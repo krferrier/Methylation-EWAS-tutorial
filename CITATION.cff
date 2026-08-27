@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: "An EWAS walkthrough: from raw IDATs to functional annotation"
+message: "If you use this tutorial, please cite both this repository and the Zenodo data record."
+type: software
+authors:
+  - family-names: Ferrier
+    given-names: Kendra
+repository-code: "https://github.com/krferrier/EWAS-tutorial"
+url: "https://krferrier.github.io/EWAS-tutorial/"
+keywords:
+  - EWAS
+  - DNA methylation
+  - Illumina EPIC
+  - epigenomics
+  - reproducible research
+license: MIT
