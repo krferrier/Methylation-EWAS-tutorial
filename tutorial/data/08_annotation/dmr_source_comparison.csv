@@ -1,0 +1,4 @@
+Annotation source,"What it names for chr6:28,633,493–28,633,599"
+UCSC refGene (pipeline default gene table),"nothing within ±5 kb (nearest ZBED9 ~17 kb up, LINC00533 ~15 kb down)"
+UCSC HGNC BigBed (annotate.smk cache),"COX8CP1 (COX8C pseudogene, directly overlapping)"
+Zhou GENCODE v41 (our probe-level annotation),"ENSG00000271440, ENSG00000287279 (promoter-associated, non-coding)"

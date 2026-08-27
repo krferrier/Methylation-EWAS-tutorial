@@ -1,0 +1,58 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - 00b_dataset_catalog.qmd
+    - 00_setup.qmd
+    - 01_qc.qmd
+    - 02_normalization.qmd
+    - 03_probe_filtering.qmd
+    - 04_cell_composition.qmd
+    - 05_batch_effects.qmd
+    - 06_ewas.qmd
+    - 07_pipeline.qmd
+    - 08_annotation.qmd
+
+website:
+  title: "EWAS Tutorial — Grady Trauma Project (GSE132203)"
+  sidebar:
+    style: docked
+    contents:
+      - text: "Overview"
+        href: index.qmd
+      - text: "Choosing a dataset"
+        href: 00b_dataset_catalog.qmd
+      - section: "Data preprocessing"
+        contents:
+          - 00_setup.qmd
+          - 01_qc.qmd
+          - 02_normalization.qmd
+          - 03_probe_filtering.qmd
+          - 04_cell_composition.qmd
+          - 05_batch_effects.qmd
+      - section: "Analysis"
+        contents:
+          - 06_ewas.qmd
+          - 07_pipeline.qmd
+          - 08_annotation.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    code-tools: true
+    df-print: paged
+    fig-width: 8
+    fig-height: 5
+    embed-resources: true
+
+bibliography: references.bib
+link-citations: true
+
+execute:
+  warning: false
+  message: false
+  cache: false

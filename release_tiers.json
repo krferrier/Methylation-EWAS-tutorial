@@ -1,0 +1,172 @@
+{
+ "tiers": {
+  "B_qc": {
+   "resume": "ch02 \u2014 skip reading 622 IDAT pairs",
+   "files": [
+    [
+     "repo/data/01_RGset.rds",
+     481434074
+    ],
+    [
+     "repo/data/01_detP.rds",
+     108980124
+    ],
+    [
+     "repo/data/01_qc_pieces.rds",
+     48793
+    ]
+   ]
+  },
+  "C_normalized": {
+   "resume": "ch03 \u2014 skip funnorm normalization",
+   "files": [
+    [
+     "repo/data/02_funnorm_grs.rds",
+     1252923324
+    ],
+    [
+     "repo/data/02_norm_pieces.rds",
+     47564425
+    ]
+   ]
+  },
+  "D_filtered": {
+   "resume": "ch04/ch05 \u2014 skip v8.1 mask filtering",
+   "files": [
+    [
+     "repo/data/03_grs_filtered.rds",
+     1094261487
+    ],
+    [
+     "repo/data/03_mask_pieces.rds",
+     3691143
+    ],
+    [
+     "repo/data/03_filter_funnel.rds",
+     3567699
+    ]
+   ]
+  },
+  "E_model_inputs": {
+   "resume": "ch06 \u2014 skip cell composition, ComBat and SVA",
+   "files": [
+    [
+     "repo/data/04_cc_full.rds",
+     3378
+    ],
+    [
+     "repo/data/04_validation.rds",
+     8114
+    ],
+    [
+     "repo/data/05_mvals_combat.rds",
+     510973400
+    ],
+    [
+     "repo/data/05_sva.rds",
+     11687
+    ],
+    [
+     "repo/data/05_batch_pca.rds",
+     14241
+    ]
+   ]
+  },
+  "F_ewas_results": {
+   "resume": "ch07/ch08 \u2014 skip the limma + BACON run",
+   "files": [
+    [
+     "repo/data/06_ewas.rds",
+     56036353
+    ],
+    [
+     "repo/data/06_bacon_summary.rds",
+     333
+    ],
+    [
+     "repo/data/06_ewas_bacon_toptable.csv.gz",
+     60794109
+    ]
+   ]
+  },
+  "G_pipeline_run": {
+   "resume": "ch07 \u2014 Snakemake pipeline outputs (no need to re-run 4 h of EWAS)",
+   "files": [
+    [
+     "ewas_pipeline/data/pheno.csv",
+     17485
+    ],
+    [
+     "ewas_pipeline/run_grady/all/PTSD_ewas_results.csv.gz",
+     30245000
+    ],
+    [
+     "ewas_pipeline/run_grady/all/PTSD_ewas_bacon_results.csv.gz",
+     57674325
+    ],
+    [
+     "ewas_pipeline/run_grady/strat/F/F_PTSD_ewas_bacon_results.csv.gz",
+     56714625
+    ],
+    [
+     "ewas_pipeline/run_grady/strat/M/M_PTSD_ewas_bacon_results.csv.gz",
+     56700202
+    ],
+    [
+     "ewas_pipeline/run_grady/meta_analysis/PTSD_ewas_meta_analysis_results_1.txt",
+     42987000
+    ],
+    [
+     "ewas_pipeline/run_grady/meta_analysis/PTSD_metal_commands.txt",
+     774
+    ]
+   ]
+  },
+  "H_annotation": {
+   "resume": "ch08 \u2014 Zhou manifests plus annotated results and comb-p output",
+   "files": [
+    [
+     "masks/EPIC.hg38.manifest.gencode.v41.tsv.gz",
+     62477035
+    ],
+    [
+     "masks/EPIC.hg38.manifest.gencode.v36.tsv.gz",
+     29916134
+    ],
+    [
+     "masks/EPIC.hg38.coord.tsv.gz",
+     5505138
+    ],
+    [
+     "repo/data/08_annotation/annotated.rds",
+     69948881
+    ],
+    [
+     "repo/data/08_annotation/PTSD_ewas_annotated_results.bed",
+     39982171
+    ],
+    [
+     "repo/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz",
+     83052368
+    ],
+    [
+     "repo/data/08_annotation/bios_eqtm_hgnc_annotated.tsv",
+     9130455
+    ],
+    [
+     "repo/data/08_annotation/08_dmr_combp_outputs.tar.gz",
+     34346704
+    ]
+   ]
+  }
+ },
+ "excluded": {
+  "repo/data/05_mvals_combat_pos.rds": "redundant variant of 05_mvals_combat.rds (position-in-model diagnostic)",
+  "repo/data/05_sv_worth_it.rds": "diagnostic sweep object; the CSV/PNG summaries ship in git",
+  "repo/data/05_k_lambda_sweep.rds": "diagnostic sweep object; 05_k_lambda_sweep.csv ships in git",
+  "repo/data/05_sva_prev.rds": "superseded SVA fit from an earlier design",
+  "repo/data/05_position_comparison.rds": "diagnostic; summary CSV ships in git",
+  "repo/data/05_k_sweep_posmod.rds": "diagnostic; summary CSV ships in git",
+  "ewas_pipeline/data/mvals.csv.gz": "regenerable from tier D by scripts/build_pipeline_inputs.R (514 MB)"
+ }
+}

@@ -1,0 +1,231 @@
+---
+title: "Cell composition: Whole Blood"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+library(data.table)
+```
+
+Whole blood is not one thing. It is a mixture of neutrophils, monocytes, NK cells,
+B cells, and CD4+/CD8+ T cells, and each cell type has a distinctly different
+methylome. When you draw blood from two people, differences in their cell-type
+*proportions* — driven by age, infection, stress, time of day — can produce large
+methylation differences that are to the biology you're studying.
+For most blood EWAS, cell composition is a large source of confounding
+[@houseman2012cellcomp; @jaffe2014celltype]. This notebook estimates the
+proportions, explains the reference-based method, and validates our estimates
+against the proportions the study deposited.
+
+```{r}
+#| label: load
+props <- readRDS(data_path("04_cc_full.rds"))$prop   # 96 x 6
+val   <- readRDS(data_path("04_validation.rds"))
+ss    <- fread(data_path("sample_sheet.csv"))
+```
+
+## 1. Why cell composition matters
+
+A neutrophil and a CD4+ T cell carry the same genome but very different DNA
+methylation. A whole-blood methylation measurement at any CpG is therefore a 
+**weighted average** across the cell types present, with weights equal to the 
+cell proportions:
+
+$$\beta_{\text{observed}} \approx \sum_{k} w_k \, \beta_k$$
+
+where $w_k$ is the fraction of cell type $k$ and $\beta_k$ is that cell type's
+methylation at the CpG. If cases have more neutrophils than controls — even for
+reasons unrelated to the exposure — every cell-type-discriminating CpG will look
+"differentially methylated." Neutrophil fraction alone routinely explains the largest 
+chunk of genome-wide methylation variance in blood.
+
+::: {.callout-important}
+## Modeling blood cell proportions
+You must **either** adjust for estimated cell proportions as covariates in the EWAS
+model, **or** use a reference-free method that captures them as latent components
+(covered in [batch effects](05_batch_effects.qmd)). 
+:::
+
+## 2. Reference-based deconvolution (Houseman)
+
+The standard approach is the **Houseman method** [@houseman2012cellcomp]:
+
+1. Start from a **reference** of purified, flow-sorted blood cell types, each
+   profiled on the same array platform. For each cell type we know its methylation
+   at a panel of cell-type-discriminating CpGs.
+2. Choose the discriminating CpGs. The original method picked them by F-test; the
+   **IDOL** optimization [@salas2018idol] selects a library that minimizes
+   deconvolution error and is the current best practice for EPIC. We use the
+   IDOL-optimized 450-CpG library from `FlowSorted.Blood.EPIC`.
+3. For each sample, solve a **constrained regression** (proportions ≥ 0, summing to
+   ~1) of the observed methylation at those CpGs against the reference profiles.
+   The fitted coefficients are the estimated cell proportions.
+
+Crucially, the sample and reference data must be **normalized together** so that
+technical differences don't confound composition. `minfi`'s
+`estimateCellCounts2` handles this by combining `RGChannelSet` with the
+reference `RGChannelSet`, normalizing jointly (here with noob), then deconvolving:
+
+```r
+library(FlowSorted.Blood.EPIC)
+data("IDOLOptimizedCpGs")
+cc <- estimateCellCounts2(
+  rg,                                   # raw RGChannelSet (not yet normalized)
+  compositeCellType   = "Blood",
+  processMethod       = "preprocessNoob",
+  probeSelect         = "IDOL",
+  cellTypes           = c("CD8T","CD4T","NK","Bcell","Mono","Neu"),
+  referencePlatform   = "IlluminaHumanMethylationEPIC",
+  IDOLOptimizedCpGs   = IDOLOptimizedCpGs,
+  returnAll           = FALSE)
+props <- cc$prop                        # 96 samples x 6 cell types
+```
+
+::: {.callout-note}
+## Reference-based needs the *raw* data
+`estimateCellCounts2` starts from the raw `RGChannelSet`, not the normalized object
+from [normalization](02_normalization.qmd), because it must normalize the samples
+*and* reference. This is one of the few steps that reaches back
+to the raw IDATs. The reference dataset itself is downloaded once from Bioconductor's
+ExperimentHub and cached.
+:::
+
+## 3. The composition of this subset
+
+```{r}
+#| label: comp-summary
+comp <- data.frame(cell_type = colnames(props),
+                   mean_pct   = round(100 * colMeans(props), 1),
+                   min_pct    = round(100 * apply(props, 2, min), 1),
+                   max_pct    = round(100 * apply(props, 2, max), 1))
+comp <- comp[order(-comp$mean_pct), ]
+knitr::kable(comp, row.names = FALSE,
+             caption = "Estimated cell-type composition across the 96 samples. Neutrophils dominate, as expected for whole blood, but the range is wide — this between-sample variation is exactly what must be modeled.")
+```
+
+```{r}
+#| label: comp-stack
+#| fig-cap: "Estimated cell-type proportions per sample (stacked). The neutrophil fraction (largest band) varies from roughly 20% to 85% across individuals — a swing that would swamp most disease effects if left unmodeled."
+#| fig-width: 8
+#| fig-height: 3.4
+library(ggplot2)
+pl <- as.data.frame(props); pl$sample_id <- rownames(pl)
+plm <- reshape(pl, varying = colnames(props), v.names = "prop",
+               timevar = "cell", times = colnames(props),
+               direction = "long")
+plm$cell <- factor(plm$cell, levels = c("Neu","CD4T","CD8T","Mono","Bcell","NK"))
+ord <- order(props[,"Neu"]); plm$sample_id <- factor(plm$sample_id,
+                                                     levels = rownames(props)[ord])
+ggplot(plm, aes(sample_id, prop, fill = cell)) +
+  geom_col(width = 1) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "sample (ordered by neutrophil fraction)", y = "estimated proportion",
+       fill = "cell type", title = "Blood cell composition varies widely between samples") +
+  theme_bw(base_size = 11) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+## 4. Validation against the deposited answer key
+
+The Grady Trauma Project deposited its own cell-type proportion estimates with the
+GEO record. That gives us the opportunity to check our deconvolution.
+```{r}
+#| label: validation-table
+res <- val$validation
+disp <- data.frame(
+  `cell type`        = res$cell,
+  `Pearson r`        = sprintf("%.3f", res$r),
+  `mean abs. error`  = sprintf("%.4f", res$mae),
+  `our mean`         = sprintf("%.1f%%", 100*res$mean_est),
+  `deposited mean`   = sprintf("%.1f%%", 100*res$mean_dep),
+  check.names = FALSE)
+knitr::kable(disp, caption = "Our estimates vs the study's deposited proportions, per cell type (n = 96).")
+```
+
+```{r}
+#| label: validation-scatter
+#| fig-cap: "Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates > 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study's own estimates."
+#| echo: false
+knitr::include_graphics(data_path("04_validation_scatter.png"))
+```
+
+Correlations range from **`r sprintf("%.3f", min(val$validation$r))`** (NK, the
+rarest and hardest-to-estimate type) to **`r sprintf("%.3f", max(val$validation$r))`**
+(neutrophils), and the mean absolute error never exceeds
+**`r sprintf("%.1f", 100*max(val$validation$mae))` percentage points**. Small
+systematic offsets (e.g. our B-cell estimates run slightly high) are expected when
+the reference library or normalization differs from the original authors', and they
+matter far less than the near-perfect *ranking* — because in the EWAS model it is
+the between-sample variation, not the absolute level, that does the confounding
+adjustment.
+
+::: {.callout-tip}
+## Practical note
+Many studies do not provide cell proportions. In a real analysis you trust the method 
+and **sanity-check the output**: neutrophils should dominate whole blood (~50–70%), 
+proportions should sum to ~1, and the distribution should look biologically plausible. 
+:::
+
+## 5. When you don't have IDATs: deconvolution from a processed matrix
+
+Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
+β-matrix-only deposit is the harder case. Two routes:
+
+1. **`projectCellType` on a β-matrix.** The Houseman projection itself only needs
+   methylation *values* at the reference CpGs, not intensities. Pull the reference
+   β-values and its cell-type means, subset your matrix to the shared reference CpGs,
+   and run the constrained projection directly:
+
+   ```r
+   library(FlowSorted.Blood.EPIC)
+   library(genefilter)
+   # reference cell-type means at the IDOL CpGs (from the package)
+   ref <- ...   # matrix: IDOL CpGs x 6 cell types
+   shared <- intersect(rownames(beta), rownames(ref))
+   props  <- minfi:::projectCellType(beta[shared, ], ref[shared, ])
+   ```
+   The estimates are slightly noisier than the joint-normalization route because the
+   sample and reference weren't normalized together, but for a well-processed matrix
+   they are close.
+
+2. **`EpiDISH` (reference-based, matrix-native).** The `EpiDISH` package
+   [@teschendorff2017reference] is designed to take a β-matrix plus a reference
+   centroid matrix and return proportions via robust partial correlation (RPC),
+   CIBERSORT, or constrained projection. It ships blood reference centroids and is
+   the most convenient option when you only have processed data:
+
+   ```r
+   library(EpiDISH)
+   data(centDHSbloodDMC.m)                     # blood reference centroids
+   out <- epidish(beta, ref.m = centDHSbloodDMC.m, method = "RPC")
+   props <- out$estF
+   ```
+
+::: {.callout-note}
+## Reference-free alternatives
+When no suitable reference exists (unusual tissues, or you worry the reference
+doesn't match your population), **reference-free** methods estimate latent
+composition-like components directly from the data: RefFreeEWAS
+[@houseman2014reffree], SVA [@leek2012sva], and RUV. These are covered in
+[batch effects](05_batch_effects.qmd); the trade-off is that the recovered
+components are not labeled cell types, only surrogate variables to adjust for.
+:::
+
+We carry the estimated proportions forward as EWAS covariates:
+
+```r
+saveRDS(props, data_path("04_cellcounts.rds"))
+```
+
+---
+
+**Next:** [Batch effects](05_batch_effects.qmd) — technical variation from chips,
+array positions, and plates, and how to detect it before deciding whether to
+correct.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

@@ -1,0 +1,209 @@
+---
+title: "Quality control: which samples can we trust?"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+```
+
+The first step in methylation analsysis is quality control. A failed
+array, a swapped sample, or a mislabeled sex can cause serious trouble 
+downstream if it slips through. This notebook runs the standard `minfi`
+[@aryee2014minfi] QC 
+process on the 96-sample subset and decides what (if anything) to drop.
+
+We start from the raw two-channel object saved by the [Setup](00_setup.qmd) step.
+
+```{r}
+#| label: load
+rg  <- readRDS(data_path("01_RGset.rds"))
+qcp <- readRDS(data_path("01_qc_pieces.rds"))
+ss  <- as.data.frame(pData(rg))
+rg
+```
+
+## 1. Detection p-values — did the probe beat background?
+
+Every probe is compared to the array's negative-control distribution. A large
+**detection p-value** means the signal is indistinguishable from background; the
+measurement is noise. We summarize per sample: the mean detection p, and the
+fraction of probes failing at p > 0.01.
+
+```{r}
+#| label: detp-plot
+#| fig-cap: "Per-sample detection p-value. All 96 samples are far below the 0.01 concern line — no failed arrays."
+det <- data.frame(sample = names(qcp$det_mean),
+                  mean_detP = qcp$det_mean,
+                  frac_fail = qcp$det_fail,
+                  slide = ss$slide)
+ggplot(det, aes(x = reorder(sample, mean_detP), y = mean_detP)) +
+  geom_point(color = "#4C72B0", size = 1.6) +
+  geom_hline(yintercept = 0.01, linetype = "dashed", color = "#C44E52") +
+  labs(x = "sample (ranked)", y = "mean detection p-value",
+       title = "Detection p-value per sample") +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+```
+
+```{r}
+#| label: detp-table
+cat("worst sample mean detP:", signif(max(det$mean_detP), 3), "\n")
+cat("worst sample % probes p>0.01:", signif(max(det$frac_fail) * 100, 3), "%\n")
+cat("samples failing QC (mean detP > 0.01):", sum(det$mean_detP > 0.01), "\n")
+```
+
+::: {.callout-note}
+## What a failure would look like
+On a real plate you will sometimes see one or two samples an order of magnitude
+above the rest, crossing the 0.01 line. Those get dropped here, before
+normalization. 
+:::
+
+## 2. Signal intensity — is the array bright enough?
+
+`getQC()` reduces each sample to the median methylated (`mMed`) and unmethylated
+(`uMed`) log2 intensity. Weak arrays fall toward the bottom-left; `minfi`'s
+convention flags samples below a line at `(mMed + uMed)/2 = 10.5`.
+
+```{r}
+#| label: intensity-plot
+#| fig-cap: "Median methylated vs unmethylated log2 intensity. All samples sit well above the 10.5 low-signal cutoff."
+qc <- as.data.frame(qcp$qc); qc$sample <- rownames(qc)
+qc$flag <- ((qc$mMed + qc$uMed) / 2) < 10.5
+ggplot(qc, aes(mMed, uMed, color = flag)) +
+  geom_point(size = 2) +
+  geom_abline(intercept = 2 * 10.5, slope = -1, linetype = "dashed", color = "grey40") +
+  scale_color_manual(values = c(`FALSE` = "#4C72B0", `TRUE` = "#C44E52"),
+                     labels = c("pass", "low signal"), name = NULL) +
+  labs(x = "median methylated log2 int (mMed)",
+       y = "median unmethylated log2 int (uMed)",
+       title = "Signal-intensity QC") +
+  coord_equal(xlim = c(9, 14), ylim = c(9, 14))
+```
+
+```{r}
+#| label: intensity-summary
+cat("mMed range:", round(min(qc$mMed),2), "-", round(max(qc$mMed),2), "\n")
+cat("low-signal flagged samples:", sum(qc$flag), "\n")
+```
+
+## 3. Predicted vs reported sex 
+
+Sex is the single most reliable phenotype to predict from methylation: the X and
+Y chromosome signal is unambiguous. `getSex()` compares median total intensity on
+X vs Y. A mismatch between predicted and reported sex is a strong signal of a
+**sample swap or annotation error** — and, because sex is a strong methylation
+covariate we must model, catching it here is important.
+
+```{r}
+#| label: sex-plot
+#| fig-cap: "Predicted sex from X/Y intensity, colored by reported sex. Clean separation, zero mismatches."
+sx <- data.frame(xMed = qcp$psex$xMed, yMed = qcp$psex$yMed,
+                 predicted = qcp$psex$predictedSex,
+                 reported = qcp$rep_sex)
+sx$mismatch <- sx$predicted != sx$reported
+ggplot(sx, aes(xMed, yMed, color = reported, shape = mismatch)) +
+  geom_point(size = 2.5) +
+  scale_color_manual(values = c(F = "#DD8452", M = "#4C72B0"), name = "reported") +
+  scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 4), guide = "none") +
+  labs(x = "median X log2 int", y = "median Y log2 int",
+       title = "Predicted vs reported sex")
+```
+
+```{r}
+#| label: sex-table
+tab <- table(reported = sx$reported, predicted = sx$predicted)
+knitr::kable(tab, caption = "Reported vs predicted sex")
+cat("sex mismatches:", sum(sx$mismatch), "of", nrow(sx), "\n")
+```
+
+## 4. SNP-identity fingerprint
+
+EPIC carries ~59 `rs` SNP probes that measure genotype, not methylation. Their
+beta values cluster near 0, 0.5, or 1 (the three genotypes). They are useful for
+two things: spotting **sample duplicates / swaps** (two arrays from the same
+person share a fingerprint) and, in longitudinal designs, confirming that repeat
+samples really are the same individual.
+
+```{r}
+#| label: snp-heatmap
+#| fig-cap: "The ~59 rs SNP probes across samples. Discrete banding near 0 / 0.5 / 1 is the expected genotype signal; no two columns are identical, so no duplicate samples."
+snps <- qcp$snps
+# cluster samples by SNP fingerprint
+d <- dist(t(snps))
+ord <- hclust(d)$order
+image(t(snps[, ord]), col = colorRampPalette(c("#4C72B0","white","#C44E52"))(64),
+      axes = FALSE, main = "rs SNP-probe fingerprints (samples clustered)")
+box()
+```
+
+```{r}
+#| label: snp-dups
+# nearest-neighbor distance: a near-zero value would flag a duplicate
+dm <- as.matrix(dist(t(snps)))
+diag(dm) <- NA
+nn <- apply(dm, 1, min, na.rm = TRUE)
+cat("SNP probes:", nrow(snps), "\n")
+cat("smallest between-sample fingerprint distance:", round(min(nn), 3),
+    "(a value near 0 would indicate a duplicate)\n")
+```
+
+## Verdict
+
+```{r}
+#| label: verdict
+drop_detp <- det$sample[det$mean_detP > 0.01]
+drop_int  <- qc$sample[qc$flag]
+drop_sex  <- sx$reported[sx$mismatch]
+keep <- setdiff(colnames(rg), unique(c(drop_detp, drop_int)))
+cat("Samples in:", ncol(rg), "\n")
+cat("Dropped for detection p:", length(drop_detp), "\n")
+cat("Dropped for low intensity:", length(drop_int), "\n")
+cat("Sex mismatches (investigate, don't auto-drop):", length(drop_sex), "\n")
+cat("Samples passing QC:", length(keep), "\n")
+saveRDS(keep, data_path("01_qc_pass_samples.rds"))
+```
+
+All 96 samples pass. We carry the full set forward to
+[normalization](02_normalization.qmd).
+
+::: {.callout-tip}
+## Always do QC. ALWAYS
+Even though all samples passed QC thresholds in this subset, doing the QC was 
+still important as now we have evidence supporting that these samples are 'clean'.
+In a real dataset there are typically several samples that will not pass
+QC for one of the 4 checks.
+:::
+
+## What the phenotype file is missing
+
+QC checks whether the *arrays* worked. It is also the right moment to check whether
+the **phenotype data** you will eventually model is complete, because a covariate you
+discover is absent at modeling time is far more expensive than one you plan around
+now.
+
+For blood methylation the most consequential gap is usually **smoking**. Smoking
+produces some of the largest and most reproducible methylation signals in blood
+[@joehanes2016smoking], so an unmeasured smoking variable is unmeasured confounding
+in every model you fit. The Grady deposit gives PTSD, age, sex, race, and childhood
+trauma — but no smoking variable, which is common in public deposits rather than
+unusual.
+
+That absence is worth noting here because it shapes decisions in the next two
+chapters: it is one reason to consider excluding literature-derived smoking CpGs at
+[probe filtering](03_probe_filtering.qmd), and the reason the surrogate variables
+estimated in [batch effects](05_batch_effects.qmd) are doing more work than
+technical-noise removal alone. The full set of options, and the one this tutorial
+takes, is laid out in [the EWAS chapter](06_ewas.qmd).
+
+::: {.callout-tip}
+## Inventory your covariates before you normalize
+Write down the model you intend to fit, then check each term against the metadata you
+actually have. Note anything missing, and decide *then* how you will handle it.
+:::
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

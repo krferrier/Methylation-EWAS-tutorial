@@ -1,0 +1,169 @@
+---
+title: "Setup: the platform, the data, and the teaching subset"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+```
+
+## What is DNA methylation
+
+DNA methylation is an epigenetic mechanism that occurs when a methyl (CH3) group
+is added to a cytosine base in DNA. Methylated cytosines often occur directly next
+to a guanine nucleotide, which has led to the name of methylated sites as 'CpGs'
+(cytosine-phosphate-guanine). The added methyl group of a CpG can physically inhibit
+the cellular machinery necessary for gene expression, thus we can infer effects of gene
+expression from methylation status.
+
+In the human genome, there are GC-rich regions known as CpG islands (CGIs). These regions
+typically span 500-1500 base pairs with greater than 60% GC-content. CGIs tend to be in the
+promoter regions of genes. While 70-80% of CpGs genome-wide are methylated, CGIs are
+predominantly unmethylated, particularly at active promoters. There are CpGs outside of CGIs, however, and based on their distance
+from the CGI they may be labeled as in the 'shore' (0-2kb), 'shelf' (2kb-4kb), or 'open sea' (
+greater than 4kb).
+
+![CGI and relative regions](data/CGI.png)
+
+The unique and important characteristic of methylation compared with genetic variants is that
+methylation status can change over time as a response to environmental factors and is reversible.
+For example, there are distinct methylation patterns observed between exposure to commercial tobacco
+smoking and people who have never smoked. After a person quits smoking, their methylation patterns
+revert back to a state more similar to that of someone who has never smoked.
+
+# Measuring Methylation
+
+Array technology, such as the Illumina Infinium Methylation EPIC array (v1, "850K"),
+estimate the methylation status at a CpG site by the fraction of DNA molecules carrying
+a methyl group at that specific genomic location. The EPIC array interrogates ~865,000
+CpGs across the genome. For each CpG it reports two intensities:
+
+- **M** — signal from the *methylated* allele,
+- **U** — signal from the *unmethylated* allele.
+
+From those two numbers we form the two estimates/metrics of methylation status used
+in methylation analyses:
+
+$$\beta = \frac{M}{M + U + \alpha}, \qquad M\text{-value} = \log_2\!\frac{M}{U}$$
+
+The **beta value** is the direct proportion of methylation and values range
+between $[0,1]$. While the beta value is easily interpretable, the distribution of
+beta values are often non-normal and thus violate assumptions of normality when
+they are used in linear regression modeling. Thus, the beta values are log-transformed
+to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in
+distribution, which makes it the better choice for statistical modeling.
+($\alpha \approx 100$ is a small offset that stabilizes betas where
+total intensity is low.)
+
+::: {.callout-tip}
+## Two probe designs
+Methylation array technology often uses two different probe chemistries.
+**Type I** probes use two beads (one for M, one for
+U) in the *same* color channel; **Type II** probes use a single bead and read M
+vs U in the *two* color channels. Type I probes are better suited for regions with
+high CpG density, but require double the physical space on the array per locus.
+Type II are more compact, but have reduced sensitivity in high density regions.
+compressed dynamic range — which is exactly what the normalization step
+(BMIQ/SWAN/noob) exists to correct.
+:::
+
+A short history of the Illumina methylation platforms:
+
+| Array | CpGs (approx.) | Notes |
+|---|---|---|
+| HumanMethylation27 | 27,000 | promoter-focused, largely retired |
+| HumanMethylation450 | 485,000 | the workhorse of the 2010s |
+| **MethylationEPIC v1** | **865,000** | **this tutorial** (GPL21145) |
+| MethylationEPIC v2 | 935,000 | current; different probe IDs |
+
+The dataset we will use in this tutorial is EPIC **v1**, but the same framework can be
+applied for other arrays.
+
+## Raw Methylation data files
+
+Each sample on an Illumina array is stored as **two IDAT files** — one per color
+channel:
+
+```
+GSM3853168_200932680028_R01C01_Grn.idat.gz   (green channel)
+GSM3853168_200932680028_R01C01_Red.idat.gz   (red channel)
+```
+
+The filename encodes the physical location of the sample: `200932680028` is the
+**Sentrix barcode** (the BeadChip / "slide"), and `R01C01` is the **array
+position** (row 1, column 1) on that chip.
+
+For this tutorial, we are going to use a subset of 96 samples from the Grady Trauma Project,
+(GSE132203) which are available from the NCBI GEO database. IDAT pairs were downloaded directly
+from GEO's per-sample supplementary FTP area, e.g.:
+
+```
+https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM3853nnn/GSM3853168/suppl/
+```
+
+The subset of 96 samples is ~1.4 GB, which should be manageable for most to download and perform
+analyses on quickly on their local computer. The full Grady Trauma Project dataset has 795 samples
+and is ~6 GB and can be downloaded into R directly with `GEOquery::getGEOSuppFiles()` or
+`minfi::read.metharray.sheet()` + `read.metharray.exp()`; the mechanics are the same.
+
+## The sample sheet
+
+`minfi` reads IDATs given a **Basename** (the path up to `_Grn/_Red`). We pair
+each Basename with the phenotype row for that GSM. Here is the first 8 rows of the sample sheet:
+
+```{r}
+#| label: sample-sheet
+ss <- readRDS("data/sample_sheet.rds")
+ss <- ss[order(ss$slide, ss$array_pos), ]
+cat("Samples:", nrow(ss), " | Chips:", length(unique(ss$slide)), "\n")
+knitr::kable(head(ss[, c("sample_id","slide","array_pos","gender","age",
+                         "ptsd","childhood_abuse","race")], 8),
+             caption = "First 8 rows of the sample sheet")
+```
+
+## How the teaching subset was chosen
+
+The Grady Trauma Project was selected for this tutorial in specific because I wanted
+to be able to provide a walkthrough that shows:
+
+1. How to process from raw IDAT files,
+2. Uses whole blood as the tissue source since this is a common tissue used in methylation studies and requires some additional consideration in statistical modeling.
+3. Has available phenotype data for a disease or trait association testing, as well as sex and age demographic information.
+
+The resulting balance of the 96 samples chosen for the tutorial subset:
+
+```{r}
+#| label: subset-balance
+bal <- list(
+  PTSD          = table(ss$ptsd, useNA = "ifany"),
+  Sex           = table(ss$gender),
+  `Childhood abuse` = table(ss$childhood_abuse, useNA = "ifany"),
+  Race          = table(ss$race, useNA = "ifany")
+)
+bal
+cat("\nAge: range", paste(range(ss$age, na.rm=TRUE), collapse="-"),
+    "| mean", round(mean(ss$age, na.rm=TRUE), 1), "\n")
+cat("Chips carrying both PTSD classes:",
+    sum(tapply(ss$ptsd, ss$slide, function(x) length(unique(na.omit(x)))>1)),
+    "of", length(unique(ss$slide)), "\n")
+```
+
+::: {.callout-note}
+## A bonus lesson I can teach with the Grady Trauma Project
+This cohort is ~95% African American, which means in addition to the main tutorial
+lessons I wanted to achieve, I also get to showcase using **population-specific**
+SNP (single nucleotide polymorphism) masks. Differences in genomic architecture is
+observed across populations; a variant may be polymorphic in one population, but is
+not in another, and vice-versa. SNPs in close proximity to a CpG can impact the
+ability for the CpG probes to measure the methylation status accurately. Thus, CpGs
+near common SNPs are typically excluded from downstream analyses. However, not all
+populations share the same SNPs and masking with the wrong population may cause you
+to lose true-positive signals and retain false-positive signals.
+:::
+
+## What the next notebook does
+
+With the sample sheet provided, the [QC notebook](01_qc.qmd) reads all 96 IDAT
+pairs into a single `RGChannelSet` and runs the quality checks that decide which
+samples are trustworthy before we begin normalization.

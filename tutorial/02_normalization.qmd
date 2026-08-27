@@ -1,0 +1,289 @@
+---
+title: "Normalization: making arrays comparable"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+```
+
+The next step in methylation data pre-processing is normalization. There is variation 
+in intensities from the different probe chemistries, as well as from technical variation 
+in the assay, which needs to be accounted for before the probe intensities can be compared 
+across samples in downstream analyses. Normalization is the method used to do this. This 
+notebook walks through the standard normalization strategies used for methylation data.
+
+Since all of the samples from our small example subset passed QC, we will start normaliztion 
+from the raw two-channel object produced in [QC](01_qc.qmd). If you did identify samples that 
+failed to meet QC thresholds, those samples should be removed prior to normalization.
+
+```{r}
+#| label: load
+rg <- readRDS(data_path("01_RGset.rds"))
+np <- readRDS(data_path("02_norm_pieces.rds"))
+rg
+```
+
+## 1. Two sources of unwanted variation
+
+**Within-array, technical.** Every Infinium measurement is a fluorescence
+intensity, and fluorescence has a background floor (autofluorescence, non-specific
+hybridization, optical noise) and a **dye bias**: the Cy3 (green) and Cy5 (red)
+channels are not excited or detected with equal efficiency, so the same amount of
+methylated and unmethylated DNA does not produce the same raw signal. Left
+uncorrected, this shifts β-values systematically.
+
+**Within-array, by probe design.** The EPIC array (like the 450K before it) mixes two 
+assay chemistries [@pidsley2016epic]:
+
+- **Type I** probes use two bead types per CpG (one for methylated, one for
+  unmethylated), both read in the *same* color channel. They tolerate a wider
+  dynamic range but use up two bead addresses per site.
+- **Type II** probes use a single bead per CpG, with methylated and unmethylated
+  states read in *different* channels. They are twice as space-efficient — which
+  is why ~72% of EPIC probes are Type II — but their β-value distribution is
+  **compressed toward the center**: they under-call fully methylated and fully
+  unmethylated sites relative to Type I.
+
+We can see this compression directly in the subset. Below are the median β and the
+between-probe spread (SD of per-probe mean β) for each design, on raw data:
+
+```{r}
+#| label: type-bias-table
+type_summ <- function(beta, typeI, typeII) {
+  bi  <- beta[rownames(beta) %in% typeI, , drop = FALSE]
+  bii <- beta[rownames(beta) %in% typeII, , drop = FALSE]
+  data.frame(
+    design      = c("Type I", "Type II"),
+    n_probes    = c(nrow(bi), nrow(bii)),
+    median_beta = round(c(median(bi, na.rm = TRUE), median(bii, na.rm = TRUE)), 3),
+    spread_sd   = round(c(sd(rowMeans(bi, na.rm = TRUE)),
+                          sd(rowMeans(bii, na.rm = TRUE))), 3)
+  )
+}
+knitr::kable(type_summ(np$beta_raw, np$typeI, np$typeII),
+             caption = "Raw β by probe design (20k-probe sample). Type II sits closer to 0.5 with a narrower spread — the design-bias normalization must correct.")
+```
+
+::: {.callout-important}
+## Why this matters for an EWAS
+If Type I and Type II probes are on different scales, a differential-methylation
+test will partly reflect *which chemistry* a probe uses rather than biology, and
+effect sizes are not comparable across probe types.
+:::
+
+## 2. Normalization methods
+
+Methods fall into two groups by *what* they try to make comparable.
+
+### Within-array methods (fix probe-design bias per sample)
+
+- **noob** (normal-exponential out-of-band background correction) models the
+  background as a normal-exponential mixture using the out-of-band Type I signals,
+  then applies a dye-bias correction [@triche2013noob]. It is a background/dye
+  step, not a design-bias step, but it is the standard first move and is what most
+  pipelines build on.
+- **BMIQ** (beta-mixture quantile) fits a three-state beta mixture
+  (unmethylated / hemimethylated / methylated) separately to Type I and Type II
+  probes, then transforms the Type II distribution onto the Type I scale
+  [@teschendorff2013bmiq]. It directly targets the design bias.
+- **SWAN** (subset-quantile within-array normalization) matches Type I and Type II
+  intensity distributions using a subset of probes with matched underlying biology
+  [@maksimovic2012swan].
+
+### Between-array methods (make samples comparable to each other)
+
+- **Quantile normalization** forces every sample's intensity distribution to a
+  common reference. Powerful, but it assumes the *global* methylation distribution
+  is the same across samples — a poor assumption when groups differ biologically
+  (e.g. tumor vs normal), where it can erase real signal.
+- **Functional normalization (funnorm)** is a between-array method designed for
+  exactly that case [@fortin2014funnorm]. Instead of forcing distributions to
+  match, it regresses out variation explained by the array's **internal control
+  probes** — bisulfite conversion, staining, extension, hybridization controls —
+  which capture technical variation *without* being tied to biological signal. It
+  is the recommended default when you expect large biological differences between
+  groups, and it wraps noob as its first step.
+
+::: {.callout-note}
+## Choosing a method
+There is no single winner. A defensible default for blood EWAS is **noob +
+functional normalization** (what `preprocessFunnorm` does in one call), because it
+corrects background/dye and removes technical variation without assuming samples
+share a methylation distribution. If your study is a within-tissue comparison with
+small expected differences, quantile-based methods (or `preprocessQuantile`) are
+also reasonable.
+:::
+
+## 3. Running it on the subset
+
+We compute three versions and compare: **raw** (`preprocessRaw`, no correction),
+**noob** (`preprocessNoob`), and **functional** (`preprocessFunnorm`). The
+functional result is a `GenomicRatioSet` — CpGs mapped to the genome with β and
+M-values ready for analysis.
+
+The code to produce these subsets is shown below. It may take several minutes to 
+complete. 
+
+```r
+mset_raw  <- preprocessRaw(rg);   beta_raw  <- getBeta(mset_raw)
+mset_noob <- preprocessNoob(rg);  beta_noob <- getBeta(mset_noob)
+grs_fun   <- preprocessFunnorm(rg); beta_fun <- getBeta(grs_fun)  # GenomicRatioSet
+```
+
+Then we can compare the distribution of signals across the three versions of the data and the probe types. 
+
+```{r}
+#| label: density-compare
+#| fig-cap: "β-value density by probe design, before and after normalization (20k-probe sample). Raw Type II (dashed) is visibly pulled toward the center; noob and funnorm restore a more bimodal shape and bring the two designs closer together."
+#| fig-width: 9
+#| fig-height: 3.4
+library(ggplot2)
+mk_long <- function(beta, label, typeII) {
+  b <- beta[sample(nrow(beta), min(8000, nrow(beta))), ]
+  v <- as.vector(b)
+  design <- ifelse(rownames(b) %in% typeII, "Type II", "Type I")
+  data.frame(beta = as.vector(b),
+             design = rep(design, times = ncol(b)),
+             method = label)
+}
+long <- rbind(
+  mk_long(np$beta_raw,  "raw",     np$typeII),
+  mk_long(np$beta_noob, "noob",    np$typeII),
+  mk_long(np$beta_fun,  "funnorm", np$typeII)
+)
+long$method <- factor(long$method, levels = c("raw", "noob", "funnorm"))
+ggplot(long, aes(x = beta, color = design, linetype = design)) +
+  geom_density(na.rm = TRUE, linewidth = 0.7) +
+  facet_wrap(~method) +
+  scale_color_manual(values = c("Type I" = "#4C72B0", "Type II" = "#C44E52")) +
+  labs(x = "β-value", y = "density",
+       title = "Probe-design bias, before and after normalization") +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+#| label: post-norm-table
+tab <- rbind(
+  cbind(method = "raw",     type_summ(np$beta_raw,  np$typeI, np$typeII)),
+  cbind(method = "noob",    type_summ(np$beta_noob, np$typeI, np$typeII)),
+  cbind(method = "funnorm", type_summ(np$beta_fun,  np$typeI, np$typeII))
+)
+knitr::kable(tab, row.names = FALSE,
+             caption = "Type I vs Type II β summaries across methods. The gap in median β between the two designs narrows after normalization.")
+```
+
+The Type II median moves from **0.75 (raw)** toward the Type I scale after
+correction, and the design-specific density curves in the figure come into closer
+agreement — exactly what design-bias correction should do. Functional
+normalization additionally removes between-array technical variance that these
+density plots do not show; its payoff appears later, in the [batch-effects](05_batch_effects.qmd)
+notebook, as reduced technical structure in the principal components.
+
+## 4. β-values vs M-values
+
+Normalization outputs β-values (proportion methylated, bounded 0–1), which are
+interpretable but **heteroscedastic** — their variance is small near 0 and 1 and
+large near 0.5, which violates the constant-variance assumption of linear models.
+For statistical testing we use the **M-value**, the log₂ ratio of methylated to
+unmethylated signal [@du2010comparison]:
+
+$$
+M = \log_2\!\left(\frac{\beta}{1-\beta}\right)
+$$
+
+M-values are roughly homoscedastic and better behaved for the linear models used
+in an EWAS. The convention is to **test on M-values and report/interpret effect
+sizes on β-values** (a β difference of 0.05 is a "5% methylation change," which is
+biologically legible; an M-value difference is not). It is becoming more common to 
+report/interpret from M-values instead of beta values, but we generate effect sizes 
+from both in the [analysis](06_ewas.qmd) notebook for a more comprehensive example.
+
+```{r}
+#| label: mvalue-demo
+#| fig-cap: "The β→M transform. β is bounded and heteroscedastic; M is unbounded and closer to constant-variance."
+#| fig-width: 7
+#| fig-height: 3
+b <- seq(0.001, 0.999, length.out = 500)
+m <- log2(b / (1 - b))
+dfm <- data.frame(beta = b, M = m)
+ggplot(dfm, aes(beta, M)) + geom_line(color = "#4C72B0", linewidth = 0.9) +
+  geom_hline(yintercept = 0, color = "grey70") +
+  geom_vline(xintercept = 0.5, color = "grey70") +
+  labs(x = "β-value", y = "M-value", title = "β → M-value transform")
+```
+
+## 5. Normalizing from a processed matrix
+
+Many GEO series do not deposit raw IDATs, but do provide a processed matrix: 
+a table of β-values (or sometimes M-values) with CpGs in rows and samples in columns, often as a
+`GSExxxxx_series_matrix.txt.gz` or a supplementary file. You cannot run
+`minfi`'s IDAT-based normalization on these, because the raw two-channel
+intensities are gone. Here is how to work with them.
+
+**Step 1 — get the matrix into R.** For a series matrix:
+
+```r
+library(GEOquery)
+gse  <- getGEO("GSExxxxxx", GSEMatrix = TRUE)      # returns a list of ExpressionSets
+eset <- gse[[1]]
+beta <- Biobase::exprs(eset)                        # CpG x sample β matrix
+pheno <- Biobase::pData(eset)                       # sample metadata
+```
+
+For a supplementary flat file (`getGEOSuppFiles` downloads it), read it with
+`data.table::fread()` and coerce to a matrix with CpG IDs as rownames.
+
+**Step 2 — find out what was already done.** Read the series' processing description (`experimentData()` /
+`pData(eset)$data_processing`) to learn whether the matrix is already normalized,
+and how. Common cases:
+
+- *Already noob + BMIQ (or funnorm) normalized* — the most common. Do **not**
+  re-normalize; treat the matrix as analysis-ready β and proceed to probe filtering.
+- *Raw/unnormalized β* — you can apply a **β-space** normalization such as BMIQ
+  (`wateRmelon::BMIQ()`), which only needs β and probe design, not intensities.
+- *Already batch-corrected (e.g. ComBat) or cell-composition-adjusted* — be
+  cautious: further correction can over-adjust, and you have lost the ability to
+  model those effects yourself. Note it as a limitation.
+
+**Step 3 — QC on what you have.** Without intensities you lose detection
+p-values and the intensity/sex-signal checks from the [QC](01_qc.qmd) notebook.
+You can still:
+
+- check for **missing values** and impute or drop probes with excessive `NA`;
+- run **PCA/MDS** to spot outlier samples and technical structure;
+- **predict sex** from the X/Y-chromosome β distributions (or `wateRmelon`'s
+  `estimateSex`) and compare to the reported sex, catching label swaps;
+- verify the probe count and platform match what you expect (EPIC ≈ 865k).
+
+**Step 4 — harmonize probe IDs.** Processed matrices vary: some are already
+masked/filtered, some use different ID conventions, some are 450K and some EPIC.
+Before combining or comparing series, intersect on common `cg`/`ch` probe IDs and
+apply the same probe-filtering ([next notebook](03_probe_filtering.qmd)) you would
+apply to IDAT-derived data.
+
+::: {.callout-tip}
+## Practical rule
+From IDATs you control normalization; from a processed matrix you **inherit** it.
+The job shifts from "normalize" to "audit what was done and decide whether it is
+adequate," then continue from probe filtering. Always record, in your methods, the
+processing state of every series you use — reviewers will ask.
+:::
+
+We save the functional-normalized `GenomicRatioSet` for the downstream steps:
+
+```r
+saveRDS(grs_fun, data_path("02_funnorm_grs.rds"))
+```
+
+---
+
+**Next:** [Probe filtering](03_probe_filtering.qmd) — removing probes that are
+unreliable by design (cross-reactive, SNP-affected, sex-chromosome), using Zhou's
+curated masks with ancestry awareness.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

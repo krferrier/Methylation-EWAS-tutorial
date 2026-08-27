@@ -1,0 +1,11 @@
+"ID","Description","Size","pvalue","padj"
+"04070","Phosphatidylinositol signaling system",78,0.00471456685687256,0.447664748611611
+"00983","Drug metabolism - other enzymes",52,0.00546138722616079,0.447664748611611
+"04514","Cell adhesion molecule (CAM) interaction",133,0.00630513730438889,0.447664748611611
+"00562","Inositol phosphate metabolism",57,0.0140726815340465,0.749370291687974
+"04914","Progesterone-mediated oocyte maturation",86,0.0289409973795441,1
+"03010","Ribosome",91,0.0296547771704651,1
+"05223","Non-small cell lung cancer",54,0.0331120735210764,1
+"00620","Pyruvate metabolism",40,0.038762743450101,1
+"00071","Fatty acid degradation",43,0.0427177232568949,1
+"04930","Type II diabetes mellitus",48,0.0498406979639622,1

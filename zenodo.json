@@ -1,0 +1,38 @@
+{
+  "title": "EWAS tutorial (GSE132203, Zhou EPIC mask.cm v8.1): checkpoint data",
+  "upload_type": "dataset",
+  "description": "Intermediate checkpoint data for the eleven-chapter Quarto EWAS tutorial at https://github.com/krferrier/EWAS-tutorial. Derived from NCBI GEO GSE132203 (Grady Trauma Project, Illumina EPIC whole-blood methylation), subset to n=87 (32 PTSD cases, 55 controls). Probe filtering uses the Zhou EPIC mask.cm v8.1 recommended mask (YAME v1.40); 756,251 CpGs are tested. Files are grouped into seven tarballs, each a resume point for a chapter of the tutorial, so users can download only what they need. See MANIFEST.md in the repository for a per-file listing and checksums.",
+  "creators": [
+    {
+      "name": "Ferrier, Kendra"
+    }
+  ],
+  "keywords": [
+    "EWAS",
+    "DNA methylation",
+    "Illumina EPIC",
+    "epigenomics",
+    "PTSD",
+    "tutorial",
+    "reproducible research",
+    "GSE132203"
+  ],
+  "license": "cc-by-4.0",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/krferrier/EWAS-tutorial",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://github.com/krferrier/EWAS",
+      "relation": "isSupplementedBy",
+      "scheme": "url"
+    },
+    {
+      "identifier": "10.1093/nar/gkw967",
+      "relation": "cites",
+      "scheme": "doi"
+    }
+  ]
+}

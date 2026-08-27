@@ -1,0 +1,42 @@
+# Checkpoints >= 5 MB live in the Zenodo record — fetch with ./get_data.sh
+# (paths are listed explicitly so that every smaller data file stays in git)
+/tutorial/data/01_RGset.rds
+/tutorial/data/01_detP.rds
+/tutorial/data/02_funnorm_grs.rds
+/tutorial/data/02_norm_pieces.rds
+/tutorial/data/03_grs_filtered.rds
+/tutorial/data/05_k_lambda_sweep.rds
+/tutorial/data/05_mvals_combat.rds
+/tutorial/data/05_mvals_combat_pos.rds
+/tutorial/data/05_sv_worth_it.rds
+/tutorial/data/06_ewas.rds
+/tutorial/data/06_ewas_bacon_toptable.csv.gz
+/tutorial/data/08_annotation/08_dmr_combp_outputs.tar.gz
+/tutorial/data/08_annotation/PTSD_ewas_annotated_results.bed
+/tutorial/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz
+/tutorial/data/08_annotation/annotated.rds
+/tutorial/data/08_annotation/bios_eqtm_hgnc_annotated.tsv
+/tutorial/data/08_annotation/dmr/PTSD_dmr.fdr.bed.gz
+/tutorial/data/08_annotation/dmr/PTSD_dmr.slk.bed.gz
+/tutorial/data/08_annotation/dmr/PTSD_dmr_demo.fdr.bed.gz
+/tutorial/data/08_annotation/dmr/PTSD_dmr_demo.slk.bed.gz
+/tutorial/data/08_annotation/dmr_demo/PTSD_dmr_demo.fdr.bed.gz
+/tutorial/data/08_annotation/dmr_demo/PTSD_dmr_demo.slk.bed.gz
+
+# External sibling trees, fetched as Zenodo tiers G and H
+/ewas_pipeline/
+/masks/
+
+# Downloaded tarballs
+*.tar.gz
+
+# Quarto build products (the committed render lives in docs/)
+/tutorial/_site/
+/tutorial/.quarto/
+*_files/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+.Renviron

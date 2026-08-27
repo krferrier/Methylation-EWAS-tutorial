@@ -1,0 +1,7 @@
+CpG,hg38 pos (chr6),GENCODE feature,CGI context,effect (β-scale),p
+cg25653641,"28,633,534",Promoter (±1.5 kb TSS),N_Shore,-0.528,0.000544
+cg22572476,"28,633,546",Promoter (±1.5 kb TSS),N_Shore,-0.444,0.000487
+cg19488431,"28,633,551",Promoter (±1.5 kb TSS),N_Shore,-0.435,0.000216
+cg27535677,"28,633,587",Promoter (±1.5 kb TSS),N_Shore,-0.564,0.000551
+cg22497095,"28,633,597",Promoter (±1.5 kb TSS),N_Shore,-0.468,0.000332
+cg26865747,"28,633,599",Promoter (±1.5 kb TSS),N_Shore,-0.654,0.00015

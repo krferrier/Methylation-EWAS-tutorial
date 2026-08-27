@@ -1,0 +1,4 @@
+Method,Input,Bias model,KEGG FDR<0.05,Top KEGG pathway,Its nominal p,Its FDR
+gometh (Wallenius hypergeometric),"top 1,000 CpGs vs universe",probes per gene (Wallenius),0,Basal cell carcinoma,0.00101,0.376
+methylglm (logistic regression),full named p-value vector,probe count as covariate,0,Phosphatidylinositol signaling system,0.00471,0.448
+methylRRA-GSEA (rank aggregation),full named p-value vector,gene-level RRA score,0,Hedgehog signaling pathway,0.000463,0.0976

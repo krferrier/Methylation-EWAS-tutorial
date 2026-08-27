@@ -1,0 +1,432 @@
+---
+title: "EWAS"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+library(data.table)
+```
+
+We now have everything an epigenome-wide association study needs: a normalized,
+filtered methylation matrix ([P2](02_normalization.qmd)–[P3](03_probe_filtering.qmd)),
+cell-composition estimates ([P4](04_cell_composition.qmd)), and surrogate variables
+that absorb technical structure ([P5](05_batch_effects.qmd)). This notebook fits the
+association model, checks that it is well-calibrated, and interprets the results
+honestly. It also lays out **two modeling conventions** you will meet in the
+literature — methylation-as-outcome vs. phenotype-as-outcome — and a
+residualization workflow that is common in practice.
+
+The worked example tests **PTSD case/control status** against methylation at each
+CpG, adjusting for sex, age, cell composition, and surrogate variables.
+
+```{r}
+#| label: load
+ew <- readRDS(data_path("06_ewas.rds"))
+tt <- ew$tt
+```
+
+## 1. Two ways to write the model — and why the outcome matters
+
+There are two ways to set up the per-CpG regression, and they answer subtly
+different questions.
+
+**(a) Methylation as the outcome**:
+
+$$\text{methylation}_{\text{CpG}} \sim \text{PTSD} + \text{sex} + \text{age} + \text{cell composition} (+ \text{SVs})$$
+
+**(b) Phenotype as the outcome**:
+
+$$\text{PTSD} \sim \text{methylation}_{\text{CpG}} + \text{sex} + \text{age} + \text{cell composition} (+ \text{SVs})$$
+
+Both are used, but **methylation-as-outcome** is the field standard for EWAS for
+several reasons:
+
+- **Methylation is the measured, continuous response.** Treating the β/M-value as the
+  dependent variable matches the data-generating process: you measured methylation and
+  ask what it varies with. 
+- **It generalizes to any exposure type.** With methylation as outcome, the predictor
+  of interest can be binary (PTSD), continuous (BMI, age, pack-years), or ordinal —
+  the model form doesn't change. Phenotype-as-outcome forces a different link function
+  for each exposure type (logistic for binary, linear for continuous), complicating a
+  genome-wide pipeline.
+- **Effect sizes are biologically legible.** A coefficient in the methylation-outcome
+  model is "change in methylation per unit exposure" — a Δβ you can read as a percent
+  methylation difference. 
+- **It is what meta-analysis tools expect.** METAL and comparable tools combine
+  per-CpG **effect sizes and standard errors** on a common scale; the methylation-outcome
+  β/SE is that common currency across cohorts.
+
+When would you flip it to phenotype-as-outcome? Mainly when methylation is conceived
+as a **predictor/biomarker** of the phenotype — e.g. building a methylation risk score,
+or asking "does methylation at this locus predict disease?" rather than "does disease
+associate with methylation here?".
+
+::: {.callout-note}
+## Test on M-values, report on β-values
+Regardless of the outcome convention, the statistical test is run on **M-values**
+(logit-transformed β), which are approximately homoscedastic and better satisfy the
+model's variance assumptions [@du2010comparison]. Effect sizes are then reported as
+**Δβ** because a β difference is biologically interpretable — a Δβ of 0.05 is a "5%
+methylation change." We follow this throughout: fit on M, report Δβ. It is 
+becoming more common to only report M-values, but it's still useful to generate both.
+:::
+
+## 2. The covariate set
+
+Our design protects everything we established as a real driver of methylation:
+
+- **sex** and **age** — strong, ubiquitous methylation covariates
+  ([P5](05_batch_effects.qmd) confirmed both drive leading PCs).
+- **cell composition** (6 estimated proportions) the single largest source
+  of variance in whole blood ([P4](04_cell_composition.qmd)).
+- **a smoking proxy** — this cohort has no recorded smoking variable, so
+  [P5](05_batch_effects.qmd) builds one from a published panel of replicated
+  smoking-associated CpGs. The panel probes themselves are excluded from testing.
+- **array position** — the chip row (`R01C01`…`R08C01`), a recorded technical
+  factor that is estimable here and so enters as a fixed effect (7 dummy columns).
+- **surrogate variables** — the `r ew$k_sv` SVs retained in
+  [P5](05_batch_effects.qmd), which absorb structure that none of the measured
+  covariates name.
+
+Chip (slide) is *not* in this list. It is 87% collinear with sex in this subset, so
+`~ ptsd + sex + slide` is not estimable; [P5](05_batch_effects.qmd) removes chip
+effects with ComBat inside each sex stratum before the model is fitted. The matrix
+entering `lmFit` below is that ComBat-adjusted matrix.
+
+::: {.callout-note}
+## Smoking 
+Another covariate that is important to account for in modeling is smoking. Smoking is 
+well established to cause distinct, systemic methylation changes, so it is important to include 
+as a covariate in modeling if you have that information available. If you don't, there 
+are methods to predict smoking status from a subset of methylation sites (these sites 
+would then be excluded from the EWAS). Alternatively, you can exclude CpGs identified as 
+strongly associated with smoking from previous literature prior to or post EWAS (prior is 
+recommended if using this option). Lastly, surrogate variables can capture latent variation due 
+to smoking if you don't have a measured smoking variable included in the null model, but use this 
+option with caution as the surrogate variables may attenuate more biological signal than intended. 
+As a last resort, you can run the EWAS without accounting for smoking, just keep this in mind while 
+interpreting results. 
+:::
+
+```r
+library(limma)
+# Mcb = ComBat-adjusted M-values from P5, probes x samples
+# smoke = smoking proxy (P5); pos = array position factor; SV = surrogate variables
+design <- model.matrix(~ ptsd + sex + age + smoke + pos +
+                         CD8T + CD4T + NK + Bcell + Mono + Neu + SV)
+fit <- lmFit(Mcb, design)        # per-probe weighted least squares
+fit <- eBayes(fit)               # empirical-Bayes moderation of the variance
+tt  <- topTable(fit, coef = "ptsdCase", number = Inf)
+```
+
+`limma`'s `eBayes` step is what makes this appropriate for an EWAS on a modest sample
+size: it moderates each probe's variance toward a pooled estimate, stabilizing the
+t-statistics for the ~700k probes tested [@ritchie2015limma].
+
+```{r}
+#| label: model-summary
+cat(sprintf("EWAS sample size: n = %d  (%d cases, %d controls)\n", ew$n, ew$ncase, ew$nctrl))
+cat(sprintf("Design columns (covariates + intercept): %d\n", ew$design_ncol))
+cat(sprintf("Residual degrees of freedom per probe:   %d\n", ew$resid_df))
+cat(sprintf("Surrogate variables retained:            %d\n", ew$k_sv))
+cat(sprintf("CpGs tested: %s  (%d smoking-panel probes excluded)\n",
+            format(ew$n_tested, big.mark = ","), ew$panel_excluded))
+```
+
+## 3. Is the model well-calibrated? The QQ plot and genomic inflation
+
+Before looking at *which* CpGs are top-ranked, check whether the p-values behave.
+The **genomic inflation factor** λ compares the median observed test statistic to its
+null expectation. λ ≈ 1 means the model is well-calibrated; λ ≫ 1 signals residual
+confounding (unmodeled batch, cell composition, or population structure) inflating the
+statistics; λ ≪ 1 can signal over-correction, but may also indicate that there truly is
+very little differential methylation or the sample size is underpowered to detect true 
+signals. Due to the biological differences between genetic variants and methylation and 
+the technical design differences in how they are measured in arrays, EWAS results tend to have 
+inflated λ compared to GWAS results. Additional bias and inflation correction is performed 
+post-EWAS to account for this. The lambda post-bias-and-inflation correction is what should 
+be used to judge the model fit. 
+
+## 4. Correcting residual bias and inflation with BACON
+
+**BACON** [@vanIterson2017bacon] estimates the *empirical null distribution* of the test 
+statistics with a Bayesian three-component mixture (one null component plus two alternative 
+components for positive and negative effects), then rescales every statistic to that estimated 
+null. This corrects both **bias** (a non-zero centre of the null — a systematic shift) and
+**inflation** (a null wider than N(0,1) — the same phenomenon λ measures), and it does
+so without assuming that all deviation from the diagonal is confounding.
+
+Always run BACON on your EWAS results:
+
+- A λ near 1 does not mean there is *no* residual bias — bias (a shift of the null's
+  centre) barely moves λ, which is driven by the *spread* of the statistics. BACON
+  estimates and removes both.
+- Applying the empirical-null correction and *inspecting its diagnostics* is what lets
+  you distinguish "well-calibrated" from "looks calibrated by one number." 
+
+BACON works from **effect sizes and their standard errors**, which limma gives us
+directly (SE = logFC / *t*):
+
+```{r}
+#| label: run-bacon
+#| eval: false
+library(bacon)
+set.seed(42)
+
+es <- tt$logFC              # effect size per CpG
+se <- tt$logFC / tt$t       # standard error = beta / t-statistic
+
+bc <- bacon(NULL, effectsizes = es, standarderrors = se)
+
+inflation(bc)   # estimated inflation (sigma.0); 1 = none
+bias(bc)        # estimated bias (mu); 0 = none
+tt$bacon.p  <- pval(bc)     # empirical-null-adjusted p-values
+tt$bacon.es <- es(bc)       # adjusted effect sizes
+tt$bacon.se <- se(bc)       # adjusted standard errors
+```
+
+```{r}
+#| label: bacon-summary
+#| echo: false
+bs <- readRDS(data_path("06_bacon_summary.rds"))
+cat(sprintf("Estimated inflation (sigma.0): %.3f\n", bs$inflation))
+cat(sprintf("Estimated bias (mu):           %.3f\n", bs$bias))
+cat(sprintf("lambda before BACON:           %.3f\n", bs$lambda_raw))
+cat(sprintf("lambda after  BACON:           %.3f\n", bs$lambda_bacon))
+```
+
+Here the model was already well-calibrated (λ ≈ `r sprintf("%.2f", bs$lambda_raw)`), so
+BACON changes little — the estimated inflation is ≈ 1 and the adjusted λ stays close to
+1. That is the *reassuring* outcome: the correction is available and applied, and it
+confirms rather than rescues the analysis. On a poorly-specified model you would instead
+see inflation ≫ 1 pulled back toward 1, and the diagnostics below would show it.
+
+### Always inspect the four BACON diagnostic plots
+
+The single number can hide a mis-specified or non-converged fit. BACON's Gibbs sampler
+produces four diagnostic plots, and you should look at all four every time. (The
+interpretation below follows the guidance in the [pipeline
+repository](https://github.com/krferrier/EWAS) README, where these are documented in
+full.)
+
+```{r}
+#| label: bacon-fit
+#| fig-cap: "**Fit plot.** Histogram of the observed z-scores with the fitted three-component mixture overlaid: the black curve is the overall fit, red is the estimated null component, and blue/green are the two alternative components. The black curve tracks the histogram closely — the model is well-specified. A large gap between the fitted (black) and observed (histogram) densities would signal mis-specification or non-convergence."
+#| echo: false
+knitr::include_graphics(data_path("06_bacon/fit.jpg"))
+```
+
+```{r}
+#| label: bacon-qq
+#| fig-cap: "**QQ plots, before (uncorrected) and after (corrected) BACON.** Points should hug the diagonal, breaking upward into a tail spike only for genuine associations. Systematic departure from the line *before* the spike is bias/inflation; after correction the bulk of points should sit closer to the diagonal. Here the two panels are nearly identical because the input was already calibrated."
+#| echo: false
+knitr::include_graphics(data_path("06_bacon/qq.jpg"))
+```
+
+```{r}
+#| label: bacon-traces
+#| fig-cap: "**Traces plot.** The Gibbs sampler's value for each parameter (p, mu, sigma for each of the three components) across iterations. A well-mixed, converged chain looks like a fuzzy horizontal band with a narrow range in estimates — a 'hairy caterpillar' — with no drift or trend. A sharp early sweep followed by settling is normal (the prior was far from the estimate); a chain that never settles means non-convergence."
+#| echo: false
+knitr::include_graphics(data_path("06_bacon/traces.jpg"))
+```
+
+```{r}
+#| label: bacon-posteriors
+#| fig-cap: "**Posteriors plot.** Scatter of the sampled posterior draws for the null inflation (sigma.0) and the null proportion (p.0), with 75/90/95% probability ellipses. A dense, roughly elliptical cloud sitting inside the contours indicates the sampler converged on a stable estimate; a sparse or lopsided cloud spilling outside the ellipses indicates it did not."
+#| echo: false
+knitr::include_graphics(data_path("06_bacon/posteriors.jpg"))
+```
+
+In this run the fit tracks the histogram, the QQ panels are near-diagonal, the traces
+are hairy caterpillars, and the posteriors form a dense cloud inside the ellipses — all
+four say the sampler converged and the empirical null is trustworthy.
+
+::: {.callout-tip}
+## Make BACON a default, and read the diagnostics
+Report BACON-adjusted effect sizes and p-values as your primary EWAS results. It is 
+not usually necessary to report the diagnostic plots, but I strongly recommend reporting 
+the adjusted lambda.
+:::
+
+## 5. Results
+
+```{r}
+#| label: hits
+bonf   <- 0.05 / nrow(tt)
+n_bonf <- sum(tt$bacon.p < bonf)
+n_fdr  <- sum(tt$bacon.adj.P < 0.05)
+cat(sprintf("Probes tested: %s\n", format(nrow(tt), big.mark = ",")))
+cat(sprintf("Bonferroni-significant (p < %.2g): %d\n", bonf, n_bonf))
+cat(sprintf("FDR < 0.05: %d\n", n_fdr))
+cat(sprintf("Suggestive (p < 1e-5): %d\n", sum(tt$bacon.p < 1e-5)))
+knitr::kable(head(tt[order(tt$bacon.p),
+                     c("probe","logFC","delta_beta","P.Value","bacon.p","bacon.adj.P")], 6),
+             digits = c(0, 3, 4, 8, 8, 4), row.names = FALSE,
+             col.names = c("probe", "logFC", "delta_beta", "P (limma)",
+                           "P (BACON)", "FDR (BACON)"),
+             caption = "Top 6 CpGs, ranked by BACON-adjusted p-value. logFC is the M-value effect; delta_beta is the case−control β difference (interpretable as percent methylation).")
+```
+
+Only `r n_bonf` CpG passes Bonferroni and `r n_fdr` pass FDR < 0.05 — a borderline
+result that a study of this size cannot settle either way. With n = 87 and a subtle
+psychiatric phenotype, the sensible reading is that nothing here is established: a
+single marginal hit in 756,251 tests is exactly what an underpowered scan produces,
+and it would need replication in an independent cohort before it meant anything.
+
+```{r}
+#| label: manhattan
+#| fig-cap: "Manhattan plot of the EWAS, drawn on limma's uncorrected p-values. Nothing crosses the Bonferroni line (red) on this scale — the single CpG that clears Bonferroni does so only after BACON rescaling, which shifts it just past the threshold. A near-empty Manhattan is the expected result for a subtle psychiatric phenotype in a small teaching subset (n=87); the full-scale analysis (n≈800) and meta-analysis across cohorts is what powers genome-wide discovery for PTSD [@katrinli2020ptsd]."
+#| echo: false
+knitr::include_graphics(data_path("06_manhattan.png"))
+```
+
+```{r}
+#| label: volcano
+#| fig-cap: "Volcano plot. Even the most significant CpGs shift methylation by only a few percent (Δβ), illustrating that EWAS effect sizes for complex phenotypes are typically small and require large samples to detect reliably."
+#| echo: false
+knitr::include_graphics(data_path("06_volcano.png"))
+```
+
+## 6. An alternative in common use: the M-value residual workflow
+
+The design above puts **all** covariates — biological and technical — into one large
+regression. A common alternative, and the convention many groups (including this
+tutorial's pipeline author) prefer, is a **two-stage residualization**:
+
+1. **Regress the technical variation out first.** Fit each CpG's M-value on only the
+   technical/nuisance terms (surrogate variables, or recorded batch such as chip and
+   position) and keep the **residuals** — the methylation signal with technical
+   structure removed.
+2. **Run the association on the residuals** with only the biological model:
+   $$\text{resid}(\text{M})_{\text{CpG}} \sim \text{PTSD} + \text{sex} + \text{age} + \text{cell composition}$$
+
+```r
+# Stage 1: residualize M-values on the technical terms (SVs here; or chip + position)
+tech <- model.matrix(~ SV)                       # nuisance-only design
+M_resid <- residuals(lmFit(M, tech), M)          # limma residuals, probes x samples
+
+# Stage 2: association model on the residuals, biological covariates only
+bio <- model.matrix(~ ptsd + sex + age + Neu + NK + CD4T + CD8T + Bcell + Mono, data = md)
+fit <- eBayes(lmFit(M_resid, bio))
+```
+
+**Why do this?** The usual motivation is **degrees of freedom**. Our single-stage model
+spends `r ew$design_ncol` design columns *per probe*; at n = `r ew$n` that leaves
+`r ew$resid_df` residual df. Moving the technical terms into a first stage — where they
+are estimated once — leaves the association model lean
+(`PTSD + sex + age + 6 cell props`) and returns df to the test that matters.
+
+::: {.callout-note}
+## In this dataset the df argument does not actually bind
+It is worth checking the premise rather than assuming it. [P5](05_batch_effects.qmd)
+compares the model above against the same model with the SV block removed: dropping the
+`r ew$k_sv` SVs frees 6 df, and the *median standard error of the PTSD coefficient rises
+by about 11%*. The SV block reduces each probe's residual variance by more than it costs
+in df, so at this k the trade-off runs the other way from the textbook description. The
+residualization workflow is still worth knowing — it is what many pipelines do, and the
+df savings are real when the nuisance block is large — but "spends df, therefore costs
+power" is a claim to test on your own data, not a rule.
+::: It is also common to regress out the blood cell proportions in 
+addition to the technical variation prior to running the main model. There is no *wrong* 
+choice in which or how many covariates you adjust for prior to the EWAS, just make sure
+to report what exactly was done in your methods. 
+
+::: {.callout-warning}
+## The caveat: residualization understates uncertainty
+Two-stage residualization treats the stage-1 fitted values as *known* when it runs
+stage 2, so it doesn't propagate the uncertainty of estimating the technical terms.
+In practice, with many samples relative to nuisance terms, the difference from the
+single-stage model is small and the df savings are worth it — which is why it is
+widely used. But be aware it is an approximation to the joint model, not identical to
+it. Report which approach you used, and ideally confirm the top hits are stable under
+both.
+:::
+
+## 7. When and why to stratify, then meta-analyze
+
+The model so far adjusts for sex as a **covariate**: it lets men and women have
+different mean methylation, but forces the *PTSD effect* to be a single number shared
+across both. That assumption is often wrong for methylation.
+
+### Why sex is a special case in methylation
+
+Sex is one of the largest sources of variation in the methylome, and it is not just an
+X/Y-chromosome effect — autosomal CpGs show widespread sex differences in mean level,
+in variance, and in how they *respond* to exposures and phenotypes. When the effect of
+your exposure/trait/disease genuinely differs between men and women (a sex interaction),
+a sex-adjusted model estimates a blend of the two and can miss a real signal that is
+present in only one sex, or that points in opposite directions. Because sex-specific
+methylation effects are common, I strongly recommond performing sex-stratified analyses.
+
+More generally, stratify when you have reason to believe the **effect itself** (not
+just the baseline) differs across a grouping variable: genetic ancestry, tissue or cell
+subtype, exposure dose, or age band can all justify it. The cost is power — each stratum
+has fewer samples — so stratification trades a cleaner, assumption-light estimate within
+each group against reduced within-stratum sample size. However, the loss of power from 
+sample size can be recovered with meta-analysis to re-join the strata results.
+
+### Stratify → analyze → meta-analyze
+
+The workflow is three steps:
+
+1. **Split** the data by the stratifying variable (e.g. sex) and drop that variable
+   from the covariate set within each stratum — it is now constant.
+2. **Run the full EWAS separately** in each stratum: the same model, the same BACON
+   adjustment, the same diagnostics, per stratum.
+3. **Meta-analyze** the per-stratum results with an inverse-variance-weighted
+   fixed-effect meta-analysis, which combines the two effect estimates weighting each
+   by its precision (1/SE²). This recovers power from both strata while still allowing
+   the underlying effects to differ — and it gives you a **heterogeneity test**
+   (Cochran's *Q*, *I²*) that formally asks whether the sexes differ at each CpG.
+
+Inverse-variance meta-analysis of a single CpG is short enough to show by hand:
+
+```r
+# per-CpG effect + SE from each stratum's BACON-adjusted results
+# (bF, seF) from females; (bM, seM) from males
+wF <- 1 / seF^2                       # inverse-variance weights
+wM <- 1 / seM^2
+beta_meta <- (wF*bF + wM*bM) / (wF + wM)      # combined effect
+se_meta   <- sqrt(1 / (wF + wM))              # combined standard error
+z_meta     <- beta_meta / se_meta
+p_meta     <- 2 * pnorm(-abs(z_meta))
+
+# heterogeneity: does the effect differ between the sexes?
+Q  <- wF*(bF - beta_meta)^2 + wM*(bM - beta_meta)^2   # Cochran's Q, 1 df
+p_het <- pchisq(Q, df = 1, lower.tail = FALSE)
+```
+
+In practice you run this across all CpGs at once, and the standard tool for it is
+**METAL** [@willer2010metal] — the same command-line meta-analyzer used for GWAS. It
+reads each stratum's results file, matches CpGs by ID, does the inverse-variance
+weighting and the heterogeneity test genome-wide, and writes a combined table. A
+concordant hit (same direction in both sexes, low heterogeneity) is far more credible
+than a hit seen in only one stratum.
+
+## 8. When you don't have IDATs
+
+Everything in this notebook operates on a **methylation matrix** and a phenotype
+table, so the non-IDAT path is identical once you have M-values:
+
+- Convert a deposited β-matrix to M-values (`M = log2(beta/(1-beta))`;
+  see [normalization](02_normalization.qmd)).
+- Obtain covariates from the series metadata: sex and age from `pData`, cell
+  composition via a **reference-based estimator that runs on β-matrices**
+  (e.g. `EpiDISH`/`RPC`) when you can't run `estimateCellCounts2` from IDATs
+  ([P4](04_cell_composition.qmd) covers this), and surrogate variables from
+  `sva` run on the matrix ([P5](05_batch_effects.qmd)).
+- Fit the identical `limma` model. The association step never touches raw intensities.
+
+---
+
+**Next:** [Running the EWAS pipeline](07_pipeline.qmd) — scale this analysis with a
+reproducible Snakemake workflow that models methylation as the outcome, runs a
+**sex-stratified** EWAS, and meta-analyzes the strata with METAL. Then
+[functional annotation](08_annotation.qmd) of the results.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

@@ -1,0 +1,68 @@
+---
+title: "Epigenome-Wide Association Studies: a hands-on tutorial"
+subtitle: "From raw IDATs to annotated hits, using the Grady Trauma Project (GSE132203)"
+---
+
+## Who this is for
+
+This tutorial is written for rotation students and anyone new to array-based
+DNA methylation analysis. It walks the full path from **raw Illumina IDAT
+files** to a set of **annotated, genome-wide association results**, running
+every step for real on a teaching subset of a public dataset. By the end you
+will have:
+
+- read raw two-channel IDATs into R and understood what the numbers mean;
+- run the quality-control checks that decide which samples and probes to trust;
+- normalized the data and filtered unreliable probes using ancestry-aware masks;
+- estimated blood cell composition and diagnosed technical batch structure;
+- fit an epigenome-wide model, run it reproducibly as a Snakemake pipeline, and annotated the top CpGs and regions.
+
+## The dataset
+
+We use **GSE132203**, the *Grady Trauma Project* — whole-blood Illumina
+MethylationEPIC (v1, 850K) profiles from an adult cohort deeply phenotyped for
+trauma exposure and PTSD. It was chosen for teaching because it is unusually
+complete:
+
+| Feature | Why it matters for teaching |
+|---|---|
+| Raw IDATs deposited | Lets us start from the true beginning, not a processed matrix |
+| N = 795 (we use a **96-sample subset**) | Big enough to be realistic, small enough to run live |
+| Deposited cell-type proportions | An **answer key** to validate our own deconvolution |
+| Deposited epigenetic-age acceleration | An answer key to validate the epigenetic clock |
+| Sentrix barcodes in filenames | Real chip/position structure for the batch-effects lesson |
+| Explicit age & sex, multiple exposures | Proper covariate modeling, several candidate outcomes |
+
+::: {.callout-note}
+## One dataset, on purpose
+The whole tutorial uses this single dataset for consistency. Some steps (notably
+batch correction) would be more dramatic on a dataset with a stronger technical
+artifact, but keeping one cohort throughout means every object you build in one
+notebook flows directly into the next.
+:::
+
+## The teaching subset
+
+To keep every step executable in a live session, we selected **96 samples**
+(12 full EPIC BeadChips × 8 positions). The selection preserves the honest
+structure of the experiment: it is balanced on PTSD status, sex, and childhood
+abuse, and **all 12 chips carry both PTSD cases and controls** — so the
+phenotype is not confounded with chip. See the [Setup](00_setup.qmd) notebook
+for exactly how the subset was chosen.
+
+## How the notebooks fit together
+
+The preprocessing-through-analysis arc maps onto these notebooks:
+
+1. **[Setup](00_setup.qmd)** — platform background, how the data were obtained, the subset.
+2. **[Quality control](01_qc.qmd)** — detection p-values, intensity, predicted sex, SNP identity.
+3. **[Normalization](02_normalization.qmd)** — within- and between-array normalization.
+4. **[Probe filtering](03_probe_filtering.qmd)** — detection-p, cross-reactive, and ancestry-aware SNP masks.
+5. **[Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.
+6. **[Batch effects](05_batch_effects.qmd)** — chip/position/plate diagnosis; decide whether to correct.
+7. **[EWAS](06_ewas.qmd)** — the association model, with sex and age as covariates.
+8. **[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.
+9. **[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.
+
+Each notebook loads the object saved by the previous one, so you can work
+through them in order or jump to any step and pick up the saved checkpoint.

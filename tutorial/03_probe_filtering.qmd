@@ -1,0 +1,415 @@
+---
+title: "Probe filtering"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+```
+
+Not every one of the ~865,000 EPIC probes should be used in downstream analyses. 
+Some probes need to be removed because they were designed for assessing quality 
+control, as we did in [QC](01_qc.qmd). Other probes need to be removed because 
+they have been found to be problematic in some way: cross-hybridization to more than 
+one place in the genome; proximity to a common SNP (so what looks like a methylation 
+difference is really a genotype difference); mapping to repetitive regions. These are 
+properties of the **probe**, so these problematic probes are filtered out from everyone. 
+This notebook explains the categories and applies Wanding Zhou's curated
+masks [@zhou2017comprehensive] for Illumina methylation arrays. 
+
+```{r}
+#| label: load
+grs   <- readRDS(data_path("03_grs_filtered.rds"))   # already-filtered result, for display
+funl  <- readRDS(data_path("03_filter_funnel.rds"))
+mp    <- readRDS(data_path("03_mask_pieces.rds"))
+```
+
+## 1. Why some probes are unreliable by design
+
+There are three main types of problematic probes and each has been characterized 
+in dedicated methods papers:
+
+**Cross-reactive / non-specific probes.** A 50-mer probe sequence is not
+guaranteed to be unique in the genome. Some probes hybridize to multiple loci, so
+their signal is a blend from several genomic locations. Chen et al.
+[@chen2013crossreactive] catalogued cross-reactive probes on the 450K; McCartney
+et al. [@mccartney2016identification] extended this to the EPIC array. Zhou's
+`MASK_mapping` flag captures probes that do not map uniquely.
+
+**SNP-affected probes.** If a common SNP falls in the probe body — especially at
+the interrogated CpG or the single-base extension position — then the assay may 
+reflect **genotype**, and not methylation. Two individuals with different alleles 
+will show a large "methylation difference" that is really a difference in DNA 
+sequence. This is a dangerous and often overlooked category for an EWAS, because 
+it produces reproducible, highly significant, and completely spurious associations 
+whenever the SNP allele frequency differs between your comparison groups. Zhou provides 
+SNP masks recommendations built from 1000 Genomes allele frequencies. If you are studying a 
+population that is not well represented by one of the 1000 Genomes Project, it is 
+recommended to find or curate a list of population-specific SNPs and exclude any CpGs 
+within the last 5bp of the CpG probe. If there is no appropriate 1000 Genomes population and 
+you don't have population/study-specific allele frequencies, you can use the general population SNP
+mask and note this as a limitation of the study. If you are performing a study on a multi-ancestry 
+cohort or don't know the ancestry of your cohort, then the general population masking is appropriate.
+
+**Repetitive / structurally masked probes.** Probes overlapping RepeatMasker
+regions, copy-number-variable segments, or requiring an extension-base substitution
+have also been flagged historically — as `MASK_rmsk15`, `MASK_sub25_copy` and
+`MASK_typeINextBaseSwitch` in the archived manifest. Be aware that the current v8.1
+mask retains only the extension-base category (as `M_1baseSwitchSNP_*`) and drops the
+repeat and copy-number terms entirely; see the note in §2.
+
+The latest CpG masking recommendations from Zhou (`EPIC.hg38.mask.cm`, v8.1) are
+distributed as **24 separate mask terms**, each a one-bit-per-probe track, rather
+than as one wide table of boolean columns. One of those terms is `M_general`, which
+combines the recommended masking for probes with problematic mapping (the probes
+that should be masked independent of population) with CpGs within 5bp of common SNPs
+(MAF ≥ 5%) for the general population. If you do have a specific population, the
+remaining terms give population-specific masking for the 5 super-populations from
+the 1000 Genomes. The population-specific masking is a bit more stringent, as it
+uses MAF ≥ 1% — which is what the `_1pt` suffix on those term names records.
+
+The terms are compositional: rather than a single pre-baked per-population column,
+you select the mapping terms plus the SNP terms for each ancestry you need and take
+their union. That is what makes the admixed case in §3 expressible at all. The full
+set of 24 for EPIC is:
+
+- **mapping / specificity** — `M_mapping`, `M_nonuniq`
+- **SNP at the interrogated CpG**, per population — `M_SNP_{AFR,EUR,EAS,SAS,AMR}_1pt`,
+  plus `M_SNPcommon_1pt` and `M_SNPcommon_5pt` for the general population
+- **SNP at the extension base** — `M_2extBase_SNP_*` (same population suffixes)
+- **Type I extension-base switch** — `M_1baseSwitchSNP_*`
+- **the recommended general default** — `M_general`
+
+::: {.callout-warning}
+## v8.1 does not mask repeats or copy-number regions
+The legacy manifest's `MASK_general_<POP>` bundled `MASK_rmsk15` (RepeatMasker),
+`MASK_sub25_copy` (copy-number-variable segments) and `MASK_typeINextBaseSwitch`
+together with the mapping and SNP flags. **v8.1 has no repeat or copy-number term
+among its 24.** This is why the v8.1 mask is the *less* aggressive of the two on
+this cohort despite covering two ancestries — quantified at the end of this section.
+If excluding repeat-overlapping probes matters for your question, you need the
+archived manifest or a separate repeat annotation; it is not in `mask.cm`.
+:::
+
+If you need more specific sub-population masking, there is an archived version of the
+recommended population masking (`EPIC.hg38.manifest.pop.tsv.gz`) that includes the 5
+super-populations and 26 sub-populations. If using the archived population masking
+file, the `MASK_general_<POP>` column includes the recommended problematic probes as
+well as the population-specific probes. The `MASK_snp5_<POP>` columns only flag the
+population-specific masking.
+
+::: {.callout-note}
+## Why use Zhou's masks specifically
+The Zhou lab re-mapped every Infinium probe against the genome from scratch and
+integrated SNP information across 1000 Genomes populations
+[@zhou2017comprehensive]. The masks are the annotation layer underneath the
+`sesame` package [@zhou2018sesame] and are the current community standard.
+:::
+
+### Getting the mask: YAME
+
+The v8.1 mask ships as `EPIC.hg38.mask.cm` — a bit-packed **CX-format** file rather
+than a table. It stores one bit per probe per mask term over the array's canonical
+probe ordering, which is why the whole thing is only ~360 kB where the equivalent
+TSV is 2.8 MB. Because the file carries no probe names (row *i* means whatever row
+*i* of the ordering means), you fetch the ordering alongside it.
+
+Read it with [YAME](https://github.com/zhou-lab/YAME), the Zhou lab's encoder for
+these formats:
+
+```bash
+# install: conda install -c zhou-lab -c conda-forge yame
+# (bioconda's linux build is pinned at 1.8, which predates `yame fetch` --
+#  use the zhou-lab channel or build from source)
+
+yame fetch EPIC/EPIC.hg38.mask.cm EPIC/EPIC.ordering.tsv.gz
+
+yame info    EPIC.hg38.mask.cm   # 24 mask terms over 866,553 probes
+yame summary EPIC.hg38.mask.cm   # how many probes each term flags
+yame unpack -a EPIC.hg38.mask.cm > mask_bits.tsv   # all 24 terms, one column each
+```
+
+`yame summary` is the quickest way to see what a term costs you before you commit
+to it. Turning the bits into a probe list is then a row-wise OR across the columns
+you chose, indexed against the ordering:
+
+```r
+library(data.table)
+terms  <- names(fread("mask.cm.idx", header = FALSE))  # term order = column order
+probes <- fread("EPIC.ordering.tsv.gz")$Probe_ID
+bits   <- fread("mask_bits.tsv", header = FALSE); setnames(bits, terms)
+
+drop <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
+```
+
+::: {.callout-note}
+## The archived manifest is still there when you need it
+`EPIC.hg38.manifest.pop.tsv.gz` remains available and is the right choice when you
+need **sub-population** resolution: it carries `MASK_general_<POP>` and
+`MASK_snp5_<POP>` columns for the 5 super-populations *and* 26 sub-populations
+(GWD, YRI, ASW, CEU, FIN, …), where v8.1's `.cm` stops at the 5 super-populations.
+Note also that the two generations do not mask the same categories — see the
+comparison at the end of this section.
+:::
+
+Broken down, the probe removal includes: 
+
+```{r}
+#| label: funnel-table
+funnel <- data.frame(
+  step = c("Start (normalized probes)",
+           "− Zhou v8.1 mask (8 codes, AFR + EUR)",
+           "− Detection-p failures (>10% of samples)",
+           "− Sex chromosomes (autosomal EWAS)",
+           "= Retained (EWAS-ready)"),
+  probes_dropped = c(NA, funl$drop_mask, funl$drop_detp, funl$drop_sex, NA),
+  probes_remaining = c(funl$n0, NA, NA, NA, funl$retained)
+)
+knitr::kable(funnel, caption = "Probe-filtering funnel on the 96-sample subset (AFR + EUR aware).")
+cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
+            funl$retained, funl$n0, 100 * funl$retained / funl$n0))
+```
+
+## 2. The categories, quantified on EPIC
+
+The SNP mask is **not the same for every study population**, because a "common
+SNP" depends on which population you ask about. Zhou's latest masking manifest 
+gives masking information for the general population as well as the five super-populations 
+from the 1000 Genomes project. The archived population manifest gives a
+`MASK_snp5_<POP>` (SNP within 5 bp) flag for each of 31 1000 Genomes populations (5 super-populations 
+and 26 sub-populations). The number of SNP-affected probes varies substantially by ancestry:
+
+```{r}
+#| label: pop-snp-table
+snp <- data.frame(
+  population  = c("AFR (African)", "AMR (Admixed American)", "SAS (South Asian)",
+                  "EUR (European)", "EAS (East Asian)"),
+  snp_masked  = funl$snp_by_pop[c("AFR", "AMR", "SAS", "EUR", "EAS")]
+)
+knitr::kable(snp, row.names = FALSE,
+             caption = "Probes flagged by M_SNP_<POP>_1pt (common SNP at the interrogated CpG, MAF >= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.")
+```
+
+African-ancestry populations carry the most common genetic variation, so more
+probes overlap a common SNP. Concretely, in these masks
+**`r format(funl$snp_by_pop[["AFR"]], big.mark = ",")`** probes are SNP-flagged for
+AFR versus **`r format(funl$snp_by_pop[["EUR"]], big.mark = ",")`** for EUR, and the
+two lists are far from nested:
+
+```{r}
+#| label: afr-eur-overlap
+afr <- mp$per_code_sets$M_SNP_AFR_1pt
+eur <- mp$per_code_sets$M_SNP_EUR_1pt
+cat("masked in AFR but NOT EUR:", length(setdiff(afr, eur)), "\n")
+cat("masked in EUR but NOT AFR:", length(setdiff(eur, afr)), "\n")
+cat("masked in both:           ", length(intersect(afr, eur)), "\n")
+```
+
+This is the concrete argument for taking a union rather than picking one
+population's mask: neither list contains the other.
+
+## 3. Ancestry matters
+
+The Grady Trauma Project subset is **~95% African American**. If we filtered with 
+a general or only European-population mask (a common default), we would leave in 
+probes that are SNP-affected in African-ancestry individuals. As African American 
+individuals tend to have an admixture of both European and African Ancestry, it is 
+important to include masking recommendations for both.
+
+```{r}
+#| label: ancestry-contrast
+#| fig-cap: "Probes retained under the AFR+EUR union mask used here versus a EUR-only mask. Filtering this African-American cohort on European SNP flags alone would keep tens of thousands of probes that are SNP-affected in African-ancestry individuals."
+#| fig-width: 6.5
+#| fig-height: 3
+library(ggplot2)
+contrast <- data.frame(
+  mask = c("AFR + EUR union\n(used here)", "EUR only\n(wrong here)"),
+  retained = c(funl$retained, funl$retained_eur)
+)
+ggplot(contrast, aes(mask, retained, fill = mask)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = format(retained, big.mark = ",")), vjust = -0.4, size = 3.5) +
+  scale_fill_manual(values = c("#4C72B0", "#C44E52"), guide = "none") +
+  labs(x = NULL, y = "probes retained",
+       title = "Ancestry-aware probe filtering") +
+  expand_limits(y = max(contrast$retained) * 1.06)
+```
+
+```{r}
+#| label: ancestry-diff
+cat("Probes kept by a EUR-only mask but dropped by the AFR + EUR union:",
+    funl$afr_not_eur_kept, "\n")
+```
+
+The union is what the code below applies, and it is the operational meaning of
+"include masking recommendations for both".
+
+So, if we are using the latest recommended masking file, the columns we would want 
+to include in the masking would be `M_mapping`, `M_nonuniq`, `M_SNP_AFR_1pt`,`M_1baseSwitchSNP_AFR_1pt`,
+`M_2extBase_SNP_AFR_1pt`, `M_SNP_EUR_1pt`, `M_1baseSwitchSNP_EUR_1pt`, and `M_2extBase_SNP_EUR_1pt`. If 
+we were using the archived manifest population file, we would use the `MASK_general_AFR` and `MASK_snp5_EUR`.
+
+
+### What changing mask generation costs you
+
+It is worth seeing the size of the version effect directly, because it runs the
+opposite way to intuition. The eight v8.1 codes cover **two** ancestries; the legacy
+`MASK_general_AFR` covers one. Yet the legacy mask is the more aggressive:
+
+```{r}
+#| label: mask-generation-contrast
+gen <- data.frame(
+  mask = c("Legacy MASK_general_AFR", "v8.1, 8 codes (AFR + EUR)"),
+  probes_masked   = c(124132, funl$union8),
+  probes_retained = c(724282, funl$retained)
+)
+knitr::kable(gen, row.names = FALSE,
+             caption = "Same cohort, same detection-p and sex filters; only the mask generation differs.")
+```
+
+The difference is the repeat and copy-number terms described in §2: the legacy
+`MASK_general_<POP>` bundles them in, and v8.1 has no equivalent. So moving to v8.1
+retains **`r format(funl$retained - 724282, big.mark = ",")`** more probes here — more
+sites tested, but also the repeat-overlapping probes no longer excluded. Neither
+choice is automatically right; what matters is that you state which mask generation
+and which terms you used, since the two are not interchangeable.
+
+::: {.callout-important}
+## The teaching point
+Probe filtering is not a fixed recipe — the SNP component depends on your study
+population. For a cohort of known, relatively homogeneous ancestry, use that
+population's mask. For an admixed or mixed-ancestry cohort, the conservative choice
+is to take the **union** of the relevant population masks (drop a probe if it is
+SNP-affected in *any* represented ancestry). For a multi-ancestry cohort or cohort 
+of unknown ancestry, the general population mask is the most appropriate.
+:::
+
+::: {.callout-note}
+## Probes you might filter for a different reason: smoking
+Everything above masks probes that are unreliable *by design*. There is a separate,
+optional reason to drop probes: smoking is one of the largest environmental drivers
+of blood methylation, and if your dataset has no smoking variable — as the Grady
+deposit does not — one of the available strategies is to exclude CpGs known from the
+literature to be smoking-associated, at this filtering stage rather than after the
+fact. That is a decision about confounding, not about probe quality, so it does not
+belong in the funnel above. This tutorial does not take that route; see
+[the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options
+and why surrogate variables are used here instead.
+:::
+
+## 4. Detection-p and sex-chromosome filtering
+
+Two study-specific filters complete the funnel:
+
+- **Detection-p failures.** From [QC](01_qc.qmd) we have the per-probe detection
+  p-values. A probe that fails (p > 0.01) in more than ~10% of samples is
+  unreliable *in this dataset* and is dropped. Here that removed
+  `r funl$drop_detp` probes.
+- **Sex chromosomes.** For an autosomal EWAS, X- and Y-chromosome probes are also removed 
+  (`r funl$drop_sex` probes): X-inactivation and sex differences would
+  otherwise dominate, and they need sex-stratified handling if analyzed. They are
+  *removed from the autosomal analysis*, not deleted from the study — a sex-specific
+  analysis would use them deliberately.
+
+The exact filtering code (run once, checkpointed):
+
+```r
+library(data.table)
+
+# --- Zhou v8.1 mask, read from the bit-packed .cm (see "Getting the mask") ---
+terms  <- fread("EPIC.hg38.mask.cm.idx", header = FALSE)$V1  # term = column order
+probes <- fread("EPIC.ordering.tsv.gz")$Probe_ID
+bits   <- fread("mask_bits.tsv", header = FALSE)             # yame unpack -a
+setnames(bits, terms)
+
+# mapping/specificity terms, plus SNP terms for BOTH represented ancestries
+mask_cols <- c("M_mapping", "M_nonuniq",
+               "M_SNP_AFR_1pt", "M_1baseSwitchSNP_AFR_1pt", "M_2extBase_SNP_AFR_1pt",
+               "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt")
+drop8 <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
+
+drop_mask <- intersect(rownames(grs), drop8)
+# Detection-p failures in >10% of samples
+frac_fail <- rowMeans(detP[rownames(grs), ] > 0.01)
+drop_detp <- rownames(grs)[frac_fail > 0.10]
+# Sex chromosomes
+drop_sex  <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
+# Apply
+keep <- setdiff(rownames(grs), Reduce(union, list(drop_mask, drop_detp, drop_sex)))
+grs_filt <- grs[keep, ]
+```
+
+## 5. When you don't have IDATs: filtering a processed matrix
+
+Probe filtering is one of the few preprocessing steps that works **identically**
+whether your data came from IDATs or from a processed β-matrix — because the masks
+are keyed on **probe IDs**, not intensities. The workflow:
+
+1. **Load the matrix** (see the [normalization](02_normalization.qmd) non-IDAT
+   section) so you have a β-matrix with `cg`/`ch` probe IDs as rownames.
+2. **Apply the same masks by ID.** Read Zhou's mask/manifest for the correct array
+   (450K vs EPIC vs EPICv2 — they have different probe sets), pick the mask for
+   your study population, and subset:
+
+   ```r
+   # v8.1 (recommended): the union built above works unchanged on a matrix,
+   # because the mask is keyed on probe IDs
+   beta_filt <- beta[!rownames(beta) %in% drop8, ]
+
+   # archived manifest, if you need sub-population resolution instead
+   library(data.table)
+   pop  <- fread("EPIC.hg38.manifest.pop.tsv.gz")
+   drop <- pop$probeID[pop$MASK_general_ASW]           # e.g. African-ancestry SW US
+   beta_filt <- beta[!rownames(beta) %in% drop, ]
+   ```
+3. **You lose the detection-p filter** unless the submitter deposited detection
+   p-values alongside the matrix (some do, as a separate supplementary file — use
+   it if present). Without it, rely on the mask plus removing probes with excessive
+   `NA` values.
+4. **Sex chromosomes** filter the same way, by intersecting with the manifest's
+   chromosome annotation. It is possible sex chromosome CpGs will have already been 
+   removed from a pre-processed dataset. 
+
+::: {.callout-tip}
+## Match the mask to the array *and* the genome build
+Zhou publishes masks per platform (450K / EPIC / EPICv2) and per genome build
+(hg19 / hg38). Use the manifest that matches the array the data were generated on;
+the probe IDs mostly overlap between 450K and EPIC but the mask *contents* differ.
+If you are combining a 450K series with an EPIC series, filter each on its own
+manifest, then intersect on the shared probe IDs.
+:::
+
+We save the filtered, EWAS-ready object for cell-composition estimation next:
+
+```r
+saveRDS(grs_filt, data_path("03_grs_filtered.rds"))
+```
+
+The result: **`r format(funl$retained, big.mark=",")`** autosomal probes on
+96 samples, filtered under the Zhou v8.1 mask for mapping quality, SNP masking
+appropriate to an admixed African-American cohort (AFR and EUR terms together),
+detection reliability, and sex chromosomes.
+
+Nearly every probe that survives here is tested in the EWAS. Two small deductions
+happen later, both in [chapter 05](05_batch_effects.qmd):
+
+- the **20 CpGs used to build the smoking proxy** are excluded, because regressing
+  those probes on a score derived from themselves is circular; and
+- **two probes** (`cg17759086`, `cg01801182`) have β pinned at 0 or 1 in the
+  87-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.
+
+So `r format(funl$retained, big.mark=",")` probes pass filtering and
+**756,251** are actually tested. There is no other subsetting downstream — in
+particular, no random subsampling: the EWAS runs on the whole matrix.
+
+---
+
+**Next:** [Cell composition](04_cell_composition.qmd) — whole blood is a mixture of
+cell types with very different methylomes; we estimate the proportions and validate
+against the study's deposited values.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::
