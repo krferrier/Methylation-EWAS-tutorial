@@ -326,3 +326,177 @@ correctly without them. Also benign: the bubblewrap `--bind-fd` warning and
 - `recompute_06_final.R` has not been re-executed since its `saveRDS` patch;
   `06_ewas.rds` currently carries columns written by a manual `match()` backfill.
   The values were verified against the pipeline output (§8) and agree to 8.9e-15.
+
+---
+
+## 15. Sample scope: where 96 becomes 87
+
+**The question.** Nine of the 96 QC-passing arrays have no recorded PTSD status.
+Earlier drafts collapsed this into a single "n = 87 after QC" sentence, which
+misattributes a metadata gap to a quality failure and hides the fact that the
+count changes exactly once, at the step where the exposure enters.
+
+**Chapter 01** now separates *missing values in variables we intend to model*
+from *variables absent for every sample*. Two new chunks compute the accounting
+live rather than asserting it:
+
+| variable | missing of 96 |
+|---|---|
+| `ptsd` | **9** |
+| `sex` | 0 |
+| `age` | 0 |
+| `childhood_abuse` | 2 |
+| `mergedcapsandpsswinthin30days` | **9** |
+
+The CAPS/PSS severity score is missing for the *same* nine samples, so no
+fallback outcome exists. The nine are 4 female / 5 male, ages 22–65, spread
+across 8 of 12 chips — incidental, not structured, which is the missing-at-random
+check the chapter now walks through. A `callout-important` states the
+distinction: samples dropped for *quality* are samples you do not trust, while
+samples dropped for *missing phenotype* are samples you trust but cannot model.
+
+**Which steps run on which count**, now stated explicitly in ch04, ch05 and ch06:
+
+| step | n | why |
+|---|---|---|
+| QC (ch01) | 96 | all pass |
+| Normalization (ch02) | 96 | no model |
+| Probe filtering (ch03) | 96 | no model |
+| Cell deconvolution (ch04) | 96 | `estimateCellCounts2` takes no model |
+| PCA diagnostics (ch05 §2) | 96 | descriptive; no model |
+| Smoking proxy (ch05 §5) | 87 | captures variance of the set the EWAS fits |
+| Stratified ComBat (ch05 §4) | 87 | takes a protection model containing PTSD |
+| SVA (ch05 §6) | 87 | `sva()` requires the full model; see below |
+| EWAS (ch06, ch07) | 87 | 32 cases / 55 controls |
+
+**Why SVA cannot be moved to 96.** `sva()` requires both a full model and a null
+model, and the full model is what prevents the surrogate variables from absorbing
+the exposure. Because `ptsd` is `NA` for nine samples, `model.matrix` returns 87
+rows — it drops incomplete rows silently — so a call against a 96-column matrix
+fails with `non-conformable arrays`. Forcing 96 through would require either
+removing `ptsd` from the full model, which makes it identical to the null model
+so that nothing is protected and the SVs are free to regress away the signal
+under test, or imputing the exposure. The 87 gate is where SVA's definition puts
+it, not a preference.
+
+**Consequence worth noting** (now in ch05 §4). Chip `201114400024` carries 6
+females and **2** males across all 96 arrays, but 6 females and **1** male among
+the 87. One of the two males is among the nine. That singleton is what forces
+`mean.only = TRUE` in the male stratum — so the incomplete phenotype table did
+not just cost nine samples, it changed which batch corrections are estimable.
+ComBat *could* have been run on 96, where the minimum male chip is 2 and variance
+scaling is identifiable; this was considered and declined, because ComBat's
+protection model also contains PTSD, the matrix still has to narrow to 87 before
+SVA regardless, and the singleton is more valuable as a worked example of missing
+metadata propagating into a methods choice.
+
+## 16. Prose revision pass
+
+The author revised prose across all eleven source files and the README. Those
+revisions were installed verbatim; previous copies are preserved in
+`repo_backup_pre_userprose/` and `repo_backup_pre_userprose2/`. Substantive
+changes made on top of the author's text, all of them corrections:
+
+- **ch05** — `mean.only = TRUE` was described as correcting "each chip's mean and
+  variance". Corrected to "mean but not its variance", which is what the argument
+  does and the reason the male/female asymmetry matters.
+- **ch05** — the "Where 96 becomes 87" callout linked `04_cell_composition.qmd`
+  for a sample-funnel section that had been deleted. Repointed to
+  `01_qc.qmd#what-the-phenotype-file-is-missing`.
+- **ch05** — the callout named only SVA as running on 87, leaving the impression
+  ComBat ran on 96. It does not: `05_mvals_combat.rds` is 756,251 × 87.
+
+Deleted by the author and **not reinstated**: the ch04 sample-funnel section, the
+ch05 `chip-position-grid` chunk, and the "one full plate" paragraph.
+
+## 17. US spelling throughout
+
+All source files, both `repo/` and the packaged `gh/EWAS-tutorial/` copies, plus
+all 14 recompute and figure scripts, were converted to US spelling — 42 files.
+Word-boundary matched, then re-scanned to zero residuals.
+
+| category | tokens |
+|---|---|
+| `-ise` → `-ize` | analyse/analysed/analysing, meta-analysed, summarise, residualise, randomisation |
+| `-ll-` → `-l-` | modelled, modelling, unmodelled, labelled, signalling |
+| `-our` → `-or` | colour (32×), coloured, behaviour, neighbour(s)(ing) |
+| `-re` → `-er` | centre, centred |
+| `-gue`/`-ce` | catalogue (21×), catalogued, analogue, licence |
+| misc | artefact(s), ageing, grey → gray |
+
+Code identifiers were converted deliberately: ggplot2 accepts `color`/`colour` as
+synonyms and R accepts both `grey`/`gray` colour names, so `colour =` → `color =`,
+`scale_colour_manual` → `scale_color_manual`, and `"grey45"` → `"gray45"` are
+behaviour-preserving. All 25 R scripts were re-parsed after the substitution to
+confirm no syntax errors, and the regenerated figures are byte-comparable in
+appearance.
+
+Left unconverted, correctly: `analyses` as the plural of *analysis* (US-correct);
+`meta_analysis` / `dmr_analysis` config keys and the
+`PTSD_ewas_meta_analysis_results_1.txt` filename (already US spelling); and
+`characteristics` where it names GEO's own series-matrix field.
+
+## 18. Final render, verification pass, and publishing
+
+### Full-site re-render
+
+The whole book was re-rendered from a clean state after the US-spelling pass
+(`bash qrender.sh render`), producing eleven HTML files in `_site/`. Two earlier
+launch attempts had died silently; the cause was environmental rather than
+analytical, and is recorded in the tooling notes rather than here.
+
+### Rendered-prose audit
+
+Rendered text was extracted from every chapter (tags and base64 payloads
+stripped) and scanned rather than trusting the sources. Results:
+
+| check | outcome |
+| --- | --- |
+| British-spelling residuals | none (only `analyses`, the US-correct plural) |
+| `756,251` (CpGs tested) | present in 23 places |
+| `724,282` (superseded retained count) | absent from prose; appears only as the 4 legitimate legacy-mask contrast values |
+| `1.0104` / `1.0198` (superseded λ) | absent |
+| `715,992` (rejected union variant) | absent |
+| `n = 87` / `n = 96` | both present, each in its correct scope |
+
+The λ values that survive in the rendered text are the current ones
+(λ_raw ≈ 1.02), rendered from the checkpoint via inline `sprintf` rather than
+hard-coded, so they cannot drift from the data again.
+
+### Two stale Git-LFS pointer files removed
+
+`data/06_ewas_bacon_toptable.csv` and `data/06_ewas_toptable.csv` were not data
+files at all — each was a 133–134 byte Git-LFS pointer stub left over from the
+original upstream repository, naming an object that was never fetched into this
+workspace. Nothing in the tutorial referenced them (every chapter reads the
+`.csv.gz` form or the `.rds`), and `06_ewas_bacon_toptable.csv.gz` (60.8 MB,
+regenerated under the v8.1 mask) is the real artifact. Both stubs were deleted
+from `repo/data/` and from the packaged tree so that a reader cloning the
+repository without `git-lfs` does not find a file that looks like results and
+is not.
+
+### Unverifiable comment softened
+
+The `listDBGroups("EPIC")` code comment claimed "19 EPIC knowledgebases". The
+count could not be re-verified — `knowYourCG` is not installed in the render
+environment, and the chapter's enrichment chunks are `eval: false` for exactly
+that reason — so the specific number was removed and the comment now lists the
+knowledgebase categories without asserting a count. The verified numbers from
+the recorded run (863 features tested, 41 at FDR < 0.05, across four
+knowledgebases) are unchanged, because those came from the run itself.
+
+### Citation audit
+
+All five previously-flagged references (`hannum2013clock`, `horvath2013clock`,
+`aryee2014minfi`, `smith2011grady`, `joehanes2016smoking`) are now both defined
+in `references.bib` and cited in the text. No undefined citation keys remain.
+
+### Repository name
+
+The GitHub repository is `krferrier/Methylation-EWAS-tutorial` (hyphenated).
+Thirteen references across `README.md`, `CITATION.cff`, `PUBLISHING.md` and
+`zenodo.json` were updated: the Pages URL, the clone URL, the `cd` lines, the
+`gh repo create` invocation, the CFF `repository-code` and `url` fields, and the
+Zenodo description and related-identifier URLs. The Pages URL is
+`https://krferrier.github.io/Methylation-EWAS-tutorial/`. Note that the on-disk
+staging directory retains its original name; only the references were renamed.

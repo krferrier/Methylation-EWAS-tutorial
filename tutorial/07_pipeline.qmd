@@ -21,9 +21,7 @@ The EWAS Snakemake pipeline with installation and run instructions can be found 
 We run the whole thing here on the same Grady subset we have been using — the 87
 samples with complete covariate data — across the **full filtered probe set**
 (756,251 CpGs), the same matrix and the same model chapter 06 fit interactively.
-That makes this a genuine end-to-end run rather than a toy demonstration: the
-combined arm takes roughly two hours on a busy workstation, and every number and
-figure below is the pipeline's own output.
+
 
 ## 1. The pipeline's structure
 
@@ -99,34 +97,6 @@ compressed files to the pipeline without issue. In addition to standardized form
 like .csv, .txt, etc., you can also use '.fst' filetypes (a fast data serialization format) 
 which is by far the format type the pipeline can process the fastest. 
 
-### Carrying the surrogate variables and the smoking proxy across
-
-Two of the covariates in `pheno.csv` were *constructed* in the earlier chapters
-rather than measured, and they need care when you hand them to the pipeline.
-
-**Surrogate variables.** Chapter 05 estimated six SVs with `sva` on the
-ComBat-adjusted matrix and chapter 06 fit them as fixed covariates. The pipeline
-has no SVA step — by design. It reads covariate *columns*, so the SVs travel as
-six plain numeric columns `SV1`–`SV6`, computed once upstream and frozen. That is
-the only way to keep the combined arm identical to chapter 06's model.
-
-It also has a consequence you should be aware of when you stratify. The SVs were
-estimated **once, on the whole cohort**, protecting `PTSD`. When the pipeline
-splits by sex it carries those same whole-cohort columns into each stratum
-unchanged; it does not — and with this design cannot — re-estimate SVs within
-each arm. So inside a single-sex stratum the SV columns still encode structure
-that was partly defined by sex differences across the full cohort. They remain
-useful as technical-variation controls, but do not read a per-stratum SV
-coefficient as though it were estimated in that stratum.
-
-**The smoking proxy.** `smoke` is PC1 of 20 replicated smoking-associated CpGs
-(chapter 05), oriented so that higher values mean heavier exposure. Because it is
-derived from methylation itself, the 20 panel probes were **excluded from the
-tested probe set** before the matrix was written — otherwise those CpGs would be
-regressed on a linear combination of themselves. Two further probes drop out
-because their β-values are pinned at 0 or 1 in this 87-sample subset, making
-log₂(β/(1−β)) non-finite. That is why the pipeline reports 756,251 CpGs rather
-than the 756,273 that survived filtering.
 
 ```{r}
 #| label: show-inputs
@@ -149,8 +119,7 @@ data.table::fwrite(data.table(SampleID = rownames(Mt), data.table::as.data.table
                    "data/mvals.csv.gz")
 ```
 
-This writes the **full filtered probe set** — every CpG that survived Chapter 3 —
-not a subset. The chunking machinery is what makes that affordable: `ewas.R` reads
+This writes the **full filtered probe set** — every CpG that survived Chapter 3. The chunking machinery is what makes that affordable: `ewas.R` reads
 the matrix once, splits the CpGs into chunks of `chunk-size`, and distributes chunks
 across workers, so memory stays flat as the probe count grows.
 
@@ -185,7 +154,7 @@ Rscript scripts/ewas.R \
 # → run_grady/all/PTSD_ewas_results.csv.gz   (756,251 CpGs, ~1.9 h — see note)
 ```
 
-::: {.callout-tip}
+
 ## Does the pipeline agree with chapter 06?
 
 It should, and checking is a good habit whenever you move an analysis between
@@ -209,30 +178,7 @@ pipeline fits one `glm` per CpG. On this run:
 Identical point estimates plus a small, explainable difference in the variance
 model is exactly what a successful port looks like. Estimates that *disagree*
 would mean the covariate columns differ between the two runs.
-:::
 
-::: {.callout-note}
-## What this actually costs to run
-
-Wall-clock times for this run, on 32 cores with `--workers 4`:
-
-| Arm | *n* | CpGs | Wall time |
-|---|---|---|---|
-| Combined | 87 | 756,251 | 1 h 54 m |
-| Female | 45 | 756,251 | 1 h 55 m |
-| Male | 42 | 756,251 | 1 h 03 m |
-| BACON (each arm) | — | 756,251 | ~23 s |
-| METAL meta-analysis | — | 756,251 | ~90 s |
-
-Treat these as an order-of-magnitude guide, not a benchmark. The three EWAS arms
-were run concurrently on a shared machine, and each `glm` call spawns its own
-multi-threaded BLAS, so the node was heavily oversubscribed (load average 190–250
-on 32 cores) throughout. A single arm run alone, with BLAS threading pinned to
-one thread per worker, is considerably faster. The lesson to take is the *shape*
-of the cost: the per-CpG regressions dominate, and everything downstream —
-BACON's 5,000 Gibbs iterations, METAL's two passes over three-quarters of a
-million markers — is small change by comparison.
-:::
 
 ```{r}
 #| label: load-all
@@ -308,7 +254,7 @@ print(summ[, .(Analysis, n, lambda_raw = round(lambda_raw, 3),
 The raw λ values start close to 1 but pull in *opposite directions* across the
 strata: 1.021 in the combined arm, 0.967 in females (mildly deflated), 1.070 in
 males (mildly inflated). BACON pulls all three to within 1.5% of 1.0 — 1.023 /
-1.014 / 1.013 — which is the behaviour you want from it: a small, symmetric
+1.014 / 1.013 — which is the behavior you want from it: a small, symmetric
 correction of residual bias, not a rescue of a badly specified model.
 
 Note that the male arm needed the largest correction. With 42 samples and the
@@ -334,9 +280,9 @@ The two stratum QQs after correction:
 :::
 
 ::: {.callout-important}
-## BACON is not a licence to ignore λ
+## BACON is not a license to ignore λ
 BACON corrects the *distribution* of test statistics; it does not manufacture
-signal. If your λ is inflated because of unmodelled batch or cell composition,
+signal. If your λ is inflated because of unmodeled batch or cell composition,
 the right response is to fix the model (P4, P5), not to lean on BACON. Use it for
 the residual bias that remains after honest adjustment — which is exactly the
 mild deflation we see here.
@@ -425,7 +371,7 @@ of it. Two useful reflexes:
 
 1. **Check the arms.** For every hit you plan to report, look up the per-stratum
    estimate, SE, and p-value. If one arm is flat, you have a stratum-specific
-   finding at best, and you should describe it that way.
+   finding and you should describe it that way.
 2. **Distrust `HetISq` at *k* = 2.** With two studies and one heterogeneity
    degree of freedom, I² is extremely noisy. `cg22671410` has I² = 0.0 despite
    effects of +0.40 and −0.06, because the male SE is so large (0.51) that the
@@ -450,42 +396,34 @@ cat("CpGs with heterogeneity P < 0.05:",
 
 ## 9. Reading the run as a whole
 
-For the purposes of this tutorial, we ran the compare the EWAS without stratification, 
+For the purposes of this tutorial, we ran the EWAS without stratification,
 the individual sex EWAS results, and the sex-combined meta-analysis EWAS results:
 
 ![QQ plots of all four analyses (BACON-adjusted p-values), overlaid.](data/07_qq_overlay.png){#fig-qq-overlay width=75%}
 
-![Per-CpG PTSD effect sizes, female vs male stratum. Grey = not meta-significant; coloured points are the meta-analysis top hits.](data/07_effect_concordance.png){#fig-concordance width=70%}
+![Per-CpG PTSD effect sizes, female vs male stratum. Gray = not meta-significant; colored points are the meta-analysis top hits.](data/07_effect_concordance.png){#fig-concordance width=70%}
 
 A few caveats about these results:
 
 - **The combined arm finds one CpG at Bonferroni; the stratified arms and the
-  meta-analysis find more, and that asymmetry is instructive rather than
-  encouraging.** The single-sex arms have ~40 samples each and consequently much
-  larger standard errors (median SE 0.078 in females and 0.089 in males, against
-  0.050 in the combined arm). Wider sampling distributions produce more extreme
-  tail statistics by chance, so a stratified design at this size buys apparent
-  hits, not power. Compare the four QQ curves in @fig-qq-overlay: the two strata
-  and the meta-analysis all sit above the combined arm across the whole range.
-- **The female/male effect concordance is essentially zero** (Pearson r = −0.004
-  genome-wide, with sign agreement at 49.9% — indistinguishable from a coin flip;
-  @fig-concordance). At genome scale that is the *correct* result: almost no CpG
-  carries a real PTSD effect, so the two stratum estimates are independent noise.
-  It also means a scatter of stratum effects can never, on its own, tell you
-  whether a specific CpG replicated — which is what the formal meta-analysis and
-  its per-hit diagnostics are for.
+  meta-analysis find more.** The single-sex arms have an n that is too small to run
+  an EWAS. It is likely that the sex-strata results prior to BACON adjustment were
+  quite deflated and after were over-corrected because the BACON adjustment did not perform well.
+  This inflation makes it appear as if there are statstically significant results where there are none. This
+  inflation is persisted in the meta-analysis results. This is not meant to be an
+  argument against doing stratified analyses, but it does bring to light the importance of
+  considering whether the sample size of your strata is sufficiently powered to do a stratified analysis.
 - **Heterogeneity sits at 5.4%** of CpGs below P = 0.05, against a 5% null
   expectation, with a median I² of 0. There is no evidence of systematic
-  sex-differential methylation genome-wide. In a real study an *excess* here would
-  be the signal that sex-specific effects deserve dedicated investigation. Note
-  the tension with the hit table above, where most of the nine top CpGs show high
-  I²: heterogeneity is undetectable *on average* and rampant *among the extremes*,
-  which is exactly the pattern winner's-curse produces at this sample size.
-- **The honest summary of this run is a null result.** The point of the chapter is
-  that the pipeline executes correctly, reproduces chapter 06's estimates to
-  floating-point precision, and produces calibrated statistics (λ within 1.5% of
-  1 in every arm). It is not that PTSD associates with these nine CpGs in 87
-  people.
+  sex-differential methylation genome-wide. That does not mean that the heterogeneity
+  observed at the extremes is false, but with a sample size this small it does
+  warrant further investigation to validate if there are true sex differences at these sites.
+
+The point of the chapter is
+that the pipeline executes correctly, reproduces chapter 06's estimates to
+floating-point precision, and produces calibrated statistics (λ within 1.5% of
+1 in every arm). It is not that PTSD associates with these nine CpGs in 87
+people.
 
 ## 10. Scaling up
 

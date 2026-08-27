@@ -8,11 +8,11 @@ title: "Quality control: which samples can we trust?"
 source("_setup.R")
 ```
 
-The first step in methylation analsysis is quality control. A failed
-array, a swapped sample, or a mislabeled sex can cause serious trouble 
+The first step in methylation analysis is quality control. A failed
+array, a swapped sample, or sex-mismatch can cause serious trouble
 downstream if it slips through. This notebook runs the standard `minfi`
 [@aryee2014minfi] QC 
-process on the 96-sample subset and decides what (if anything) to drop.
+process on the 96-sample subset and walks you through how to decide what (if anything) to drop.
 
 We start from the raw two-channel object saved by the [Setup](00_setup.qmd) step.
 
@@ -73,7 +73,7 @@ qc <- as.data.frame(qcp$qc); qc$sample <- rownames(qc)
 qc$flag <- ((qc$mMed + qc$uMed) / 2) < 10.5
 ggplot(qc, aes(mMed, uMed, color = flag)) +
   geom_point(size = 2) +
-  geom_abline(intercept = 2 * 10.5, slope = -1, linetype = "dashed", color = "grey40") +
+  geom_abline(intercept = 2 * 10.5, slope = -1, linetype = "dashed", color = "gray40") +
   scale_color_manual(values = c(`FALSE` = "#4C72B0", `TRUE` = "#C44E52"),
                      labels = c("pass", "low signal"), name = NULL) +
   labs(x = "median methylated log2 int (mMed)",
@@ -168,6 +168,10 @@ saveRDS(keep, data_path("01_qc_pass_samples.rds"))
 All 96 samples pass. We carry the full set forward to
 [normalization](02_normalization.qmd).
 
+Note that "96 samples pass QC" is not the same as "96 samples are analyzed". Nine of
+them have no recorded PTSD status and will drop out when the exposure enters the
+model — see [phenotype completeness](#what-the-phenotype-file-is-missing) below.
+
 ::: {.callout-tip}
 ## Always do QC. ALWAYS
 Even though all samples passed QC thresholds in this subset, doing the QC was 
@@ -183,6 +187,80 @@ the **phenotype data** you will eventually model is complete, because a covariat
 discover is absent at modeling time is far more expensive than one you plan around
 now.
 
+There are two distinct kinds of gap, and they have different consequences. A variable
+that is **absent for every sample** is unmeasured confounding — you cannot adjust for
+it. A variable that is **present but incomplete** costs you samples, because any model
+containing that term silently drops the rows where it is missing. Check for both.
+
+### Missing values in the variables we intend to model
+
+Tabulate missingness for every term in the planned model, before you normalize:
+
+```{r}
+#| label: pheno-missing
+model_vars <- c("ptsd", "sex", "age", "childhood_abuse",
+                "mergedcapsandpsswinthin30days")
+miss <- data.frame(
+  variable = model_vars,
+  n_missing = sapply(model_vars, function(v)
+    sum(is.na(ss[[v]]) | ss[[v]] == "")),
+  row.names = NULL)
+knitr::kable(miss, caption = "Missing values per candidate model variable, across all 96 QC-passing arrays.")
+```
+
+PTSD status — the exposure — is missing for
+`r sum(is.na(ss$ptsd) | ss$ptsd == "")` of the 96 samples. The continuous CAPS/PSS
+severity score is missing for the same samples, so there is no alternative outcome
+to fall back on for them.
+
+::: {.callout-important}
+## These nine samples are dropped later, and it is not a QC failure
+
+Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so
+`lm` / `limma` will drop any sample with no PTSD status — the analysis in
+[chapter 06](06_ewas.qmd) and the pipeline run in
+[chapter 07](07_pipeline.qmd) therefore fit **n = 87**, not 96.
+
+This tutorial keeps all 96 samples through normalization
+([chapter 02](02_normalization.qmd)), probe filtering
+([chapter 03](03_probe_filtering.qmd)), cell-composition estimation
+([chapter 04](04_cell_composition.qmd)), and batch diagnosis
+([chapter 05](05_batch_effects.qmd)) on purpose. None of those steps uses PTSD
+status: deconvolution and PCA describe the arrays, not the association model, so
+there is no reason to discard usable arrays before the step that actually needs the
+exposure. The count changes exactly once, at the point the exposure enters.
+
+The distinction worth internalising: **samples dropped for quality** are samples you
+do not trust, and **samples dropped for missing phenotype** are samples you trust
+but cannot model. Report them separately. Collapsing them into one "n = 87 after QC"
+sentence — the most common way this gets written up — hides the fact that nine
+usable arrays were lost to an incomplete metadata table, which is a very different
+problem from nine failed arrays.
+:::
+
+Because the nine are a loss from missingness rather than quality, it is worth a
+moment to ask whether they are **missing at random** or missing in a way that
+correlates with something. If the samples without PTSD status were, say, all male or
+all from one chip, dropping them would distort the design:
+
+```{r}
+#| label: missing-pattern
+no_ptsd <- is.na(ss$ptsd) | ss$ptsd == ""
+cat("samples with no PTSD status:", sum(no_ptsd), "\n")
+cat("sex:", paste(names(table(ss$sex[no_ptsd])),
+                 table(ss$sex[no_ptsd]), collapse = " / "), "\n")
+cat("age range:", paste(range(ss$age[no_ptsd]), collapse = "-"), "\n")
+cat("distinct chips:", length(unique(ss$slide[no_ptsd])),
+    "of", length(unique(ss$slide)), "\n")
+```
+
+Four female and five male, ages spanning the full cohort range, spread across eight
+of the twelve chips — the missingness looks incidental rather than structured. That
+is reassuring, but note that it is a *check you can only do for observed variables*;
+it cannot rule out the samples differing on something unrecorded.
+
+### Variables absent for every sample
+
 For blood methylation the most consequential gap is usually **smoking**. Smoking
 produces some of the largest and most reproducible methylation signals in blood
 [@joehanes2016smoking], so an unmeasured smoking variable is unmeasured confounding
@@ -191,16 +269,16 @@ trauma — but no smoking variable, which is common in public deposits rather th
 unusual.
 
 That absence is worth noting here because it shapes decisions in the next two
-chapters: it is one reason to consider excluding literature-derived smoking CpGs at
-[probe filtering](03_probe_filtering.qmd), and the reason the surrogate variables
-estimated in [batch effects](05_batch_effects.qmd) are doing more work than
-technical-noise removal alone. The full set of options, and the one this tutorial
+chapters. The full set of options, and the one this tutorial
 takes, is laid out in [the EWAS chapter](06_ewas.qmd).
 
 ::: {.callout-tip}
 ## Inventory your covariates before you normalize
 Write down the model you intend to fit, then check each term against the metadata you
-actually have. Note anything missing, and decide *then* how you will handle it.
+actually have. For each term ask two questions: *is it present at all?* and *how many
+samples is it missing for?* The first tells you what you cannot adjust for; the second
+tells you your real analysis n. Note both, and decide *then* how you will handle them —
+including whether a term is worth the samples it costs.
 :::
 
 ## References {.unnumbered}

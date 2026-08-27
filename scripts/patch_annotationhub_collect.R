@@ -11,7 +11,7 @@
 ## the opaque "ExperimentHub Caching fails".
 ##
 ## Because `n = Inf` is also the default, simply ignoring the stray dot restores
-## the intended behaviour. Neutralising rlang's dots checks for the lifetime of
+## the intended behavior. Neutralising rlang's dots checks for the lifetime of
 ## this R session is therefore both sufficient and semantically safe here.
 ##
 ## Trap: use `body(f) <- parse(text = txt)[[1]]`, never `eval(parse(...))`.

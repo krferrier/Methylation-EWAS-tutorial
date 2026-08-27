@@ -1,5 +1,5 @@
 ---
-title: "Choosing a dataset: a catalog of 70 EPIC methylation studies on GEO"
+title: "Choosing a dataset"
 resources:
   - methylation_geo_catalog.csv
 ---
@@ -16,7 +16,7 @@ how we picked a curated catalog of **70 Illumina MethylationEPIC studies on
 GEO**, including the dataset used in the tutorial, that carry enough phenotype
 and covariate metadata to support a real association analysis. Browse it to 
 understand the landscape of public EPIC data and to pick your own
-dataset for a rotation project.
+dataset for a project.
 
 The full table is downloadable as a CSV at the bottom of the page so you can
 filter and load it in R or Python yourself.
@@ -136,8 +136,8 @@ cell-type proportions, giving us answer keys to validate the deconvolution step
 against. The cohort also has a long methylation literature behind it — early work
 on immune-system methylation in PTSD in this sample [@smith2011grady] through to
 the EPIC-array analyses we compare against in notebook
-[06](06_ewas.qmd) [@katrinli2020ptsd] — so a student's result can be read against
-published findings rather than in a vacuum.
+[06](06_ewas.qmd) [@katrinli2020ptsd] — so results can be read against
+published findings.
 
 ::: {.callout-note}
 ## Not every study gives you IDATs

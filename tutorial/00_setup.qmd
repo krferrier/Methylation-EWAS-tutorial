@@ -18,7 +18,7 @@ the cellular machinery necessary for gene expression, thus we can infer effects 
 expression from methylation status.
 
 In the human genome, there are GC-rich regions known as CpG islands (CGIs). These regions
-typically span 500-1500 base pairs with greater than 60% GC-content. CGIs tend to be in the
+typically span 500-1500 base pairs (bp) with greater than 60% GC-content. CGIs tend to be in the
 promoter regions of genes. While 70-80% of CpGs genome-wide are methylated, CGIs are
 predominantly unmethylated, particularly at active promoters. There are CpGs outside of CGIs, however, and based on their distance
 from the CGI they may be labeled as in the 'shore' (0-2kb), 'shelf' (2kb-4kb), or 'open sea' (
@@ -59,13 +59,15 @@ total intensity is low.)
 ::: {.callout-tip}
 ## Two probe designs
 Methylation array technology often uses two different probe chemistries.
-**Type I** probes use two beads (one for M, one for
-U) in the *same* color channel; **Type II** probes use a single bead and read M
+
+  - **Type I** probes use two beads (one for M, one for
+U) in the *same* color channel;
+  - **Type II** probes use a single bead and read M
 vs U in the *two* color channels. Type I probes are better suited for regions with
 high CpG density, but require double the physical space on the array per locus.
 Type II are more compact, but have reduced sensitivity in high density regions.
-compressed dynamic range — which is exactly what the normalization step
-(BMIQ/SWAN/noob) exists to correct.
+
+Normalization is done to allow for these different probe types to be compared.
 :::
 
 A short history of the Illumina methylation platforms:

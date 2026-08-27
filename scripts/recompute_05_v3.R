@@ -14,7 +14,7 @@
 ## asymmetry. Slide-to-slide differences here are treated as location shifts.
 ##
 ## The smoking proxy is in both SVA models (mod and mod0), so smoking is an
-## explicitly modelled covariate rather than something the SVs are hoped to
+## explicitly modeled covariate rather than something the SVs are hoped to
 ## absorb; the panel CpGs are excluded from the tested matrix.
 suppressPackageStartupMessages({
   library(minfi); library(sva); library(data.table)

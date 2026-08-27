@@ -26,6 +26,24 @@ tab <- pca$r2          # variable x PC R^2 matrix
 pve <- pca$pve
 ```
 
+::: {.callout-note}
+## Where 96 becomes 87
+
+Two sample counts appear in this chapter and it is worth being clear about which is
+which.
+
+The **PCA diagnostics in §2** run on all **96** QC-passing arrays. They describe
+technical structure in the arrays and take no model, so the exposure never enters and
+there is no reason to exclude anything.
+
+**Batch effect adjustment runs on 87** — the stratified ComBat,
+and SVA. For each of these analyses, it's necessary to provide which variables should
+be protected which includes the phenotype of interest. There are nine samples with no recorded PTSD status,
+therefore these are excluded.
+
+The **Smoking proxy** is also run on 87 samples, but for the reason of capturing the variance of the sample set that the EWAS will actually be performed on.
+:::
+
 ## 1. The sources of technical variation on an array
 
 The usual suspects, in rough order of how often they matter:
@@ -33,21 +51,31 @@ The usual suspects, in rough order of how often they matter:
 - **Chip / BeadChip (Sentrix ID).** Eight samples share one EPIC chip. Samples on
   the same chip are processed together and tend to be more similar to each other
   than to samples on other chips — the strongest and most common array batch factor.
-- **Array position (Sentrix position).** The row/column a sample occupies on the
-  chip (`R01C01`…`R08C01` on EPIC). Position effects are subtler than chip effects
-  but real and reproducible.
-- **Plate / well.** Chips are handled in plates of samples; plate captures reagent
-  lots and handling batches upstream of the chip.
+- **Array position (Sentrix position).** Where a sample sits on the chip. The EPIC v1
+  BeadChip is an **8 × 1** grid, so the positions are `R01C01` through `R08C01` and
+  there are exactly **eight** of them. Position effects are subtler than chip effects but real and
+  reproducible — edge rows in particular can differ systematically.
+- **Plate.** Chips are processed in plates. A full plate holds 96 arrays — twelve
+  chips of eight — and captures reagent lots, enzyme batches, and the handling
+  session, all *upstream* of any individual chip.
+- **Well.** The sample's position in the 96-well DNA plate, labeled `A01`–`H12`.
+  Well captures pipetting variation, bisulfite-conversion efficiency, reagent
+  gradients across the plate, and plate-edge effects (evaporation and thermal
+  gradients hit the outer wells hardest). Well is *related to but distinct from*
+  Sentrix position: under a standard plate map, well is essentially the
+  **(chip, position) pair taken jointly**, so within a single plate, adjusting for
+  chip and position largely covers well. Across plates they separate — two samples
+  can both sit at `R03C01` on plates processed weeks apart.
 - **Scan date / scanner.** When and on which machine the chip was imaged.
 
 These are recorded in the IDAT filenames and sample sheet
 (see [Setup](00_setup.qmd)). Here we have chip (`slide`) and position (`array_pos`);
-the Grady deposit doesn't give explicit plate or scan date.
+the Grady deposit doesn't give explicit plate, well, or scan date.
 
 
 ## 2. Detecting structure with PCA
 
-Principal component analysis is a commonly used method to assses for technical variation. 
+Principal component analysis is a commonly used method to assess for technical variation.
 Each principal component is an axis of coordinated methylation variation
 across samples; we then ask **what each PC is associated with** by regressing it on
 every candidate variable — technical and biological alike — and reading off the
@@ -74,14 +102,14 @@ Key take-aways from the heatmap:
    mechanically), so we interpret chip effects with the adjusted $R^2$ and with the
    confounding check below, not the raw number alone.
 3. **PTSD doesn't explain much.** The exposure explains almost none of the leading variance.
-   This is not a failure — it is what a genuine EWAS looks like. Real epigenetic
+   This is not a cause for alarm. Real epigenetic
    effects of a psychiatric phenotype are small and spread across many probes, making them 
    practically invisible at the whole-genome PCA level. The association test in
    [analysis](06_ewas.qmd) is designed to find these signals.
 
 ```{r}
 #| label: pc-neu-scatter
-#| fig-cap: "Samples in PC1–PC2 space, coloured by estimated neutrophil fraction. The leading component is a smooth gradient in cell composition — a textbook illustration that PC1 of a blood methylome is usually immune-cell mixture, not the phenotype under study."
+#| fig-cap: "Samples in PC1–PC2 space, colored by estimated neutrophil fraction. The leading component is a smooth gradient in cell composition — a textbook illustration that PC1 of a blood methylome is usually immune-cell mixture, not the phenotype under study."
 #| echo: false
 knitr::include_graphics(data_path("05_pc_scatter_neu.png"))
 ```
@@ -110,7 +138,8 @@ conf <- data.frame(
 knitr::kable(conf, caption = "Confounding between technical factors and biological variables (Cramér's V; 0 = independent, 1 = perfectly confounded).")
 ```
 
-This table is the pivot of the whole notebook:
+This results of this can greatly impact how you proceed with correcting for batch effects.
+In this case:
 
 - **chip × PTSD = `r round(cramV(md$slide, md$ptsd),2)`** — low. The exposure is
   *well mixed* across chips (all 12 chips in the subset carry both cases and
@@ -123,28 +152,13 @@ This table is the pivot of the whole notebook:
 
 ::: {.callout-important}
 ## Why the chip × sex confound matters
-Our standing rule is that **sex must be in the model** — it is one of the strongest
-methylation covariates. But here chip is collinear with sex. If you put both `chip`
+Sex is a strong source of variation in methylation data, so as a rule sex should be accounted for
+in the model design. Here chip is collinear with sex. If you put both `chip`
 and `sex` in the design as fixed effects, the model cannot separate them and the
-sex coefficient (and the chip coefficients) become unidentifiable.[@leek2010sva_confound].
+sex coefficient and the chip coefficients become unidentifiable.[@leek2010sva_confound].
 :::
 
 ## 4. Choosing a correction strategy
-
-The confounding structure dictates the toolbox:
-
-| Situation | Appropriate correction |
-|---|---|
-| Batch factor **known and un-confounded** (e.g. chip vs PTSD here) | Adjust as a covariate in the model, or `ComBat` with the biology protected |
-| Batch factor **known but confounded** with a covariate (chip vs sex here) | Cannot separate directly; use latent-variable methods that estimate residual structure *after* protecting the biology |
-| Batch factor **unknown / unrecorded** (no plate or scan date here) | Latent-variable methods (SVA, RUV) — recover surrogate variables from the data |
-
-Because this dataset has confounded batch and biological variables and potentially
-other unknown/unrecorded batch factors, the appropriate tool is
-**Surrogate Variable Analysis** [@leek2012sva]. SVA estimates hidden components of
-expression/methylation variation **while protecting the variables in your model**
-(PTSD, sex, age, cell composition), so it removes technical structure without
-removing biological signal.
 
 ### The correction methods, compared
 
@@ -165,8 +179,7 @@ ComBat is fast, matrix-native, and the default in many pipelines. But it applies
 **global, parametric adjustment**: every sample in a batch is shifted by the same
 estimated location/scale, under the assumption that the batch effect is a single
 additive+multiplicative offset shared by all probes in that batch. When that
-assumption holds it is efficient; when it doesn't — probe-specific or non-linear
-batch effects, or heavy-tailed distributions — the global shift can *introduce*
+assumption doesn't hold, the global shift can *introduce*
 distortion, and because it also alters the variance structure it can inflate false
 positives if the design is unbalanced. This is the core reason some analysts prefer
 to leave the data untouched and instead **model** the batch (as a covariate or via
@@ -181,8 +194,7 @@ Kolmogorov–Smirnov test and **median differences** between batches at each pro
 and correct only where a distributional difference is actually present. The appeal is
 that it does not force a uniform parametric adjustment on probes that don't need one.
 
-The trade-offs are real, though, and are why it is not (yet) standard practice:
-BeCLEAR was **not designed to scale** to large EPIC datasets — the per-probe,
+However, BeCLEAR was **not designed to scale** to large EPIC datasets — the per-probe,
 per-batch distributional testing is computationally heavy — and it is far less widely
 validated and supported than ComBat or SVA. For a teaching pipeline, and for most
 production EWAS, we stay with the standard tools; but it is worth knowing that the
@@ -190,30 +202,37 @@ production EWAS, we stay with the standard tools; but it is worth knowing that t
 alternatives exist for cases where it matters.
 :::
 
-::: {.callout-note}
-## SVA and RUV — latent-variable correction
+
+**SVA and RUV** — latent-variable correction:
+
 - **SVA** [@leek2012sva] discovers **unnamed** structure and returns surrogate
-  variables you add as covariates. Use it for unrecorded batches or when a known
-  batch is confounded with your exposure (our situation).
+  variables you add as covariates. Use it for unknown or unmeasured technical or
+  even biological variation (such as smoking) which can cause systemic methylation
+  changes that confound the association testing.
 - **RUV** [@gagnon2012ruv] uses negative-control probes (or replicate samples) to
   estimate unwanted variation. A good choice when reliable control probes exist.
 
-These are not mutually exclusive with ComBat: a common recipe is ComBat for a clean,
+Latent variable methods are not mutually exclusive with ComBat: a common recipe is ComBat for a clean,
 recorded, un-confounded plate effect, then SVA for whatever residual structure
 remains. That is close to what we do here — with one modification forced by the
 chip × sex confound, described next.
-:::
+
 
 ### The design we actually use: ComBat *within* sex strata
 
-The confound above looks like it rules ComBat out. Chip is collinear with sex, so
-correcting chip across the whole cohort would partly remove sex — and sex is one of
-the strongest and most real methylation signals we have. Passing sex in ComBat's
-`mod` is supposed to protect it, but protection only works when the batch and the
-protected covariate are separable, which is exactly what fails here.
+The confounding between Chip and sex adds a layer of complexity to adjusting for
+batch effects in the Grady Trauma Project. While this particular design flaw may not
+be common, it highlights the importance of looking critically at the relationship between
+technical and biological variables relevant to your analysis. Another dataset may not have
+confounding between chip and sex, but may have confounding by something else, or may not have
+any confounding at all! What matters is that you check for it so that you can address it appropriately.
 
-The way out is to **stratify the correction**. Within the female samples alone, chip
-is no longer confounded with sex — there is only one sex present — so chip is a clean
+Here, chip is a known variable, so ideally we would use ComBat to adjust for this. However, because of the collinearity with sex,
+correcting chip across the whole cohort would partly remove biological signal from sex. Passing sex in ComBat's
+`mod` is supposed to 'protect' it, but this only works when the batch and the covariate are not confounded.
+
+There are a number of ways this could be handled, but the way we chose and recommend is to **stratify the correction**.
+Within the female samples alone, chip is no longer confounded with sex — there is only one sex present — so chip is a clean
 batch factor, and the same holds within the males. So we run ComBat on `slide`
 separately in each sex stratum and then recombine:
 
@@ -232,43 +251,71 @@ for (s in c("F", "M")) {
 
 Two choices in that call are worth explaining:
 
-- **`mean.only = TRUE`** corrects each chip's location but not its scale. With only
-  a handful of samples per chip, per-chip variance estimates are too noisy to be
-  worth using, and scale correction on small batches is a known way to distort the
-  variance structure — which then propagates straight into false positives.
+- **`mean.only = TRUE`** corrects each chip's mean but not its variance. ComBat's
+  default is to adjust both, and this is normally fine. In this specific case,
+  there are two chips which have males and females present. When we split by sex to
+  do the stratified ComBat adjustment, we end up with a problematic splitting of the
+  sexes on one of the chips.
+
+  ```{r}
+  #| label: stratum-chip-sizes
+  #| echo: false
+  ## the 87 modeled samples; chip taken from the Sentrix barcode
+  mdk <- sva$mdk
+  mdk$chip <- sub("_.*", "", mdk$sentrix_id)
+  for (s in c("F", "M")) {
+    tb <- table(mdk$chip[mdk$sex == s])
+    cat(sprintf("%s stratum: n = %2d across %d chips | chip sizes: %s\n",
+                s, sum(tb), length(tb), paste(sort(as.vector(tb)), collapse = ", ")))
+  }
+  cat("\nchips contributing a single sample to a stratum:\n")
+  for (s in c("F", "M")) {
+    tb <- table(mdk$chip[mdk$sex == s])
+    if (any(tb == 1)) cat(sprintf("  %s: %s\n", s, paste(names(tb)[tb == 1], collapse = ", ")))
+  }
+  ```
+
+  Chip `201114400024` carries 6 females and 1 male. In the **male** stratum that
+  chip is a batch of size **one**, and a batch of one has no within-batch variance
+  to estimate — the scale parameter for that chip is unidentifiable. `sva::ComBat`
+  checks for exactly this and switches to `mean.only = T` from its default of `mean.only = F`.
+  So, if we did not explicitly specify `mean.only = T`, the female arm would end up being
+  corrected differently from the male arm.
+
+  Note where that singleton came from. Across all 96 arrays this chip carries 6
+  females and **2** males; one of those two males is among the nine samples with no
+  PTSD status ([chapter 01](01_qc.qmd)), so it leaves the modeled set and the chip
+  drops to a single male. The incomplete phenotype did not just cost nine
+  samples — it changed which batch corrections are estimable. Missing metadata
+  propagates into methods choices in ways that are easy to miss if you only look at
+  the final n.
+
 - **`par.prior = TRUE`** uses the parametric empirical-Bayes prior. It is the
   stable choice at this sample size; the non-parametric alternative needs more
   samples per batch than we have.
 
 The correction works: chip explains R² ≈ 0.20 (female) and 0.14 (male) of the
-leading residual structure *before* it, and PTSD retains R² ≈ 0.01 in both strata —
-the batch signal comes down without touching the exposure.
+leading residual structure *before* using ComBat and is reduced after, and PTSD retains R² ≈ 0.01 in both strata —
+the batch signal comes down without affecting the exposure.
 
-### Array position: model it, don't hide it
+### Array position
 
-Chip position (`array_pos`) is a second technical factor, and it is *not* confounded
-with anything biological here. That makes the choice easy — it goes in the model as
-an explicit fixed covariate rather than being left for SVA to discover:
+Chip position (`array_pos`) is the second measured technical factor, and it is *not* confounded
+with anything biological here. While in theory we could use ComBat to adjust for this as well in
+the chip-adjusted-recombined dataset, in practice this is not the best choice. The array_pos only has 8 levels,
+so it's cost in degrees of freedom (7) in modeling array_pos as a covariate is acceptable for the sample size we are testing in.
 
-> If you measured it, model it. A named covariate costs one degree of freedom and
-> gives you an interpretable coefficient; a surrogate variable costs the same degree
-> of freedom and tells you nothing about what it absorbed.
 
-This subset has 8 of the 96 positions possible on a full plate populated, so `pos`
-enters as an 8-level factor. (Plate itself is not identifiable at all here — every
-sample is on a single plate — which is a good illustration of a batch factor you
-simply cannot correct for, no matter which method you reach for.)
 
 ## 5. Constructing a smoking proxy when smoking is not recorded
 
 Smoking is the single largest environmental driver of the blood methylome
-[@joehanes2016smoking; @zeilinger2013smoking], and it is comorbid with PTSD. Leaving
-it out of the model is not an option. But GSE132203's public phenotype table has no
-smoking variable — a very common situation with GEO datasets, and a good problem for
-a tutorial, because methylation can supply its own answer.
+[@joehanes2016smoking; @zeilinger2013smoking], and it is comorbid with PTSD. But, GSE132203's public phenotype table has no
+smoking variable — a very common situation with GEO datasets. Fortunately, this
+is something we can address with the methylation data itself.
 
-The approach: take CpGs that the literature has established as smoking-associated,
-and summarise their methylation into a single continuous score. We use a 20-CpG panel
+We can take CpGs that the literature has established as smoking-associated,
+and summarize their methylation into a single continuous score. We use a 20-CpG panel
 of loci replicated across the large smoking EWAS
 [@joehanes2016smoking; @zeilinger2013smoking; @shenker2013epic; @elliott2014smoking],
 anchored on `cg05575921` in *AHRR* — the most reproducible smoking-associated CpG in
@@ -295,7 +342,7 @@ PC1 captures `r sprintf("%.0f%%", 100*max(sva$panel_pve))` of the variance acros
 panel, consistent with the panel behaving as one coherent axis rather than 20
 independent probes.
 
-::: {.callout-important}
+
 ## The panel probes must be excluded from the EWAS
 A proxy built from methylation is a linear combination of methylation. If those same
 20 CpGs stay in the tested probe set, you are regressing each of them partly on
@@ -309,24 +356,30 @@ survived filtering in [chapter 03](03_probe_filtering.qmd).
 The same logic applies to any methylation-derived covariate — epigenetic age, cell
 proportions estimated from the same array, an EpiSmokEr score
 [@bollepalli2019epismoker]. Know which probes went into it, and take them out.
-:::
+
 
 ::: {.callout-note}
 ## A proxy is not the phenotype
 This score is a *measurement of methylation that correlates with smoking*, not a
-measurement of smoking. Two consequences worth stating to students. First, it cannot
-distinguish "current smoker" from "recently quit heavy smoker" — the methylation
-signature decays over years after cessation. Second, and more subtly, some
+measurement of smoking. There are two characteristics of this proxy score worth stating. First, it is a continuous
+variable vs a categorical. A score doesn't distinguish "current smoker" from "recently quit heavy smoker". It is possible
+to convert this continuous scale into categories, and some tools that do return 'smoker' vs 'non-smoker', if this would
+be preferred to a continuous scale. Second, some
 smoking-associated CpGs act partly through shifts in cell composition
 [@bauer2015gpr15], so the proxy and the cell-proportion covariates are not fully
-independent. If real smoking data exists, use it; a proxy is what you do when it
+independent. If real smoking data exists (and is reliable), use it; a proxy is what you do when it
 doesn't.
 :::
 
 ## 6. Surrogate Variable Analysis, done correctly
 
-SVA is run on M-values with a **full model** (everything you want to keep) and a
-**null model** (everything except the exposure). We protect PTSD, sex, age, the
+After doing ComBat for chip, adding array_pos as a covariate, and creating the smoking proxy,
+we then use SVA to create surrogate variables for any additional unknown/unmeasured variation.
+For example, we know that plate and well can cause technical variation, but these were not
+reported in the Grady Trauma Project phenotypes, so we can use SVA to hopefully capture any
+remaining technical variation from these types of batch effects if they are present. SVA is run on
+M-values with a **full model** (everything you want to keep) and a
+**null model** (everything except the exposure). We 'protect' PTSD, sex, age, the
 smoking proxy, array position, and the six estimated cell-type proportions:
 
 ```r
@@ -340,9 +393,7 @@ SV <- svobj$sv                            # add these as covariates in the EWAS
 
 Note what is in the **null** model as well as the full one. Anything you put in
 `mod0` is variation SVA is told *not* to bother capturing, because you are already
-modelling it explicitly. Putting `smoke` and `pos` there is deliberate: we have
-measured (or constructed) those, so we would rather spend a named, interpretable
-covariate on each than have a surrogate variable absorb them anonymously.
+modeling it explicitly.
 
 Note that SVA runs on the **full filtered probe set**, not the 20,000-probe subset
 used for the PCA diagnostic above. The PCA subset exists only to make the
@@ -352,16 +403,11 @@ are estimated from every probe that survived filtering.
 ### How many surrogate variables? (choosing *k*)
 
 `num.sv`'s Buja–Eyuboglu permutation test suggests **`r sva$prev_n_sv`** SVs here.
-We fit **`r sva$k_selected`**. That deserves a justification, because "use the
-number the function returned" is the usual advice.
-
-The problem is that `num.sv` answers a different question than the one we care
-about. It asks *how many dimensions of residual structure are statistically
-detectable* — and with 756,251 probes, plenty are detectable that are also tiny.
-What we need to know is *how many are worth a degree of freedom*, and at n = 87
-degrees of freedom are the binding constraint. So we swept k over
-`r paste(sva$k_candidates, collapse = ", ")` and judged each fit on two things a
-tutorial reader can check directly: calibration (genomic inflation λ, which should
+We fit **`r sva$k_selected`**. `num.sv` answers *how many dimensions of residual structure are statistically
+detectable* — and with 756,251 probes, plenty are detectable, but are also tiny.
+What we need to know is *how many are worth a degree of freedom* in modeling, and at n = 87,
+degrees of freedom are a constraint. So, we swept k over
+`r paste(sva$k_candidates, collapse = ", ")` and judged each fit on two things: calibration (genomic inflation λ, which should
 sit near 1) and precision (the median standard error of the PTSD coefficient,
 which should fall if the SVs are removing real noise).
 
@@ -380,38 +426,23 @@ knitr::kable(
 Reading down that table:
 
 - **k = 0 is clearly wrong.** λ = 0.85 is badly *deflated*, the signature of
-  unmodelled structure inflating residual variance and washing out real
+  unmodeled structure inflating residual variance and washing out real
   differences.
 - **k = 6 fixes the calibration** (λ = 1.02) and captures nearly all of the
   available precision gain — the median SE drops about 5%, which is
   `r sprintf("%.0f%%", 100*ks$frac_gain[ks$k==6])` of the total improvement
   available anywhere in the sweep.
 - **k = 8, 10, and 15 buy almost nothing and cost real power.** By k = 10, λ has
-  drifted up to 1.07 and the SEs have barely moved, but the stratified arms are
-  down to 18 and 15 residual degrees of freedom.
-- **The SVs increasingly eat the smoking proxy.** R² of `smoke` on the SVs climbs
+  drifted up to 1.07, which is still an acceptable lambda, and the SEs have barely moved,
+  but the burden of degrees of freedom becomes problematic.
+- **The SVs increasingly re-capture the smoking proxy.** R² of `smoke` on the SVs climbs
   from 0.39 at k = 6 to 0.64 at k = 15. Since we specifically want smoking as a
   named, interpretable covariate, letting latent variables absorb it is a loss,
   not a gain.
 
-k = 6 is the smallest k that gets λ to 1 — the parsimonious choice, and the one
-that leaves the most residual degrees of freedom for the sex-stratified arms in
-[chapter 07](07_pipeline.qmd).
+k = 6 is the smallest k that gets λ to 1 and that leaves the most residual degrees of freedom.
 
-::: {.callout-note}
-## Why not a scree plot or a percent-variance cutoff?
-Both are standard for PCA and neither transfers cleanly to SVA. Surrogate
-variables are estimated from the *residuals* after the full model is projected
-out, so they do not partition total variance into a decreasing sequence the way
-principal components do, and there is no "% of variance explained" that means what
-it means for PCA. Judging k by its effect on the thing you actually care about —
-calibration and standard errors of the coefficient of interest — is the defensible
-alternative.
-:::
 
-The proof that SVA did the right thing is in what those SVs are associated with —
-they should track the **technical** structure (chip, position) and stay
-**orthogonal to the exposure** (PTSD):
 
 ```{r}
 #| label: sv-table
@@ -421,11 +452,9 @@ knitr::kable(sva$sv_table, digits = 4,
   caption = "What each surrogate variable tracks. Chip (slide) and array position dominate; association with PTSD stays below 0.05 throughout.")
 ```
 
-SV5 is strongly chip-linked (R² = 0.64) and SV4 next (R² = 0.34); no SV reaches
-R² = 0.05 against PTSD. Note that SV4 and SV5 also carry substantial sex
+SV5 is strongly chip-linked (R² = 0.64) and SV4 next (R² = 0.34). Note that SV4 and SV5 also carry substantial sex
 association (R² = 0.37 and 0.46) — a direct consequence of the chip × sex confound
-documented above, and the reason the stratified analysis in chapter 07 needs the
-caveat it carries there.
+documented above.
 
 ```{r}
 #| label: sva-bars

@@ -47,7 +47,7 @@ if (kycg_ok) {
     print(head(res, 10))
     kp <- head(res[is.finite(estimate)], 12)
     kp[, lab := factor(get(labcol), levels = rev(get(labcol)))]
-    ## Colour by database group: the top hits are all FDR < 0.05, so a
+    ## Color by database group: the top hits are all FDR < 0.05, so a
     ## significance legend would carry no information here.
     kp[, grp := sub("^KYCG\\.EPIC\\.", "", sub("\\.[0-9]+$", "", group))]
     pk <- ggplot(kp, aes(estimate, lab, fill = grp)) +

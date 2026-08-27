@@ -72,18 +72,18 @@ cat("max SV-PTSD r2:", round(max(ptsd_r2), 4), "\n")
 
 ## ---- figures ----
 hm <- as.data.frame(as.table(r2)); names(hm) <- c("variable","PC","r2")
-p1 <- ggplot(hm, aes(PC, variable, fill = r2)) + geom_tile(colour = "white") +
+p1 <- ggplot(hm, aes(PC, variable, fill = r2)) + geom_tile(color = "white") +
   geom_text(aes(label = sprintf("%.2f", r2)), size = 2.7,
-            colour = ifelse(hm$r2 > 0.5, "white", "grey20")) +
+            color = ifelse(hm$r2 > 0.5, "white", "gray20")) +
   scale_fill_gradient(low = "#F7F7F7", high = "#C44E52", limits = c(0, 1), name = expression(R^2)) +
   labs(x = NULL, y = NULL, title = "PC associations with technical and biological variables") +
   theme_minimal(base_size = 11) + theme(panel.grid = element_blank())
 ggsave(data_path("05_pc_heatmap.png"), plot = p1, width = 8, height = 4, dpi = 200)
 
 sc <- data.frame(PC1 = pcs[,1], PC2 = pcs[,2], Neu = props[,"Neu"])
-p2 <- ggplot(sc, aes(PC1, PC2, colour = Neu)) + geom_point(size = 2.6, alpha = 0.9) +
-  scale_colour_viridis_c(name = "Neutrophil\nfraction") +
-  labs(title = "PC1-PC2, coloured by estimated neutrophil fraction",
+p2 <- ggplot(sc, aes(PC1, PC2, color = Neu)) + geom_point(size = 2.6, alpha = 0.9) +
+  scale_color_viridis_c(name = "Neutrophil\nfraction") +
+  labs(title = "PC1-PC2, colored by estimated neutrophil fraction",
        x = sprintf("PC1 (%.1f%%)", 100*pve[1]), y = sprintf("PC2 (%.1f%%)", 100*pve[2])) +
   theme_minimal(base_size = 11)
 ggsave(data_path("05_pc_scatter_neu.png"), plot = p2, width = 7, height = 5, dpi = 200)

@@ -55,13 +55,13 @@ cat("largest drop after SV:", which.max(drops), "\n")
 
 ## scree plot with both criteria marked
 p <- ggplot(d, aes(k, pve)) +
-  geom_line(colour = "grey55") +
+  geom_line(color = "gray55") +
   geom_point(aes(fill = k <= k80), shape = 21, size = 3, stroke = 0.4) +
-  geom_vline(xintercept = k80 + 0.5, linetype = 2, colour = "#C44E52") +
+  geom_vline(xintercept = k80 + 0.5, linetype = 2, color = "#C44E52") +
   annotate("text", x = k80 + 0.7, y = max(d$pve) * 0.92, hjust = 0,
            label = sprintf("k = %d\n(%.0f%% of SV-captured\nresidual variance)", k80, d[k == k80]$cum_share),
-           size = 3.1, colour = "#C44E52") +
-  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "grey75"), guide = "none") +
+           size = 3.1, color = "#C44E52") +
+  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "gray75"), guide = "none") +
   scale_x_continuous(breaks = d$k) +
   labs(x = "surrogate variable", y = "% of residual variance",
        title = "Scree plot of the surrogate variables",

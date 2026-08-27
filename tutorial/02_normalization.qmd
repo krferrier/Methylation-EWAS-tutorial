@@ -197,8 +197,9 @@ M-values are roughly homoscedastic and better behaved for the linear models used
 in an EWAS. The convention is to **test on M-values and report/interpret effect
 sizes on β-values** (a β difference of 0.05 is a "5% methylation change," which is
 biologically legible; an M-value difference is not). It is becoming more common to 
-report/interpret from M-values instead of beta values, but we generate effect sizes 
-from both in the [analysis](06_ewas.qmd) notebook for a more comprehensive example.
+report/interpret from M-values instead of beta values, so here we only show analysis
+and reporting from M-values, but to report effect sizes from Beta values you would
+follow the same steps, just with the Beta value matrix instead of the M-value matrix.
 
 ```{r}
 #| label: mvalue-demo
@@ -209,8 +210,8 @@ b <- seq(0.001, 0.999, length.out = 500)
 m <- log2(b / (1 - b))
 dfm <- data.frame(beta = b, M = m)
 ggplot(dfm, aes(beta, M)) + geom_line(color = "#4C72B0", linewidth = 0.9) +
-  geom_hline(yintercept = 0, color = "grey70") +
-  geom_vline(xintercept = 0.5, color = "grey70") +
+  geom_hline(yintercept = 0, color = "gray70") +
+  geom_vline(xintercept = 0.5, color = "gray70") +
   labs(x = "β-value", y = "M-value", title = "β → M-value transform")
 ```
 

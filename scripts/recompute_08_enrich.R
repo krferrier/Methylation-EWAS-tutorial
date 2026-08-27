@@ -72,7 +72,7 @@ pd[, lab := factor(paste0(term, "  (", collection, ")"),
                    levels = rev(paste0(term, "  (", collection, ")")))]
 pg <- ggplot(pd, aes(-log10(P), lab, fill = collection)) +
   geom_col() +
-  geom_vline(xintercept = -log10(0.05), linetype = 2, colour = "grey40") +
+  geom_vline(xintercept = -log10(0.05), linetype = 2, color = "gray40") +
   scale_fill_manual(values = c(GO = "#4C72B0", KEGG = "#C44E52"), name = NULL) +
   labs(x = expression(-log[10]~italic(P)~"(nominal)"), y = NULL,
        title = "gometh enrichment, top 1,000 CpGs by BACON p",
@@ -145,7 +145,7 @@ if (kycg_ok) {
     kp[, lab := factor(dbname, levels = rev(dbname))]
     pk <- ggplot(kp, aes(estimate, lab, fill = FDR < 0.05)) +
       geom_col() +
-      scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "grey70"),
+      scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "gray70"),
                         labels = c("FDR ≥ 0.05", "FDR < 0.05"), name = NULL) +
       labs(x = expression(log[2]~"odds ratio"), y = NULL,
            title = "KYCG enrichment, top 1,000 CpGs") +

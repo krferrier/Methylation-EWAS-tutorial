@@ -6,10 +6,10 @@ are already built and verified.
 ## 1. Create the GitHub repository
 
 ```bash
-gh repo create krferrier/EWAS-tutorial --public \
+gh repo create krferrier/Methylation-EWAS-tutorial --public \
   --description "A reproducible eleven-chapter EWAS walkthrough: raw IDATs to functional annotation"
-cd EWAS-tutorial          # this directory
-git remote add origin git@github.com:krferrier/EWAS-tutorial.git
+cd Methylation-EWAS-tutorial          # this directory
+git remote add origin git@github.com:krferrier/Methylation-EWAS-tutorial.git
 git push -u origin main
 ```
 
@@ -18,7 +18,7 @@ The commit is already made, so `git push` is all that is needed.
 ## 2. Turn on GitHub Pages
 
 Settings → Pages → Source: **Deploy from a branch** → branch `main`, folder **`/docs`**.
-The rendered site appears at `https://krferrier.github.io/EWAS-tutorial/` within a minute.
+The rendered site appears at `https://krferrier.github.io/Methylation-EWAS-tutorial/` within a minute.
 `docs/.nojekyll` is committed so Jekyll does not strip the `_files` asset directories.
 
 ## 3. Deposit the data on Zenodo
@@ -81,8 +81,8 @@ and commit both changes.
 From a clean directory, as a student would:
 
 ```bash
-git clone https://github.com/krferrier/EWAS-tutorial.git
-cd EWAS-tutorial
+git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
+cd Methylation-EWAS-tutorial
 export ZENODO_RECORD=1234567
 ./get_data.sh F_ewas_results H_annotation
 bash qrender.sh render 08_annotation.qmd

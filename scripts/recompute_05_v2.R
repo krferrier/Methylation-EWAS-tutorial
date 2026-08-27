@@ -2,7 +2,7 @@
 ##
 ## Two changes driven by user decisions:
 ##   1. The methylation-derived smoking proxy enters the SVA null model, so
-##      smoking is an EXPLICITLY MODELLED covariate and the SVs estimate only
+##      smoking is an EXPLICITLY MODELED covariate and the SVs estimate only
 ##      the variation that remains unmeasured after it.
 ##   2. The CpGs used to build the proxy are EXCLUDED from the tested matrix,
 ##      removing the circularity of testing probes that define a covariate.

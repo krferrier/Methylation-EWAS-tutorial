@@ -9,11 +9,11 @@ source("_setup.R")
 library(data.table)
 ```
 
-Whole blood is not one thing. It is a mixture of neutrophils, monocytes, NK cells,
+Whole blood is not one thing. It is a mixture of neutrophils, monocytes, natural killer (NK) cells,
 B cells, and CD4+/CD8+ T cells, and each cell type has a distinctly different
 methylome. When you draw blood from two people, differences in their cell-type
 *proportions* — driven by age, infection, stress, time of day — can produce large
-methylation differences that are to the biology you're studying.
+methylation differences that are unrelated to the biology you're studying.
 For most blood EWAS, cell composition is a large source of confounding
 [@houseman2012cellcomp; @jaffe2014celltype]. This notebook estimates the
 proportions, explains the reference-based method, and validates our estimates
@@ -41,12 +41,6 @@ reasons unrelated to the exposure — every cell-type-discriminating CpG will lo
 "differentially methylated." Neutrophil fraction alone routinely explains the largest 
 chunk of genome-wide methylation variance in blood.
 
-::: {.callout-important}
-## Modeling blood cell proportions
-You must **either** adjust for estimated cell proportions as covariates in the EWAS
-model, **or** use a reference-free method that captures them as latent components
-(covered in [batch effects](05_batch_effects.qmd)). 
-:::
 
 ## 2. Reference-based deconvolution (Houseman)
 
@@ -218,6 +212,12 @@ We carry the estimated proportions forward as EWAS covariates:
 ```r
 saveRDS(props, data_path("04_cellcounts.rds"))
 ```
+
+Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not
+use the exposure, so there is no reason to restrict it to the modeled subset here —
+the nine samples with no recorded PTSD status
+([chapter 01](01_qc.qmd)) drop out later, when the exposure enters the model, leaving
+n = 87 for the EWAS.
 
 ---
 

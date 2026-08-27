@@ -13,8 +13,8 @@ We now have everything an epigenome-wide association study needs: a normalized,
 filtered methylation matrix ([P2](02_normalization.qmd)–[P3](03_probe_filtering.qmd)),
 cell-composition estimates ([P4](04_cell_composition.qmd)), and surrogate variables
 that absorb technical structure ([P5](05_batch_effects.qmd)). This notebook fits the
-association model, checks that it is well-calibrated, and interprets the results
-honestly. It also lays out **two modeling conventions** you will meet in the
+association model, checks that it is well-calibrated, and provides guidance for
+interpreting results. It also lays out **two modeling conventions** you will meet in the
 literature — methylation-as-outcome vs. phenotype-as-outcome — and a
 residualization workflow that is common in practice.
 
@@ -69,13 +69,12 @@ Regardless of the outcome convention, the statistical test is run on **M-values*
 (logit-transformed β), which are approximately homoscedastic and better satisfy the
 model's variance assumptions [@du2010comparison]. Effect sizes are then reported as
 **Δβ** because a β difference is biologically interpretable — a Δβ of 0.05 is a "5%
-methylation change." We follow this throughout: fit on M, report Δβ. It is 
-becoming more common to only report M-values, but it's still useful to generate both.
+methylation change."
 :::
 
 ## 2. The covariate set
 
-Our design protects everything we established as a real driver of methylation:
+Our design includes covariates for everything we established as a driver of methylation:
 
 - **sex** and **age** — strong, ubiquitous methylation covariates
   ([P5](05_batch_effects.qmd) confirmed both drive leading PCs).
@@ -90,21 +89,22 @@ Our design protects everything we established as a real driver of methylation:
   [P5](05_batch_effects.qmd), which absorb structure that none of the measured
   covariates name.
 
-Chip (slide) is *not* in this list. It is 87% collinear with sex in this subset, so
-`~ ptsd + sex + slide` is not estimable; [P5](05_batch_effects.qmd) removes chip
-effects with ComBat inside each sex stratum before the model is fitted. The matrix
-entering `lmFit` below is that ComBat-adjusted matrix.
+This is the step where the sample count changes. Chapters 1–5 worked with all
+**96** QC-passing arrays, because none of those steps needs the exposure. The model
+above does, so the nine samples with no recorded PTSD status drop out and the EWAS
+fits **n = `r ew$n`** (`r ew$ncase` cases, `r ew$nctrl` controls). No sample was
+excluded for quality — see [phenotype completeness](01_qc.qmd).
+
 
 ::: {.callout-note}
 ## Smoking 
-Another covariate that is important to account for in modeling is smoking. Smoking is 
-well established to cause distinct, systemic methylation changes, so it is important to include 
+Smoking is well established to cause distinct, systemic methylation changes, so it is important to include
 as a covariate in modeling if you have that information available. If you don't, there 
 are methods to predict smoking status from a subset of methylation sites (these sites 
 would then be excluded from the EWAS). Alternatively, you can exclude CpGs identified as 
 strongly associated with smoking from previous literature prior to or post EWAS (prior is 
 recommended if using this option). Lastly, surrogate variables can capture latent variation due 
-to smoking if you don't have a measured smoking variable included in the null model, but use this 
+to smoking if you don't have a smoking variable included in the null model, but use this
 option with caution as the surrogate variables may attenuate more biological signal than intended. 
 As a last resort, you can run the EWAS without accounting for smoking, just keep this in mind while 
 interpreting results. 
@@ -154,20 +154,21 @@ be used to judge the model fit.
 **BACON** [@vanIterson2017bacon] estimates the *empirical null distribution* of the test 
 statistics with a Bayesian three-component mixture (one null component plus two alternative 
 components for positive and negative effects), then rescales every statistic to that estimated 
-null. This corrects both **bias** (a non-zero centre of the null — a systematic shift) and
+null. This corrects both **bias** (a non-zero center of the null — a systematic shift) and
 **inflation** (a null wider than N(0,1) — the same phenomenon λ measures), and it does
 so without assuming that all deviation from the diagonal is confounding.
 
 Always run BACON on your EWAS results:
 
 - A λ near 1 does not mean there is *no* residual bias — bias (a shift of the null's
-  centre) barely moves λ, which is driven by the *spread* of the statistics. BACON
+  center) barely moves λ, which is driven by the *spread* of the statistics. BACON
   estimates and removes both.
 - Applying the empirical-null correction and *inspecting its diagnostics* is what lets
   you distinguish "well-calibrated" from "looks calibrated by one number." 
 
-BACON works from **effect sizes and their standard errors**, which limma gives us
-directly (SE = logFC / *t*):
+BACON works from either t-statistics *or* effect sizes and their standard errors. We chose
+effect sizes and standard errors as we can derive these from the output of limma and these
+estimates are needed down stream if a meta-analysis is performed.
 
 ```{r}
 #| label: run-bacon
@@ -270,10 +271,8 @@ knitr::kable(head(tt[order(tt$bacon.p),
 ```
 
 Only `r n_bonf` CpG passes Bonferroni and `r n_fdr` pass FDR < 0.05 — a borderline
-result that a study of this size cannot settle either way. With n = 87 and a subtle
-psychiatric phenotype, the sensible reading is that nothing here is established: a
-single marginal hit in 756,251 tests is exactly what an underpowered scan produces,
-and it would need replication in an independent cohort before it meant anything.
+result that a study of this size cannot settle either way. With n = 87, a
+single marginal hit is not unexpected.
 
 ```{r}
 #| label: manhattan
@@ -318,17 +317,7 @@ spends `r ew$design_ncol` design columns *per probe*; at n = `r ew$n` that leave
 are estimated once — leaves the association model lean
 (`PTSD + sex + age + 6 cell props`) and returns df to the test that matters.
 
-::: {.callout-note}
-## In this dataset the df argument does not actually bind
-It is worth checking the premise rather than assuming it. [P5](05_batch_effects.qmd)
-compares the model above against the same model with the SV block removed: dropping the
-`r ew$k_sv` SVs frees 6 df, and the *median standard error of the PTSD coefficient rises
-by about 11%*. The SV block reduces each probe's residual variance by more than it costs
-in df, so at this k the trade-off runs the other way from the textbook description. The
-residualization workflow is still worth knowing — it is what many pipelines do, and the
-df savings are real when the nuisance block is large — but "spends df, therefore costs
-power" is a claim to test on your own data, not a rule.
-::: It is also common to regress out the blood cell proportions in 
+ It is also common to regress out the blood cell proportions in
 addition to the technical variation prior to running the main model. There is no *wrong* 
 choice in which or how many covariates you adjust for prior to the EWAS, just make sure
 to report what exactly was done in your methods. 
@@ -358,11 +347,11 @@ in variance, and in how they *respond* to exposures and phenotypes. When the eff
 your exposure/trait/disease genuinely differs between men and women (a sex interaction),
 a sex-adjusted model estimates a blend of the two and can miss a real signal that is
 present in only one sex, or that points in opposite directions. Because sex-specific
-methylation effects are common, I strongly recommond performing sex-stratified analyses.
+methylation effects are common, I strongly recommend performing sex-stratified analyses.
 
 More generally, stratify when you have reason to believe the **effect itself** (not
 just the baseline) differs across a grouping variable: genetic ancestry, tissue or cell
-subtype, exposure dose, or age band can all justify it. The cost is power — each stratum
+subtype, exposure dose, or age categories can all justify it. The cost is power — each stratum
 has fewer samples — so stratification trades a cleaner, assumption-light estimate within
 each group against reduced within-stratum sample size. However, the loss of power from 
 sample size can be recovered with meta-analysis to re-join the strata results.

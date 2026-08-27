@@ -22,7 +22,7 @@ regional analyses) that are a necessary part in interpretation of results.
 2. **Region-level analysis (DMRs)** — ask whether *spatially clustered* CpGs
    move together. A differentially methylated region (DMR) can be highly
    significant even when no single CpG in it survives genome-wide correction,
-   because neighbouring probes are correlated and that correlation carries
+   because neighboring probes are correlated and that correlation carries
    signal [@pedersen2012combp; @peters2015dmrcate].
 
 For functional annotation of the EWAS results we use Wanding Zhou's hg38 EPIC annotation resources 
@@ -45,10 +45,10 @@ The three tables used for annotation, all downloadable from the
 
 Methylation is often a mediator of change. The environment can cause changes to methylation, which subsequently
 causes change in gene expression. Methylation sites that cause changes in gene expression are called 
-expression quantitative trait methylation sites (eQTMs). So, one additional external layer, the **BIOS cis-eQTM catalogue** (whole-blood
+expression quantitative trait methylation sites (eQTMs). So, one additional external layer, the **BIOS cis-eQTM catalog** (whole-blood
 methylation→expression links) was added to expand the functional annotation. This helps identify 
 which (if any) effector gene may be behind methylation change. I recommend reading more into 
-the BIOS eQTM catalogue more before using and reporting the results as there are some distinct 
+the BIOS eQTM catalog more before using and reporting the results as there are some distinct 
 limitations (only 450k methylation array probes were tested, European-ancestry only cohort, original analysis uses hg19 mapping). 
 This part of the functional annotation was added to the EWAS Snakemake upon request
 from a reviewer for the information. 
@@ -150,13 +150,11 @@ strongest statistical signal need not be the most interpretable one.
 the `GPS2`/`NEURL4` TSS (−137 bp). Four of the top ten fall within 1.5 kb of a
 TSS — a mild promoter lean, not the dramatic one a well-powered scan produces.
 Only the top CpG clears Bonferroni, and only just (BACON p ≈ 3.0 × 10⁻⁸ against
-a threshold of ≈ 6.6 × 10⁻⁸); two pass FDR < 0.05. A single marginal hit in
-756,251 tests at n = 87 is not a finding — read the rest of this table as
-'nominally significant' rather than 'statistically significant', and treat even
-the leader as a candidate for replication rather than a result.
+a threshold of ≈ 6.6 × 10⁻⁸); two pass FDR < 0.05. Read the rest of this table as
+'nominally significant' rather than 'statistically significant'.
 
 In a real study this table is the hand-off point to the enrichment
-tools in Part 3 and to comparison against published EWAS catalogues.
+tools in Part 3 and to comparison against published EWAS catalogs.
 
 ### Where the top hits sit relative to genes and islands
 
@@ -185,11 +183,11 @@ Distance to the nearest gene is a proxy. The question we usually care about is
 *functional*: does this CpG's methylation actually track a gene's **expression**?
 The BIOS consortium answered this directly by pairing whole-blood methylation with
 RNA-seq in ~3,000 samples and testing every cis CpG–transcript pair, producing a
-catalogue of **cis-eQTMs** [@bonder2017eqtm]. Joining it names the likely
+catalog of **cis-eQTMs** [@bonder2017eqtm]. Joining it names the likely
 *effector* gene behind a methylation change — which is not necessarily the nearest
 gene.
 
-The catalogue is keyed on Ensembl gene IDs; the pipeline's
+The catalog is keyed on Ensembl gene IDs; the pipeline's
 `prepare_bios_eqtm_annotation.R` helper re-maps those to current HGNC symbols
 (using the HGNC complete set) before the join. 
 
@@ -212,9 +210,9 @@ annotated <- merge(annotated, eq, by = "probe", all.x = TRUE)
 
 On our subset the eQTM layer annotates **10,803 of the 756,251** tested CpGs
 (1.4%) with at least one expression-linked effector gene. There are so few annotations 
-because the BIOS eQTM catalogue was curated using the 450k methylation array, and not all 
+because the BIOS eQTM catalog was curated using the 450k methylation array, and not all 
 probes used in the 450k array were included in the 850k array. In addition, the BIOS
-catalogue only keeps pairs at FDR < 0.05. Restricting to our top EWAS hits that
+catalog only keeps pairs at FDR < 0.05. Restricting to our top EWAS hits that
 *do* carry an eQTM makes the point that nearest-gene and effector-gene can differ:
 
 ```{r eqtm-top, echo=FALSE, message=FALSE}
@@ -226,7 +224,7 @@ knitr::kable(fread("data/08_annotation/eqtm_display.csv"),
 For **cg06083200** the nearest gene is `PPP1R11`, but the
 CpG's methylation tracks the expression of **`TRIM26`** — a different gene, and
 the more plausible functional target. For **cg26713179** the nearest gene is
-`ZNF766` while the eQTM points at the neighbouring **`ZNF528`/`ZNF880`** cluster.
+`ZNF766` while the eQTM points at the neighboring **`ZNF528`/`ZNF880`** cluster.
 Four of these twelve hits show an effector that differs from the nearest gene.
 This is exactly why an eQTM layer is worth the trouble: **proximity names a
 locus; the eQTM names a gene whose expression actually moves with it.** When reporting 
@@ -249,7 +247,7 @@ in an EWAS) is, collectively, a statistically significant region.
 
 ### DMR tools
 
-The choice of DMR tool is constrained by **what upstream modelling you did**.
+The choice of DMR tool is constrained by **what upstream modeling you did**.
 
 ::: {.callout-important}
 ## comb-p works on summary statistics; DMRcate needs line-level data
@@ -263,8 +261,8 @@ This is why the Snakemake pipeline uses **comb-p**.
 **`DMRcate`** [@peters2015dmrcate] takes **line-level β/M values plus a single
 design formula** and re-fits the model internally to compute a smoothed,
 region-level statistic. It is powerful and self-contained, but it **cannot
-consume meta-analysed results** — there is no single design matrix
-that represents *"stratify by sex, then inverse-variance meta-analyse."* If you
+consume meta-analyzed results** — there is no single design matrix
+that represents *"stratify by sex, then inverse-variance meta-analyze."* If you
 used the stratified-meta workflow, DMRcate is not an option; if you fit one
 pooled model with sex as a covariate, it is.
 :::
@@ -314,7 +312,7 @@ This trips people up. Relaxing the seed to 1 × 10⁻⁸ purely to see the machi
 produce output yields one region — `chr6:28,633,534–28,633,601`, 6 probes,
 `min_p = 2.3 × 10⁻¹³`, Šidák-corrected `z_sidak_p = 1.2 × 10⁻¹⁰`. That
 `min_p` is the **Stouffer–Liptak–Kechris–smoothed** p-value, computed by pooling
-each CpG with its neighbours, so it is far smaller than any raw p-value in the
+each CpG with its neighbors, so it is far smaller than any raw p-value in the
 input: the smallest raw BACON p anywhere in the BED is
 3.0 × 10⁻⁸. Smoothed regional statistics and probe-level statistics are not on
 the same scale, and comparing them directly will make a region look far stronger
@@ -338,7 +336,7 @@ otherwise masquerade as MHC methylation signal.
 
 ### Seeing the machinery work
 
-To show region detection actually firing — not just returning empty — we can
+To show region detection actually working — not just returning empty — we can
 relax the seed to 1 × 10⁻⁸. comb-p then reports a single region: the same MHC
 cluster, six adjacent CpGs spanning 67 bp, all consistently hypomethylated:
 
@@ -357,7 +355,7 @@ comb-p pipeline --seed 1e-8 --dist 200 --region-filter-p 0.05 \
 @fig-dmr is the payoff. Six CpGs, each at −log₁₀ p between 3.3 and 3.8 — none
 remotely genome-wide significant on its own — collapse into one region three
 orders of magnitude past the single-CpG bar, purely by borrowing strength across
-correlated neighbours. That is what a DMR method buys you, and why a region-level
+correlated neighbors. That is what a DMR method buys you, and why a region-level
 pass is worth running even when the single-CpG EWAS turns up nothing.
 
 ### DMRcate: the line-level alternative
@@ -375,7 +373,7 @@ results.ranges <- extractRanges(dmrs, genome = "hg38")
 ```
 
 Note what it requires that comb-p does not: the full `M` matrix in memory and a
-single `design`/`coef`. If your EWAS was residualised or meta-analysed, you
+single `design`/`coef`. If your EWAS was residualized or meta-analyzed, you
 cannot express it as one `coef` here.
 
 ### Annotating the DMRs
@@ -386,7 +384,7 @@ genes and islands by overlapping its coordinates against UCSC **refGene**,
 rule from `hgdownload.soe.ucsc.edu`, all hg38). The DMR's constituent CpGs are
 looked up in the EWAS BED so each region carries its probe list and direction of
 effect. The overlap is a coordinate join — `bedtools intersect` in the pipeline,
-or `GenomicRanges::findOverlaps()` if you are staying in R — with no modelling
+or `GenomicRanges::findOverlaps()` if you are staying in R — with no modeling
 involved. We run it here for our one demo region, the six CpGs of the
 comb-p MHC region at **chr6:28,633,534–28,633,601**:
 
@@ -435,7 +433,7 @@ knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv"),
 
 The gene-set tools in Part 3 take a list of *CpGs*. When your unit of discovery
 is a **region**, `missMethyl::goregion` [@phipson2016missmethyl] is the
-region-level analogue of `gometh`: give it a `GRanges` of your DMRs and it maps
+region-level analog of `gometh`: give it a `GRanges` of your DMRs and it maps
 each region to the CpGs it contains, collapses those to genes, and runs the same
 probe-number-bias-corrected GO/KEGG test. It is the natural way to ask "are my
 comb-p regions collectively enriched for a biological process?"
@@ -500,7 +498,7 @@ yet been added to the Snakemake pipeline, but will in a future release.
 #| eval: false
 library(missMethyl)
 tt     <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
-all.cpg <- tt$probe                          # tested universe = every CpG you analysed
+all.cpg <- tt$probe                          # tested universe = every CpG you analyzed
 sig.cpg <- tt[order(bacon.p)][1:1000]$probe  # your significant set
 
 # GO enrichment, corrected for probes-per-gene. array.type matches your array.
@@ -583,8 +581,8 @@ knitr::kable(fread("data/08_annotation/08_gsa_method_comparison.csv"),
 
 On this dataset the three agree on the *count* — **zero** KEGG pathways at
 FDR < 0.05 from all three — and disagree on everything else. Each nominates a
-different leader (Basal cell carcinoma, Phosphatidylinositol signalling,
-Hedgehog signalling), and the smallest FDR any of them reaches spans an order of
+different leader (Basal cell carcinoma, Phosphatidylinositol signaling,
+Hedgehog signaling), and the smallest FDR any of them reaches spans an order of
 magnitude: 0.38 for `gometh`, 0.45 for `methylglm`, **0.098** for
 `methylRRA`-GSEA. That last number is the informative one. `methylRRA`'s GSEA
 mode uses the full ranking and no cutoff, so it is the most sensitive *and* the
@@ -596,16 +594,16 @@ would have produced a "significant pathway" to write up.
 ```{r gsa-rra, echo=FALSE, message=FALSE}
 knitr::kable(fread("data/08_annotation/08_methylgsa_rra_top.csv")[, .(KEGG, Pathway, Size, NES, pvalue, padj)],
   digits = 4,
-  caption = "The five top-ranked methylRRA-GSEA KEGG pathways. None survives FDR < 0.05, but Hedgehog signalling reaches FDR = 0.098 on a dataset with no epigenome-wide signal — the sensitivity/specificity trade-off of a cutoff-free rank test, made concrete.")
+  caption = "The five top-ranked methylRRA-GSEA KEGG pathways. None survives FDR < 0.05, but Hedgehog signaling reaches FDR = 0.098 on a dataset with no epigenome-wide signal — the sensitivity/specificity trade-off of a cutoff-free rank test, made concrete.")
 ```
 
 ::: {.callout-important}
-## The tool is a modelling choice, not a lookup
+## The tool is a modeling choice, not a lookup
 Report the method **and** its settings, not just "KEGG enrichment." A reviewer
 who reruns your CpGs through a different tool will get a different list, and that
 is expected — `gometh`, `methylglm`, and `methylRRA` encode different
 assumptions about how probe density biases the test. Pick one *a priori* (we
-default to `gometh` for its conservative, well-validated behaviour), and if you
+default to `gometh` for its conservative, well-validated behavior), and if you
 report a second for sensitivity, say so and show both. Never run all three and
 present the one with the prettiest pathway.
 :::
@@ -632,9 +630,9 @@ all.cpg <- tt$probe                              # universe = every CpG you test
 sig.cpg <- tt[order(bacon.p)][1:1000]$probe   # your query set
 
 # What CpG-feature databases are available for this platform?
-# ALWAYS list first: the catalogue names carry datestamps and they change
+# ALWAYS list first: the catalog names carry datestamps and they change
 # between releases. A wrong name fails at load time, not at test time.
-listDBGroups("EPIC")           # 19 EPIC knowledgebases: CGI, TFBS, chromHMM, HM, ...
+listDBGroups("EPIC")           # EPIC knowledgebases: CGI, TFBS, chromHMM, HM, ...
 
 # Cache the databases you want from ExperimentHub, then test.
 dbs <- c("KYCG.EPIC.CGI.20210713",               # CpG-island relation
@@ -658,7 +656,7 @@ databases are wildly different sizes.
 
 On our teaching subset KYCG returns **41 features at FDR < 0.05** where `gometh`
 returned nothing. That looks like a decisive win for the CpG-centric lens. It is
-partly real and partly an artefact of the test's shape, and separating the two is
+partly real and partly an artifact of the test's shape, and separating the two is
 the lesson of this section.
 
 ![The twelve most significant KYCG features for the top 1,000 CpGs, across four EPIC knowledgebases. Bars are $\log_2$ odds ratio; every bar shown clears FDR < 0.05. Note what is *absent*: no CpG-island-relation feature appears, and every significant enrichment is positive and modest (log₂OR 0.36–1.28).](data/08_annotation/08_kycg_enrichment.png){#fig-kycg width=90%}
@@ -705,7 +703,7 @@ heavily: the median significant feature covers **7.4%** of the tested universe
 `RAG2`, and `ZNF335` each overlap 90,000–120,000 CpGs. Benjamini–Hochberg
 assumes independence (or positive dependence); with sets this large and this
 correlated, "41 significant" is closer to a handful of distinct signals counted
-repeatedly. The honest description is *one broad enrichment in open,
+repeatedly. The more honest description is *one broad enrichment in open,
 promoter-proximal, TF-bound chromatin*, not 41 transcription factors.
 
 **3. Big databases win by construction.** Every significant feature here has a
@@ -716,8 +714,7 @@ why `TFBSconsensus`, with the most and largest sets, supplies 85% of the hits,
 and why a database of five island categories supplies none.
 :::
 
-So the comparison with `gometh` is more interesting than "KYCG is more
-sensitive." Both tests see the same underlying fact — the top CpGs lean toward
+Both tests see the same underlying fact — the top CpGs lean toward
 open, promoter-proximal chromatin — but they differ in what they can resolve.
 `gometh` has to collapse CpGs to genes and then test gene sets of a few dozen to
 a few hundred members, which at this sample size leaves it no power at all. KYCG
@@ -741,11 +738,11 @@ pass [@xiong2022ewasopenplatform; @li2019ewasatlas]. The value is that several
 of these draw on curated resources you can't easily reproduce locally:
 
 - **Trait enrichment** — tests your CpG list against the platform's manually
-  curated catalogue of associations from thousands of published EWAS, using a
+  curated catalog of associations from thousands of published EWAS, using a
   **weighted Fisher's exact test** where each probe is weighted by the number of
   studies reporting that probe–trait association. This is the analysis you
   *can't* reproduce locally without their database, and it is the most useful:
-  it tells you whether your hits overlap CpGs already linked to smoking, ageing,
+  it tells you whether your hits overlap CpGs already linked to smoking, aging,
   BMI, or a specific disease. 
 - **Genomic location enrichment** — assigns each probe to **13 location
   categories** defined relative to gene and CpG island (each probe gets one
@@ -776,7 +773,7 @@ of these draw on curated resources you can't easily reproduce locally:
   This is the *same idea* as the BIOS eQTM layer we joined in Part 1, but computed
   in solid tissues rather than whole blood — so for a blood EWAS, prefer the BIOS
   blood eQTMs and read this panel as supporting, cross-tissue context.
-- **Motif enrichment** — runs **HOMER** on a 500 bp window centred on each CpG to
+- **Motif enrichment** — runs **HOMER** on a 500 bp window centered on each CpG to
   find over-represented transcription-factor binding motifs, a lead on which TFs
   might read or be blocked by the methylation change.
 
@@ -794,7 +791,7 @@ notes:
 - **Treat it as a curated cross-check, not a replacement** for the reproducible R
   path. Its trait and tissue panels are the parts you genuinely can't run locally;
   its GO/KEGG and location panels duplicate `gometh`/`knowYourCG`, so use those in
-  the pipeline for the record and the Toolkit interactively to mine the catalogues.
+  the pipeline for the record and the Toolkit interactively to mine the catalogs.
 
 ## `eFORGE`: is a hit list driven by cell composition?
 
@@ -821,7 +818,7 @@ assemble.
 Our subset carries the confounds notebook 05 mapped — cell composition loads
 heavily on the leading PCs. An `eFORGE` cell-type enrichment on the top hits is
 the natural closing sanity check: it asks the composition question of the
-*final* CpG list, after all modelling, in the vocabulary (chromatin states,
+*final* CpG list, after all modeling, in the vocabulary (chromatin states,
 DHS) that a reviewer of a blood EWAS will expect to see addressed.
 :::
 
@@ -839,7 +836,7 @@ landscape, roughly in the order you'd reach for them:
 | Broad gene-set / pathway diagrams, no bias model | ShinyGO, g:Profiler, Enrichr, GREAT | Built for gene lists generally; **do not** correct for methylation probe bias, so feed them a gene list you already trust, not raw CpG hits. |
 | Cell-type / tissue enrichment (is a hit driven by composition?) | `eFORGE`, LOLA | Tests whether your CpGs cluster in cell-type-specific regulatory elements — a direct check on residual confounding. |
 | Chromatin-state / enhancer context | Roadmap/ENCODE overlaps via LOLA or `annotatr` | Places hits in enhancers, promoters, and TF-binding regions. |
-| Causal direction (does methylation *cause* the phenotype?) | Mendelian randomisation with mQTLs (e.g. GoDMC) | The rigorous follow-up when a hit is real; well beyond a single EWAS. |
+| Causal direction (does methylation *cause* the phenotype?) | Mendelian randomization with mQTLs (e.g. GoDMC) | The rigorous follow-up when a hit is real; well beyond a single EWAS. |
 | "Is my phenotype associated with epigenetic *age*?" | Epigenetic clocks: `methylclock`, Horvath [@horvath2013clock] / Hannum [@hannum2013clock] predictors | A composite outcome computed from a fixed CpG set, not an enrichment of *your* hits. Fit it as a separate phenotype-level analysis; don't read it off your EWAS table. |
 
 
@@ -882,16 +879,14 @@ reason alone.
 **Per-stratum power is very low.** The stratified arms spend the same 24 design
 columns on 45 and 42 samples, leaving roughly 22 and 19 residual degrees of
 freedom. That is enough to fit the model and not enough to estimate small effects
-precisely — which is exactly why the meta-analysis's Bonferroni hits are almost
-all driven by a single arm. Enrichment run on such a hit list inherits that
-fragility, however well-corrected the enrichment test itself is.
+precisely.
 :::
 
 ## Summary
 
 - **Annotation turns probe IDs into biology.** Take coordinates, gene model,
   and CpG-island relation all from **one genome build annotation set**; don't mix 
-  annotations built from hg19 with those from hg38. The BIOS eQTM catalogue provides some 
+  annotations built from hg19 with those from hg38. The BIOS eQTM catalog provides some 
   annotation for likely effector genes, which can differ from the nearest gene. 
 - **Region analysis recovers signal that single-CpG testing misses** by
   leveraging the spatial correlation of methylation. On our subset a
@@ -899,12 +894,12 @@ fragility, however well-corrected the enrichment test itself is.
   EWAS significance threshold.
 - **Match the DMR tool to your upstream model.** `comb-p` runs on summary
   statistics and therefore works after stratified meta-analysis. `DMRcate` needs line-level data and one design formula, so it
-  cannot consume meta-analysed results.
+  cannot consume meta-analyzed results.
 - **Run enrichment three complementary ways.** `missMethyl::gometh` for
   reproducible, probe-bias-corrected **gene-set** (GO/KEGG) tests;
   `knowYourCG::testEnrichment` for **CpG-centric** tests against regulatory-element
   databases (CGI, TFBS, chromatin state); and the EWAS Toolkit for the **trait**
-  catalogue you can't reproduce locally. Read the **FDR** column, not the nominal
+  catalog you can't reproduce locally. Read the **FDR** column, not the nominal
   *p*, and always feed the tool your real tested CpG-set. On this subset all
   three gene-set tools (`gometh`, `methylglm`, `methylRRA`) return **nothing** at
   FDR < 0.05, while KYCG returns **41 of 863** regulatory features — a difference

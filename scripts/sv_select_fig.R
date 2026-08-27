@@ -11,11 +11,11 @@ K <- 8L   # decided from the elbow in panel A; see prose
 ## Panel A: technical association, SVs in descending order
 pa <- ggplot(d, aes(lab, tech_max)) +
   geom_col(aes(fill = rank <= K), width = 0.72) +
-  geom_hline(yintercept = d[rank == K]$tech_max, linetype = 3, colour = "grey45") +
-  geom_vline(xintercept = K + 0.5, linetype = 2, colour = "#C44E52") +
-  annotate("text", x = K + 0.75, y = 0.80, hjust = 0, size = 3.1, colour = "#C44E52",
+  geom_hline(yintercept = d[rank == K]$tech_max, linetype = 3, color = "gray45") +
+  geom_vline(xintercept = K + 0.5, linetype = 2, color = "#C44E52") +
+  annotate("text", x = K + 0.75, y = 0.80, hjust = 0, size = 3.1, color = "#C44E52",
            label = sprintf("keep k = %d", K)) +
-  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "grey78"), guide = "none") +
+  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "gray78"), guide = "none") +
   labs(x = NULL, y = expression(R^2~"with chip / array position"),
        title = "A. Each SV against known technical factors",
        subtitle = "SVs ordered by technical association, not by index: SVA does not order its output by variance") +
@@ -25,7 +25,7 @@ pa <- ggplot(d, aes(lab, tech_max)) +
 pb <- ggplot(d, aes(tech_max, pve)) +
   geom_point(aes(fill = rank <= K), shape = 21, size = 3.4, stroke = 0.4) +
   ggrepel::geom_text_repel(aes(label = sv), size = 2.9, seed = 42, max.overlaps = 20) +
-  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "grey78"), guide = "none") +
+  scale_fill_manual(values = c(`TRUE` = "#C44E52", `FALSE` = "gray78"), guide = "none") +
   labs(x = expression(R^2~"with chip / array position"), y = "% of residual variance",
        title = "B. Variance rank and technical rank disagree",
        subtitle = "SV2 carries the most variance but the least chip signal; SV4 the reverse") +

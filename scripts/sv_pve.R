@@ -18,7 +18,7 @@ SV <- s15$sv
 sub <- order(apply(Mcb, 1, var), decreasing = TRUE)[1:20000]
 Ms  <- Mcb[sub, ]
 
-## residualise on the FULL measured model, so "variance explained" means
+## residualize on the FULL measured model, so "variance explained" means
 ## variance the SVs explain over and above ptsd/sex/age/smoke/cells/position
 R <- residuals(lmFit(Ms, modC), Ms)
 tot <- sum(R^2)

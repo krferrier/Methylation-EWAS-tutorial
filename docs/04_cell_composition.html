@@ -5523,7 +5523,7 @@ window.Quarto = {
 </header>
 
 
-<p>Whole blood is not one thing. It is a mixture of neutrophils, monocytes, NK cells, B cells, and CD4+/CD8+ T cells, and each cell type has a distinctly different methylome. When you draw blood from two people, differences in their cell-type <em>proportions</em> — driven by age, infection, stress, time of day — can produce large methylation differences that are to the biology you’re studying. For most blood EWAS, cell composition is a large source of confounding <span class="citation" data-cites="houseman2012cellcomp jaffe2014celltype">(<a href="#ref-houseman2012cellcomp" role="doc-biblioref">Houseman et al. 2012</a>; <a href="#ref-jaffe2014celltype" role="doc-biblioref">Jaffe and Irizarry 2014</a>)</span>. This notebook estimates the proportions, explains the reference-based method, and validates our estimates against the proportions the study deposited.</p>
+<p>Whole blood is not one thing. It is a mixture of neutrophils, monocytes, natural killer (NK) cells, B cells, and CD4+/CD8+ T cells, and each cell type has a distinctly different methylome. When you draw blood from two people, differences in their cell-type <em>proportions</em> — driven by age, infection, stress, time of day — can produce large methylation differences that are unrelated to the biology you’re studying. For most blood EWAS, cell composition is a large source of confounding <span class="citation" data-cites="houseman2012cellcomp jaffe2014celltype">(<a href="#ref-houseman2012cellcomp" role="doc-biblioref">Houseman et al. 2012</a>; <a href="#ref-jaffe2014celltype" role="doc-biblioref">Jaffe and Irizarry 2014</a>)</span>. This notebook estimates the proportions, explains the reference-based method, and validates our estimates against the proportions the study deposited.</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
@@ -5537,19 +5537,6 @@ window.Quarto = {
 <p>A neutrophil and a CD4+ T cell carry the same genome but very different DNA methylation. A whole-blood methylation measurement at any CpG is therefore a <strong>weighted average</strong> across the cell types present, with weights equal to the cell proportions:</p>
 <p><span class="math display">\[\beta_{\text{observed}} \approx \sum_{k} w_k \, \beta_k\]</span></p>
 <p>where <span class="math inline">\(w_k\)</span> is the fraction of cell type <span class="math inline">\(k\)</span> and <span class="math inline">\(\beta_k\)</span> is that cell type’s methylation at the CpG. If cases have more neutrophils than controls — even for reasons unrelated to the exposure — every cell-type-discriminating CpG will look “differentially methylated.” Neutrophil fraction alone routinely explains the largest chunk of genome-wide methylation variance in blood.</p>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>Modeling blood cell proportions
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>You must <strong>either</strong> adjust for estimated cell proportions as covariates in the EWAS model, <strong>or</strong> use a reference-free method that captures them as latent components (covered in <a href="./05_batch_effects.html">batch effects</a>).</p>
-</div>
-</div>
 </section>
 <section id="reference-based-deconvolution-houseman" class="level2">
 <h2 class="anchored" data-anchor-id="reference-based-deconvolution-houseman">2. Reference-based deconvolution (Houseman)</h2>
@@ -5813,6 +5800,7 @@ window.Quarto = {
 </div>
 <p>We carry the estimated proportions forward as EWAS covariates:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(props, <span class="fu">data_path</span>(<span class="st">&quot;04_cellcounts.rds&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Proportions are estimated for all <strong>96</strong> QC-passing arrays. Deconvolution does not use the exposure, so there is no reason to restrict it to the modeled subset here — the nine samples with no recorded PTSD status (<a href="./01_qc.html">chapter 01</a>) drop out later, when the exposure enters the model, leaving n = 87 for the EWAS.</p>
 <hr>
 <p><strong>Next:</strong> <a href="./05_batch_effects.html">Batch effects</a> — technical variation from chips, array positions, and plates, and how to detect it before deciding whether to correct.</p>
 </section>
@@ -6307,11 +6295,11 @@ Teschendorff, Andrew E, Charles E Breeze, Shijie C Zheng, and Stephan Beck. 2017
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>Whole blood is not one thing. It is a mixture of neutrophils, monocytes, NK cells,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>Whole blood is not one thing. It is a mixture of neutrophils, monocytes, natural killer (NK) cells,</span>
 <span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>B cells, and CD4+/CD8+ T cells, and each cell type has a distinctly different</span>
 <span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>methylome. When you draw blood from two people, differences in their cell-type</span>
 <span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>*proportions* — driven by age, infection, stress, time of day — can produce large</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>methylation differences that are to the biology you&#39;re studying.</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>methylation differences that are unrelated to the biology you&#39;re studying.</span>
 <span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>For most blood EWAS, cell composition is a large source of confounding</span>
 <span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@houseman2012cellcomp; @jaffe2014celltype</span><span class="co">]</span>. This notebook estimates the</span>
 <span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>proportions, explains the reference-based method, and validates our estimates</span>
@@ -6339,183 +6327,183 @@ Teschendorff, Andrew E, Charles E Breeze, Shijie C Zheng, and Stephan Beck. 2017
 <span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>&quot;differentially methylated.&quot; Neutrophil fraction alone routinely explains the largest </span>
 <span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>chunk of genome-wide methylation variance in blood.</span>
 <span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
-<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a><span class="fu">## Modeling blood cell proportions</span></span>
-<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a>You must **either** adjust for estimated cell proportions as covariates in the EWAS</span>
-<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>model, **or** use a reference-free method that captures them as latent components</span>
-<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a>(covered in <span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span>). </span>
-<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Reference-based deconvolution (Houseman)</span></span>
-<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>The standard approach is the **Houseman method** <span class="co">[</span><span class="ot">@houseman2012cellcomp</span><span class="co">]</span>:</span>
-<span id="cb9-58"><a href="#cb9-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-59"><a href="#cb9-59" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Start from a **reference** of purified, flow-sorted blood cell types, each</span>
-<span id="cb9-60"><a href="#cb9-60" aria-hidden="true" tabindex="-1"></a>   profiled on the same array platform. For each cell type we know its methylation</span>
-<span id="cb9-61"><a href="#cb9-61" aria-hidden="true" tabindex="-1"></a>   at a panel of cell-type-discriminating CpGs.</span>
-<span id="cb9-62"><a href="#cb9-62" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Choose the discriminating CpGs. The original method picked them by F-test; the</span>
-<span id="cb9-63"><a href="#cb9-63" aria-hidden="true" tabindex="-1"></a>   **IDOL** optimization <span class="co">[</span><span class="ot">@salas2018idol</span><span class="co">]</span> selects a library that minimizes</span>
-<span id="cb9-64"><a href="#cb9-64" aria-hidden="true" tabindex="-1"></a>   deconvolution error and is the current best practice for EPIC. We use the</span>
-<span id="cb9-65"><a href="#cb9-65" aria-hidden="true" tabindex="-1"></a>   IDOL-optimized 450-CpG library from <span class="in">`FlowSorted.Blood.EPIC`</span>.</span>
-<span id="cb9-66"><a href="#cb9-66" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>For each sample, solve a **constrained regression** (proportions ≥ 0, summing to</span>
-<span id="cb9-67"><a href="#cb9-67" aria-hidden="true" tabindex="-1"></a>   ~1) of the observed methylation at those CpGs against the reference profiles.</span>
-<span id="cb9-68"><a href="#cb9-68" aria-hidden="true" tabindex="-1"></a>   The fitted coefficients are the estimated cell proportions.</span>
-<span id="cb9-69"><a href="#cb9-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-70"><a href="#cb9-70" aria-hidden="true" tabindex="-1"></a>Crucially, the sample and reference data must be **normalized together** so that</span>
-<span id="cb9-71"><a href="#cb9-71" aria-hidden="true" tabindex="-1"></a>technical differences don&#39;t confound composition. <span class="in">`minfi`</span>&#39;s</span>
-<span id="cb9-72"><a href="#cb9-72" aria-hidden="true" tabindex="-1"></a><span class="in">`estimateCellCounts2`</span> handles this by combining <span class="in">`RGChannelSet`</span> with the</span>
-<span id="cb9-73"><a href="#cb9-73" aria-hidden="true" tabindex="-1"></a>reference <span class="in">`RGChannelSet`</span>, normalizing jointly (here with noob), then deconvolving:</span>
-<span id="cb9-74"><a href="#cb9-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-75"><a href="#cb9-75" aria-hidden="true" tabindex="-1"></a><span class="in">```r</span></span>
-<span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(FlowSorted.Blood.EPIC)</span>
-<span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;IDOLOptimizedCpGs&quot;</span>)</span>
-<span id="cb9-78"><a href="#cb9-78" aria-hidden="true" tabindex="-1"></a>cc <span class="ot">&lt;-</span> <span class="fu">estimateCellCounts2</span>(</span>
-<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a>  rg,                                   <span class="co"># raw RGChannelSet (not yet normalized)</span></span>
-<span id="cb9-80"><a href="#cb9-80" aria-hidden="true" tabindex="-1"></a>  <span class="at">compositeCellType   =</span> <span class="st">&quot;Blood&quot;</span>,</span>
-<span id="cb9-81"><a href="#cb9-81" aria-hidden="true" tabindex="-1"></a>  <span class="at">processMethod       =</span> <span class="st">&quot;preprocessNoob&quot;</span>,</span>
-<span id="cb9-82"><a href="#cb9-82" aria-hidden="true" tabindex="-1"></a>  <span class="at">probeSelect         =</span> <span class="st">&quot;IDOL&quot;</span>,</span>
-<span id="cb9-83"><a href="#cb9-83" aria-hidden="true" tabindex="-1"></a>  <span class="at">cellTypes           =</span> <span class="fu">c</span>(<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;NK&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Neu&quot;</span>),</span>
-<span id="cb9-84"><a href="#cb9-84" aria-hidden="true" tabindex="-1"></a>  <span class="at">referencePlatform   =</span> <span class="st">&quot;IlluminaHumanMethylationEPIC&quot;</span>,</span>
-<span id="cb9-85"><a href="#cb9-85" aria-hidden="true" tabindex="-1"></a>  <span class="at">IDOLOptimizedCpGs   =</span> IDOLOptimizedCpGs,</span>
-<span id="cb9-86"><a href="#cb9-86" aria-hidden="true" tabindex="-1"></a>  <span class="at">returnAll           =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb9-87"><a href="#cb9-87" aria-hidden="true" tabindex="-1"></a>props <span class="ot">&lt;-</span> cc<span class="sc">$</span>prop                        <span class="co"># 96 samples x 6 cell types</span></span>
-<span id="cb9-88"><a href="#cb9-88" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-89"><a href="#cb9-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-90"><a href="#cb9-90" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb9-91"><a href="#cb9-91" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reference-based needs the *raw* data</span></span>
-<span id="cb9-92"><a href="#cb9-92" aria-hidden="true" tabindex="-1"></a><span class="in">`estimateCellCounts2`</span> starts from the raw <span class="in">`RGChannelSet`</span>, not the normalized object</span>
-<span id="cb9-93"><a href="#cb9-93" aria-hidden="true" tabindex="-1"></a>from <span class="co">[</span><span class="ot">normalization</span><span class="co">](02_normalization.qmd)</span>, because it must normalize the samples</span>
-<span id="cb9-94"><a href="#cb9-94" aria-hidden="true" tabindex="-1"></a>*and* reference. This is one of the few steps that reaches back</span>
-<span id="cb9-95"><a href="#cb9-95" aria-hidden="true" tabindex="-1"></a>to the raw IDATs. The reference dataset itself is downloaded once from Bioconductor&#39;s</span>
-<span id="cb9-96"><a href="#cb9-96" aria-hidden="true" tabindex="-1"></a>ExperimentHub and cached.</span>
-<span id="cb9-97"><a href="#cb9-97" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb9-98"><a href="#cb9-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-99"><a href="#cb9-99" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. The composition of this subset</span></span>
-<span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: comp-summary</span></span>
-<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>comp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">cell_type =</span> <span class="fu">colnames</span>(props),</span>
-<span id="cb9-106"><a href="#cb9-106" aria-hidden="true" tabindex="-1"></a>                   <span class="at">mean_pct   =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">colMeans</span>(props), <span class="dv">1</span>),</span>
-<span id="cb9-107"><a href="#cb9-107" aria-hidden="true" tabindex="-1"></a>                   <span class="at">min_pct    =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">apply</span>(props, <span class="dv">2</span>, min), <span class="dv">1</span>),</span>
-<span id="cb9-108"><a href="#cb9-108" aria-hidden="true" tabindex="-1"></a>                   <span class="at">max_pct    =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">apply</span>(props, <span class="dv">2</span>, max), <span class="dv">1</span>))</span>
-<span id="cb9-109"><a href="#cb9-109" aria-hidden="true" tabindex="-1"></a>comp <span class="ot">&lt;-</span> comp[<span class="fu">order</span>(<span class="sc">-</span>comp<span class="sc">$</span>mean_pct), ]</span>
-<span id="cb9-110"><a href="#cb9-110" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comp, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb9-111"><a href="#cb9-111" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Estimated cell-type composition across the 96 samples. Neutrophils dominate, as expected for whole blood, but the range is wide — this between-sample variation is exactly what must be modeled.&quot;</span>)</span>
-<span id="cb9-112"><a href="#cb9-112" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-113"><a href="#cb9-113" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-116"><a href="#cb9-116" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-117"><a href="#cb9-117" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: comp-stack</span></span>
-<span id="cb9-118"><a href="#cb9-118" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Estimated cell-type proportions per sample (stacked). The neutrophil fraction (largest band) varies from roughly 20% to 85% across individuals — a swing that would swamp most disease effects if left unmodeled.&quot;</span></span>
-<span id="cb9-119"><a href="#cb9-119" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 8</span></span>
-<span id="cb9-120"><a href="#cb9-120" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3.4</span></span>
-<span id="cb9-121"><a href="#cb9-121" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb9-122"><a href="#cb9-122" aria-hidden="true" tabindex="-1"></a>pl <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(props); pl<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">rownames</span>(pl)</span>
-<span id="cb9-123"><a href="#cb9-123" aria-hidden="true" tabindex="-1"></a>plm <span class="ot">&lt;-</span> <span class="fu">reshape</span>(pl, <span class="at">varying =</span> <span class="fu">colnames</span>(props), <span class="at">v.names =</span> <span class="st">&quot;prop&quot;</span>,</span>
-<span id="cb9-124"><a href="#cb9-124" aria-hidden="true" tabindex="-1"></a>               <span class="at">timevar =</span> <span class="st">&quot;cell&quot;</span>, <span class="at">times =</span> <span class="fu">colnames</span>(props),</span>
-<span id="cb9-125"><a href="#cb9-125" aria-hidden="true" tabindex="-1"></a>               <span class="at">direction =</span> <span class="st">&quot;long&quot;</span>)</span>
-<span id="cb9-126"><a href="#cb9-126" aria-hidden="true" tabindex="-1"></a>plm<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>cell, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Neu&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;NK&quot;</span>))</span>
-<span id="cb9-127"><a href="#cb9-127" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(props[,<span class="st">&quot;Neu&quot;</span>]); plm<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>sample_id,</span>
-<span id="cb9-128"><a href="#cb9-128" aria-hidden="true" tabindex="-1"></a>                                                     <span class="at">levels =</span> <span class="fu">rownames</span>(props)[ord])</span>
-<span id="cb9-129"><a href="#cb9-129" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plm, <span class="fu">aes</span>(sample_id, prop, <span class="at">fill =</span> cell)) <span class="sc">+</span></span>
-<span id="cb9-130"><a href="#cb9-130" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb9-131"><a href="#cb9-131" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">&quot;Set2&quot;</span>) <span class="sc">+</span></span>
-<span id="cb9-132"><a href="#cb9-132" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;sample (ordered by neutrophil fraction)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;estimated proportion&quot;</span>,</span>
-<span id="cb9-133"><a href="#cb9-133" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">&quot;cell type&quot;</span>, <span class="at">title =</span> <span class="st">&quot;Blood cell composition varies widely between samples&quot;</span>) <span class="sc">+</span></span>
-<span id="cb9-134"><a href="#cb9-134" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
-<span id="cb9-135"><a href="#cb9-135" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.x =</span> <span class="fu">element_blank</span>())</span>
-<span id="cb9-136"><a href="#cb9-136" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-137"><a href="#cb9-137" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-138"><a href="#cb9-138" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Validation against the deposited answer key</span></span>
-<span id="cb9-139"><a href="#cb9-139" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-140"><a href="#cb9-140" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project deposited its own cell-type proportion estimates with the</span>
-<span id="cb9-141"><a href="#cb9-141" aria-hidden="true" tabindex="-1"></a>GEO record. That gives us the opportunity to check our deconvolution.</span>
-<span id="cb9-144"><a href="#cb9-144" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-145"><a href="#cb9-145" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-table</span></span>
-<span id="cb9-146"><a href="#cb9-146" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> val<span class="sc">$</span>validation</span>
-<span id="cb9-147"><a href="#cb9-147" aria-hidden="true" tabindex="-1"></a>disp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb9-148"><a href="#cb9-148" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">cell type</span><span class="st">`</span>        <span class="ot">=</span> res<span class="sc">$</span>cell,</span>
-<span id="cb9-149"><a href="#cb9-149" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Pearson r</span><span class="st">`</span>        <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.3f&quot;</span>, res<span class="sc">$</span>r),</span>
-<span id="cb9-150"><a href="#cb9-150" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">mean abs. error</span><span class="st">`</span>  <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.4f&quot;</span>, res<span class="sc">$</span>mae),</span>
-<span id="cb9-151"><a href="#cb9-151" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">our mean</span><span class="st">`</span>         <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_est),</span>
-<span id="cb9-152"><a href="#cb9-152" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">deposited mean</span><span class="st">`</span>   <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_dep),</span>
-<span id="cb9-153"><a href="#cb9-153" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb9-154"><a href="#cb9-154" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(disp, <span class="at">caption =</span> <span class="st">&quot;Our estimates vs the study&#39;s deposited proportions, per cell type (n = 96).&quot;</span>)</span>
-<span id="cb9-155"><a href="#cb9-155" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-156"><a href="#cb9-156" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-159"><a href="#cb9-159" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-160"><a href="#cb9-160" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-scatter</span></span>
-<span id="cb9-161"><a href="#cb9-161" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates &gt; 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study&#39;s own estimates.&quot;</span></span>
-<span id="cb9-162"><a href="#cb9-162" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb9-163"><a href="#cb9-163" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">data_path</span>(<span class="st">&quot;04_validation_scatter.png&quot;</span>))</span>
-<span id="cb9-164"><a href="#cb9-164" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb9-165"><a href="#cb9-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-166"><a href="#cb9-166" aria-hidden="true" tabindex="-1"></a>Correlations range from **`r sprintf(&quot;%.3f&quot;, min(val$validation$r))`** (NK, the</span>
-<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a>rarest and hardest-to-estimate type) to **`r sprintf(&quot;%.3f&quot;, max(val$validation$r))`**</span>
-<span id="cb9-168"><a href="#cb9-168" aria-hidden="true" tabindex="-1"></a>(neutrophils), and the mean absolute error never exceeds</span>
-<span id="cb9-169"><a href="#cb9-169" aria-hidden="true" tabindex="-1"></a>**`r sprintf(&quot;%.1f&quot;, 100*max(val$validation$mae))` percentage points**. Small</span>
-<span id="cb9-170"><a href="#cb9-170" aria-hidden="true" tabindex="-1"></a>systematic offsets (e.g. our B-cell estimates run slightly high) are expected when</span>
-<span id="cb9-171"><a href="#cb9-171" aria-hidden="true" tabindex="-1"></a>the reference library or normalization differs from the original authors&#39;, and they</span>
-<span id="cb9-172"><a href="#cb9-172" aria-hidden="true" tabindex="-1"></a>matter far less than the near-perfect *ranking* — because in the EWAS model it is</span>
-<span id="cb9-173"><a href="#cb9-173" aria-hidden="true" tabindex="-1"></a>the between-sample variation, not the absolute level, that does the confounding</span>
-<span id="cb9-174"><a href="#cb9-174" aria-hidden="true" tabindex="-1"></a>adjustment.</span>
-<span id="cb9-175"><a href="#cb9-175" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-176"><a href="#cb9-176" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
-<span id="cb9-177"><a href="#cb9-177" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical note</span></span>
-<span id="cb9-178"><a href="#cb9-178" aria-hidden="true" tabindex="-1"></a>Many studies do not provide cell proportions. In a real analysis you trust the method </span>
-<span id="cb9-179"><a href="#cb9-179" aria-hidden="true" tabindex="-1"></a>and **sanity-check the output**: neutrophils should dominate whole blood (~50–70%), </span>
-<span id="cb9-180"><a href="#cb9-180" aria-hidden="true" tabindex="-1"></a>proportions should sum to ~1, and the distribution should look biologically plausible. </span>
-<span id="cb9-181"><a href="#cb9-181" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb9-182"><a href="#cb9-182" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-183"><a href="#cb9-183" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. When you don&#39;t have IDATs: deconvolution from a processed matrix</span></span>
-<span id="cb9-184"><a href="#cb9-184" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-185"><a href="#cb9-185" aria-hidden="true" tabindex="-1"></a>Reference-based deconvolution normally wants the raw <span class="in">`RGChannelSet`</span>, so a</span>
-<span id="cb9-186"><a href="#cb9-186" aria-hidden="true" tabindex="-1"></a>β-matrix-only deposit is the harder case. Two routes:</span>
-<span id="cb9-187"><a href="#cb9-187" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-188"><a href="#cb9-188" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**`projectCellType` on a β-matrix.** The Houseman projection itself only needs</span>
-<span id="cb9-189"><a href="#cb9-189" aria-hidden="true" tabindex="-1"></a>   methylation *values* at the reference CpGs, not intensities. Pull the reference</span>
-<span id="cb9-190"><a href="#cb9-190" aria-hidden="true" tabindex="-1"></a>   β-values and its cell-type means, subset your matrix to the shared reference CpGs,</span>
-<span id="cb9-191"><a href="#cb9-191" aria-hidden="true" tabindex="-1"></a>   and run the constrained projection directly:</span>
-<span id="cb9-192"><a href="#cb9-192" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-193"><a href="#cb9-193" aria-hidden="true" tabindex="-1"></a>   <span class="in">```r</span></span>
-<span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(FlowSorted.Blood.EPIC)</span>
-<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(genefilter)</span>
-<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a>   <span class="co"># reference cell-type means at the IDOL CpGs (from the package)</span></span>
-<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a>   ref <span class="ot">&lt;-</span> ...   <span class="co"># matrix: IDOL CpGs x 6 cell types</span></span>
-<span id="cb9-198"><a href="#cb9-198" aria-hidden="true" tabindex="-1"></a>   shared <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(beta), <span class="fu">rownames</span>(ref))</span>
-<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a>   props  <span class="ot">&lt;-</span> minfi<span class="sc">:::</span><span class="fu">projectCellType</span>(beta[shared, ], ref[shared, ])</span>
-<span id="cb9-200"><a href="#cb9-200" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a>   The estimates are slightly noisier than the joint-normalization route because the</span>
-<span id="cb9-202"><a href="#cb9-202" aria-hidden="true" tabindex="-1"></a>   sample and reference weren&#39;t normalized together, but for a well-processed matrix</span>
-<span id="cb9-203"><a href="#cb9-203" aria-hidden="true" tabindex="-1"></a>   they are close.</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Reference-based deconvolution (Houseman)</span></span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>The standard approach is the **Houseman method** <span class="co">[</span><span class="ot">@houseman2012cellcomp</span><span class="co">]</span>:</span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Start from a **reference** of purified, flow-sorted blood cell types, each</span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a>   profiled on the same array platform. For each cell type we know its methylation</span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>   at a panel of cell-type-discriminating CpGs.</span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Choose the discriminating CpGs. The original method picked them by F-test; the</span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>   **IDOL** optimization <span class="co">[</span><span class="ot">@salas2018idol</span><span class="co">]</span> selects a library that minimizes</span>
+<span id="cb9-58"><a href="#cb9-58" aria-hidden="true" tabindex="-1"></a>   deconvolution error and is the current best practice for EPIC. We use the</span>
+<span id="cb9-59"><a href="#cb9-59" aria-hidden="true" tabindex="-1"></a>   IDOL-optimized 450-CpG library from <span class="in">`FlowSorted.Blood.EPIC`</span>.</span>
+<span id="cb9-60"><a href="#cb9-60" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>For each sample, solve a **constrained regression** (proportions ≥ 0, summing to</span>
+<span id="cb9-61"><a href="#cb9-61" aria-hidden="true" tabindex="-1"></a>   ~1) of the observed methylation at those CpGs against the reference profiles.</span>
+<span id="cb9-62"><a href="#cb9-62" aria-hidden="true" tabindex="-1"></a>   The fitted coefficients are the estimated cell proportions.</span>
+<span id="cb9-63"><a href="#cb9-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-64"><a href="#cb9-64" aria-hidden="true" tabindex="-1"></a>Crucially, the sample and reference data must be **normalized together** so that</span>
+<span id="cb9-65"><a href="#cb9-65" aria-hidden="true" tabindex="-1"></a>technical differences don&#39;t confound composition. <span class="in">`minfi`</span>&#39;s</span>
+<span id="cb9-66"><a href="#cb9-66" aria-hidden="true" tabindex="-1"></a><span class="in">`estimateCellCounts2`</span> handles this by combining <span class="in">`RGChannelSet`</span> with the</span>
+<span id="cb9-67"><a href="#cb9-67" aria-hidden="true" tabindex="-1"></a>reference <span class="in">`RGChannelSet`</span>, normalizing jointly (here with noob), then deconvolving:</span>
+<span id="cb9-68"><a href="#cb9-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-69"><a href="#cb9-69" aria-hidden="true" tabindex="-1"></a><span class="in">```r</span></span>
+<span id="cb9-70"><a href="#cb9-70" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(FlowSorted.Blood.EPIC)</span>
+<span id="cb9-71"><a href="#cb9-71" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;IDOLOptimizedCpGs&quot;</span>)</span>
+<span id="cb9-72"><a href="#cb9-72" aria-hidden="true" tabindex="-1"></a>cc <span class="ot">&lt;-</span> <span class="fu">estimateCellCounts2</span>(</span>
+<span id="cb9-73"><a href="#cb9-73" aria-hidden="true" tabindex="-1"></a>  rg,                                   <span class="co"># raw RGChannelSet (not yet normalized)</span></span>
+<span id="cb9-74"><a href="#cb9-74" aria-hidden="true" tabindex="-1"></a>  <span class="at">compositeCellType   =</span> <span class="st">&quot;Blood&quot;</span>,</span>
+<span id="cb9-75"><a href="#cb9-75" aria-hidden="true" tabindex="-1"></a>  <span class="at">processMethod       =</span> <span class="st">&quot;preprocessNoob&quot;</span>,</span>
+<span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a>  <span class="at">probeSelect         =</span> <span class="st">&quot;IDOL&quot;</span>,</span>
+<span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a>  <span class="at">cellTypes           =</span> <span class="fu">c</span>(<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;NK&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Neu&quot;</span>),</span>
+<span id="cb9-78"><a href="#cb9-78" aria-hidden="true" tabindex="-1"></a>  <span class="at">referencePlatform   =</span> <span class="st">&quot;IlluminaHumanMethylationEPIC&quot;</span>,</span>
+<span id="cb9-79"><a href="#cb9-79" aria-hidden="true" tabindex="-1"></a>  <span class="at">IDOLOptimizedCpGs   =</span> IDOLOptimizedCpGs,</span>
+<span id="cb9-80"><a href="#cb9-80" aria-hidden="true" tabindex="-1"></a>  <span class="at">returnAll           =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-81"><a href="#cb9-81" aria-hidden="true" tabindex="-1"></a>props <span class="ot">&lt;-</span> cc<span class="sc">$</span>prop                        <span class="co"># 96 samples x 6 cell types</span></span>
+<span id="cb9-82"><a href="#cb9-82" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-83"><a href="#cb9-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-84"><a href="#cb9-84" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb9-85"><a href="#cb9-85" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reference-based needs the *raw* data</span></span>
+<span id="cb9-86"><a href="#cb9-86" aria-hidden="true" tabindex="-1"></a><span class="in">`estimateCellCounts2`</span> starts from the raw <span class="in">`RGChannelSet`</span>, not the normalized object</span>
+<span id="cb9-87"><a href="#cb9-87" aria-hidden="true" tabindex="-1"></a>from <span class="co">[</span><span class="ot">normalization</span><span class="co">](02_normalization.qmd)</span>, because it must normalize the samples</span>
+<span id="cb9-88"><a href="#cb9-88" aria-hidden="true" tabindex="-1"></a>*and* reference. This is one of the few steps that reaches back</span>
+<span id="cb9-89"><a href="#cb9-89" aria-hidden="true" tabindex="-1"></a>to the raw IDATs. The reference dataset itself is downloaded once from Bioconductor&#39;s</span>
+<span id="cb9-90"><a href="#cb9-90" aria-hidden="true" tabindex="-1"></a>ExperimentHub and cached.</span>
+<span id="cb9-91"><a href="#cb9-91" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-92"><a href="#cb9-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-93"><a href="#cb9-93" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. The composition of this subset</span></span>
+<span id="cb9-94"><a href="#cb9-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-97"><a href="#cb9-97" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-98"><a href="#cb9-98" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: comp-summary</span></span>
+<span id="cb9-99"><a href="#cb9-99" aria-hidden="true" tabindex="-1"></a>comp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">cell_type =</span> <span class="fu">colnames</span>(props),</span>
+<span id="cb9-100"><a href="#cb9-100" aria-hidden="true" tabindex="-1"></a>                   <span class="at">mean_pct   =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">colMeans</span>(props), <span class="dv">1</span>),</span>
+<span id="cb9-101"><a href="#cb9-101" aria-hidden="true" tabindex="-1"></a>                   <span class="at">min_pct    =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">apply</span>(props, <span class="dv">2</span>, min), <span class="dv">1</span>),</span>
+<span id="cb9-102"><a href="#cb9-102" aria-hidden="true" tabindex="-1"></a>                   <span class="at">max_pct    =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">apply</span>(props, <span class="dv">2</span>, max), <span class="dv">1</span>))</span>
+<span id="cb9-103"><a href="#cb9-103" aria-hidden="true" tabindex="-1"></a>comp <span class="ot">&lt;-</span> comp[<span class="fu">order</span>(<span class="sc">-</span>comp<span class="sc">$</span>mean_pct), ]</span>
+<span id="cb9-104"><a href="#cb9-104" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comp, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb9-105"><a href="#cb9-105" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Estimated cell-type composition across the 96 samples. Neutrophils dominate, as expected for whole blood, but the range is wide — this between-sample variation is exactly what must be modeled.&quot;</span>)</span>
+<span id="cb9-106"><a href="#cb9-106" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-107"><a href="#cb9-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-110"><a href="#cb9-110" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-111"><a href="#cb9-111" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: comp-stack</span></span>
+<span id="cb9-112"><a href="#cb9-112" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Estimated cell-type proportions per sample (stacked). The neutrophil fraction (largest band) varies from roughly 20% to 85% across individuals — a swing that would swamp most disease effects if left unmodeled.&quot;</span></span>
+<span id="cb9-113"><a href="#cb9-113" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 8</span></span>
+<span id="cb9-114"><a href="#cb9-114" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3.4</span></span>
+<span id="cb9-115"><a href="#cb9-115" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb9-116"><a href="#cb9-116" aria-hidden="true" tabindex="-1"></a>pl <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(props); pl<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">rownames</span>(pl)</span>
+<span id="cb9-117"><a href="#cb9-117" aria-hidden="true" tabindex="-1"></a>plm <span class="ot">&lt;-</span> <span class="fu">reshape</span>(pl, <span class="at">varying =</span> <span class="fu">colnames</span>(props), <span class="at">v.names =</span> <span class="st">&quot;prop&quot;</span>,</span>
+<span id="cb9-118"><a href="#cb9-118" aria-hidden="true" tabindex="-1"></a>               <span class="at">timevar =</span> <span class="st">&quot;cell&quot;</span>, <span class="at">times =</span> <span class="fu">colnames</span>(props),</span>
+<span id="cb9-119"><a href="#cb9-119" aria-hidden="true" tabindex="-1"></a>               <span class="at">direction =</span> <span class="st">&quot;long&quot;</span>)</span>
+<span id="cb9-120"><a href="#cb9-120" aria-hidden="true" tabindex="-1"></a>plm<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>cell, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Neu&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;NK&quot;</span>))</span>
+<span id="cb9-121"><a href="#cb9-121" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(props[,<span class="st">&quot;Neu&quot;</span>]); plm<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>sample_id,</span>
+<span id="cb9-122"><a href="#cb9-122" aria-hidden="true" tabindex="-1"></a>                                                     <span class="at">levels =</span> <span class="fu">rownames</span>(props)[ord])</span>
+<span id="cb9-123"><a href="#cb9-123" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plm, <span class="fu">aes</span>(sample_id, prop, <span class="at">fill =</span> cell)) <span class="sc">+</span></span>
+<span id="cb9-124"><a href="#cb9-124" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb9-125"><a href="#cb9-125" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">&quot;Set2&quot;</span>) <span class="sc">+</span></span>
+<span id="cb9-126"><a href="#cb9-126" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;sample (ordered by neutrophil fraction)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;estimated proportion&quot;</span>,</span>
+<span id="cb9-127"><a href="#cb9-127" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">&quot;cell type&quot;</span>, <span class="at">title =</span> <span class="st">&quot;Blood cell composition varies widely between samples&quot;</span>) <span class="sc">+</span></span>
+<span id="cb9-128"><a href="#cb9-128" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb9-129"><a href="#cb9-129" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.x =</span> <span class="fu">element_blank</span>())</span>
+<span id="cb9-130"><a href="#cb9-130" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-131"><a href="#cb9-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-132"><a href="#cb9-132" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Validation against the deposited answer key</span></span>
+<span id="cb9-133"><a href="#cb9-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-134"><a href="#cb9-134" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project deposited its own cell-type proportion estimates with the</span>
+<span id="cb9-135"><a href="#cb9-135" aria-hidden="true" tabindex="-1"></a>GEO record. That gives us the opportunity to check our deconvolution.</span>
+<span id="cb9-138"><a href="#cb9-138" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-139"><a href="#cb9-139" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-table</span></span>
+<span id="cb9-140"><a href="#cb9-140" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> val<span class="sc">$</span>validation</span>
+<span id="cb9-141"><a href="#cb9-141" aria-hidden="true" tabindex="-1"></a>disp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-142"><a href="#cb9-142" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">cell type</span><span class="st">`</span>        <span class="ot">=</span> res<span class="sc">$</span>cell,</span>
+<span id="cb9-143"><a href="#cb9-143" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Pearson r</span><span class="st">`</span>        <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.3f&quot;</span>, res<span class="sc">$</span>r),</span>
+<span id="cb9-144"><a href="#cb9-144" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">mean abs. error</span><span class="st">`</span>  <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.4f&quot;</span>, res<span class="sc">$</span>mae),</span>
+<span id="cb9-145"><a href="#cb9-145" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">our mean</span><span class="st">`</span>         <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_est),</span>
+<span id="cb9-146"><a href="#cb9-146" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">deposited mean</span><span class="st">`</span>   <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_dep),</span>
+<span id="cb9-147"><a href="#cb9-147" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-148"><a href="#cb9-148" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(disp, <span class="at">caption =</span> <span class="st">&quot;Our estimates vs the study&#39;s deposited proportions, per cell type (n = 96).&quot;</span>)</span>
+<span id="cb9-149"><a href="#cb9-149" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-150"><a href="#cb9-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-153"><a href="#cb9-153" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb9-154"><a href="#cb9-154" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-scatter</span></span>
+<span id="cb9-155"><a href="#cb9-155" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates &gt; 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study&#39;s own estimates.&quot;</span></span>
+<span id="cb9-156"><a href="#cb9-156" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb9-157"><a href="#cb9-157" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">data_path</span>(<span class="st">&quot;04_validation_scatter.png&quot;</span>))</span>
+<span id="cb9-158"><a href="#cb9-158" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-159"><a href="#cb9-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-160"><a href="#cb9-160" aria-hidden="true" tabindex="-1"></a>Correlations range from **`r sprintf(&quot;%.3f&quot;, min(val$validation$r))`** (NK, the</span>
+<span id="cb9-161"><a href="#cb9-161" aria-hidden="true" tabindex="-1"></a>rarest and hardest-to-estimate type) to **`r sprintf(&quot;%.3f&quot;, max(val$validation$r))`**</span>
+<span id="cb9-162"><a href="#cb9-162" aria-hidden="true" tabindex="-1"></a>(neutrophils), and the mean absolute error never exceeds</span>
+<span id="cb9-163"><a href="#cb9-163" aria-hidden="true" tabindex="-1"></a>**`r sprintf(&quot;%.1f&quot;, 100*max(val$validation$mae))` percentage points**. Small</span>
+<span id="cb9-164"><a href="#cb9-164" aria-hidden="true" tabindex="-1"></a>systematic offsets (e.g. our B-cell estimates run slightly high) are expected when</span>
+<span id="cb9-165"><a href="#cb9-165" aria-hidden="true" tabindex="-1"></a>the reference library or normalization differs from the original authors&#39;, and they</span>
+<span id="cb9-166"><a href="#cb9-166" aria-hidden="true" tabindex="-1"></a>matter far less than the near-perfect *ranking* — because in the EWAS model it is</span>
+<span id="cb9-167"><a href="#cb9-167" aria-hidden="true" tabindex="-1"></a>the between-sample variation, not the absolute level, that does the confounding</span>
+<span id="cb9-168"><a href="#cb9-168" aria-hidden="true" tabindex="-1"></a>adjustment.</span>
+<span id="cb9-169"><a href="#cb9-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-170"><a href="#cb9-170" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb9-171"><a href="#cb9-171" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical note</span></span>
+<span id="cb9-172"><a href="#cb9-172" aria-hidden="true" tabindex="-1"></a>Many studies do not provide cell proportions. In a real analysis you trust the method </span>
+<span id="cb9-173"><a href="#cb9-173" aria-hidden="true" tabindex="-1"></a>and **sanity-check the output**: neutrophils should dominate whole blood (~50–70%), </span>
+<span id="cb9-174"><a href="#cb9-174" aria-hidden="true" tabindex="-1"></a>proportions should sum to ~1, and the distribution should look biologically plausible. </span>
+<span id="cb9-175"><a href="#cb9-175" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-176"><a href="#cb9-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-177"><a href="#cb9-177" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. When you don&#39;t have IDATs: deconvolution from a processed matrix</span></span>
+<span id="cb9-178"><a href="#cb9-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-179"><a href="#cb9-179" aria-hidden="true" tabindex="-1"></a>Reference-based deconvolution normally wants the raw <span class="in">`RGChannelSet`</span>, so a</span>
+<span id="cb9-180"><a href="#cb9-180" aria-hidden="true" tabindex="-1"></a>β-matrix-only deposit is the harder case. Two routes:</span>
+<span id="cb9-181"><a href="#cb9-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-182"><a href="#cb9-182" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**`projectCellType` on a β-matrix.** The Houseman projection itself only needs</span>
+<span id="cb9-183"><a href="#cb9-183" aria-hidden="true" tabindex="-1"></a>   methylation *values* at the reference CpGs, not intensities. Pull the reference</span>
+<span id="cb9-184"><a href="#cb9-184" aria-hidden="true" tabindex="-1"></a>   β-values and its cell-type means, subset your matrix to the shared reference CpGs,</span>
+<span id="cb9-185"><a href="#cb9-185" aria-hidden="true" tabindex="-1"></a>   and run the constrained projection directly:</span>
+<span id="cb9-186"><a href="#cb9-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-187"><a href="#cb9-187" aria-hidden="true" tabindex="-1"></a>   <span class="in">```r</span></span>
+<span id="cb9-188"><a href="#cb9-188" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(FlowSorted.Blood.EPIC)</span>
+<span id="cb9-189"><a href="#cb9-189" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(genefilter)</span>
+<span id="cb9-190"><a href="#cb9-190" aria-hidden="true" tabindex="-1"></a>   <span class="co"># reference cell-type means at the IDOL CpGs (from the package)</span></span>
+<span id="cb9-191"><a href="#cb9-191" aria-hidden="true" tabindex="-1"></a>   ref <span class="ot">&lt;-</span> ...   <span class="co"># matrix: IDOL CpGs x 6 cell types</span></span>
+<span id="cb9-192"><a href="#cb9-192" aria-hidden="true" tabindex="-1"></a>   shared <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(beta), <span class="fu">rownames</span>(ref))</span>
+<span id="cb9-193"><a href="#cb9-193" aria-hidden="true" tabindex="-1"></a>   props  <span class="ot">&lt;-</span> minfi<span class="sc">:::</span><span class="fu">projectCellType</span>(beta[shared, ], ref[shared, ])</span>
+<span id="cb9-194"><a href="#cb9-194" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb9-195"><a href="#cb9-195" aria-hidden="true" tabindex="-1"></a>   The estimates are slightly noisier than the joint-normalization route because the</span>
+<span id="cb9-196"><a href="#cb9-196" aria-hidden="true" tabindex="-1"></a>   sample and reference weren&#39;t normalized together, but for a well-processed matrix</span>
+<span id="cb9-197"><a href="#cb9-197" aria-hidden="true" tabindex="-1"></a>   they are close.</span>
+<span id="cb9-198"><a href="#cb9-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-199"><a href="#cb9-199" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**`EpiDISH` (reference-based, matrix-native).** The <span class="in">`EpiDISH`</span> package</span>
+<span id="cb9-200"><a href="#cb9-200" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@teschendorff2017reference</span><span class="co">]</span> is designed to take a β-matrix plus a reference</span>
+<span id="cb9-201"><a href="#cb9-201" aria-hidden="true" tabindex="-1"></a>   centroid matrix and return proportions via robust partial correlation (RPC),</span>
+<span id="cb9-202"><a href="#cb9-202" aria-hidden="true" tabindex="-1"></a>   CIBERSORT, or constrained projection. It ships blood reference centroids and is</span>
+<span id="cb9-203"><a href="#cb9-203" aria-hidden="true" tabindex="-1"></a>   the most convenient option when you only have processed data:</span>
 <span id="cb9-204"><a href="#cb9-204" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-205"><a href="#cb9-205" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**`EpiDISH` (reference-based, matrix-native).** The <span class="in">`EpiDISH`</span> package</span>
-<span id="cb9-206"><a href="#cb9-206" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@teschendorff2017reference</span><span class="co">]</span> is designed to take a β-matrix plus a reference</span>
-<span id="cb9-207"><a href="#cb9-207" aria-hidden="true" tabindex="-1"></a>   centroid matrix and return proportions via robust partial correlation (RPC),</span>
-<span id="cb9-208"><a href="#cb9-208" aria-hidden="true" tabindex="-1"></a>   CIBERSORT, or constrained projection. It ships blood reference centroids and is</span>
-<span id="cb9-209"><a href="#cb9-209" aria-hidden="true" tabindex="-1"></a>   the most convenient option when you only have processed data:</span>
-<span id="cb9-210"><a href="#cb9-210" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-211"><a href="#cb9-211" aria-hidden="true" tabindex="-1"></a>   <span class="in">```r</span></span>
-<span id="cb9-212"><a href="#cb9-212" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(EpiDISH)</span>
-<span id="cb9-213"><a href="#cb9-213" aria-hidden="true" tabindex="-1"></a>   <span class="fu">data</span>(centDHSbloodDMC.m)                     <span class="co"># blood reference centroids</span></span>
-<span id="cb9-214"><a href="#cb9-214" aria-hidden="true" tabindex="-1"></a>   out <span class="ot">&lt;-</span> <span class="fu">epidish</span>(beta, <span class="at">ref.m =</span> centDHSbloodDMC.m, <span class="at">method =</span> <span class="st">&quot;RPC&quot;</span>)</span>
-<span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a>   props <span class="ot">&lt;-</span> out<span class="sc">$</span>estF</span>
-<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reference-free alternatives</span></span>
-<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a>When no suitable reference exists (unusual tissues, or you worry the reference</span>
-<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a>doesn&#39;t match your population), **reference-free** methods estimate latent</span>
-<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>composition-like components directly from the data: RefFreeEWAS</span>
-<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@houseman2014reffree</span><span class="co">]</span>, SVA <span class="co">[</span><span class="ot">@leek2012sva</span><span class="co">]</span>, and RUV. These are covered in</span>
-<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span>; the trade-off is that the recovered</span>
-<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a>components are not labeled cell types, only surrogate variables to adjust for.</span>
-<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-205"><a href="#cb9-205" aria-hidden="true" tabindex="-1"></a>   <span class="in">```r</span></span>
+<span id="cb9-206"><a href="#cb9-206" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(EpiDISH)</span>
+<span id="cb9-207"><a href="#cb9-207" aria-hidden="true" tabindex="-1"></a>   <span class="fu">data</span>(centDHSbloodDMC.m)                     <span class="co"># blood reference centroids</span></span>
+<span id="cb9-208"><a href="#cb9-208" aria-hidden="true" tabindex="-1"></a>   out <span class="ot">&lt;-</span> <span class="fu">epidish</span>(beta, <span class="at">ref.m =</span> centDHSbloodDMC.m, <span class="at">method =</span> <span class="st">&quot;RPC&quot;</span>)</span>
+<span id="cb9-209"><a href="#cb9-209" aria-hidden="true" tabindex="-1"></a>   props <span class="ot">&lt;-</span> out<span class="sc">$</span>estF</span>
+<span id="cb9-210"><a href="#cb9-210" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb9-211"><a href="#cb9-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-212"><a href="#cb9-212" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb9-213"><a href="#cb9-213" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reference-free alternatives</span></span>
+<span id="cb9-214"><a href="#cb9-214" aria-hidden="true" tabindex="-1"></a>When no suitable reference exists (unusual tissues, or you worry the reference</span>
+<span id="cb9-215"><a href="#cb9-215" aria-hidden="true" tabindex="-1"></a>doesn&#39;t match your population), **reference-free** methods estimate latent</span>
+<span id="cb9-216"><a href="#cb9-216" aria-hidden="true" tabindex="-1"></a>composition-like components directly from the data: RefFreeEWAS</span>
+<span id="cb9-217"><a href="#cb9-217" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@houseman2014reffree</span><span class="co">]</span>, SVA <span class="co">[</span><span class="ot">@leek2012sva</span><span class="co">]</span>, and RUV. These are covered in</span>
+<span id="cb9-218"><a href="#cb9-218" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span>; the trade-off is that the recovered</span>
+<span id="cb9-219"><a href="#cb9-219" aria-hidden="true" tabindex="-1"></a>components are not labeled cell types, only surrogate variables to adjust for.</span>
+<span id="cb9-220"><a href="#cb9-220" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb9-221"><a href="#cb9-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-222"><a href="#cb9-222" aria-hidden="true" tabindex="-1"></a>We carry the estimated proportions forward as EWAS covariates:</span>
+<span id="cb9-223"><a href="#cb9-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-224"><a href="#cb9-224" aria-hidden="true" tabindex="-1"></a><span class="in">```r</span></span>
+<span id="cb9-225"><a href="#cb9-225" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(props, <span class="fu">data_path</span>(<span class="st">&quot;04_cellcounts.rds&quot;</span>))</span>
+<span id="cb9-226"><a href="#cb9-226" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb9-227"><a href="#cb9-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a>We carry the estimated proportions forward as EWAS covariates:</span>
-<span id="cb9-229"><a href="#cb9-229" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a><span class="in">```r</span></span>
-<span id="cb9-231"><a href="#cb9-231" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(props, <span class="fu">data_path</span>(<span class="st">&quot;04_cellcounts.rds&quot;</span>))</span>
-<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb9-228"><a href="#cb9-228" aria-hidden="true" tabindex="-1"></a>Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not</span>
+<span id="cb9-229"><a href="#cb9-229" aria-hidden="true" tabindex="-1"></a>use the exposure, so there is no reason to restrict it to the modeled subset here —</span>
+<span id="cb9-230"><a href="#cb9-230" aria-hidden="true" tabindex="-1"></a>the nine samples with no recorded PTSD status</span>
+<span id="cb9-231"><a href="#cb9-231" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 01</span><span class="co">](01_qc.qmd)</span>) drop out later, when the exposure enters the model, leaving</span>
+<span id="cb9-232"><a href="#cb9-232" aria-hidden="true" tabindex="-1"></a>n = 87 for the EWAS.</span>
 <span id="cb9-233"><a href="#cb9-233" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-234"><a href="#cb9-234" aria-hidden="true" tabindex="-1"></a>---</span>
 <span id="cb9-235"><a href="#cb9-235" aria-hidden="true" tabindex="-1"></a></span>

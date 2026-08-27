@@ -13,7 +13,7 @@ masking remains available where it is more appropriate.
 The `.cm` file is not in `zhou-lab/InfiniumAnnotationData` (which I searched first,
 and which carries only `EPIC.hg38.mask.tsv.gz`). It lives in
 `zhou-lab/InfiniumAnnotation` at `EPIC/EPIC.hg38.mask.cm`, and is fetched by YAME
-itself. The YAME catalogue labels that directory **v8.1**, confirming the version
+itself. The YAME catalog labels that directory **v8.1**, confirming the version
 named in the revised prose.
 
 The `.cm` is a bit-packed CX-format file: 24 mask terms over the full
@@ -135,7 +135,7 @@ should be excluded from the EWAS."
 Rationale: SVA estimates surrogate variables from variation *not* explained by
 the supplied model. Placing the proxy in both `mod` and `mod0` protects it, so
 SVA no longer reconstructs smoking as a surrogate variable and the SVs represent
-only residual unmeasured variation. Smoking becomes an explicitly modelled
+only residual unmeasured variation. Smoking becomes an explicitly modeled
 covariate rather than something hoped to be captured.
 
 ### Panel CpGs are excluded from the tested set
@@ -215,7 +215,7 @@ Only slides s6 (6F/1M) and s11 (3F/5M) carry both sexes.
 ### Pooling s6 + s11 was tested and REJECTED
 The singleton male on s6 raised the question of merging s6 with s11. Testable,
 because 9 females span both slides. Over the 30,000 most variable probes,
-probe-centred slide centroid distances within females:
+probe-centered slide centroid distances within females:
   s6 vs s11 = 152.2 -- rank 21 of 21 pairs, i.e. the MOST dissimilar pair
   s7 vs s8  =  72.9 (typical pair, permutation p = 0.59)
   median female pair ~ 90
@@ -230,7 +230,7 @@ sample ("Note: one batch has only one sample, setting mean.only=TRUE"). Left
 implicit, the male arm would receive a mean-only correction and the female arm a
 mean-and-variance correction -- an undocumented asymmetry between strata. Set
 explicitly for both so the two arms are treated identically. Slide differences
-are thereby modelled as location shifts, which is the defensible component at
+are thereby modeled as location shifts, which is the defensible component at
 these batch sizes. No samples dropped; n stays 87 (45 F / 42 M).
 
 ### Array position: fixed covariate in the model, NOT a second ComBat pass
@@ -302,7 +302,7 @@ estimable as a fixed effect: 12 samples share R01C01, 12 share R02C01, etc.
 Coding well identity instead would give 96 levels for 96 samples and zero
 residual df.
 
-Plate is NOT modelled because this dataset is a single plate. In a multi-plate
+Plate is NOT modeled because this dataset is a single plate. In a multi-plate
 study plate would be a leading ComBat candidate, being the coarsest processing
 batch. This is stated in the tutorial so students do not copy a single-plate
 design into a multi-plate study unchanged.
@@ -317,7 +317,7 @@ it. Two reasons pve is the wrong metric here:
 
 1. The 17.1% figure is a share of the **residual** variance — what remains after
    `ptsd + sex + age + smoke + position + 6 cell proportions`. 17% of the leftover
-   is not a small structure to leave unmodelled.
+   is not a small structure to leave unmodeled.
 2. A component can explain little variance and still bias a coefficient. What
    matters is whether it correlates with the exposure, not how much variance it
    carries.
@@ -340,7 +340,7 @@ cor(t) = 0.931; cor(-log10 p) = 0.857; top-20 overlap = 6/20; median |dt| = 0.23
 
 **Findings.**
 
-- **Dropping the SVs deflates the statistics to lambda = 0.846.** Unmodelled
+- **Dropping the SVs deflates the statistics to lambda = 0.846.** Unmodeled
   between-sample structure stays in the residual, inflates s^2, and shrinks every
   t-statistic toward zero. The chapter's own prose warns students that lambda << 1
   signals over-correction or underpowering; shipping a design that does this would

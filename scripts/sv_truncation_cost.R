@@ -55,16 +55,16 @@ long <- melt(res, id.vars = c("ordering","k"),
 long[, axis := factor(axis, levels = c("tech_pct","smk_pct"),
                       labels = c("technical (chip / array position)","smoking proxy"))]
 
-pa <- ggplot(long, aes(k, pct, colour = ordering)) +
-  geom_hline(yintercept = 80, linetype = 3, colour = "grey50") +
+pa <- ggplot(long, aes(k, pct, color = ordering)) +
+  geom_hline(yintercept = 80, linetype = 3, color = "gray50") +
   geom_line(linewidth = 0.7) + geom_point(size = 1.5) +
   facet_wrap(~ axis) +
-  scale_colour_manual(values = c(`SV index` = "grey55",
+  scale_color_manual(values = c(`SV index` = "gray55",
                                  `technical R2` = "#C44E52",
                                  `combined rank` = "#4C72B0")) +
   scale_x_continuous(breaks = seq(0, 15, 3)) +
   labs(x = "number of SVs retained (k)", y = "% of nuisance signal retained",
-       colour = "SVs added in order of",
+       color = "SVs added in order of",
        title = "A. Truncating the SV set trades away smoking adjustment faster than technical adjustment",
        subtitle = "Ranking on technical association alone (red, right panel) discards the SVs carrying smoking signal") +
   theme_minimal(base_size = 10) + theme(legend.position = "bottom")

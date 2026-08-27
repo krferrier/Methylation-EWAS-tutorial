@@ -33,7 +33,7 @@ in dedicated methods papers:
 **Cross-reactive / non-specific probes.** A 50-mer probe sequence is not
 guaranteed to be unique in the genome. Some probes hybridize to multiple loci, so
 their signal is a blend from several genomic locations. Chen et al.
-[@chen2013crossreactive] catalogued cross-reactive probes on the 450K; McCartney
+[@chen2013crossreactive] cataloged cross-reactive probes on the 450K; McCartney
 et al. [@mccartney2016identification] extended this to the EPIC array. Zhou's
 `MASK_mapping` flag captures probes that do not map uniquely.
 
@@ -55,13 +55,13 @@ cohort or don't know the ancestry of your cohort, then the general population ma
 **Repetitive / structurally masked probes.** Probes overlapping RepeatMasker
 regions, copy-number-variable segments, or requiring an extension-base substitution
 have also been flagged historically — as `MASK_rmsk15`, `MASK_sub25_copy` and
-`MASK_typeINextBaseSwitch` in the archived manifest. Be aware that the current v8.1
-mask retains only the extension-base category (as `M_1baseSwitchSNP_*`) and drops the
-repeat and copy-number terms entirely; see the note in §2.
+`MASK_typeINextBaseSwitch` in the legacy manifest files from Zhou's annotation database. The current v8.1
+mask retains only the extension-base category (as `M_1baseSwitchSNP_*`), and the
+repeat and copy-number terms are now handled by the `MASK_mapping` criteria (based on a
+mapping quality score).
 
-The latest CpG masking recommendations from Zhou (`EPIC.hg38.mask.cm`, v8.1) are
-distributed as **24 separate mask terms**, each a one-bit-per-probe track, rather
-than as one wide table of boolean columns. One of those terms is `M_general`, which
+The latest CpG masking recommendations from Zhou (`EPIC.hg38.mask.cm`, v8.1) include
+24 separate mask terms. One of those terms is `M_general`, which
 combines the recommended masking for probes with problematic mapping (the probes
 that should be masked independent of population) with CpGs within 5bp of common SNPs
 (MAF ≥ 5%) for the general population. If you do have a specific population, the
@@ -71,8 +71,7 @@ uses MAF ≥ 1% — which is what the `_1pt` suffix on those term names records.
 
 The terms are compositional: rather than a single pre-baked per-population column,
 you select the mapping terms plus the SNP terms for each ancestry you need and take
-their union. That is what makes the admixed case in §3 expressible at all. The full
-set of 24 for EPIC is:
+their union. The full set of 24 terms for EPIC is:
 
 - **mapping / specificity** — `M_mapping`, `M_nonuniq`
 - **SNP at the interrogated CpG**, per population — `M_SNP_{AFR,EUR,EAS,SAS,AMR}_1pt`,
@@ -80,17 +79,6 @@ set of 24 for EPIC is:
 - **SNP at the extension base** — `M_2extBase_SNP_*` (same population suffixes)
 - **Type I extension-base switch** — `M_1baseSwitchSNP_*`
 - **the recommended general default** — `M_general`
-
-::: {.callout-warning}
-## v8.1 does not mask repeats or copy-number regions
-The legacy manifest's `MASK_general_<POP>` bundled `MASK_rmsk15` (RepeatMasker),
-`MASK_sub25_copy` (copy-number-variable segments) and `MASK_typeINextBaseSwitch`
-together with the mapping and SNP flags. **v8.1 has no repeat or copy-number term
-among its 24.** This is why the v8.1 mask is the *less* aggressive of the two on
-this cohort despite covering two ancestries — quantified at the end of this section.
-If excluding repeat-overlapping probes matters for your question, you need the
-archived manifest or a separate repeat annotation; it is not in `mask.cm`.
-:::
 
 If you need more specific sub-population masking, there is an archived version of the
 recommended population masking (`EPIC.hg38.manifest.pop.tsv.gz`) that includes the 5
@@ -130,7 +118,7 @@ yame summary EPIC.hg38.mask.cm   # how many probes each term flags
 yame unpack -a EPIC.hg38.mask.cm > mask_bits.tsv   # all 24 terms, one column each
 ```
 
-`yame summary` is the quickest way to see what a term costs you before you commit
+`yame summary` is the quickest way to see what a term includes you before you commit
 to it. Turning the bits into a probe list is then a row-wise OR across the columns
 you chose, indexed against the ordering:
 
@@ -174,11 +162,7 @@ cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
 ## 2. The categories, quantified on EPIC
 
 The SNP mask is **not the same for every study population**, because a "common
-SNP" depends on which population you ask about. Zhou's latest masking manifest 
-gives masking information for the general population as well as the five super-populations 
-from the 1000 Genomes project. The archived population manifest gives a
-`MASK_snp5_<POP>` (SNP within 5 bp) flag for each of 31 1000 Genomes populations (5 super-populations 
-and 26 sub-populations). The number of SNP-affected probes varies substantially by ancestry:
+SNP" depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:
 
 ```{r}
 #| label: pop-snp-table
@@ -194,8 +178,7 @@ knitr::kable(snp, row.names = FALSE,
 African-ancestry populations carry the most common genetic variation, so more
 probes overlap a common SNP. Concretely, in these masks
 **`r format(funl$snp_by_pop[["AFR"]], big.mark = ",")`** probes are SNP-flagged for
-AFR versus **`r format(funl$snp_by_pop[["EUR"]], big.mark = ",")`** for EUR, and the
-two lists are far from nested:
+AFR versus **`r format(funl$snp_by_pop[["EUR"]], big.mark = ",")`** for EUR:
 
 ```{r}
 #| label: afr-eur-overlap
@@ -206,8 +189,8 @@ cat("masked in EUR but NOT AFR:", length(setdiff(eur, afr)), "\n")
 cat("masked in both:           ", length(intersect(afr, eur)), "\n")
 ```
 
-This is the concrete argument for taking a union rather than picking one
-population's mask: neither list contains the other.
+While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each
+population.
 
 ## 3. Ancestry matters
 
@@ -245,7 +228,7 @@ cat("Probes kept by a EUR-only mask but dropped by the AFR + EUR union:",
 The union is what the code below applies, and it is the operational meaning of
 "include masking recommendations for both".
 
-So, if we are using the latest recommended masking file, the columns we would want 
+So, if we are using the latest recommended masking file (v8.1), the columns we would want
 to include in the masking would be `M_mapping`, `M_nonuniq`, `M_SNP_AFR_1pt`,`M_1baseSwitchSNP_AFR_1pt`,
 `M_2extBase_SNP_AFR_1pt`, `M_SNP_EUR_1pt`, `M_1baseSwitchSNP_EUR_1pt`, and `M_2extBase_SNP_EUR_1pt`. If 
 we were using the archived manifest population file, we would use the `MASK_general_AFR` and `MASK_snp5_EUR`.
@@ -286,16 +269,16 @@ of unknown ancestry, the general population mask is the most appropriate.
 :::
 
 ::: {.callout-note}
-## Probes you might filter for a different reason: smoking
+## Smoking-associated probes
 Everything above masks probes that are unreliable *by design*. There is a separate,
 optional reason to drop probes: smoking is one of the largest environmental drivers
 of blood methylation, and if your dataset has no smoking variable — as the Grady
 deposit does not — one of the available strategies is to exclude CpGs known from the
 literature to be smoking-associated, at this filtering stage rather than after the
 fact. That is a decision about confounding, not about probe quality, so it does not
-belong in the funnel above. This tutorial does not take that route; see
-[the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options
-and why surrogate variables are used here instead.
+belong in the funnel above. This tutorial does exclude smoking-associated CpGs, but
+at a later step as these probes are needed to create a proxy smoking variable. See
+[the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options.
 :::
 
 ## 4. Detection-p and sex-chromosome filtering
@@ -400,8 +383,7 @@ happen later, both in [chapter 05](05_batch_effects.qmd):
   87-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.
 
 So `r format(funl$retained, big.mark=",")` probes pass filtering and
-**756,251** are actually tested. There is no other subsetting downstream — in
-particular, no random subsampling: the EWAS runs on the whole matrix.
+**756,251** are actually tested.
 
 ---
 

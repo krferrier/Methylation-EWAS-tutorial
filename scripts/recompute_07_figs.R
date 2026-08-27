@@ -1,4 +1,4 @@
-## Regenerate chapter 07 artefacts from the v8.1 full-probe pipeline run.
+## Regenerate chapter 07 artifacts from the v8.1 full-probe pipeline run.
 suppressPackageStartupMessages({ library(data.table); library(ggplot2) })
 t0 <- Sys.time()
 D  <- "ewas_pipeline/run_grady"
@@ -50,8 +50,8 @@ qqdt <- function(p, lab) {
 }
 qm <- qqdt(m$P, "Meta (F+M)")
 pq <- ggplot(qm, aes(exp, obs)) +
-  geom_abline(slope = 1, intercept = 0, colour = "grey60", linetype = 2) +
-  geom_point(size = 0.5, colour = "#4C72B0", alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60", linetype = 2) +
+  geom_point(size = 0.5, color = "#4C72B0", alpha = 0.6) +
   labs(x = expression(Expected~-log[10](p)), y = expression(Observed~-log[10](p)),
        title = "Meta-analysis QQ (BACON-adjusted, inverse-variance)",
        subtitle = sprintf("%s CpGs, lambda = %.3f", format(nrow(m), big.mark = ","), lam(m$P))) +
@@ -70,11 +70,11 @@ ov <- rbindlist(lapply(list(
   thin(qm)), identity))
 ov[, analysis := factor(analysis, levels = c("Overall (n=87)", "Female (n=45)",
                                              "Male (n=42)", "Meta (F+M)"))]
-po <- ggplot(ov, aes(exp, obs, colour = analysis)) +
-  geom_abline(slope = 1, intercept = 0, colour = "grey60", linetype = 2) +
+po <- ggplot(ov, aes(exp, obs, color = analysis)) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60", linetype = 2) +
   geom_point(size = 0.5, alpha = 0.7) +
-  geom_hline(yintercept = -log10(0.05 / nrow(m)), colour = "#C44E52", linetype = 3) +
-  scale_colour_manual(values = c("Overall (n=87)" = "grey30", "Female (n=45)" = "#DD8452",
+  geom_hline(yintercept = -log10(0.05 / nrow(m)), color = "#C44E52", linetype = 3) +
+  scale_color_manual(values = c("Overall (n=87)" = "gray30", "Female (n=45)" = "#DD8452",
                                  "Male (n=42)" = "#4C72B0", "Meta (F+M)" = "#C44E52"),
                       name = NULL) +
   labs(x = expression(Expected~-log[10](p)), y = expression(Observed~-log[10](p)),
@@ -95,15 +95,15 @@ r_all <- cor(J$F_es, J$M_es)
 set.seed(42)
 bg <- J[sig == FALSE][sample(.N, min(60000, .N))]
 pc <- ggplot() +
-  geom_hline(yintercept = 0, colour = "grey80") + geom_vline(xintercept = 0, colour = "grey80") +
-  geom_point(data = bg, aes(F_es, M_es), colour = "grey75", size = 0.3, alpha = 0.4) +
-  geom_point(data = J[sig == TRUE], aes(F_es, M_es, colour = Direction), size = 2.6) +
-  scale_colour_manual(values = c(`++` = "#C44E52", `--` = "#4C72B0",
+  geom_hline(yintercept = 0, color = "gray80") + geom_vline(xintercept = 0, color = "gray80") +
+  geom_point(data = bg, aes(F_es, M_es), color = "gray75", size = 0.3, alpha = 0.4) +
+  geom_point(data = J[sig == TRUE], aes(F_es, M_es, color = Direction), size = 2.6) +
+  scale_color_manual(values = c(`++` = "#C44E52", `--` = "#4C72B0",
                                  `+-` = "#DD8452", `-+` = "#8172B3"), name = "Direction") +
   labs(x = "Female stratum effect (BACON-adjusted)",
        y = "Male stratum effect (BACON-adjusted)",
        title = "Per-CpG PTSD effect sizes, female vs male",
-       subtitle = sprintf("Pearson r = %.3f genome-wide; coloured = %d Bonferroni meta hits",
+       subtitle = sprintf("Pearson r = %.3f genome-wide; colored = %d Bonferroni meta hits",
                           r_all, nrow(hits))) +
   theme_minimal(base_size = 11)
 ggsave(file.path(out, "07_effect_concordance.png"), plot = pc, width = 6.5, height = 5.5, dpi = 200)
