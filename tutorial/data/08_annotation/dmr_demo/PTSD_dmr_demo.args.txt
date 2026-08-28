@@ -1,4 +1,0 @@
---seed 1e-8 --dist 200 --region-filter-p 0.05 -p data/08_annotation/dmr_demo/PTSD_dmr_demo data/08_annotation/PTSD_ewas_annotated_results.bed
-
-date: 2026-08-26 13:59:13.683369
-version: 0.50.6

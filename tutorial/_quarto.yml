@@ -39,7 +39,9 @@ website:
 
 format:
   html:
-    theme: cosmo
+    theme:
+      - cosmo
+      - theme.scss
     toc: true
     toc-depth: 3
     code-fold: show
@@ -48,6 +50,7 @@ format:
     fig-width: 8
     fig-height: 5
     embed-resources: true
+    fig-dpi: 200
 
 bibliography: references.bib
 link-citations: true

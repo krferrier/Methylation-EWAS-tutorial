@@ -5,20 +5,19 @@
 #   ./get_data.sh F_ewas_results H_annotation
 #   ./get_data.sh all               # everything (~4.1 GB)
 #
-# Set ZENODO_DOI once the record is published, or export it in your shell.
+# The record id below is the published one; override it by exporting ZENODO_RECORD
+# (e.g. to pin an older version of the data).
+#   Concept DOI (always newest): 10.5281/zenodo.22135215
+#   This version:                10.5281/zenodo.22135216
 set -euo pipefail
 
-ZENODO_RECORD="${ZENODO_RECORD:-REPLACE_WITH_RECORD_ID}"
+ZENODO_RECORD="${ZENODO_RECORD:-22135216}"
 BASE="https://zenodo.org/records/${ZENODO_RECORD}/files"
 ALL_TIERS=(B_qc C_normalized D_filtered E_model_inputs F_ewas_results G_pipeline_run H_annotation)
 
 usage() { printf 'tiers: %s\n' "${ALL_TIERS[*]}"; exit 1; }
 [ $# -ge 1 ] || usage
 if [ "$1" = "all" ]; then want=("${ALL_TIERS[@]}"); else want=("$@"); fi
-
-if [ "$ZENODO_RECORD" = "REPLACE_WITH_RECORD_ID" ]; then
-  echo "ERROR: set ZENODO_RECORD to the numeric Zenodo record id first." >&2; exit 2
-fi
 
 for t in "${want[@]}"; do
   case " ${ALL_TIERS[*]} " in *" $t "*) ;; *) echo "unknown tier: $t" >&2; usage ;; esac

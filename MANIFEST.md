@@ -2,6 +2,12 @@
 
 Every file in the seven Zenodo tarballs, with its size and the tier's SHA-256 checksum. Paths inside the tarballs are relative to the repository root, with `repo/` rewritten to `tutorial/`, so extracting from the repo root puts each file where the `.qmd` documents expect it.
 
+The published record is **https://doi.org/10.5281/zenodo.22135215** (concept DOI, always the newest
+version; this build is record `22135216`, version DOI `10.5281/zenodo.22135216`). The
+SHA-256 checksums below are what `get_data.sh` verifies after download; the record
+page additionally lists Zenodo's own MD5 for each file.
+
+
 ### Tier `B_qc`
 
 `ewas-tutorial-data-B_qc.tar.gz` — 587 MB compressed  
@@ -75,9 +81,9 @@ Every file in the seven Zenodo tarballs, with its size and the tier's SHA-256 ch
 | `ewas_pipeline/run_grady/meta_analysis/PTSD_metal_commands.txt` | 774 |
 ### Tier `H_annotation`
 
-`ewas-tutorial-data-H_annotation.tar.gz` — 305 MB compressed  
+`ewas-tutorial-data-H_annotation.tar.gz` — 306 MB compressed  
 **Resume point:** ch08 — Zhou manifests plus annotated results and comb-p output  
-`sha256 d82cda05e7f4be344496c778614bab09f6a5b5da70dcffe13c4a1ef9b0ca218b`
+`sha256 d23a810f60b791e582fd8a952ec907fcd9e8dedb37847b3abe1d689a2d02a8cf`
 
 | file | bytes |
 |---|---:|
@@ -88,7 +94,7 @@ Every file in the seven Zenodo tarballs, with its size and the tier's SHA-256 ch
 | `repo/data/08_annotation/PTSD_ewas_annotated_results.bed` | 39,982,171 |
 | `repo/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz` | 83,052,368 |
 | `repo/data/08_annotation/bios_eqtm_hgnc_annotated.tsv` | 9,130,455 |
-| `repo/data/08_annotation/08_dmr_combp_outputs.tar.gz` | 34,346,704 |
+| `repo/data/08_annotation/08_dmr_combp_outputs.tar.gz` | 35,916,056 |
 
 ## Deliberately not distributed
 

@@ -39,8 +39,8 @@ det <- data.frame(sample = names(qcp$det_mean),
                   frac_fail = qcp$det_fail,
                   slide = ss$slide)
 ggplot(det, aes(x = reorder(sample, mean_detP), y = mean_detP)) +
-  geom_point(color = "#4C72B0", size = 1.6) +
-  geom_hline(yintercept = 0.01, linetype = "dashed", color = "#C44E52") +
+  geom_point(color = ewas_col[["teal"]], size = 1.6) +
+  geom_hline(yintercept = 0.01, linetype = "dashed", color = ewas_col[["plum"]]) +
   labs(x = "sample (ranked)", y = "mean detection p-value",
        title = "Detection p-value per sample") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
@@ -74,7 +74,7 @@ qc$flag <- ((qc$mMed + qc$uMed) / 2) < 10.5
 ggplot(qc, aes(mMed, uMed, color = flag)) +
   geom_point(size = 2) +
   geom_abline(intercept = 2 * 10.5, slope = -1, linetype = "dashed", color = "gray40") +
-  scale_color_manual(values = c(`FALSE` = "#4C72B0", `TRUE` = "#C44E52"),
+  scale_color_manual(values = c(`FALSE` = ewas_col[["teal"]], `TRUE` = ewas_col[["plum"]]),
                      labels = c("pass", "low signal"), name = NULL) +
   labs(x = "median methylated log2 int (mMed)",
        y = "median unmethylated log2 int (uMed)",
@@ -105,7 +105,7 @@ sx <- data.frame(xMed = qcp$psex$xMed, yMed = qcp$psex$yMed,
 sx$mismatch <- sx$predicted != sx$reported
 ggplot(sx, aes(xMed, yMed, color = reported, shape = mismatch)) +
   geom_point(size = 2.5) +
-  scale_color_manual(values = c(F = "#DD8452", M = "#4C72B0"), name = "reported") +
+  scale_color_manual(values = c(F = ewas_col[["sand"]], M = ewas_col[["teal"]]), name = "reported") +
   scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 4), guide = "none") +
   labs(x = "median X log2 int", y = "median Y log2 int",
        title = "Predicted vs reported sex")
@@ -133,7 +133,7 @@ snps <- qcp$snps
 # cluster samples by SNP fingerprint
 d <- dist(t(snps))
 ord <- hclust(d)$order
-image(t(snps[, ord]), col = colorRampPalette(c("#4C72B0","white","#C44E52"))(64),
+image(t(snps[, ord]), col = colorRampPalette(c(ewas_col[["teal"]],"white",ewas_col[["plum"]]))(64),
       axes = FALSE, main = "rs SNP-probe fingerprints (samples clustered)")
 box()
 ```

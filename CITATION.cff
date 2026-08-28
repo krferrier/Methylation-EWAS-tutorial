@@ -5,6 +5,8 @@ type: software
 authors:
   - family-names: Ferrier
     given-names: Kendra
+    affiliation: "University of Colorado Anschutz Medical Campus"
+    orcid: "https://orcid.org/0000-0002-8813-6871"
 repository-code: "https://github.com/krferrier/Methylation-EWAS-tutorial"
 url: "https://krferrier.github.io/Methylation-EWAS-tutorial/"
 keywords:
@@ -14,3 +16,20 @@ keywords:
   - epigenomics
   - reproducible research
 license: MIT
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22135215"
+    description: "Concept DOI for the checkpoint data (always the newest version)"
+  - type: doi
+    value: "10.5281/zenodo.22135216"
+    description: "Version DOI for the checkpoint data used to build this tutorial"
+references:
+  - type: data
+    title: "EWAS tutorial (GSE132203, Zhou EPIC mask.cm v8.1): checkpoint data"
+    authors:
+      - family-names: Ferrier
+        given-names: Kendra
+    doi: "10.5281/zenodo.22135215"
+    year: 2026
+    publisher:
+      name: Zenodo

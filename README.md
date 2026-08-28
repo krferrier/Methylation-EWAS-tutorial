@@ -8,6 +8,8 @@ annotation of the results.
 
 **Rendered tutorial:** https://krferrier.github.io/Methylation-EWAS-tutorial/
 
+**Data:** [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22135215.svg)](https://doi.org/10.5281/zenodo.22135215)
+
 ## The dataset
 
 Grady Trauma Project, NCBI GEO accession **GSE132203** — whole-blood EPIC methylation
@@ -73,12 +75,11 @@ the chapter you want to start from, and every later chapter will run.
 | `E_model_inputs` | 511 MB | **ch06** | cell proportions, ComBat M-values, SVA fit (k = 6), batch PCA |
 | `F_ewas_results` | 117 MB | **ch07** | limma top table, BACON summary, corrected top table |
 | `G_pipeline_run` | 220 MB | **ch07 figures** | Snakemake pipeline outputs: combined arm, F/M strata, METAL meta-analysis |
-| `H_annotation` | 305 MB | **ch08** | Zhou gencode v36/v41 manifests, annotated results, comb-p output |
+| `H_annotation` | 306 MB | **ch08** | Zhou gencode v36/v41 manifests, annotated results, comb-p output |
 
 ```bash
 git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
 cd Methylation-EWAS-tutorial
-export ZENODO_RECORD=<numeric record id from the DOI badge>
 
 ./get_data.sh F_ewas_results H_annotation   # enough to run ch07 and ch08
 ./get_data.sh all                           # everything, ~4.1 GB
@@ -110,8 +111,14 @@ outputs so the chapter renders without recomputing.
 
 ## Citing
 
-Please cite both the tutorial repository and the Zenodo data record. The Zenodo DOI
-resolves to the concept record, so it always points at the newest version of the data.
+Please cite both the tutorial repository and the Zenodo data record.
+
+- Tutorial (code and prose): this repository — see `CITATION.cff`.
+- Checkpoint data: **https://doi.org/10.5281/zenodo.22135215**
+
+That is the *concept* DOI: it always resolves to the newest version of the data. To
+cite the exact files this tutorial was built from, use the version DOI
+https://doi.org/10.5281/zenodo.22135216 (record `22135216`).
 
 ## License
 

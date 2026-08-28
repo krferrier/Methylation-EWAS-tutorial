@@ -4,7 +4,9 @@
   "description": "Intermediate checkpoint data for the eleven-chapter Quarto EWAS tutorial at https://github.com/krferrier/Methylation-EWAS-tutorial. Derived from NCBI GEO GSE132203 (Grady Trauma Project, Illumina EPIC whole-blood methylation), subset to n=87 (32 PTSD cases, 55 controls). Probe filtering uses the Zhou EPIC mask.cm v8.1 recommended mask (YAME v1.40); 756,251 CpGs are tested. Files are grouped into seven tarballs, each a resume point for a chapter of the tutorial, so users can download only what they need. See MANIFEST.md in the repository for a per-file listing and checksums.",
   "creators": [
     {
-      "name": "Ferrier, Kendra"
+      "name": "Ferrier, Kendra",
+      "affiliation": "University of Colorado Anschutz Medical Campus",
+      "orcid": "0000-0002-8813-6871"
     }
   ],
   "keywords": [

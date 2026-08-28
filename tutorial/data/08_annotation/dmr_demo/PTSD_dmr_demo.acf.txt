@@ -1,3 +1,0 @@
-#lag_min	lag_max	correlation	N	p
-1	71	0.0527	202084	2.953e-124
-wrote: data/08_annotation/dmr_demo/PTSD_dmr_demo.acf.txt

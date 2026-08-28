@@ -458,7 +458,7 @@ documented above.
 
 ```{r}
 #| label: sva-bars
-#| fig-cap: "Association (R²) of each surrogate variable with chip (technical, red) and PTSD (biological exposure, blue). The SVs capture chip structure strongly — the strongest chip-linked SV reaches R² ≈ 0.9 — while remaining almost uncorrelated with PTSD. This is SVA working as intended: it absorbs unwanted technical variation without touching the signal we want to test."
+#| fig-cap: "Association (R²) of each surrogate variable with chip (technical), sex (biological), and PTSD (the exposure). The SVs carry the chip structure — SV5 reaches R² = 0.64 — and the sex signal entangled with it, while every SV stays near-orthogonal to PTSD (largest R² = 0.04). This is SVA working as intended: it absorbs unwanted technical variation without touching the signal we want to test."
 #| echo: false
 knitr::include_graphics(data_path("05_sva_bars.png"))
 ```

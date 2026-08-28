@@ -500,3 +500,201 @@ Thirteen references across `README.md`, `CITATION.cff`, `PUBLISHING.md` and
 Zenodo description and related-identifier URLs. The Pages URL is
 `https://krferrier.github.io/Methylation-EWAS-tutorial/`. Note that the on-disk
 staging directory retains its original name; only the references were renamed.
+
+## 19. Site theme, figure restyle, and the ch08 DMR reconciliation
+
+This section covers the final presentation pass and the last set of numbers that
+moved. It is the only pass in which published *figures* changed; the underlying
+analysis was already frozen and no model was re-fit.
+
+### A compiled theme replaces the bare Bootstrap preset
+
+`tutorial/_quarto.yml` previously set `theme: cosmo`. It now sets a two-element
+theme stack, `[cosmo, theme.scss]`, so the site is Cosmo with a compiled SCSS
+layer on top, and adds `fig-dpi: 200` so raster figures embed at the same
+resolution the restyle script writes them at.
+
+`tutorial/theme.scss` is new (326 lines, 8,545 bytes). It defines a *Scholarly
+teal + warm gray* palette, sets `$font-family-sans-serif` to Source Sans 3,
+`$font-family-serif` to Source Serif 4 (also used for headings via
+`$headings-font-family`), and `$font-family-monospace` to JetBrains Mono, each
+with a full platform fallback chain. A `@font-face` loop at line 100 emits
+`src: url("assets/fonts/#{$file}.woff2") format("woff2")` for every face.
+
+### Fonts are self-hosted, not fetched from Google
+
+`tutorial/assets/fonts/` is new and carries nine woff2 faces (Source Sans 3
+Regular/Italic/Semibold/Bold, Source Serif 4 Regular/Semibold/Bold, JetBrains
+Mono Regular/Bold). Quarto copies them into the rendered site, and all eleven
+pages in `docs/` were verified to carry two `@font-face` rules and to reference
+only local asset paths — no page loads a webfont from a third party.
+
+`tutorial/assets/fonts/otf/` additionally ships four OTF sources
+(SourceSans3 Regular/Italic/Semibold/SemiboldItalic, 1.15 MB). These are *not*
+redundant with the woff2: the browser consumes woff2, while `_setup.R` registers
+the OTF files with `systemfonts` (lines 43-61) so that R figure text in a fresh
+clone renders in the same typeface as the surrounding page. If registration
+fails — no `systemfonts`, or a version too old — `.ewas_family` falls back to
+`""` and plots use the device default rather than erroring. The whole assets tree
+is 2.2 MB and is tracked; `.gitignore` deliberately does not exclude it, because
+a clone without the fonts renders in the wrong typeface with no warning.
+
+### Palette literals removed from chunk bodies
+
+`_setup.R` now exports a named palette and a theme:
+
+- `ewas_col` — `teal_dark #0F3D43`, `teal #1A6B75`, `teal_light #2A8F9B`,
+  `sand #B8873F`, `plum #8C3A4A`, `gray_dark #3A362F`, `gray #6E675B`,
+  `gray_light #B5AFA4`
+- `pheno_pal` — `Control`/`Male`/`neg` on teal, `Case`/`pos` on plum,
+  `Female` on sand
+- `theme_ewas()`, installed globally at line 96 via `theme_set(theme_ewas())`
+
+Thirteen hard-coded seaborn hexes were replaced with palette lookups across three
+chapters: **eight** in `01_qc.qmd` (detection-p scatter, intensity scatter, sex
+scatter, SNP-fingerprint colour ramp), **three** in `02_normalization.qmd`
+(Type I/II density facets, β→M transform curve), **two** in
+`03_probe_filtering.qmd` (ancestry-mask contrast bars). `"#4C72B0"` became
+`ewas_col[["teal"]]`, `"#C44E52"` became `ewas_col[["plum"]]`, `"#DD8452"`
+became `ewas_col[["sand"]]`. The only hex literal remaining in any `.qmd` is
+`00b_dataset_catalog.qmd:80`, `styleEqual("GSE132203", "#FFF3CD")` — an
+intentional highlight in a DT table, not a plot colour.
+
+All fifteen referenced PNGs were regenerated through a single script,
+`scripts/restyle_figs.R` (541 lines, 30,659 bytes), rather than by re-running
+chapter chunks; that keeps the figure pass independent of the analysis
+checkpoints. Every regenerated figure was inspected before acceptance. Two
+figures needed layout work beyond the palette swap: the SVA bar panel and the
+DMR locus panel, the latter accepted only at the fourth iteration with
+`plot.margin = margin(5.5, 22, 5.5, 5.5)` and `breaks_width(50)` on the
+coordinate axis. The four `bacon` diagnostic panels are JPGs written by
+`bacon`'s own plotting methods and were deliberately left un-restyled.
+
+### `index.qmd`: two removals
+
+The dataset-rationale table lost its "Deposited epigenetic-age acceleration"
+row, and the "One dataset, on purpose" callout was removed entirely. The
+tutorial never validates an epigenetic clock, so advertising the answer key for
+one promised a section that does not exist.
+
+### The ch08 DMR numbers were wrong and are now reconciled
+
+This is the substantive correction in this pass. The chapter had been describing
+a stale comb-p run (`data/08_annotation/dmr_demo/`) while the v8.1 rebuild wrote
+its output to `data/08_annotation/dmr/`. The stale directory has been deleted,
+`run_combp.sh` was patched to point at the authoritative path, and the demo
+command in the chapter now reads `-p data/08_annotation/dmr/PTSD_dmr_demo`.
+
+Numbers that moved, all from the stale run to the v8.1 run:
+
+| quantity | was | now |
+|---|---|---|
+| Šidák region p | 1.8 × 10⁻⁹ | **1.2 × 10⁻¹⁰** |
+| best raw BACON p among the six CpGs | 1.5 × 10⁻⁴ | **1.7 × 10⁻⁵** |
+| per-CpG −log₁₀ p range | 3.3 – 3.8 | **2.8 – 4.8** |
+
+The Šidák value appears in three places — the region table, the `fig-dmr`
+caption, and the chapter summary — and all three were updated. The region itself
+is unchanged: `chr6:28,633,534–28,633,601`, 67 bp, 6 CpGs, all
+`Promoter`/`N_Shore`, `genesUniq = ENSG00000271440;ENSG00000287279`, all
+hypomethylated.
+
+Two column headers were also wrong. The region table's second data column was
+labelled "min single-CpG p" but holds the best raw BACON p *within the region*,
+not the minimum over all CpGs; it is now labelled accordingly. And the
+`dmr_cpg_display.csv` table caption now states the Δβ range explicitly
+(**−3.5 to −5.6 percentage points**, all in the same direction) instead of
+gesturing at "negative effect on the β-scale". Both CSVs behind those tables
+were regenerated: `dmr_cpg_display.csv` (6 rows, 409 bytes) and
+`dmr_cpg_annotation.csv` (7 rows, 650 bytes).
+
+### `min_p` semantics corrected
+
+The chapter previously said comb-p's `min_p` is "the Stouffer–Liptak–Kechris–
+smoothed p-value". That is half right and misleading in the half that matters:
+`min_p` is the smallest SLK-smoothed **FDR-corrected regional q** among the
+region's CpGs. The raw SLK p at those same CpGs goes down to 6.0 × 10⁻¹⁹, so the
+text now distinguishes the two — regional p 6.0 × 10⁻¹⁹ *before* FDR correction,
+q 2.3 × 10⁻¹³ *after* — in both the sentence about the strongest local cluster
+and the dedicated `min_p` subsection. Without that distinction a reader
+comparing 2.3 × 10⁻¹³ against a probe-level p is comparing two different
+statistics on two different scales.
+
+### Column-name correction: `bacon.p.t` does not exist
+
+An earlier decision recorded `bacon.p.t` as the p-value column in
+`annotated.rds`. It is not a column in that object. The correct name is
+**`bacon.p`**, and the DMR figure code and the comb-p invocation both use
+`pvals = bacon.p`. This supersedes the earlier note.
+
+### Two captions corrected against their own figures
+
+- **SVA bars.** The caption claimed "the strongest chip-linked SV reaches
+  R² ≈ 0.9". Under the k = 6 checkpoint the strongest is **SV5 at R² = 0.64**,
+  and sex is entangled with chip in the same SVs, so the caption now names all
+  three tracks (chip, sex, PTSD) and gives the largest PTSD association,
+  **R² = 0.04**, as evidence the SVs stay near-orthogonal to the exposure.
+- **KYCG enrichment.** The caption said the twelve features came "across four
+  EPIC knowledgebases". Four were *tested*; only three are represented among the
+  significant features, and the CGI knowledgebase contributes none. The caption
+  now says exactly that, which also makes the "no CpG-island-relation feature
+  appears" observation that follows it coherent rather than contradictory.
+
+### Data-tier and record metadata
+
+`data/08_annotation/dmr_demo/` was removed from the H_annotation tier and the
+regenerated comb-p bundle replaced it, so the tier grew from 305 MB to
+**306 MB** and its checksum changed to
+`d23a810f60b791e582fd8a952ec907fcd9e8dedb37847b3abe1d689a2d02a8cf` in both
+`MANIFEST.md` and `SHA256SUMS.txt`. The stale
+`PTSD_ewas_annotated_results.csv.gz` was dropped from the repository data
+directory (the `.bed` and the `_zhou.csv.gz` remain, and the `.csv.gz` was
+redundant with them).
+
+`get_data.sh` no longer ships a `REPLACE_WITH_RECORD_ID` placeholder and the
+guard clause that aborted on it is gone; `ZENODO_RECORD` now defaults to
+**22135216** and is still overridable from the environment for pinning an older
+version. `MANIFEST.md` gained a header paragraph naming the concept DOI
+**10.5281/zenodo.22135215** as the citable identifier, with the version DOI
+**10.5281/zenodo.22135216** for this build. `zenodo.json` gained the creator's
+affiliation (University of Colorado Anschutz Medical Campus) and ORCID
+(0000-0002-8813-6871), and the file now ends with a newline.
+
+### Known record-side defect (not fixable from any repository file)
+
+The **published** Zenodo record's `related_identifiers` carry
+`isSupplementTo: https://github.com/krferrier/EWAS-tutorial`, which does not
+resolve — the repository was renamed to `Methylation-EWAS-tutorial` after that
+metadata was drafted and Zenodo does not re-read `zenodo.json` after
+publication. `zenodo.json` in this repository already has the correct URL, so
+any future version will be right. Fixing the existing record requires editing it
+in the web interface: open `https://zenodo.org/records/22135216`, click
+**Edit**, change the `isSupplementTo` URL to
+`https://github.com/krferrier/Methylation-EWAS-tutorial`, and **Publish**. This
+is a metadata-only edit; it does not mint a new version and does not change
+either DOI. Documented in `PUBLISHING.md` §"Known record defect".
+
+### Packaging
+
+`sync_gh_repo.sh` grew from 912 to **1,237 bytes** with a new step 1b that
+copies `repo/theme.scss` into the packaged tree and `rsync -a --delete`s
+`repo/assets/` across, so the theme and fonts travel with the sources instead of
+being reconstructed by hand at publish time.
+
+### Render verification
+
+Full-site render exited 0 and wrote eleven HTML files. Every page was checked
+for three things: at least one theme hex (`0F3D43` or `1A6B75`) present, two
+`@font-face` rules present, and **zero** occurrences of the retired seaborn
+hexes (`4C72B0`, `C44E52`, `DD8452`). All eleven pass all three. The rendered
+`08_annotation.html` was additionally checked to contain each corrected number
+(1.2 × 10⁻¹⁰, 1.7 × 10⁻⁵, 2.8–4.8, −3.5 to −5.6, 6.0 × 10⁻¹⁹, 2.3 × 10⁻¹³) and
+*not* to contain the superseded ones (1.8 × 10⁻⁹, 1.5 × 10⁻⁴, `dmr_demo`,
+`bacon.p.t`).
+
+Two blocked outbound requests appear in the render log and are benign:
+`fonts.googleapis.com` and `cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js`,
+both 403 via the sandbox proxy. Neither is referenced by any source file in this
+repository — both come from Quarto's stock Bootstrap template — and with the
+fonts now self-hosted the Google request has nothing to fetch that the site
+needs.

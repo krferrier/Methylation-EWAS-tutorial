@@ -1,0 +1,326 @@
+/*-- scss:functions --*/
+// Self-hosted faces. Google Fonts is not reachable from the build sandbox and a
+// CDN dependency would make the published site fail for offline readers, so the
+// woff2 files ship in assets/fonts/ and are embedded by embed-resources.
+
+/*-- scss:defaults --*/
+
+// ---------------------------------------------------------------------------
+// Palette: deep teal accent on warm gray, chosen to stay legible in grayscale
+// and to survive the common forms of color-vision deficiency. The same hexes
+// are threaded into the R figure palette in _setup.R so plots match the site.
+// ---------------------------------------------------------------------------
+$teal-900:   #0F3D43;
+$teal-700:   #1A6B75;
+$teal-500:   #2A8F9B;
+$teal-100:   #DCECEE;
+
+$sand-500:   #B8873F;
+$sand-100:   #F6EEE0;
+
+$plum-600:   #8C3A4A;   // used only for warnings / "don't do this"
+$plum-100:   #F5E3E6;
+
+$gray-050:   #FBFAF8;
+$gray-100:   #F2F0EC;
+$gray-200:   #E4E1DA;
+$gray-400:   #B5AFA4;
+$gray-600:   #6E675B;
+$gray-800:   #3A362F;
+$gray-900:   #24211C;
+
+// Bootstrap semantic mapping
+$primary:    $teal-700;
+$secondary:  $gray-600;
+$success:    $teal-500;
+$info:       $teal-500;
+$warning:    $sand-500;
+$danger:     $plum-600;
+$light:      $gray-100;
+$dark:       $gray-900;
+
+$body-bg:    #FFFFFF;
+$body-color: $gray-900;
+$link-color: $teal-700;
+
+// ---------------------------------------------------------------------------
+// Typography
+// ---------------------------------------------------------------------------
+$font-family-sans-serif: "Source Sans 3", -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+$font-family-serif:      "Source Serif 4", Georgia, Cambria, "Times New Roman", serif;
+$font-family-monospace:  "JetBrains Mono", SFMono-Regular, Menlo, Consolas,
+                         "Liberation Mono", monospace;
+
+$font-size-root:         17px;
+$line-height-base:       1.62;
+
+$headings-font-family:   #{$font-family-serif};
+$headings-font-weight:   600;
+$headings-line-height:   1.25;
+$headings-color:         $teal-900;
+
+$h1-font-size:           2.05rem;
+$h2-font-size:           1.55rem;
+$h3-font-size:           1.24rem;
+$h4-font-size:           1.08rem;
+
+$code-font-size:         0.855em;
+$code-color:             $plum-600;
+
+// Code blocks
+$pre-bg:                 $gray-050;
+$pre-color:              $gray-900;
+
+// Tables
+$table-border-color:     $gray-200;
+$table-striped-bg:       rgba(26, 107, 117, 0.035);
+
+// Callouts
+$callout-border-width:   4px;
+$callout-color-note:     $teal-700;
+$callout-color-tip:      $teal-500;
+$callout-color-caution:  $sand-500;
+$callout-color-warning:  $sand-500;
+$callout-color-important: $plum-600;
+
+// Sidebar / navigation
+$navbar-bg:              $teal-900;
+$navbar-fg:              #FFFFFF;
+$sidebar-bg:             $gray-050;
+$sidebar-fg:             $gray-800;
+
+$toc-color:              $gray-600;
+$toc-font-size:          0.875rem;
+
+/*-- scss:mixins --*/
+
+@mixin face($family, $file, $weight, $style: normal) {
+  @font-face {
+    font-family: $family;
+    src: url("assets/fonts/#{$file}.woff2") format("woff2");
+    font-weight: $weight;
+    font-style: $style;
+    font-display: swap;
+  }
+}
+
+/*-- scss:rules --*/
+
+@include face("Source Sans 3",  "SourceSans3-Regular",   400);
+@include face("Source Sans 3",  "SourceSans3-Italic",    400, italic);
+@include face("Source Sans 3",  "SourceSans3-Semibold",  600);
+@include face("Source Sans 3",  "SourceSans3-Bold",      700);
+@include face("Source Serif 4", "SourceSerif4-Regular",  400);
+@include face("Source Serif 4", "SourceSerif4-Semibold", 600);
+@include face("Source Serif 4", "SourceSerif4-Bold",     700);
+@include face("JetBrains Mono", "JetBrainsMono-Regular", 400);
+@include face("JetBrains Mono", "JetBrainsMono-Bold",    700);
+
+// ---------------------------------------------------------------------------
+// Prose
+// ---------------------------------------------------------------------------
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+// Measure: long methods prose is much easier to read under ~80 characters.
+main.content {
+  max-width: 46rem;
+
+  p, li {
+    hyphens: auto;
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.008em;
+}
+
+// A hairline under each chapter and section heading gives the long chapters
+// a visible spine without adding chrome.
+h1 {
+  padding-bottom: 0.3em;
+  border-bottom: 2px solid $teal-100;
+}
+
+h2 {
+  margin-top: 2.1em;
+  padding-bottom: 0.22em;
+  border-bottom: 1px solid $gray-200;
+}
+
+h3 {
+  margin-top: 1.6em;
+  color: $teal-700;
+}
+
+a {
+  text-underline-offset: 0.16em;
+  text-decoration-thickness: 0.06em;
+
+  &:hover {
+    color: $teal-900;
+  }
+}
+
+strong {
+  font-weight: 600;
+  color: $gray-900;
+}
+
+// ---------------------------------------------------------------------------
+// Code
+// ---------------------------------------------------------------------------
+div.sourceCode {
+  border: 1px solid $gray-200;
+  border-radius: 5px;
+  background-color: $pre-bg;
+}
+
+pre code {
+  font-variant-ligatures: none;   // ligatures obscure <- and %>% in R
+  line-height: 1.5;
+}
+
+// Inline code: tint it so it separates from prose without shouting.
+code:not(pre code) {
+  background-color: $gray-100;
+  padding: 0.1em 0.32em;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+// Output blocks sit visually beneath their code, not beside it.
+div.cell-output pre {
+  border-left: 3px solid $gray-200;
+  background-color: #FFFFFF;
+  font-size: 0.84em;
+  color: $gray-800;
+}
+
+.code-tools-button,
+details > summary {
+  color: $teal-700;
+}
+
+// ---------------------------------------------------------------------------
+// Callouts — tinted bodies, not just a colored bar
+// ---------------------------------------------------------------------------
+div.callout {
+  border-radius: 5px;
+  border-left-width: $callout-border-width;
+
+  .callout-title {
+    font-family: $font-family-sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.002em;
+  }
+}
+
+div.callout-note {
+  .callout-title { background-color: $teal-100; }
+  border-left-color: $teal-700;
+}
+
+div.callout-tip {
+  .callout-title { background-color: $teal-100; }
+  border-left-color: $teal-500;
+}
+
+div.callout-warning,
+div.callout-caution {
+  .callout-title { background-color: $sand-100; }
+  border-left-color: $sand-500;
+}
+
+div.callout-important {
+  .callout-title { background-color: $plum-100; }
+  border-left-color: $plum-600;
+}
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+table {
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;   // digits align down result columns
+}
+
+thead th {
+  border-bottom: 2px solid $teal-700 !important;
+  color: $teal-900;
+  font-weight: 600;
+}
+
+caption, .figure-caption, figcaption {
+  font-size: 0.86rem;
+  color: $gray-600;
+  line-height: 1.5;
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar & TOC
+// ---------------------------------------------------------------------------
+.sidebar-navigation {
+  border-right: 1px solid $gray-200;
+
+  .sidebar-item-text {
+    font-size: 0.925rem;
+  }
+
+  .sidebar-section .sidebar-item-text {
+    font-weight: 400;
+  }
+
+  // Section headers ("Data preprocessing", "Analysis")
+  .sidebar-item-section > .sidebar-item-container > .sidebar-item-text {
+    font-family: $font-family-sans-serif;
+    font-weight: 600;
+    font-size: 0.79rem;
+    text-transform: uppercase;
+    letter-spacing: 0.055em;
+    color: $gray-600;
+  }
+
+  a.active,
+  .sidebar-link.active {
+    font-weight: 600;
+    color: $teal-700;
+    border-left: 3px solid $teal-700;
+    padding-left: 0.55rem;
+    margin-left: -0.7rem;
+  }
+}
+
+#TOC, nav[role="doc-toc"] {
+  .active {
+    color: $teal-700;
+    font-weight: 600;
+  }
+}
+
+.navbar-title {
+  font-family: $font-family-serif;
+  font-weight: 600;
+}
+
+// ---------------------------------------------------------------------------
+// Figures
+// ---------------------------------------------------------------------------
+figure img,
+.figure img,
+p > img {
+  border-radius: 4px;
+  max-width: 100%;
+}
+
+// ---------------------------------------------------------------------------
+// Print
+// ---------------------------------------------------------------------------
+@media print {
+  .sidebar-navigation, .code-tools-button { display: none !important; }
+  main.content { max-width: 100%; }
+  a { text-decoration: none; color: $gray-900; }
+}

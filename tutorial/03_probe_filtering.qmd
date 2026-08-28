@@ -213,7 +213,7 @@ contrast <- data.frame(
 ggplot(contrast, aes(mask, retained, fill = mask)) +
   geom_col(width = 0.6) +
   geom_text(aes(label = format(retained, big.mark = ",")), vjust = -0.4, size = 3.5) +
-  scale_fill_manual(values = c("#4C72B0", "#C44E52"), guide = "none") +
+  scale_fill_manual(values = c(ewas_col[["teal"]], ewas_col[["plum"]]), guide = "none") +
   labs(x = NULL, y = "probes retained",
        title = "Ancestry-aware probe filtering") +
   expand_limits(y = max(contrast$retained) * 1.06)

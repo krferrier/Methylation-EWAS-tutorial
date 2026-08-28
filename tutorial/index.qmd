@@ -29,17 +29,8 @@ complete:
 | Raw IDATs deposited | Lets us start from the true beginning, not a processed matrix |
 | N = 795 (we use a **96-sample subset**) | Big enough to be realistic, small enough to run live |
 | Deposited cell-type proportions | An **answer key** to validate our own deconvolution |
-| Deposited epigenetic-age acceleration | An answer key to validate the epigenetic clock |
 | Sentrix barcodes in filenames | Real chip/position structure for the batch-effects lesson |
 | Explicit age & sex, multiple exposures | Proper covariate modeling, several candidate outcomes |
-
-::: {.callout-note}
-## One dataset, on purpose
-The whole tutorial uses this single dataset for consistency. Some steps (notably
-batch correction) would be more dramatic on a dataset with a stronger technical
-artifact, but keeping one cohort throughout means every object you build in one
-notebook flows directly into the next.
-:::
 
 ## The teaching subset
 

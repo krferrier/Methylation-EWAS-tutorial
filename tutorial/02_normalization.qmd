@@ -157,7 +157,7 @@ long$method <- factor(long$method, levels = c("raw", "noob", "funnorm"))
 ggplot(long, aes(x = beta, color = design, linetype = design)) +
   geom_density(na.rm = TRUE, linewidth = 0.7) +
   facet_wrap(~method) +
-  scale_color_manual(values = c("Type I" = "#4C72B0", "Type II" = "#C44E52")) +
+  scale_color_manual(values = c("Type I" = ewas_col[["teal"]], "Type II" = ewas_col[["plum"]])) +
   labs(x = "β-value", y = "density",
        title = "Probe-design bias, before and after normalization") +
   theme(legend.position = "bottom")
@@ -209,7 +209,7 @@ follow the same steps, just with the Beta value matrix instead of the M-value ma
 b <- seq(0.001, 0.999, length.out = 500)
 m <- log2(b / (1 - b))
 dfm <- data.frame(beta = b, M = m)
-ggplot(dfm, aes(beta, M)) + geom_line(color = "#4C72B0", linewidth = 0.9) +
+ggplot(dfm, aes(beta, M)) + geom_line(color = ewas_col[["teal"]], linewidth = 0.9) +
   geom_hline(yintercept = 0, color = "gray70") +
   geom_vline(xintercept = 0.5, color = "gray70") +
   labs(x = "β-value", y = "M-value", title = "β → M-value transform")

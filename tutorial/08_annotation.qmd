@@ -302,7 +302,8 @@ reports genuine short-range autocorrelation in our p-values (correlation ≈ 0.0
 out to ~71 bp, p ≈ 1.4 × 10⁻¹²⁹ over 202,081 CpG pairs) — methylation *is*
 spatially structured here, as expected. The SLK/FDR steps then find the
 strongest local cluster at **chr6:28.63 Mb, inside the MHC/HLA region**
-(smallest FDR-corrected SLK q ≈ 6.0 × 10⁻¹⁹). But at the pipeline's strict seed
+(smallest autocorrelation-adjusted regional p ≈ 6.0 × 10⁻¹⁹ before FDR
+correction; q ≈ 2.3 × 10⁻¹³ after). But at the pipeline's strict seed
 of 1 × 10⁻¹⁵ — appropriate for a genome-wide discovery study — **no region is
 reported**, because our strongest single CpG only reaches p ≈ 3.0 × 10⁻⁸.
 
@@ -310,10 +311,13 @@ reported**, because our strongest single CpG only reaches p ≈ 3.0 × 10⁻⁸.
 ## `min_p` in the comb-p output is *not* a raw probe p-value
 This trips people up. Relaxing the seed to 1 × 10⁻⁸ purely to see the machinery
 produce output yields one region — `chr6:28,633,534–28,633,601`, 6 probes,
-`min_p = 2.3 × 10⁻¹³`, Šidák-corrected `z_sidak_p = 1.2 × 10⁻¹⁰`. That
-`min_p` is the **Stouffer–Liptak–Kechris–smoothed** p-value, computed by pooling
-each CpG with its neighbors, so it is far smaller than any raw p-value in the
-input: the smallest raw BACON p anywhere in the BED is
+`min_p = 2.3 × 10⁻¹³`, Šidák-corrected `z_sidak_p = 1.2 × 10⁻¹⁰`. Despite the
+column name, that `min_p` is not the smallest input p-value in the region: it is
+the smallest **Stouffer–Liptak–Kechris–smoothed, FDR-corrected** regional q among
+the region's CpGs (the raw SLK p at those same CpGs goes down to 6.0 × 10⁻¹⁹).
+Smoothing pools each CpG with its neighbors, so these values are orders of
+magnitude below anything in the input: the smallest raw BACON p among the six
+CpGs is 1.7 × 10⁻⁵, and the smallest anywhere in the BED is
 3.0 × 10⁻⁸. Smoothed regional statistics and probe-level statistics are not on
 the same scale, and comparing them directly will make a region look far stronger
 than the data supporting it. A relaxed seed is a teaching device here, not a
@@ -342,17 +346,17 @@ cluster, six adjacent CpGs spanning 67 bp, all consistently hypomethylated:
 
 ```bash
 comb-p pipeline --seed 1e-8 --dist 200 --region-filter-p 0.05 \
-    -p data/08_annotation/dmr_demo/PTSD_dmr_demo \
+    -p data/08_annotation/dmr/PTSD_dmr_demo \
     data/08_annotation/PTSD_ewas_annotated_results.bed
 ```
 
-| region (hg38) | n CpGs | min single-CpG p | Šidák region p |
+| region (hg38) | n CpGs | best raw BACON p in region | Šidák region p |
 |---|---|---|---|
-| chr6:28,633,534–28,633,601 | 6 | 1.5 × 10⁻⁴ | **1.8 × 10⁻⁹** |
+| chr6:28,633,534–28,633,601 | 6 | 1.7 × 10⁻⁵ | **1.2 × 10⁻¹⁰** |
 
-![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the six inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 1.8 × 10⁻⁹. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
+![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the six inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 1.2 × 10⁻¹⁰. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
 
-@fig-dmr is the payoff. Six CpGs, each at −log₁₀ p between 3.3 and 3.8 — none
+@fig-dmr is the payoff. Six CpGs, each at −log₁₀ p between 2.8 and 4.8 — none
 remotely genome-wide significant on its own — collapse into one region three
 orders of magnitude past the single-CpG bar, purely by borrowing strength across
 correlated neighbors. That is what a DMR method buys you, and why a region-level
@@ -426,7 +430,7 @@ hypomethylated in cases, look like this:
 
 ```{r dmr-cpgs, echo=FALSE, message=FALSE}
 knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv"),
-  caption = "The six CpGs of the demo DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases (negative effect on the β-scale), the coherent single-direction signal that makes a region call meaningful.")
+  caption = "The six CpGs of the demo DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases — Δβ between −3.5 and −5.6 percentage points, every one in the same direction. That coherence is what makes a region call meaningful; none of the six individual BACON p-values comes close to genome-wide significance.")
 ```
 
 ### From regions to pathways: `goregion`
@@ -659,7 +663,7 @@ returned nothing. That looks like a decisive win for the CpG-centric lens. It is
 partly real and partly an artifact of the test's shape, and separating the two is
 the lesson of this section.
 
-![The twelve most significant KYCG features for the top 1,000 CpGs, across four EPIC knowledgebases. Bars are $\log_2$ odds ratio; every bar shown clears FDR < 0.05. Note what is *absent*: no CpG-island-relation feature appears, and every significant enrichment is positive and modest (log₂OR 0.36–1.28).](data/08_annotation/08_kycg_enrichment.png){#fig-kycg width=90%}
+![The twelve most significant KYCG features for the top 1,000 CpGs. Four EPIC knowledgebases were tested; only three are represented here, and the CGI knowledgebase contributes no significant feature at all. Bars are $\log_2$ odds ratio; every bar shown clears FDR < 0.05. Note what is *absent*: no CpG-island-relation feature appears, and every significant enrichment is positive and modest (log₂OR 0.36–1.28).](data/08_annotation/08_kycg_enrichment.png){#fig-kycg width=90%}
 
 ```{r kycg-db, echo=FALSE, message=FALSE}
 knitr::kable(fread("data/08_annotation/08_kycg_db_summary.csv"),
@@ -890,7 +894,7 @@ precisely.
   annotation for likely effector genes, which can differ from the nearest gene. 
 - **Region analysis recovers signal that single-CpG testing misses** by
   leveraging the spatial correlation of methylation. On our subset a
-  6-CpG MHC cluster reaches Šidák p = 1.8 × 10⁻⁹ while no single CpG clears the
+  6-CpG MHC cluster reaches Šidák p = 1.2 × 10⁻¹⁰ while no single CpG clears the
   EWAS significance threshold.
 - **Match the DMR tool to your upstream model.** `comb-p` runs on summary
   statistics and therefore works after stratified meta-analysis. `DMRcate` needs line-level data and one design formula, so it
