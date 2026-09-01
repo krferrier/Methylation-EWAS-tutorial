@@ -20,8 +20,10 @@
 /tutorial/data/08_annotation/dmr/PTSD_dmr.slk.bed.gz
 /tutorial/data/08_annotation/dmr/PTSD_dmr_demo.fdr.bed.gz
 /tutorial/data/08_annotation/dmr/PTSD_dmr_demo.slk.bed.gz
-/tutorial/data/08_annotation/dmr_demo/PTSD_dmr_demo.fdr.bed.gz
-/tutorial/data/08_annotation/dmr_demo/PTSD_dmr_demo.slk.bed.gz
+/tutorial/data/08_annotation/dmr_demo/
+/tutorial/data/06_ewas_bacon_toptable.csv
+/tutorial/data/06_ewas_toptable.csv
+/tutorial/data/08_annotation/PTSD_ewas_annotated_results.csv.gz
 
 # External sibling trees, fetched as Zenodo tiers G and H
 /ewas_pipeline/

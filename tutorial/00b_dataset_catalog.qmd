@@ -11,9 +11,11 @@ source("_setup.R")
 library(DT)
 ```
 
-Before you can practice an EWAS you need data. This page documents what and
-how we picked a curated catalog of **70 Illumina MethylationEPIC studies on 
-GEO**, including the dataset used in the tutorial, that carry enough phenotype
+In this tutorial we use one of the datasets available from the NCBI GEO database. 
+You are encouraged to follow along with the tutorial using the Grady Trauma Project, 
+and once you've gotten some experience following along, then practice with another 
+dataset. The NCBI GEO database can be a bit tricky to navigate, so for ease, I've curated 
+a catalog of 70 Illumina MethylationEPIC studies on GEO (including the dataset used in the tutorial) that carry enough phenotype
 and covariate metadata to support a real association analysis. Browse it to 
 understand the landscape of public EPIC data and to pick your own
 dataset for a project.
@@ -99,10 +101,10 @@ datatable(
 ::: {.callout-tip}
 ## What makes a good *first* EWAS dataset
 Sort by `Suitability_tier`, then look for: **raw IDATs deposited** (so you can
-start from the true beginning), **both age and sex present**, at least one
+start from raw data), **both age and sex present**, at least one
 **genuine phenotype** you find interesting, and ideally **whole blood or PBMC**
 so you get to practice cell-type deconvolution. Deposited cell proportions values 
-are a bonus — they give you an answer key to check your own pipeline against.
+are a bonus — they give you an answer key to check your own pipeline against, or you can skip this step and just use the deposited cell proportions.
 :::
 
 ## How the catalog was assembled
@@ -123,7 +125,7 @@ to profile GEO studies without committing to downloading all the data.
 ```{r}
 #| label: fig-catalog-overview
 #| echo: false
-#| fig-cap: "The 70-study catalog at a glance. (a) Teaching-suitability tiers. (b) How many studies carry each metadata field — note that deposited cell-type composition is rare. (c) Study sizes span 152 to ~3,100 samples. (d) Almost all are EPIC v1 (850K)."
+#| fig-cap: "The 70-study catalog at a glance. (a) Teaching-suitability tiers. (b) How many studies carry each metadata field. (c) Study sizes span 152 to ~3,100 samples. (d) Almost all are EPIC v1 (850K)."
 knitr::include_graphics("data/00b_catalog_overview.png")
 ```
 
@@ -133,18 +135,14 @@ From the shortlist we chose **GSE132203**, the Grady Trauma Project, because it
 is unusually complete for teaching: raw IDATs are deposited, it has explicit age
 and sex plus several trauma/PTSD exposures, and it provides 
 cell-type proportions, giving us answer keys to validate the deconvolution step 
-against. The cohort also has a long methylation literature behind it — early work
-on immune-system methylation in PTSD in this sample [@smith2011grady] through to
-the EPIC-array analyses we compare against in notebook
-[06](06_ewas.qmd) [@katrinli2020ptsd] — so results can be read against
-published findings.
+against. There are also published manuscripts that we can compare our results with [@smith2011grady] [@katrinli2020ptsd].
 
 ::: {.callout-note}
 ## Not every study gives you IDATs
 Some GEO methylation studies deposit only a processed beta-value matrix, not raw
 IDATs. You can still use these for your rotation — the [Normalization](02_normalization.qmd)
 notebook includes notes on how to enter the workflow from a processed matrix and
-which QC/normalization steps you can and cannot still do.
+which steps you can and cannot still do.
 :::
 
 ## Download the catalog

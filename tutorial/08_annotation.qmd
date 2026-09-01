@@ -82,7 +82,7 @@ the probe). Zhou's resources supersede it:
 
 ### The annotation join
 
-We start from the BACON-adjusted top-table saved in notebook 06 and left-join the
+We start from the BACON-adjusted top-table saved in chapter 06 and left-join the
 Zhou tables on probe ID. The v41 gene table can list several TSS distances per
 probe (one per transcript); we keep the nearest, which is what defines the
 promoter call below.
@@ -90,7 +90,7 @@ promoter call below.
 ```{r annotate, eval=FALSE}
 library(data.table)
 
-# 1. EWAS results: the BACON-adjusted toptable from notebook 06
+# 1. EWAS results: the BACON-adjusted toptable from chapter 06
 tt <- fread("data/06_ewas_bacon_toptable.csv.gz")
 
 # 2. Zhou gencode v41 gene model: gene names, biotypes, signed distance to TSS
@@ -333,7 +333,7 @@ noting. The MHC is the most gene-dense, most polymorphic, and most
 methylation-variable region in the genome, and it surfaces in a large fraction
 of blood EWAS. It is simultaneously the region where you should be *most*
 cautious about SNP-driven artifacts — which is exactly why the ancestry-aware
-SNP masking in notebook 03 matters: the probes that survive to
+SNP masking in chapter 03 matters: the probes that survive to
 this point are already stripped of the common-SNP-affected sites that would
 otherwise masquerade as MHC methylation signal.
 :::
@@ -810,7 +810,7 @@ hypersensitive sites and the Roadmap/ENCODE core-15 chromatin states across
 
 The result you *want* to see for a well-adjusted blood EWAS is **no strong,
 single-cell-type enrichment** — that is evidence your cell-composition
-adjustment (notebook 04) did its job. The result that should stop you is a list of 
+adjustment (chapter 04) did its job. The result that should stop you is a list of 
 neutrophil- or T-cell-specific enhancers: a signature that the
 "phenotype" effect is really a composition effect that leaked past the model.
 Because it works on `cg#########` IDs against pre-built reference panels, `eFORGE`
@@ -819,7 +819,7 @@ assemble.
 
 ::: {.callout-note}
 ## Why this check matters here specifically
-Our subset carries the confounds notebook 05 mapped — cell composition loads
+Our subset carries the confounds chapter 05 mapped — cell composition loads
 heavily on the leading PCs. An `eFORGE` cell-type enrichment on the top hits is
 the natural closing sanity check: it asks the composition question of the
 *final* CpG list, after all modeling, in the vocabulary (chromatin states,
@@ -856,7 +856,7 @@ Before writing "our EWAS implicates pathway X," walk through:
 3. **Does trait enrichment corroborate the biology?** Overlap with previously
    reported CpGs is stronger evidence than a lone GO term.
 4. **Could composition explain it?** Check with `eFORGE` or by confirming your
-   cell-count adjustment (notebook 04) held.
+   cell-count adjustment (chapter 04) held.
 5. **Is the direction consistent?** Hyper- vs hypo-methylation across a region or
    pathway should tell a coherent story; scattered directions suggest noise.
 6. **How big are the feature sets, and do they overlap?** A CpG-centric test on

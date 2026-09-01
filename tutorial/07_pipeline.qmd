@@ -14,7 +14,7 @@ Here we introduce using a scalable, reproducible Snakemake pipeline for running
 an EWAS. The pipeline automatically handles stratification, meta-analysis, annotation 
 of results, and basic plotting of results (manhattan and qq plot). In addition, it can 
 run a differentially methylated region (DMR) analysis. The pipeline utilizes parallelization 
-and can be run on your local computer or on an remote high performance computing cluster. 
+and can be run on your local computer or on a remote high performance computing cluster. 
 The EWAS Snakemake pipeline with installation and run instructions can be found at:
 [github.com/krferrier/EWAS](https://github.com/krferrier/EWAS).
 
@@ -119,7 +119,7 @@ data.table::fwrite(data.table(SampleID = rownames(Mt), data.table::as.data.table
                    "data/mvals.csv.gz")
 ```
 
-This writes the **full filtered probe set** — every CpG that survived Chapter 3. The chunking machinery is what makes that affordable: `ewas.R` reads
+This writes the **full filtered probe set** — every CpG that survived chapter 03. The chunking machinery is what makes that affordable: `ewas.R` reads
 the matrix once, splits the CpGs into chunks of `chunk-size`, and distributes chunks
 across workers, so memory stays flat as the probe count grows.
 
@@ -170,14 +170,11 @@ pipeline fits one `glm` per CpG. On this run:
 - **The p-values still differ slightly** (correlation 0.999 on the −log₁₀ scale;
   λ = 1.021 either way). The reason is `eBayes`: limma shrinks each probe's
   residual variance toward a prior fitted across all probes, so its standard
-  errors differ from the per-probe `glm` ones by up to ~22%. Neither is wrong —
-  moderation buys stability at small *n*, which is why limma is a good choice for
-  interactive work, while the per-probe fit is the more transparent default for a
-  production pipeline.
+  errors differ from the per-probe `glm` ones by up to ~22%. Neither is wrong,
+  which highlights the importance of being transparent about which method is used.
 
 Identical point estimates plus a small, explainable difference in the variance
-model is exactly what a successful port looks like. Estimates that *disagree*
-would mean the covariate columns differ between the two runs.
+model gives confidence that the results we are seeing are consistent.
 
 
 ```{r}
@@ -260,8 +257,8 @@ correction of residual bias, not a rescue of a badly specified model.
 Note that the male arm needed the largest correction. With 42 samples and the
 same covariate count, it has the least residual signal to estimate a variance
 from, so its test statistics are the most over-dispersed to begin with. This is
-the general pattern in stratified EWAS — the smaller stratum is the one whose
-λ you should look at hardest.
+the general pattern in stratified EWAS — the smaller stratum is the more likely
+the λ is to be in- or de-flated.
 
 The mixture fit and the before/after QQ for the overall analysis:
 
@@ -283,9 +280,8 @@ The two stratum QQs after correction:
 ## BACON is not a license to ignore λ
 BACON corrects the *distribution* of test statistics; it does not manufacture
 signal. If your λ is inflated because of unmodeled batch or cell composition,
-the right response is to fix the model (P4, P5), not to lean on BACON. Use it for
-the residual bias that remains after honest adjustment — which is exactly the
-mild deflation we see here.
+the right response is to fix the model (chapters 04 and 05), not to lean on BACON. Use it for
+the residual bias that remains after adjustment.
 :::
 
 ## 8. Meta-analyzing the strata with METAL
@@ -335,15 +331,17 @@ Output columns from METAL to note:
 - **`Direction`** is one character per input file (`F` then `M`). `++` or `--`
   means the effect pointed the same way in both sexes; `+-` or `-+` means it
   flipped. The top hit **cg22671410** is `+-`, P = 2.0×10⁻¹³ — and that mismatch
-  between a tiny p-value and a discordant direction is the single most important
-  thing to notice on this page. Read on.
+  between a tiny p-value and a discordant direction signifies that there may be a
+  true difference in effect for that CpG across sexes.
 - **`HetISq` / `HetPVal`** quantify how much the two strata *disagree*.
   A large `HetISq` with small `HetPVal` flags a CpG whose PTSD association differs
-  by sex — precisely the situation a sex-adjusted (non-stratified) model would
-  hide.
+  by sex. In a model where both sexes are combined, this signal would be missed.
 
 ::: {.callout-warning}
-## A small p-value from a two-study meta-analysis is not evidence of replication
+The sample sizes of each strata are quite small for an EWAS, so these results
+should be interpreted with caution and replicated in a larger subset (or the full
+cohort) before any real conclusions about sex-specific signals can be made.
+:::
 
 Nine CpGs clear Bonferroni in the meta-analysis. **Eight of the nine are driven
 by one stratum alone**, with the other stratum's p-value above 0.05:
@@ -376,11 +374,9 @@ of it. Two useful reflexes:
    degree of freedom, I² is extremely noisy. `cg22671410` has I² = 0.0 despite
    effects of +0.40 and −0.06, because the male SE is so large (0.51) that the
    two estimates are statistically compatible with each other. Low I² here means
-   "not enough precision to tell them apart", not "they agree".
-
-None of this makes the pipeline wrong — METAL did exactly what it was asked to.
-It makes the *interpretation* your responsibility.
-:::
+   "not enough precision to tell them apart", not "they agree". That doesn't mean
+   the results aren't meaningful, they may be an indication of a true sex
+   difference worth investigating with a more suitable statistical method.
 
 ```{r}
 #| label: meta-summary
@@ -407,10 +403,11 @@ A few caveats about these results:
 
 - **The combined arm finds one CpG at Bonferroni; the stratified arms and the
   meta-analysis find more.** The single-sex arms have an n that is too small to run
-  an EWAS. It is likely that the sex-strata results prior to BACON adjustment were
-  quite deflated and after were over-corrected because the BACON adjustment did not perform well.
-  This inflation makes it appear as if there are statstically significant results where there are none. This
-  inflation is persisted in the meta-analysis results. This is not meant to be an
+  an EWAS. The sex-strata results prior to BACON adjustment were deflated and
+  inflated, and while BACON does adjust the stratum towards a lambda of 1,
+  respectively, it likely did not perform an optimal adjustment. The inflation
+  makes it appear as if there are statistically significant results where there
+  are none and is persisted in the meta-analysis results. This is not meant to be an
   argument against doing stratified analyses, but it does bring to light the importance of
   considering whether the sample size of your strata is sufficiently powered to do a stratified analysis.
 - **Heterogeneity sits at 5.4%** of CpGs below P = 0.05, against a 5% null
@@ -441,7 +438,7 @@ you change `config.yml`, not the code:
   plots — is built in order from a single reproducible entry point.
 
 That is the payoff of the pipeline: the statistics are identical to what you did
-by hand in P6, but the *process* is now a versioned, parallel, one-command
+by hand in chapter 06, but the *process* is now a versioned, parallel, one-command
 artifact you can hand to a collaborator or a reviewer.
 
 ## References {.unnumbered}

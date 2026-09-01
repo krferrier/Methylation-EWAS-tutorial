@@ -698,3 +698,112 @@ both 403 via the sandbox proxy. Neither is referenced by any source file in this
 repository — both come from Quarto's stock Bootstrap template — and with the
 fonts now self-hosted the Google request has nothing to fetch that the site
 needs.
+
+---
+
+## 20. Chapter 07 prose reconciliation, reference normalization, and the ch06 checkpoint restoration
+
+### Chapter 07 prose reconciled against the author's revision
+
+`07_pipeline.qmd` received nine prose edits supplied by the author, verified
+line-for-line against the submitted source with a unified diff. The substantive
+changes soften three claims that the data do not carry. The limma-vs-`glm`
+comparison no longer asserts that "moderation buys stability at small *n*" and
+instead notes that the ~22% standard-error discrepancy makes it important to be
+transparent about which method produced a given estimate. The agreement between
+the two engines is described as giving confidence in consistency rather than as
+"exactly what a successful port looks like". The stratified-λ discussion now
+says the smaller stratum is the more likely to show in- or deflation, rather
+than instructing the reader which λ to "look at hardest". The sex-discordance
+passage no longer calls the pattern "the single most important thing to notice
+on this page"; it states that a small p-value with a discordant direction may
+indicate a true sex difference in effect, and a new closing paragraph warns that
+the per-stratum sample sizes are small for an EWAS and that any sex-specific
+signal needs replication in a larger subset or the full cohort before it is
+believed.
+
+### Three typographical corrections
+
+In `07_pipeline.qmd`: `on an remote` → `on a remote`; `The sample sized of each
+strata` → `The sample sizes of each strata`; `statstically` → `statistically`.
+
+### Cross-reference style normalized to "chapter NN"
+
+The tutorial referred to its own chapters three different ways — `P4`,
+`notebook 06`, and `chapter 4`. All are now `chapter NN`, zero-padded, matching
+the file-name convention. Edits landed in `06_ewas.qmd` (nine references),
+`07_pipeline.qmd` (two), and `08_annotation.qmd` (two). A tree-wide grep for
+`\bP[0-9]+\b` and `notebook [0-9]+` across all eleven `.qmd` files now returns
+nothing. Bracketed prose links of the form `[Setup](00_setup.qmd)` were left
+alone: those are titles, not numbered cross-references.
+
+### Two render-tree checkpoints were missing and one was stale
+
+The v8.1 refilter had been carried out, but two intermediate checkpoints that
+chapters 05 and 06 load at render time had never been regenerated under the new
+mask, and `06_ewas.rds` on disk still held the pre-v8.1 fit. This did not show
+up in the published HTML because `repo/data/06_bacon_summary.rds` — which is
+what most of chapter 06's inline expressions actually read — had been written by
+`scripts/recompute_06_final.R` under the correct mask. The published site was
+therefore right; the reproduction tree was not.
+
+Two scripts restore it, both taking every parameter from the frozen checkpoints
+rather than re-deriving it:
+
+- **`scripts/rebuild_checkpoints_v81.R`** (3,201 bytes) writes
+  `data/03_grs_filtered.rds` as `02_funnorm_grs.rds[funl$retained_probes, ]` →
+  **756,273 × 96**, which matches `03_filter_funnel.rds$retained` exactly; and
+  `data/05_mvals_combat.rds` as stratified ComBat on slide (`mean.only = TRUE`,
+  `par.prior = TRUE`, run separately within each sex, slide levels renamed
+  `s1..sN`) with `cb_mod = model.matrix(~ ptsd + age + smoke + Neu + NK + CD4T +
+  CD8T + Bcell + Mono)`. The `keep`, `mdk`, `propk`, `smoke`, and `k_selected`
+  fields come from the existing `05_sva.rds`, which was opened read-only and not
+  rewritten. The 20 smoking-panel CpGs in `05_smoking_proxy.rds$present` are
+  excluded, leaving **756,251** probes tested — equal to `sva_o$tested_probes`.
+- **`scripts/rebuild_06_rds.R`** (4,752 bytes) is the EWAS-and-BACON half of
+  `recompute_06_final.R` with two side effects deliberately removed: it does not
+  rewrite `06_bacon_summary.rds` (the on-disk copy carries extra fields chapter
+  06 reads) and it does not redraw the Manhattan, volcano, or BACON diagnostic
+  images (the on-disk copies are the restyled published ones). Design is
+  `model.matrix(~ ptsd + sex + age + smoke + pos + CD8T + CD4T + NK + Bcell +
+  Mono + Neu + SV)` with `ptsd` releveled to reference `"Control"`, coefficient
+  `ptsdCase`, `SV = sva$SV[, 1:6]`, and `pos = factor(mdk$array_pos)`. A
+  verification loop compares sixteen fields of the rebuilt object against
+  `06_bacon_summary.rds`; all sixteen match.
+
+The restored numbers, all of which agree with the previously published HTML:
+
+| Quantity | Value |
+|---|---|
+| Design columns | 24 |
+| Residual df | 63 (= 87 − 24) |
+| Probes tested | 756,251 |
+| λ before BACON | 1.022 |
+| λ after BACON | 1.023 |
+| Top CpG by BACON *p* | cg15434749 |
+| Bonferroni-significant | 1 |
+| FDR < 0.05 | 2 |
+
+The design reconciles term by term: 1 intercept + ptsd + sex + age + smoke +
+7 position + 6 cell + 6 SV = 24.
+
+Pre-restoration copies of `03_grs_filtered.rds` and `06_ewas.rds` were kept
+outside the repository tree during the rebuild and are not shipped.
+
+### Full-site re-render
+
+All eleven chapters were re-rendered from the restored checkpoints. The render
+log shows `[ 1/11]` through `[11/11]` and no errors; Quarto emits one
+`Output created` line for a website project, not one per page. Eleven HTML files
+were written.
+
+The rendered `06_ewas.html` was checked to contain each anchor above and *not*
+to contain the superseded values (`756,271`, λ `1.010`, a 25-column design). The
+CpG `cg25717994`, which an earlier stale fit had put at rank 1, now appears at
+rank 3 of the top-six table with BACON *p* = 2.83 × 10⁻⁷ — the position the
+published numbers give it. A tree-wide scan for the pre-v8.1 retained-probe
+count `724,282` returns zero occurrences in all eleven pages.
+
+The two blocked outbound requests documented in §19 (`fonts.googleapis.com` and
+the `cdnjs.cloudflare.com` polyfill, both 403 via the sandbox proxy) appear
+again and remain benign for the same reasons.

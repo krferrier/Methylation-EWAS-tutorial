@@ -5533,7 +5533,7 @@ window.Quarto = {
 </header>
 
 
-<p>We now have everything an epigenome-wide association study needs: a normalized, filtered methylation matrix (<a href="./02_normalization.html">P2</a>–<a href="./03_probe_filtering.html">P3</a>), cell-composition estimates (<a href="./04_cell_composition.html">P4</a>), and surrogate variables that absorb technical structure (<a href="./05_batch_effects.html">P5</a>). This notebook fits the association model, checks that it is well-calibrated, and provides guidance for interpreting results. It also lays out <strong>two modeling conventions</strong> you will meet in the literature — methylation-as-outcome vs. phenotype-as-outcome — and a residualization workflow that is common in practice.</p>
+<p>We now have everything an epigenome-wide association study needs: a normalized, filtered methylation matrix (<a href="./02_normalization.html">chapter 02</a>–<a href="./03_probe_filtering.html">chapter 03</a>), cell-composition estimates (<a href="./04_cell_composition.html">chapter 04</a>), and surrogate variables that absorb technical structure (<a href="./05_batch_effects.html">chapter 05</a>). This notebook fits the association model, checks that it is well-calibrated, and provides guidance for interpreting results. It also lays out <strong>two modeling conventions</strong> you will meet in the literature — methylation-as-outcome vs. phenotype-as-outcome — and a residualization workflow that is common in practice.</p>
 <p>The worked example tests <strong>PTSD case/control status</strong> against methylation at each CpG, adjusting for sex, age, cell composition, and surrogate variables.</p>
 <div class="cell">
 <details open class="code-fold">
@@ -5575,13 +5575,13 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="the-covariate-set">2. The covariate set</h2>
 <p>Our design includes covariates for everything we established as a driver of methylation:</p>
 <ul>
-<li><strong>sex</strong> and <strong>age</strong> — strong, ubiquitous methylation covariates (<a href="./05_batch_effects.html">P5</a> confirmed both drive leading PCs).</li>
-<li><strong>cell composition</strong> (6 estimated proportions) the single largest source of variance in whole blood (<a href="./04_cell_composition.html">P4</a>).</li>
-<li><strong>a smoking proxy</strong> — this cohort has no recorded smoking variable, so <a href="./05_batch_effects.html">P5</a> builds one from a published panel of replicated smoking-associated CpGs. The panel probes themselves are excluded from testing.</li>
+<li><strong>sex</strong> and <strong>age</strong> — strong, ubiquitous methylation covariates (<a href="./05_batch_effects.html">chapter 05</a> confirmed both drive leading PCs).</li>
+<li><strong>cell composition</strong> (6 estimated proportions) the single largest source of variance in whole blood (<a href="./04_cell_composition.html">chapter 04</a>).</li>
+<li><strong>a smoking proxy</strong> — this cohort has no recorded smoking variable, so <a href="./05_batch_effects.html">chapter 05</a> builds one from a published panel of replicated smoking-associated CpGs. The panel probes themselves are excluded from testing.</li>
 <li><strong>array position</strong> — the chip row (<code>R01C01</code>…<code>R08C01</code>), a recorded technical factor that is estimable here and so enters as a fixed effect (7 dummy columns).</li>
-<li><strong>surrogate variables</strong> — the 6 SVs retained in <a href="./05_batch_effects.html">P5</a>, which absorb structure that none of the measured covariates name.</li>
+<li><strong>surrogate variables</strong> — the 6 SVs retained in <a href="./05_batch_effects.html">chapter 05</a>, which absorb structure that none of the measured covariates name.</li>
 </ul>
-<p>This is the step where the sample count changes. Chapters 1–5 worked with all <strong>96</strong> QC-passing arrays, because none of those steps needs the exposure. The model above does, so the nine samples with no recorded PTSD status drop out and the EWAS fits <strong>n = 87</strong> (32 cases, 55 controls). No sample was excluded for quality — see <a href="./01_qc.html">phenotype completeness</a>.</p>
+<p>This is the step where the sample count changes. Chapters 01–05 worked with all <strong>96</strong> QC-passing arrays, because none of those steps needs the exposure. The model above does, so the nine samples with no recorded PTSD status drop out and the EWAS fits <strong>n = 87</strong> (32 cases, 55 controls). No sample was excluded for quality — see <a href="./01_qc.html">phenotype completeness</a>.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -5596,8 +5596,8 @@ window.Quarto = {
 </div>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(limma)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Mcb = ComBat-adjusted M-values from P5, probes x samples</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># smoke = smoking proxy (P5); pos = array position factor; SV = surrogate variables</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Mcb = ComBat-adjusted M-values from chapter 05, probes x samples</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># smoke = smoking proxy (chapter 05); pos = array position factor; SV = surrogate variables</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> ptsd <span class="sc">+</span> sex <span class="sc">+</span> age <span class="sc">+</span> smoke <span class="sc">+</span> pos <span class="sc">+</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                         CD8T <span class="sc">+</span> CD4T <span class="sc">+</span> NK <span class="sc">+</span> Bcell <span class="sc">+</span> Mono <span class="sc">+</span> Neu <span class="sc">+</span> SV)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">lmFit</span>(Mcb, design)        <span class="co"># per-probe weighted least squares</span></span>
@@ -5810,7 +5810,7 @@ window.Quarto = {
 <td style="text-align: right;">-0.394</td>
 <td style="text-align: right;">-0.0254</td>
 <td style="text-align: right;">5.00e-07</td>
-<td style="text-align: right;">3.00e-08</td>
+<td style="text-align: right;">2.964140e-08</td>
 <td style="text-align: right;">0.0224</td>
 </tr>
 <tr class="even">
@@ -5818,7 +5818,7 @@ window.Quarto = {
 <td style="text-align: right;">0.172</td>
 <td style="text-align: right;">0.0138</td>
 <td style="text-align: right;">8.60e-07</td>
-<td style="text-align: right;">7.00e-08</td>
+<td style="text-align: right;">6.727196e-08</td>
 <td style="text-align: right;">0.0254</td>
 </tr>
 <tr class="odd">
@@ -5826,7 +5826,7 @@ window.Quarto = {
 <td style="text-align: right;">0.308</td>
 <td style="text-align: right;">0.0057</td>
 <td style="text-align: right;">2.38e-06</td>
-<td style="text-align: right;">2.80e-07</td>
+<td style="text-align: right;">2.825607e-07</td>
 <td style="text-align: right;">0.0626</td>
 </tr>
 <tr class="even">
@@ -5834,7 +5834,7 @@ window.Quarto = {
 <td style="text-align: right;">-0.176</td>
 <td style="text-align: right;">-0.0076</td>
 <td style="text-align: right;">2.73e-06</td>
-<td style="text-align: right;">3.30e-07</td>
+<td style="text-align: right;">3.311373e-07</td>
 <td style="text-align: right;">0.0626</td>
 </tr>
 <tr class="odd">
@@ -5842,7 +5842,7 @@ window.Quarto = {
 <td style="text-align: right;">0.213</td>
 <td style="text-align: right;">0.0237</td>
 <td style="text-align: right;">8.71e-06</td>
-<td style="text-align: right;">1.65e-06</td>
+<td style="text-align: right;">1.652825e-06</td>
 <td style="text-align: right;">0.2359</td>
 </tr>
 <tr class="even">
@@ -5850,7 +5850,7 @@ window.Quarto = {
 <td style="text-align: right;">-0.231</td>
 <td style="text-align: right;">-0.0126</td>
 <td style="text-align: right;">1.03e-05</td>
-<td style="text-align: right;">2.00e-06</td>
+<td style="text-align: right;">2.001487e-06</td>
 <td style="text-align: right;">0.2359</td>
 </tr>
 </tbody>
@@ -5946,7 +5946,7 @@ window.Quarto = {
 <p>Everything in this notebook operates on a <strong>methylation matrix</strong> and a phenotype table, so the non-IDAT path is identical once you have M-values:</p>
 <ul>
 <li>Convert a deposited β-matrix to M-values (<code>M = log2(beta/(1-beta))</code>; see <a href="./02_normalization.html">normalization</a>).</li>
-<li>Obtain covariates from the series metadata: sex and age from <code>pData</code>, cell composition via a <strong>reference-based estimator that runs on β-matrices</strong> (e.g. <code>EpiDISH</code>/<code>RPC</code>) when you can’t run <code>estimateCellCounts2</code> from IDATs (<a href="./04_cell_composition.html">P4</a> covers this), and surrogate variables from <code>sva</code> run on the matrix (<a href="./05_batch_effects.html">P5</a>).</li>
+<li>Obtain covariates from the series metadata: sex and age from <code>pData</code>, cell composition via a <strong>reference-based estimator that runs on β-matrices</strong> (e.g. <code>EpiDISH</code>/<code>RPC</code>) when you can’t run <code>estimateCellCounts2</code> from IDATs (<a href="./04_cell_composition.html">chapter 04</a> covers this), and surrogate variables from <code>sva</code> run on the matrix (<a href="./05_batch_effects.html">chapter 05</a>).</li>
 <li>Fit the identical <code>limma</code> model. The association step never touches raw intensities.</li>
 </ul>
 <hr>
@@ -6441,9 +6441,9 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>We now have everything an epigenome-wide association study needs: a normalized,</span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>filtered methylation matrix (<span class="co">[</span><span class="ot">P2</span><span class="co">](02_normalization.qmd)</span>–<span class="co">[</span><span class="ot">P3</span><span class="co">](03_probe_filtering.qmd)</span>),</span>
-<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>cell-composition estimates (<span class="co">[</span><span class="ot">P4</span><span class="co">](04_cell_composition.qmd)</span>), and surrogate variables</span>
-<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>that absorb technical structure (<span class="co">[</span><span class="ot">P5</span><span class="co">](05_batch_effects.qmd)</span>). This notebook fits the</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>filtered methylation matrix (<span class="co">[</span><span class="ot">chapter 02</span><span class="co">](02_normalization.qmd)</span>–<span class="co">[</span><span class="ot">chapter 03</span><span class="co">](03_probe_filtering.qmd)</span>),</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>cell-composition estimates (<span class="co">[</span><span class="ot">chapter 04</span><span class="co">](04_cell_composition.qmd)</span>), and surrogate variables</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>that absorb technical structure (<span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span>). This notebook fits the</span>
 <span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>association model, checks that it is well-calibrated, and provides guidance for</span>
 <span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>interpreting results. It also lays out **two modeling conventions** you will meet in the</span>
 <span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>literature — methylation-as-outcome vs. phenotype-as-outcome — and a</span>
@@ -6508,19 +6508,19 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb29-81"><a href="#cb29-81" aria-hidden="true" tabindex="-1"></a>Our design includes covariates for everything we established as a driver of methylation:</span>
 <span id="cb29-82"><a href="#cb29-82" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb29-83"><a href="#cb29-83" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**sex** and **age** — strong, ubiquitous methylation covariates</span>
-<span id="cb29-84"><a href="#cb29-84" aria-hidden="true" tabindex="-1"></a>  (<span class="co">[</span><span class="ot">P5</span><span class="co">](05_batch_effects.qmd)</span> confirmed both drive leading PCs).</span>
+<span id="cb29-84"><a href="#cb29-84" aria-hidden="true" tabindex="-1"></a>  (<span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span> confirmed both drive leading PCs).</span>
 <span id="cb29-85"><a href="#cb29-85" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**cell composition** (6 estimated proportions) the single largest source</span>
-<span id="cb29-86"><a href="#cb29-86" aria-hidden="true" tabindex="-1"></a>  of variance in whole blood (<span class="co">[</span><span class="ot">P4</span><span class="co">](04_cell_composition.qmd)</span>).</span>
+<span id="cb29-86"><a href="#cb29-86" aria-hidden="true" tabindex="-1"></a>  of variance in whole blood (<span class="co">[</span><span class="ot">chapter 04</span><span class="co">](04_cell_composition.qmd)</span>).</span>
 <span id="cb29-87"><a href="#cb29-87" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**a smoking proxy** — this cohort has no recorded smoking variable, so</span>
-<span id="cb29-88"><a href="#cb29-88" aria-hidden="true" tabindex="-1"></a>  <span class="co">[</span><span class="ot">P5</span><span class="co">](05_batch_effects.qmd)</span> builds one from a published panel of replicated</span>
+<span id="cb29-88"><a href="#cb29-88" aria-hidden="true" tabindex="-1"></a>  <span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span> builds one from a published panel of replicated</span>
 <span id="cb29-89"><a href="#cb29-89" aria-hidden="true" tabindex="-1"></a>  smoking-associated CpGs. The panel probes themselves are excluded from testing.</span>
 <span id="cb29-90"><a href="#cb29-90" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**array position** — the chip row (<span class="in">`R01C01`</span>…<span class="in">`R08C01`</span>), a recorded technical</span>
 <span id="cb29-91"><a href="#cb29-91" aria-hidden="true" tabindex="-1"></a>  factor that is estimable here and so enters as a fixed effect (7 dummy columns).</span>
 <span id="cb29-92"><a href="#cb29-92" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**surrogate variables** — the <span class="in">`r ew$k_sv`</span> SVs retained in</span>
-<span id="cb29-93"><a href="#cb29-93" aria-hidden="true" tabindex="-1"></a>  <span class="co">[</span><span class="ot">P5</span><span class="co">](05_batch_effects.qmd)</span>, which absorb structure that none of the measured</span>
+<span id="cb29-93"><a href="#cb29-93" aria-hidden="true" tabindex="-1"></a>  <span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span>, which absorb structure that none of the measured</span>
 <span id="cb29-94"><a href="#cb29-94" aria-hidden="true" tabindex="-1"></a>  covariates name.</span>
 <span id="cb29-95"><a href="#cb29-95" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-96"><a href="#cb29-96" aria-hidden="true" tabindex="-1"></a>This is the step where the sample count changes. Chapters 1–5 worked with all</span>
+<span id="cb29-96"><a href="#cb29-96" aria-hidden="true" tabindex="-1"></a>This is the step where the sample count changes. Chapters 01–05 worked with all</span>
 <span id="cb29-97"><a href="#cb29-97" aria-hidden="true" tabindex="-1"></a>**96** QC-passing arrays, because none of those steps needs the exposure. The model</span>
 <span id="cb29-98"><a href="#cb29-98" aria-hidden="true" tabindex="-1"></a>above does, so the nine samples with no recorded PTSD status drop out and the EWAS</span>
 <span id="cb29-99"><a href="#cb29-99" aria-hidden="true" tabindex="-1"></a>fits **n = `r ew$n`** (<span class="in">`r ew$ncase`</span> cases, <span class="in">`r ew$nctrl`</span> controls). No sample was</span>
@@ -6543,8 +6543,8 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb29-116"><a href="#cb29-116" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb29-117"><a href="#cb29-117" aria-hidden="true" tabindex="-1"></a><span class="in">```r</span></span>
 <span id="cb29-118"><a href="#cb29-118" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(limma)</span>
-<span id="cb29-119"><a href="#cb29-119" aria-hidden="true" tabindex="-1"></a><span class="co"># Mcb = ComBat-adjusted M-values from P5, probes x samples</span></span>
-<span id="cb29-120"><a href="#cb29-120" aria-hidden="true" tabindex="-1"></a><span class="co"># smoke = smoking proxy (P5); pos = array position factor; SV = surrogate variables</span></span>
+<span id="cb29-119"><a href="#cb29-119" aria-hidden="true" tabindex="-1"></a><span class="co"># Mcb = ComBat-adjusted M-values from chapter 05, probes x samples</span></span>
+<span id="cb29-120"><a href="#cb29-120" aria-hidden="true" tabindex="-1"></a><span class="co"># smoke = smoking proxy (chapter 05); pos = array position factor; SV = surrogate variables</span></span>
 <span id="cb29-121"><a href="#cb29-121" aria-hidden="true" tabindex="-1"></a>design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> ptsd <span class="sc">+</span> sex <span class="sc">+</span> age <span class="sc">+</span> smoke <span class="sc">+</span> pos <span class="sc">+</span></span>
 <span id="cb29-122"><a href="#cb29-122" aria-hidden="true" tabindex="-1"></a>                         CD8T <span class="sc">+</span> CD4T <span class="sc">+</span> NK <span class="sc">+</span> Bcell <span class="sc">+</span> Mono <span class="sc">+</span> Neu <span class="sc">+</span> SV)</span>
 <span id="cb29-123"><a href="#cb29-123" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">lmFit</span>(Mcb, design)        <span class="co"># per-probe weighted least squares</span></span>
@@ -6835,8 +6835,8 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb29-428"><a href="#cb29-428" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Obtain covariates from the series metadata: sex and age from <span class="in">`pData`</span>, cell</span>
 <span id="cb29-429"><a href="#cb29-429" aria-hidden="true" tabindex="-1"></a>  composition via a **reference-based estimator that runs on β-matrices**</span>
 <span id="cb29-430"><a href="#cb29-430" aria-hidden="true" tabindex="-1"></a>  (e.g. <span class="in">`EpiDISH`</span>/<span class="in">`RPC`</span>) when you can&#39;t run <span class="in">`estimateCellCounts2`</span> from IDATs</span>
-<span id="cb29-431"><a href="#cb29-431" aria-hidden="true" tabindex="-1"></a>  (<span class="co">[</span><span class="ot">P4</span><span class="co">](04_cell_composition.qmd)</span> covers this), and surrogate variables from</span>
-<span id="cb29-432"><a href="#cb29-432" aria-hidden="true" tabindex="-1"></a>  <span class="in">`sva`</span> run on the matrix (<span class="co">[</span><span class="ot">P5</span><span class="co">](05_batch_effects.qmd)</span>).</span>
+<span id="cb29-431"><a href="#cb29-431" aria-hidden="true" tabindex="-1"></a>  (<span class="co">[</span><span class="ot">chapter 04</span><span class="co">](04_cell_composition.qmd)</span> covers this), and surrogate variables from</span>
+<span id="cb29-432"><a href="#cb29-432" aria-hidden="true" tabindex="-1"></a>  <span class="in">`sva`</span> run on the matrix (<span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span>).</span>
 <span id="cb29-433"><a href="#cb29-433" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Fit the identical <span class="in">`limma`</span> model. The association step never touches raw intensities.</span>
 <span id="cb29-434"><a href="#cb29-434" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb29-435"><a href="#cb29-435" aria-hidden="true" tabindex="-1"></a>---</span>

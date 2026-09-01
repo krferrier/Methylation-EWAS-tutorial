@@ -10,9 +10,9 @@ library(data.table)
 ```
 
 We now have everything an epigenome-wide association study needs: a normalized,
-filtered methylation matrix ([P2](02_normalization.qmd)–[P3](03_probe_filtering.qmd)),
-cell-composition estimates ([P4](04_cell_composition.qmd)), and surrogate variables
-that absorb technical structure ([P5](05_batch_effects.qmd)). This notebook fits the
+filtered methylation matrix ([chapter 02](02_normalization.qmd)–[chapter 03](03_probe_filtering.qmd)),
+cell-composition estimates ([chapter 04](04_cell_composition.qmd)), and surrogate variables
+that absorb technical structure ([chapter 05](05_batch_effects.qmd)). This notebook fits the
 association model, checks that it is well-calibrated, and provides guidance for
 interpreting results. It also lays out **two modeling conventions** you will meet in the
 literature — methylation-as-outcome vs. phenotype-as-outcome — and a
@@ -77,19 +77,19 @@ methylation change."
 Our design includes covariates for everything we established as a driver of methylation:
 
 - **sex** and **age** — strong, ubiquitous methylation covariates
-  ([P5](05_batch_effects.qmd) confirmed both drive leading PCs).
+  ([chapter 05](05_batch_effects.qmd) confirmed both drive leading PCs).
 - **cell composition** (6 estimated proportions) the single largest source
-  of variance in whole blood ([P4](04_cell_composition.qmd)).
+  of variance in whole blood ([chapter 04](04_cell_composition.qmd)).
 - **a smoking proxy** — this cohort has no recorded smoking variable, so
-  [P5](05_batch_effects.qmd) builds one from a published panel of replicated
+  [chapter 05](05_batch_effects.qmd) builds one from a published panel of replicated
   smoking-associated CpGs. The panel probes themselves are excluded from testing.
 - **array position** — the chip row (`R01C01`…`R08C01`), a recorded technical
   factor that is estimable here and so enters as a fixed effect (7 dummy columns).
 - **surrogate variables** — the `r ew$k_sv` SVs retained in
-  [P5](05_batch_effects.qmd), which absorb structure that none of the measured
+  [chapter 05](05_batch_effects.qmd), which absorb structure that none of the measured
   covariates name.
 
-This is the step where the sample count changes. Chapters 1–5 worked with all
+This is the step where the sample count changes. Chapters 01–05 worked with all
 **96** QC-passing arrays, because none of those steps needs the exposure. The model
 above does, so the nine samples with no recorded PTSD status drop out and the EWAS
 fits **n = `r ew$n`** (`r ew$ncase` cases, `r ew$nctrl` controls). No sample was
@@ -112,8 +112,8 @@ interpreting results.
 
 ```r
 library(limma)
-# Mcb = ComBat-adjusted M-values from P5, probes x samples
-# smoke = smoking proxy (P5); pos = array position factor; SV = surrogate variables
+# Mcb = ComBat-adjusted M-values from chapter 05, probes x samples
+# smoke = smoking proxy (chapter 05); pos = array position factor; SV = surrogate variables
 design <- model.matrix(~ ptsd + sex + age + smoke + pos +
                          CD8T + CD4T + NK + Bcell + Mono + Neu + SV)
 fit <- lmFit(Mcb, design)        # per-probe weighted least squares
@@ -404,8 +404,8 @@ table, so the non-IDAT path is identical once you have M-values:
 - Obtain covariates from the series metadata: sex and age from `pData`, cell
   composition via a **reference-based estimator that runs on β-matrices**
   (e.g. `EpiDISH`/`RPC`) when you can't run `estimateCellCounts2` from IDATs
-  ([P4](04_cell_composition.qmd) covers this), and surrogate variables from
-  `sva` run on the matrix ([P5](05_batch_effects.qmd)).
+  ([chapter 04](04_cell_composition.qmd) covers this), and surrogate variables from
+  `sva` run on the matrix ([chapter 05](05_batch_effects.qmd)).
 - Fit the identical `limma` model. The association step never touches raw intensities.
 
 ---

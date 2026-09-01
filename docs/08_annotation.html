@@ -5620,13 +5620,13 @@ window.Quarto = {
 </section>
 <section id="the-annotation-join" class="level3">
 <h3 class="anchored" data-anchor-id="the-annotation-join">The annotation join</h3>
-<p>We start from the BACON-adjusted top-table saved in notebook 06 and left-join the Zhou tables on probe ID. The v41 gene table can list several TSS distances per probe (one per transcript); we keep the nearest, which is what defines the promoter call below.</p>
+<p>We start from the BACON-adjusted top-table saved in chapter 06 and left-join the Zhou tables on probe ID. The v41 gene table can list several TSS distances per probe (one per transcript); we keep the nearest, which is what defines the promoter call below.</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. EWAS results: the BACON-adjusted toptable from notebook 06</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. EWAS results: the BACON-adjusted toptable from chapter 06</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Zhou gencode v41 gene model: gene names, biotypes, signed distance to TSS</span></span>
@@ -6054,7 +6054,7 @@ Figure 2: CpG-island context, same comparison, using the Zhou CGI relation. A v
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>That the strongest regional signal falls in the MHC on chromosome 6 is worth noting. The MHC is the most gene-dense, most polymorphic, and most methylation-variable region in the genome, and it surfaces in a large fraction of blood EWAS. It is simultaneously the region where you should be <em>most</em> cautious about SNP-driven artifacts — which is exactly why the ancestry-aware SNP masking in notebook 03 matters: the probes that survive to this point are already stripped of the common-SNP-affected sites that would otherwise masquerade as MHC methylation signal.</p>
+<p>That the strongest regional signal falls in the MHC on chromosome 6 is worth noting. The MHC is the most gene-dense, most polymorphic, and most methylation-variable region in the genome, and it surfaces in a large fraction of blood EWAS. It is simultaneously the region where you should be <em>most</em> cautious about SNP-driven artifacts — which is exactly why the ancestry-aware SNP masking in chapter 03 matters: the probes that survive to this point are already stripped of the common-SNP-affected sites that would otherwise masquerade as MHC methylation signal.</p>
 </div>
 </div>
 </section>
@@ -6777,7 +6777,7 @@ Figure 5: The twelve most significant KYCG features for the top 1,000 CpGs. Fou
 <section id="eforge-is-a-hit-list-driven-by-cell-composition" class="level2">
 <h2 class="anchored" data-anchor-id="eforge-is-a-hit-list-driven-by-cell-composition"><code>eFORGE</code>: is a hit list driven by cell composition?</h2>
 <p>For a <strong>whole-blood</strong> EWAS the single most important adversarial check is whether your top CpGs are simply marking a shift in cell-type proportions rather than a phenotype-specific signal. <strong><code>eFORGE</code></strong> <span class="citation" data-cites="breeze2016eforge">(<a href="#ref-breeze2016eforge" role="doc-biblioref"><span class="nocase">Breeze et al.</span> 2016</a>)</span> answers this directly: it takes a set of CpGs (your top hits, or a DMR’s constituent probes) and tests — by matched-background resampling — whether they are over-represented in cell-type-specific regulatory elements: DNase I hypersensitive sites and the Roadmap/ENCODE core-15 chromatin states across ~40 blood and other primary cell types.</p>
-<p>The result you <em>want</em> to see for a well-adjusted blood EWAS is <strong>no strong, single-cell-type enrichment</strong> — that is evidence your cell-composition adjustment (notebook 04) did its job. The result that should stop you is a list of neutrophil- or T-cell-specific enhancers: a signature that the “phenotype” effect is really a composition effect that leaked past the model. Because it works on <code>cg#########</code> IDs against pre-built reference panels, <code>eFORGE</code> runs from a web form or the <code>eForge</code> R package with no local reference data to assemble.</p>
+<p>The result you <em>want</em> to see for a well-adjusted blood EWAS is <strong>no strong, single-cell-type enrichment</strong> — that is evidence your cell-composition adjustment (chapter 04) did its job. The result that should stop you is a list of neutrophil- or T-cell-specific enhancers: a signature that the “phenotype” effect is really a composition effect that leaked past the model. Because it works on <code>cg#########</code> IDs against pre-built reference panels, <code>eFORGE</code> runs from a web form or the <code>eForge</code> R package with no local reference data to assemble.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -6788,7 +6788,7 @@ Figure 5: The twelve most significant KYCG features for the top 1,000 CpGs. Fou
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Our subset carries the confounds notebook 05 mapped — cell composition loads heavily on the leading PCs. An <code>eFORGE</code> cell-type enrichment on the top hits is the natural closing sanity check: it asks the composition question of the <em>final</em> CpG list, after all modeling, in the vocabulary (chromatin states, DHS) that a reviewer of a blood EWAS will expect to see addressed.</p>
+<p>Our subset carries the confounds chapter 05 mapped — cell composition loads heavily on the leading PCs. An <code>eFORGE</code> cell-type enrichment on the top hits is the natural closing sanity check: it asks the composition question of the <em>final</em> CpG list, after all modeling, in the vocabulary (chromatin states, DHS) that a reviewer of a blood EWAS will expect to see addressed.</p>
 </div>
 </div>
 </section>
@@ -6864,7 +6864,7 @@ Figure 5: The twelve most significant KYCG features for the top 1,000 CpGs. Fou
 <li><strong>Did anything survive FDR at the CpG level?</strong> If not (as here), say so plainly and treat enrichment as hypothesis-generating, not confirmatory.</li>
 <li><strong>Is the enrichment robust?</strong> Re-run with the full-array background vs your filtered set; a term that only appears with a permissive background is fragile.</li>
 <li><strong>Does trait enrichment corroborate the biology?</strong> Overlap with previously reported CpGs is stronger evidence than a lone GO term.</li>
-<li><strong>Could composition explain it?</strong> Check with <code>eFORGE</code> or by confirming your cell-count adjustment (notebook 04) held.</li>
+<li><strong>Could composition explain it?</strong> Check with <code>eFORGE</code> or by confirming your cell-count adjustment (chapter 04) held.</li>
 <li><strong>Is the direction consistent?</strong> Hyper- vs hypo-methylation across a region or pathway should tell a coherent story; scattered directions suggest noise.</li>
 <li><strong>How big are the feature sets, and do they overlap?</strong> A CpG-centric test on very large, correlated annotation sets will produce many significant features from one underlying signal. Count distinct signals, not rows.</li>
 <li><strong>Are the hits you are annotating stratum-specific?</strong> If they came from a stratified meta-analysis, look up the per-stratum statistics first (notebook <a href="./07_pipeline.html">07</a>) — annotating a CpG that only one arm supports is annotating one stratum’s noise.</li>
@@ -7491,7 +7491,7 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-82"><a href="#cb12-82" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-83"><a href="#cb12-83" aria-hidden="true" tabindex="-1"></a><span class="fu">### The annotation join</span></span>
 <span id="cb12-84"><a href="#cb12-84" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-85"><a href="#cb12-85" aria-hidden="true" tabindex="-1"></a>We start from the BACON-adjusted top-table saved in notebook 06 and left-join the</span>
+<span id="cb12-85"><a href="#cb12-85" aria-hidden="true" tabindex="-1"></a>We start from the BACON-adjusted top-table saved in chapter 06 and left-join the</span>
 <span id="cb12-86"><a href="#cb12-86" aria-hidden="true" tabindex="-1"></a>Zhou tables on probe ID. The v41 gene table can list several TSS distances per</span>
 <span id="cb12-87"><a href="#cb12-87" aria-hidden="true" tabindex="-1"></a>probe (one per transcript); we keep the nearest, which is what defines the</span>
 <span id="cb12-88"><a href="#cb12-88" aria-hidden="true" tabindex="-1"></a>promoter call below.</span>
@@ -7499,7 +7499,7 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-90"><a href="#cb12-90" aria-hidden="true" tabindex="-1"></a><span class="in">```{r annotate, eval=FALSE}</span></span>
 <span id="cb12-91"><a href="#cb12-91" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
 <span id="cb12-92"><a href="#cb12-92" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-93"><a href="#cb12-93" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. EWAS results: the BACON-adjusted toptable from notebook 06</span></span>
+<span id="cb12-93"><a href="#cb12-93" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. EWAS results: the BACON-adjusted toptable from chapter 06</span></span>
 <span id="cb12-94"><a href="#cb12-94" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
 <span id="cb12-95"><a href="#cb12-95" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-96"><a href="#cb12-96" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Zhou gencode v41 gene model: gene names, biotypes, signed distance to TSS</span></span>
@@ -7742,7 +7742,7 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-333"><a href="#cb12-333" aria-hidden="true" tabindex="-1"></a>methylation-variable region in the genome, and it surfaces in a large fraction</span>
 <span id="cb12-334"><a href="#cb12-334" aria-hidden="true" tabindex="-1"></a>of blood EWAS. It is simultaneously the region where you should be *most*</span>
 <span id="cb12-335"><a href="#cb12-335" aria-hidden="true" tabindex="-1"></a>cautious about SNP-driven artifacts — which is exactly why the ancestry-aware</span>
-<span id="cb12-336"><a href="#cb12-336" aria-hidden="true" tabindex="-1"></a>SNP masking in notebook 03 matters: the probes that survive to</span>
+<span id="cb12-336"><a href="#cb12-336" aria-hidden="true" tabindex="-1"></a>SNP masking in chapter 03 matters: the probes that survive to</span>
 <span id="cb12-337"><a href="#cb12-337" aria-hidden="true" tabindex="-1"></a>this point are already stripped of the common-SNP-affected sites that would</span>
 <span id="cb12-338"><a href="#cb12-338" aria-hidden="true" tabindex="-1"></a>otherwise masquerade as MHC methylation signal.</span>
 <span id="cb12-339"><a href="#cb12-339" aria-hidden="true" tabindex="-1"></a>:::</span>
@@ -8219,7 +8219,7 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-816"><a href="#cb12-816" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-817"><a href="#cb12-817" aria-hidden="true" tabindex="-1"></a>The result you *want* to see for a well-adjusted blood EWAS is **no strong,</span>
 <span id="cb12-818"><a href="#cb12-818" aria-hidden="true" tabindex="-1"></a>single-cell-type enrichment** — that is evidence your cell-composition</span>
-<span id="cb12-819"><a href="#cb12-819" aria-hidden="true" tabindex="-1"></a>adjustment (notebook 04) did its job. The result that should stop you is a list of </span>
+<span id="cb12-819"><a href="#cb12-819" aria-hidden="true" tabindex="-1"></a>adjustment (chapter 04) did its job. The result that should stop you is a list of </span>
 <span id="cb12-820"><a href="#cb12-820" aria-hidden="true" tabindex="-1"></a>neutrophil- or T-cell-specific enhancers: a signature that the</span>
 <span id="cb12-821"><a href="#cb12-821" aria-hidden="true" tabindex="-1"></a>&quot;phenotype&quot; effect is really a composition effect that leaked past the model.</span>
 <span id="cb12-822"><a href="#cb12-822" aria-hidden="true" tabindex="-1"></a>Because it works on <span class="in">`cg#########`</span> IDs against pre-built reference panels, <span class="in">`eFORGE`</span></span>
@@ -8228,7 +8228,7 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-825"><a href="#cb12-825" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-826"><a href="#cb12-826" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
 <span id="cb12-827"><a href="#cb12-827" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why this check matters here specifically</span></span>
-<span id="cb12-828"><a href="#cb12-828" aria-hidden="true" tabindex="-1"></a>Our subset carries the confounds notebook 05 mapped — cell composition loads</span>
+<span id="cb12-828"><a href="#cb12-828" aria-hidden="true" tabindex="-1"></a>Our subset carries the confounds chapter 05 mapped — cell composition loads</span>
 <span id="cb12-829"><a href="#cb12-829" aria-hidden="true" tabindex="-1"></a>heavily on the leading PCs. An <span class="in">`eFORGE`</span> cell-type enrichment on the top hits is</span>
 <span id="cb12-830"><a href="#cb12-830" aria-hidden="true" tabindex="-1"></a>the natural closing sanity check: it asks the composition question of the</span>
 <span id="cb12-831"><a href="#cb12-831" aria-hidden="true" tabindex="-1"></a>*final* CpG list, after all modeling, in the vocabulary (chromatin states,</span>
@@ -8265,7 +8265,7 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-862"><a href="#cb12-862" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Does trait enrichment corroborate the biology?** Overlap with previously</span>
 <span id="cb12-863"><a href="#cb12-863" aria-hidden="true" tabindex="-1"></a>   reported CpGs is stronger evidence than a lone GO term.</span>
 <span id="cb12-864"><a href="#cb12-864" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Could composition explain it?** Check with <span class="in">`eFORGE`</span> or by confirming your</span>
-<span id="cb12-865"><a href="#cb12-865" aria-hidden="true" tabindex="-1"></a>   cell-count adjustment (notebook 04) held.</span>
+<span id="cb12-865"><a href="#cb12-865" aria-hidden="true" tabindex="-1"></a>   cell-count adjustment (chapter 04) held.</span>
 <span id="cb12-866"><a href="#cb12-866" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Is the direction consistent?** Hyper- vs hypo-methylation across a region or</span>
 <span id="cb12-867"><a href="#cb12-867" aria-hidden="true" tabindex="-1"></a>   pathway should tell a coherent story; scattered directions suggest noise.</span>
 <span id="cb12-868"><a href="#cb12-868" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**How big are the feature sets, and do they overlap?** A CpG-centric test on</span>
