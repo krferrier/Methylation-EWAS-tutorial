@@ -1017,7 +1017,7 @@ intermediates no chunk reads (`08_dist_data.rds`, `dmr_region_cpgs.rds`).
 (`cgi_states.txt`); it takes the CGI relation from `annotated.rds` directly,
 which is the same value the manifest carries.
 
-## a3001c6 — ch08 comb-p output documentation, `min_p` in the table, revised DMR prose
+## 22. Chapter 08 comb-p output documentation, `min_p` in the results table, and revised DMR prose
 
 Author-revised prose for the comb-p section, plus the two additions that
 revision called for. **No analysis was re-run and no published number moved.**
