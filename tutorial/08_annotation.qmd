@@ -317,23 +317,45 @@ comb-p pipeline \
     data/08_annotation/PTSD_ewas_annotated_results.bed
 ```
 
+That one command writes seven files, all sharing the `-p` prefix. Nothing
+prints the answer to screen, so it is worth knowing which file holds what:
+
+| file | contents |
+|---|---|
+| `PTSD_dmr.args.txt` | the exact invocation, the comb-p version, and the run date — keep this for your methods section |
+| `PTSD_dmr.acf.txt` | the fitted autocorrelation function: `lag_min`, `lag_max`, `correlation`, `N`, `p` |
+| `PTSD_dmr.slk.bed.gz` | every input CpG with its smoothed regional p: `#chrom`, `start`, `end`, `p` (your input p), `region-p` (SLK-smoothed) |
+| `PTSD_dmr.fdr.bed.gz` | the same rows plus `region-q`, the Benjamini–Hochberg correction of `region-p` |
+| `PTSD_dmr.regions.bed.gz` | the stitched regions, minimal and headerless: chrom, start, end, `min_p`, `n_probes` |
+| `PTSD_dmr.regions-p.bed.gz` | the regions with statistics: `#chrom`, `start`, `end`, `min_p`, `n_probes`, `z_p`, `z_sidak_p` |
+| `PTSD_dmr.regions-t.bed` | the regions that pass `--region-filter-p` — here the single region with `z_sidak_p` < 0.05 |
+
+`regions-p.bed.gz` is the file to read: it lists every candidate region with
+both the uncorrected and the Šidák-corrected region p. `regions-t.bed` is that
+same table filtered down to what survived, which makes it the convenient
+endpoint for a pipeline. In this run the two files carry identical columns
+because our input BED has no effect-size column for comb-p to carry through.
+
 The ACF step reports short-range autocorrelation in our p-values (correlation
 ≈ 0.054 out to ~71 bp, p ≈ 1.3 × 10⁻¹²⁹ over 202,078 CpG pairs). Methylation
-*is* spatially structured here, as expected, which is the premise the whole
-method rests on. The SLK/FDR steps then propose three candidate regions, and
-one of them survives the Šidák correction for the number of regions tested:
+*is* spatially structured here, as expected. The SLK/FDR steps then propose
+three candidate regions, and one of them survives the Šidák correction for the
+number of regions tested:
 
-| region (hg38) | n CpGs | Šidák region p |
-|---|---|---|
-| chr6:28,633,493–28,633,701 | 11 | **2.6 × 10⁻¹⁶** |
-| chr3:138,608,544–138,608,573 | 2 | 0.45 |
-| chr20:32,018,064–32,018,066 | 1 | 1.00 |
+| region (hg38) | n CpGs | `min_p` | `z_sidak_p` |
+|---|---|---|---|
+| chr6:28,633,493–28,633,701 | 11 | 2.3 × 10⁻¹³ | **2.6 × 10⁻¹⁶** |
+| chr3:138,608,544–138,608,573 | 2 | 7.8 × 10⁻⁵ | 0.45 |
+| chr20:32,018,064–32,018,066 | 1 | 2.1 × 10⁻⁵ | 1.00 |
 
-The surviving region sits at **chr6:28.63 Mb, inside the MHC/HLA region**.
+Those are five of the seven columns in `regions-p.bed.gz` — the three
+coordinate columns are collapsed into one here, and `z_p` is omitted (it is the
+Šidák-uncorrected region p, 3.6 × 10⁻²⁰ for the chr6 region). The surviving
+region sits at **chr6:28.63 Mb, inside the MHC/HLA region**.
 
 ::: {.callout-warning}
 ## `min_p` in the comb-p output is *not* a raw probe p-value
-This trips people up. The region above is reported with
+The region above is reported with
 `min_p = 2.3 × 10⁻¹³` and `z_sidak_p = 2.6 × 10⁻¹⁶`. Despite the column name,
 that `min_p` is not the smallest input p-value in the region: it is the smallest
 **Stouffer–Liptak–Kechris–smoothed, FDR-corrected** regional q among the
@@ -353,34 +375,29 @@ than the data supporting it.
 region there; `--dist` then decides how far the region may extend. The seed is
 not a significance threshold for the result — the Šidák-corrected region p is —
 so setting it at genome-wide-significance levels defeats the point of doing
-region analysis at all. On this dataset, a seed of 1 × 10⁻¹⁵ returns **zero
-regions**, because our strongest single CpG only reaches p ≈ 3.0 × 10⁻⁸ and
-nothing is ever allowed to seed. The default of 1 × 10⁻⁴ finds the MHC region
-above. If your DMR run comes back empty, check the seed before you conclude
-there is no regional signal.
+region analysis at all. The default of 1 × 10⁻⁴ finds the MHC region
+above. If your DMR run comes back empty, you can adjust the seed p-value to
+something less stringent, but make sure you have a reason to justify the
+p-value you do use!
 :::
 
 ::: {.callout-tip}
 ## The MHC is a blood-EWAS landmark
 
-That the strongest regional signal falls in the MHC on chromosome 6 is worth
-noting. The MHC is the most gene-dense, most polymorphic, and most
-methylation-variable region in the genome, and it surfaces in a large fraction
-of blood EWAS. It is simultaneously the region where you should be *most*
-cautious about SNP-driven artifacts — which is exactly why the ancestry-aware
-SNP masking in chapter 03 matters: the probes that survive to
-this point are already stripped of the common-SNP-affected sites that would
-otherwise masquerade as MHC methylation signal.
+That the strongest regional signal falls in the MHC on chromosome 6. The MHC is
+the most gene-dense, most polymorphic, and most methylation-variable region in
+the genome, and it surfaces in a large fraction of blood EWAS. It is
+simultaneously the region where you should be *most* cautious about SNP-driven
+artifacts. We already removed common-SNP-affected sites, but it is possible
+that rare variants, structural variants, or undocumented genetic variation is
+driving this signal. Further causal inference testing with genetic or gene
+expression data can help clarify why we are seeing this signal in the MHC.
 :::
 
 ![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the eleven inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.6 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
 
-@fig-dmr is the payoff. Eleven CpGs spanning 208 bp, each at −log₁₀ p between
-2.5 and 4.8 — none remotely genome-wide significant on its own — collapse into
-one region eight orders of magnitude past the single-CpG bar, purely by
-borrowing strength across correlated neighbors. That is what a DMR method buys
-you, and why a region-level pass is worth running even when the single-CpG EWAS
-turns up nothing.
+@fig-dmr shows that eleven CpGs did not surpass genome-wide significance
+individually, but together they signal a significant region.
 
 ### DMRcate: the line-level alternative
 
