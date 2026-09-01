@@ -1016,3 +1016,70 @@ intermediates no chunk reads (`08_dist_data.rds`, `dmr_region_cpgs.rds`).
 `regen_dmr_tables.R` no longer depends on a workspace scratch file
 (`cgi_states.txt`); it takes the CGI relation from `annotated.rds` directly,
 which is the same value the manifest carries.
+
+## a3001c6 — ch08 comb-p output documentation, `min_p` in the table, revised DMR prose
+
+Author-revised prose for the comb-p section, plus the two additions that
+revision called for. **No analysis was re-run and no published number moved.**
+The values newly displayed were read out of the comb-p output already on disk.
+
+### Added
+
+- **A table of all seven files `comb-p pipeline` writes**, with the columns in
+  each: `.args.txt` (invocation, version 0.50.6, run date), `.acf.txt`
+  (`lag_min`, `lag_max`, `correlation`, `N`, `p`), `.slk.bed.gz` (`#chrom`,
+  `start`, `end`, `p`, `region-p`), `.fdr.bed.gz` (adds `region-q`),
+  `.regions.bed.gz` (headerless: chrom, start, end, `min_p`, `n_probes`),
+  `.regions-p.bed.gz` (adds `z_p`, `z_sidak_p`), `.regions-t.bed` (the
+  `--region-filter-p` survivors). Followed by a paragraph on which file to read.
+- **`min_p` as a column in the candidate-regions table**, so the `min_p`
+  callout that follows lands on a number the reader can see. New values shown,
+  all read from `PTSD_dmr.regions-p.bed.gz`:
+  - chr6:28,633,493–28,633,701 — `min_p` 2.3 × 10⁻¹³
+  - chr3:138,608,544–138,608,573 — `min_p` 7.8 × 10⁻⁵
+  - chr20:32,018,064–32,018,066 — `min_p` 2.1 × 10⁻⁵
+- **A sentence stating the table is a subset**: five of seven columns, the three
+  coordinate columns collapsed into one, and `z_p` omitted — with `z_p` for the
+  chr6 region given as 3.6 × 10⁻²⁰.
+
+### Changed (prose only)
+
+- `min_p` callout: dropped the "This trips people up" opener.
+- Seed callout: removed the 1 × 10⁻¹⁵-returns-zero-regions experiment; now
+  directs the reader to justify whatever seed they choose.
+- MHC callout: no longer credits the chapter 03 SNP mask with clearing the
+  region; now names rare variants, structural variants, and undocumented
+  genetic variation as live alternatives and points to causal-inference
+  follow-up with genetic or expression data.
+- ACF paragraph: dropped the "which is the premise the whole method rests on"
+  clause.
+- Closing paragraph: condensed from six lines to one sentence. The count reads
+  **eleven** CpGs (the author's draft said "eight"; the region has eleven, as
+  the figure, the tables, and `n_probes` in `regions-p.bed.gz` all agree).
+
+### Verified, not changed — the 17 CpGs absent from the BED
+
+Raised as a question about whether `end = CpG_beg + 2L` was costing probes. It
+is not:
+
+- All **756,251** tested probes have a Zhou v8.1 coordinate; none is missing.
+- The **17** that do not reach the BED are removed by the primary-contig filter
+  `grepl("^chr([0-9]+|X|Y)$", CpG_chrm)`: chr22_KI270879v1_alt 7,
+  chr14_GL000009v2_random 3, chr1_KI270706v1_random 2, chr4_GL000008v2_random 2,
+  chr14_KI270726v1_random 1, chr17_KI270857v1_alt 1, chr8_KI270821v1_alt 1.
+- Best BACON p among the 17 is **0.037**; none reaches p < 1 × 10⁻⁵.
+- `+2L` matches Zhou's own manifest convention — in `annotated.rds`,
+  `CpG_end − CpG_beg` is 2 for 753,631 probes and 1 for 2,620.
+- **A/B re-run of the full pipeline** confirms neither choice matters: with
+  `end = beg + 1` (primary contigs) the chr6 region is 11 CpGs at
+  `z_sidak_p` = 1.47 × 10⁻¹⁶; with `end = beg + 2` and *all* contigs included it
+  is 11 CpGs at 2.59 × 10⁻¹⁶, byte-identical to what ships. Same three
+  candidates in both. comb-p reads the end column only to reject spans
+  > 100 kb (`cpv/_common.py:84`).
+
+### Also confirmed — the figure-3 discrepancy
+
+A local working copy showed a different Figure 3 than the site. The site is
+correct: the local checkout was on commit `32ecf6d` (Aug 27) carrying the
+**68,701-byte** superseded 6-CpG figure, while the deployed
+`08_dmr_locus.png` is the **134,155-byte** 11-CpG rebuild. Resolved by pulling.
