@@ -807,3 +807,212 @@ count `724,282` returns zero occurrences in all eleven pages.
 The two blocked outbound requests documented in §19 (`fonts.googleapis.com` and
 the `cdnjs.cloudflare.com` polyfill, both 403 via the sandbox proxy) appear
 again and remain benign for the same reasons.
+
+## 21. The comb-p seed threshold, and two upstream staleness bugs it uncovered
+
+You reported that the DMR seed p-value in the pipeline's `config.yml` was
+`1e-15` rather than the intended default `1e-4`, and asked for the comb-p run
+and the surrounding prose to be redone. Fixing the seed alone would have
+published a spurious result, because two separate stale inputs were sitting
+underneath the DMR section. All three are fixed here.
+
+### 21.1 The seed threshold
+
+`--seed` is the p-value a CpG must reach before comb-p will *start* a region
+there. It is not a significance threshold for the output — the Šidák-corrected
+region p is. Setting it at genome-wide-significance levels prevents any region
+from ever being seeded.
+
+| seed | regions found | regions passing Šidák < 0.05 |
+|---|---|---|
+| 1 × 10⁻¹⁵ | 0 | 0 |
+| 1 × 10⁻⁴ (default, now used) | 3 | 1 |
+
+The strongest single CpG in this dataset reaches p = 3.0 × 10⁻⁸, so nothing
+could ever seed at 1 × 10⁻¹⁵. A new `.callout-important` in chapter 08 ("Set the
+seed threshold on purpose") documents the distinction and the empty-result
+symptom.
+
+### 21.2 Stale BED input
+
+The `make-bed` chunk was reading `PTSD_ewas_annotated_zhou.csv.gz` — the July
+pre-v8.1 table, 724,282 probes with pre-v8.1 p-values — rather than the v8.1
+refit in `06_ewas.rds` (756,251 probes). Run at the corrected seed on the stale
+BED, comb-p returns **two** regions passing Šidák < 0.05: the chr6 MHC region
+plus `chr16:3112431-3112453` at Šidák 0.019. On the v8.1 BED that second region
+does not exist. It was an artifact of the superseded p-values.
+
+The chunk now reads `readRDS("data/06_ewas.rds")$tt` joined to the YAME v8.1
+`EPIC.ordering.tsv.gz` + `EPIC.hg38.coord.tsv.gz`, filtered to primary contigs.
+That writes 756,234 of the 756,251 tested CpGs; the 17 dropped fall on unplaced
+or alt contigs. This was cross-validated against an independent coordinate route
+(the GENCODE v41 manifest, which also carries hg38 coordinates keyed on
+`probeID`): the v41 route yields 756,251 rows, and the 17-row difference is
+exactly the non-primary contigs, enumerated one by one.
+
+### 21.3 Stale annotation layer (`annotated.rds`)
+
+A third staleness, found while auditing chapter 08's data references. The
+shipped `data/08_annotation/annotated.rds` was a 724,282-row table on the **hg19
+Illumina** schema (`UCSC_RefGene_Name`, `Relation_to_Island`, `bacon.pval`),
+dated Jul 30 — it predated the entire Zhou hg38 rebuild. The v8.1 replacement
+(756,251 × 22) had been generated on Aug 26 and was then overwritten by a
+restore from the July render bundle in `~/Downloads`.
+
+This did **not** affect any published number: every chapter-08 chunk that reads
+`annotated.rds` or `PTSD_ewas_annotated_zhou.csv.gz` is `eval: false`, and the
+displayed tables and figures come from precomputed CSVs and PNGs whose values
+were confirmed to match `06_ewas.rds` exactly. The stale file was a shipped
+data artifact that disagreed with the prose describing it, not an input to the
+render.
+
+The annotation layer was rebuilt through the code path chapter 08 documents —
+`fread("data/06_ewas_bacon_toptable.csv.gz")`, joined against the GENCODE v41
+and v36 manifests. Every published number reproduced:
+
+| quantity | published | rebuilt |
+|---|---|---|
+| annotated CpGs | 756,251 | 756,251 |
+| gene-mapped | 647,034 (85.6%) | 647,034 (85.6%) |
+| BIOS eQTM-annotated | 10,803 (1.4%) | 10,803 (1.4%) |
+| Bonferroni threshold | 6.61 × 10⁻⁸ | 6.612 × 10⁻⁸ |
+| min BACON *p* | 2.96 × 10⁻⁸ | 2.964 × 10⁻⁸ |
+| Bonferroni / FDR < 0.05 | 1 / 2 | 1 / 2 |
+| promoters in top ten | 4 | 4 |
+| rank of cg16340178 | 8 | 8 |
+
+`top10_display.csv` and `eqtm_display.csv` came back **byte-identical** to the
+shipped files. `eqtm_top_hits.csv` differs only in the last one or two decimal
+digits of some floats (max absolute difference 1 × 10⁻¹⁵) — CSV round-trip
+precision, with the probe column identical. `08_feature_distribution.png` and
+`08_island_distribution.png` were left untouched; their percentages were
+confirmed correct against the rebuild.
+
+The two GENCODE manifests needed for this had been reported unavailable earlier
+in the project. They fetch cleanly from
+`github.com/zhou-lab/InfiniumAnnotationData` (v41: 62,477,035 B, 866,554 rows;
+v36: 29,916,134 B, 865,919 rows).
+
+### 21.4 The DMR that survives
+
+Rerun at seed 1 × 10⁻⁴ on the v8.1 BED, comb-p reports three candidate regions
+and one survives region filtering:
+
+| region | CpGs | Šidák *p* |
+|---|---|---|
+| chr6:28,633,493–28,633,701 | 11 | **2.6 × 10⁻¹⁶** |
+| chr3:138,608,544–138,608,573 | 2 | 0.45 |
+| chr20:32,018,064–32,018,066 | 1 | 1.00 |
+
+Autocorrelation in the input: correlation 0.054 out to ~71 bp, p = 1.3 × 10⁻¹²⁹
+over 202,078 CpG pairs.
+
+**Numbers that moved.** The previously published region was
+`chr6:28,633,534–28,633,601`, 6 CpGs, 67 bp, Šidák 1.2 × 10⁻¹⁰, −log₁₀ p 2.8–4.8,
+Δβ −3.5 to −5.6 pp. It is superseded by:
+
+| anchor | old | new |
+|---|---|---|
+| region | chr6:28,633,534–28,633,601 | chr6:28,633,493–28,633,701 |
+| CpGs | 6 | 11 |
+| span | 67 bp | 208 bp |
+| Šidák *p* | 1.2 × 10⁻¹⁰ | 2.6 × 10⁻¹⁶ |
+| `min_p` | — | 2.3 × 10⁻¹³ |
+| −log₁₀ *p* range | 2.8 – 4.8 | 2.51 – 4.77 |
+| Δβ range | −3.5 to −5.6 pp | −5.64 to −2.19 pp |
+| best raw BACON *p* in region | 1.7 × 10⁻⁵ | 1.7 × 10⁻⁵ |
+
+All eleven CpGs are hypomethylated in cases, all annotate to `Promoter`
+(within ±1.5 kb of a TSS) and all to the same CpG-island north shore
+(`N_Shore`) — cross-checked between the Zhou CGI knowledgebase
+(`CGI.20220904.cm`, read with YAME) and the v41/v36 manifest, which agree. The
+region's genes are `ENSG00000271440;ENSG00000287279`, distance to TSS −105 to
++101 bp. The summary bullet in chapter 08 was updated from the superseded
+6-CpG / 1.2 × 10⁻¹⁰ claim.
+
+The span is **208 bp**, computed as `max(CpG_beg) - min(CpG_beg) + 2` =
+28,633,699 − 28,633,493 + 2. An earlier draft said 209; that came from reading
+the region's exclusive end coordinate as inclusive. Corrected in the prose.
+
+### 21.5 Narrative simplification
+
+Per your decision, the DMR section is now a single default-seed run. The
+"Seeing the machinery work" relaxed-seed subsection and the 1 × 10⁻⁸ demo run
+were removed, along with the `dmr_demo/` output directory. The `min_p` callout
+was kept — it corrects a real misreading, since `min_p` is the smallest
+Stouffer–Liptak–Kechris-smoothed, FDR-corrected *regional* q among the region's
+CpGs, not a raw probe p-value. The raw SLK p inside the region reaches
+6.0 × 10⁻¹⁹, while the smallest raw BACON p among the eleven CpGs is
+1.7 × 10⁻⁵ — three orders of magnitude apart, which is the point of the callout.
+
+`08_dmr_locus.png` was regenerated against the 11-CpG region (9.0 × 5.2 in),
+and `dmr_cpg_display.csv` / `dmr_cpg_annotation.csv` were regenerated from the
+rebuilt `annotated.rds` rather than the stale CSV. The earlier version of the
+table script had *inferred* annotations for the one CpG that v8.1 newly retains
+and that the stale table therefore lacked; that inference is gone — all eleven
+rows now carry real annotations from the manifest.
+
+### 21.6 Stale shipped data files retired
+
+Three files in `repo/data/` predated the v8.1 refit and were superseded rather
+than regenerated, since nothing reads them:
+
+- `06_ewas_bacon_toptable.csv` (uncompressed, Jul 30) — replaced by the
+  `.csv.gz` the chapters actually `fread`
+- `06_ewas_toptable.csv` (Jul 30) — pre-BACON, unreferenced
+- `08_annotation/PTSD_ewas_annotated_results.csv.gz` (Jul 30)
+
+All three were moved out of the repository tree. They are `.gitignore`d and were
+never tracked, so no release tier or manifest entry changes.
+
+### 21.7 Independent re-run of comb-p, and cleanup of stale run artefacts
+
+The whole comb-p pipeline was re-run from the checked-in BED with exactly the
+invocation the chapter prints, and every output compared byte-for-byte against
+the shipped files:
+
+```
+comb-p pipeline -c 4 --seed 1e-4 --dist 200 --region-filter-p 0.05 \
+    -p data/08_annotation/dmr/PTSD_dmr \
+    data/08_annotation/PTSD_ewas_annotated_results.bed
+```
+
+`regions.bed.gz`, `regions-p.bed.gz`, `regions-t.bed`, `slk.bed.gz` and
+`fdr.bed.gz` are all identical to what ships. The run also confirms two details
+the chapter states implicitly: comb-p *derives* `--step 70` itself
+(`calculated stepsize as: 70`, from the median inter-probe spacing), so the
+printed command needs no `--step`; and the SLK step reports its own
+`lambda: 1.02`, consistent with the chapter 06 BACON-adjusted λ = 1.023.
+
+Two run-record files still described the superseded run and were replaced with
+the current ones:
+
+| file | was | now |
+|---|---|---|
+| `dmr/PTSD_dmr.args.txt` | `--seed 1e-15 … -p repo/data/… dmr_hdr.bed` | `--seed 1e-4 … -p data/08_annotation/dmr/PTSD_dmr data/08_annotation/PTSD_ewas_annotated_results.bed` |
+| `dmr/PTSD_dmr.acf.txt` | correlation 0.05384, N = 202,081, p = 1.397 × 10⁻¹²⁹ | correlation 0.05384, N = 202,078, p = 1.349 × 10⁻¹²⁹ |
+
+The ACF numbers moved because the old file came from `dmr_hdr.bed`, a scratch
+BED with three more CpG pairs in range than the v8.1 BED the chapter now builds.
+The correlation itself is unchanged to four figures; the chapter's rounded
+"≈ 0.054 out to ~71 bp" text was already correct.
+
+`dmr_cpg_annotation.csv` had been regenerated with a reduced column set
+(`probe, chrm, beg, delta_beta, P.Value, bacon.p, feature, CGIposition`). It is
+restored to its published schema — `probe, CpG_beg, CpG_end, genesUniq,
+transcriptTypes, distTSS, feature, island, BIOS_eQTM_genes, delta_beta,
+bacon.es, bacon.p` — now covering all eleven CpGs instead of seven. No number in
+the chapter reads from this file; it is a supplementary download.
+
+`dmr_source_comparison.csv` had picked up CRLF line endings; converted back to
+LF. Its content had already been updated for the new coordinates
+(chr6:28,633,493–28,633,701) and for the fact that COX8CP1 overlaps only the
+region's first five CpGs rather than the whole region.
+
+Removed from the repository: the superseded `dmr_demo/*` outputs, the duplicate
+BED `PTSD_ewas_bed_from_v41.bed` (identical in construction to the shipped
+`PTSD_ewas_annotated_results.bed`, which the chapter names), and two scratch
+intermediates no chunk reads (`08_dist_data.rds`, `dmr_region_cpgs.rds`).
+`regen_dmr_tables.R` no longer depends on a workspace scratch file
+(`cgi_states.txt`); it takes the CGI relation from `annotated.rds` directly,
+which is the same value the manifest carries.

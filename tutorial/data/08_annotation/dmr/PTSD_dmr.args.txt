@@ -1,4 +1,4 @@
--c 4 --seed 1e-15 --dist 200 --step 70 -p repo/data/08_annotation/dmr/PTSD_dmr --region-filter-p 0.05 dmr_hdr.bed
+-c 4 --seed 1e-4 --dist 200 --region-filter-p 0.05 -p data/08_annotation/dmr/PTSD_dmr data/08_annotation/PTSD_ewas_annotated_results.bed
 
-date: 2026-08-26 16:53:20.396176
+date: 2026-09-01 16:52:19.341223
 version: 0.50.6

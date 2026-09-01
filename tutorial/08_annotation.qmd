@@ -3,7 +3,7 @@ title: "Functional annotation & region-level analysis"
 bibliography: references.bib
 ---
 
-## Where we are
+## Annotation and Interpretation
 
 At this point the EWAS is done: we have a per-CpG table of effect sizes and
 p-values, BACON-adjusted for residual inflation (notebook
@@ -66,7 +66,7 @@ manually. We reproduce the steps by hand so the logic is clearly layed out.
 
 ### What annotation resources exist, and which to trust
 
-An EPIC probe ID like `cg16340178` is just an address on the array. To interpret
+An EPIC probe ID like `cg16340178` is the Illumina name for a CpG. To interpret
 it we need to know **where it lands in the genome** and **what functional
 element it tags**. Historically people reached for the hg19 Illumina/minfi
 manifest for this, but its coordinates are a genome build behind current
@@ -130,8 +130,8 @@ fwrite(annotated, "data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz")
 
 On our Grady PTSD subset this annotates all **756,251** CpGs with hg38
 coordinates and maps **647,034** (85.6%) to at least one gencode v41 gene. The
-remaining ~14% are intergenic — expected, since a large fraction of the EPIC
-array deliberately tiles enhancers and open sea away from genes.
+remaining ~14% are intergenic. This is expected since a large fraction of the EPIC
+array deliberately targets enhancers and open sea away from genes.
 
 ### The annotated top hits
 
@@ -142,14 +142,14 @@ knitr::kable(t10, caption = "Top 10 CpGs by BACON-adjusted p-value, with hg38 co
 ```
 
 Now the list has biological context. The top hit **cg15434749** is intergenic
-open sea on chr8 with no gencode v41 gene within reach — a reminder that the
-strongest statistical signal need not be the most interpretable one.
+open sea on chr8 with no nearby gencode v41 gene. 
 **cg25717994** sits essentially on the `EDNRB` TSS (distToTSS = −12 bp, so
 **promoter** by Zhou's ±1.5 kb rule); **cg18321729** tags the `PKM` promoter
 (−168 bp); **cg16340178** is in a CpG-island shore (`S_Shore`) just upstream of
 the `GPS2`/`NEURL4` TSS (−137 bp). Four of the top ten fall within 1.5 kb of a
-TSS — a mild promoter lean, not the dramatic one a well-powered scan produces.
-Only the top CpG clears Bonferroni, and only just (BACON p ≈ 3.0 × 10⁻⁸ against
+TSS. The trend of significant CpGs being in a promotor region is mild in this analysis, but would likely 
+be stronger in a full scale, well-powered EWAS. 
+Only the top CpG clears the Bonferroni significance threshold (BACON p ≈ 3.0 × 10⁻⁸ against
 a threshold of ≈ 6.6 × 10⁻⁸); two pass FDR < 0.05. Read the rest of this table as
 'nominally significant' rather than 'statistically significant'.
 
@@ -158,7 +158,7 @@ tools in Part 3 and to comparison against published EWAS catalogs.
 
 ### Where the top hits sit relative to genes and islands
 
-A useful sanity check — and a first look at biology — is to compare the
+A useful sanity check is to compare the
 distribution of the top-ranked CpGs across gene features and island context
 against the array background. A well-powered signal often enriches in
 promoters and island shores.
@@ -168,28 +168,38 @@ promoters and island shores.
 ![CpG-island context, same comparison, using the Zhou CGI relation. A visible lean toward islands in the top set (22.3% vs 19.2%) and away from open sea (51.4% vs 55.6%). Hold this impression loosely: the formal test in Part 3 (Know Your CpG, another Zhou resource) does *not* find it significant.](data/08_annotation/08_island_distribution.png){#fig-island width=95%}
 
 The distributions move only modestly between the top 1,000 and the background
-(@fig-feature, @fig-island) — a top-set lean toward promoters and islands that
-is in the right direction but small, as befits a subtle phenotype at n = 87.
-Whether that lean is more than chance is exactly the question the
-formal enrichment tests in Part 3 answer, and it is worth flagging now that the
-answer is **no** for the island lean: KYCG puts the island enrichment at
-nominal *p* = 0.0078 but FDR = 0.084. Eyeballing a bar chart is not a test, and
-this is a good example of why — a 3-percentage-point gap on 1,000 CpGs looks
-persuasive in a plot and does not survive multiple-testing correction.
+(@fig-feature, @fig-island). The top-set leans toward promoters and islands, but 
+it's not clear if that pattern is more than chance. The bar chart above 
+is a useful visual indicator, but not a formal enrichment test, which is covered in Part 3 of 
+this chapter.
 
 ### The BIOS eQTM layer: methylation that tracks expression
 
-Distance to the nearest gene is a proxy. The question we usually care about is
-*functional*: does this CpG's methylation actually track a gene's **expression**?
-The BIOS consortium answered this directly by pairing whole-blood methylation with
+Annotated methylation data often includes a column with the 'nearest gene' to the CpG. This is a useful annotation for 
+identifying where in the genome the CpG is physically located and can hint at potential functional impact. For example, 
+evidence of methylation at CpG in a promotor region of a gene could indicate a cis-effect between the CpG and expression 
+of that gene. However, in reality, DNA sequence is not linear, it has 3-dimensional structure. In 3D space, the 'nearest gene' 
+in terms of base-pairs may not be the gene that the methylation site is having an effect on. The answer we really want is 
+is whether a CpG actually affects gene expression. The BIOS consortium answered this directly by pairing whole-blood methylation with
 RNA-seq in ~3,000 samples and testing every cis CpG–transcript pair, producing a
-catalog of **cis-eQTMs** [@bonder2017eqtm]. Joining it names the likely
+catalog of **cis-eQTMs** [@bonder2017eqtm]. This information provides the likely
 *effector* gene behind a methylation change — which is not necessarily the nearest
-gene.
+gene. 
 
-The catalog is keyed on Ensembl gene IDs; the pipeline's
-`prepare_bios_eqtm_annotation.R` helper re-maps those to current HGNC symbols
-(using the HGNC complete set) before the join. 
+::: {.callout-note}
+## BIOS consortium meQTL catalogs 
+
+The BIOS consortium also provides catalogs for cis- and trans-meQTLs (methylation Quantitative Trait Loci), which provide 
+evidence of genetic loci that cause changes to methylation status. This annotation information was not incorporated into 
+the snakemake pipeline and how to merge it in will not be covered in this tutorial as it would require lifting over that 
+data from hg19 to hg38 and only represents meQTLs for CpGs from the 450k array. If you have both methylation and genetic 
+data for your sample, which is often the case, you can perform cis- and trans-meQTL testing yourself. The eQTM relationships 
+require having gene expression and methylation data, which is less common and why the effort was made to liftover and update 
+the meQTL data from the BIOS consortium. 
+:::
+
+The catalogs are keyed on Ensembl gene IDs; the pipeline's
+`prepare_bios_eqtm_annotation.R` helper re-maps those to current HGNC symbols for eQTM data. 
 
 ```{r eqtm, eval=FALSE}
 # One-time prep: Ensembl -> current HGNC symbol (pipeline helper)
@@ -209,11 +219,11 @@ annotated <- merge(annotated, eq, by = "probe", all.x = TRUE)
 ```
 
 On our subset the eQTM layer annotates **10,803 of the 756,251** tested CpGs
-(1.4%) with at least one expression-linked effector gene. There are so few annotations 
+(1.4%) with at least one expression-linked effector gene. I will reiterate, there are so few annotations 
 because the BIOS eQTM catalog was curated using the 450k methylation array, and not all 
 probes used in the 450k array were included in the 850k array. In addition, the BIOS
-catalog only keeps pairs at FDR < 0.05. Restricting to our top EWAS hits that
-*do* carry an eQTM makes the point that nearest-gene and effector-gene can differ:
+catalog only keeps pairs at FDR < 0.05. That said, if we filter our results to look our top EWAS hits that
+*do* carry an eQTM, we see that the nearest-gene and effector-gene can differ:
 
 ```{r eqtm-top, echo=FALSE, message=FALSE}
 library(data.table)
@@ -222,14 +232,11 @@ knitr::kable(fread("data/08_annotation/eqtm_display.csv"),
 ```
 
 For **cg06083200** the nearest gene is `PPP1R11`, but the
-CpG's methylation tracks the expression of **`TRIM26`** — a different gene, and
-the more plausible functional target. For **cg26713179** the nearest gene is
+CpG's methylation tracks the expression of **`TRIM26`**. For **cg26713179** the nearest gene is
 `ZNF766` while the eQTM points at the neighboring **`ZNF528`/`ZNF880`** cluster.
 Four of these twelve hits show an effector that differs from the nearest gene.
-This is exactly why an eQTM layer is worth the trouble: **proximity names a
-locus; the eQTM names a gene whose expression actually moves with it.** When reporting 
-results to a collaborator, the effector gene is usually the one they will
-ask about.
+When reporting results, the effector gene is usually the one people want to know about if the 
+information is available. 
 
 ## Part 2 — Region-level analysis (DMRs)
 
@@ -273,57 +280,85 @@ pooled model with sex as a covariate, it is.
 autocorrelation function (ACF) of the p-values, use it to compute
 autocorrelation-adjusted regional p-values (the Stouffer–Liptak–Kechris
 correction), FDR-correct those, and finally stitch adjacent low-p CpGs into
-regions. First we write the BED (this is the pipeline's `make_bed.R`):
+regions. First we write the BED (this is the pipeline's `make_bed.R`). The
+p-values come straight from the chapter 06 BACON fit; the coordinates come from
+the same Zhou v8.1 release the chapter 03 mask came from, so the BED and the
+mask cannot drift apart:
 
 ```{r make-bed, eval=FALSE}
-res <- fread("data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz")
-bed <- res[!is.na(CpG_chrm),
-           .(`#chrom` = CpG_chrm, start = CpG_beg, end = CpG_end,
-             pvals = bacon.p, cpgid = probe)]
+tt  <- as.data.table(readRDS("data/06_ewas.rds")$tt)
+ord <- fread("EPIC.ordering.tsv.gz", select = "Probe_ID")  # YAME probe order
+crd <- fread("EPIC.hg38.coord.tsv.gz")                     # same order, one row per probe
+map <- data.table(probe = ord$Probe_ID,
+                  CpG_chrm = crd$CpG_chrm, CpG_beg = crd$CpG_beg)
+
+bed <- merge(tt, map, by = "probe")[
+  grepl("^chr([0-9]+|X|Y)$", CpG_chrm),
+  .(`#chrom` = CpG_chrm, start = CpG_beg, end = CpG_beg + 2L,
+    pvals = bacon.p, cpgid = probe)]
 setorder(bed, `#chrom`, start)
 fwrite(bed, "data/08_annotation/PTSD_ewas_annotated_results.bed", sep = "\t")
 ```
 
+That writes **756,234** of the 756,251 tested CpGs — the 17 that fall on
+unplaced or alt contigs are dropped, because comb-p works on ordered positions
+along a chromosome and a scaffold has no neighbors to borrow from.
+
 Then the region detection, with the pipeline's default parameters
-(`config.yml`: `min_pvalue = 1e-15`, `window_size = 200`,
+(`config.yml`: `min_pvalue = 1e-4`, `window_size = 200`,
 `region_filter = 0.05`):
 
 ```bash
 comb-p pipeline \
-    --seed 1e-15 \        # a CpG must reach this p to seed a region
+    --seed 1e-4 \         # a CpG must reach this p to seed a region
     --dist 200 \          # CpGs within 200 bp can extend a region
     --region-filter-p 0.05 \
     -p data/08_annotation/dmr/PTSD_dmr \
     data/08_annotation/PTSD_ewas_annotated_results.bed
 ```
 
-What comes back is informative even when zero regions pass. The ACF step
-reports genuine short-range autocorrelation in our p-values (correlation ≈ 0.054
-out to ~71 bp, p ≈ 1.4 × 10⁻¹²⁹ over 202,081 CpG pairs) — methylation *is*
-spatially structured here, as expected. The SLK/FDR steps then find the
-strongest local cluster at **chr6:28.63 Mb, inside the MHC/HLA region**
-(smallest autocorrelation-adjusted regional p ≈ 6.0 × 10⁻¹⁹ before FDR
-correction; q ≈ 2.3 × 10⁻¹³ after). But at the pipeline's strict seed
-of 1 × 10⁻¹⁵ — appropriate for a genome-wide discovery study — **no region is
-reported**, because our strongest single CpG only reaches p ≈ 3.0 × 10⁻⁸.
+The ACF step reports short-range autocorrelation in our p-values (correlation
+≈ 0.054 out to ~71 bp, p ≈ 1.3 × 10⁻¹²⁹ over 202,078 CpG pairs). Methylation
+*is* spatially structured here, as expected, which is the premise the whole
+method rests on. The SLK/FDR steps then propose three candidate regions, and
+one of them survives the Šidák correction for the number of regions tested:
+
+| region (hg38) | n CpGs | Šidák region p |
+|---|---|---|
+| chr6:28,633,493–28,633,701 | 11 | **2.6 × 10⁻¹⁶** |
+| chr3:138,608,544–138,608,573 | 2 | 0.45 |
+| chr20:32,018,064–32,018,066 | 1 | 1.00 |
+
+The surviving region sits at **chr6:28.63 Mb, inside the MHC/HLA region**.
 
 ::: {.callout-warning}
 ## `min_p` in the comb-p output is *not* a raw probe p-value
-This trips people up. Relaxing the seed to 1 × 10⁻⁸ purely to see the machinery
-produce output yields one region — `chr6:28,633,534–28,633,601`, 6 probes,
-`min_p = 2.3 × 10⁻¹³`, Šidák-corrected `z_sidak_p = 1.2 × 10⁻¹⁰`. Despite the
-column name, that `min_p` is not the smallest input p-value in the region: it is
-the smallest **Stouffer–Liptak–Kechris–smoothed, FDR-corrected** regional q among
-the region's CpGs (the raw SLK p at those same CpGs goes down to 6.0 × 10⁻¹⁹).
+This trips people up. The region above is reported with
+`min_p = 2.3 × 10⁻¹³` and `z_sidak_p = 2.6 × 10⁻¹⁶`. Despite the column name,
+that `min_p` is not the smallest input p-value in the region: it is the smallest
+**Stouffer–Liptak–Kechris–smoothed, FDR-corrected** regional q among the
+region's CpGs (the raw SLK p at those same CpGs goes down to 6.0 × 10⁻¹⁹).
 Smoothing pools each CpG with its neighbors, so these values are orders of
-magnitude below anything in the input: the smallest raw BACON p among the six
+magnitude below anything in the input: the smallest raw BACON p among the eleven
 CpGs is 1.7 × 10⁻⁵, and the smallest anywhere in the BED is
 3.0 × 10⁻⁸. Smoothed regional statistics and probe-level statistics are not on
 the same scale, and comparing them directly will make a region look far stronger
-than the data supporting it. A relaxed seed is a teaching device here, not a
-result.
+than the data supporting it.
 :::
 
+::: {.callout-important}
+## Set the seed threshold on purpose
+
+`--seed` is the p-value a CpG must reach before comb-p will even *start* a
+region there; `--dist` then decides how far the region may extend. The seed is
+not a significance threshold for the result — the Šidák-corrected region p is —
+so setting it at genome-wide-significance levels defeats the point of doing
+region analysis at all. On this dataset, a seed of 1 × 10⁻¹⁵ returns **zero
+regions**, because our strongest single CpG only reaches p ≈ 3.0 × 10⁻⁸ and
+nothing is ever allowed to seed. The default of 1 × 10⁻⁴ finds the MHC region
+above. If your DMR run comes back empty, check the seed before you conclude
+there is no regional signal.
+:::
 
 ::: {.callout-tip}
 ## The MHC is a blood-EWAS landmark
@@ -338,29 +373,14 @@ this point are already stripped of the common-SNP-affected sites that would
 otherwise masquerade as MHC methylation signal.
 :::
 
-### Seeing the machinery work
+![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the eleven inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.6 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
 
-To show region detection actually working — not just returning empty — we can
-relax the seed to 1 × 10⁻⁸. comb-p then reports a single region: the same MHC
-cluster, six adjacent CpGs spanning 67 bp, all consistently hypomethylated:
-
-```bash
-comb-p pipeline --seed 1e-8 --dist 200 --region-filter-p 0.05 \
-    -p data/08_annotation/dmr/PTSD_dmr_demo \
-    data/08_annotation/PTSD_ewas_annotated_results.bed
-```
-
-| region (hg38) | n CpGs | best raw BACON p in region | Šidák region p |
-|---|---|---|---|
-| chr6:28,633,534–28,633,601 | 6 | 1.7 × 10⁻⁵ | **1.2 × 10⁻¹⁰** |
-
-![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the six inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 1.2 × 10⁻¹⁰. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
-
-@fig-dmr is the payoff. Six CpGs, each at −log₁₀ p between 2.8 and 4.8 — none
-remotely genome-wide significant on its own — collapse into one region three
-orders of magnitude past the single-CpG bar, purely by borrowing strength across
-correlated neighbors. That is what a DMR method buys you, and why a region-level
-pass is worth running even when the single-CpG EWAS turns up nothing.
+@fig-dmr is the payoff. Eleven CpGs spanning 208 bp, each at −log₁₀ p between
+2.5 and 4.8 — none remotely genome-wide significant on its own — collapse into
+one region eight orders of magnitude past the single-CpG bar, purely by
+borrowing strength across correlated neighbors. That is what a DMR method buys
+you, and why a region-level pass is worth running even when the single-CpG EWAS
+turns up nothing.
 
 ### DMRcate: the line-level alternative
 
@@ -389,13 +409,13 @@ rule from `hgdownload.soe.ucsc.edu`, all hg38). The DMR's constituent CpGs are
 looked up in the EWAS BED so each region carries its probe list and direction of
 effect. The overlap is a coordinate join — `bedtools intersect` in the pipeline,
 or `GenomicRanges::findOverlaps()` if you are staying in R — with no modeling
-involved. We run it here for our one demo region, the six CpGs of the
-comb-p MHC region at **chr6:28,633,534–28,633,601**:
+involved. We run it here for our one region, the eleven CpGs of the
+comb-p MHC region at **chr6:28,633,493–28,633,701**:
 
 ```{r dmr-annot, eval=FALSE}
 library(GenomicRanges)
 # DMR CpGs (from the comb-p region) as a GRanges
-dmr <- GRanges("chr6", IRanges(28633534, 28633601))
+dmr <- GRanges("chr6", IRanges(28633493, 28633701))
 
 # refGene / HGNC / cpgIslandExt hg38 BEDs (annotate.smk cache; here read locally)
 refGene <- import("refGene.bed.gz")          # rtracklayer::import
@@ -425,12 +445,12 @@ None of these is "wrong"; they reflect different inclusion criteria. The lesson
 for a DMR walkthrough is to **read the coordinates, not just the gene symbol**:
 an empty `gene_table` overlap does not mean the region is intergenic junk — here
 it is a CpG-island shore over a pseudogene in an immune-gene-dense locus, exactly
-the kind of place methylation differences cluster. Our six CpGs, all
+the kind of place methylation differences cluster. Our eleven CpGs, all
 hypomethylated in cases, look like this:
 
 ```{r dmr-cpgs, echo=FALSE, message=FALSE}
 knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv"),
-  caption = "The six CpGs of the demo DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases — Δβ between −3.5 and −5.6 percentage points, every one in the same direction. That coherence is what makes a region call meaningful; none of the six individual BACON p-values comes close to genome-wide significance.")
+  caption = "The eleven CpGs of the DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases — Δβ between −2.2 and −5.6 percentage points, every one in the same direction. That coherence is what makes a region call meaningful; none of the eleven individual BACON p-values comes close to genome-wide significance.")
 ```
 
 ### From regions to pathways: `goregion`
@@ -447,8 +467,9 @@ library(missMethyl)
 # goregion works in the array's native annotation build (hg19 for EPIC),
 # so lift the hg38 DMR coordinates back with the EPIC manifest's own map.
 anno <- minfi::getAnnotation("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
-dmr_cpgs <- c("cg25653641","cg22572476","cg19488431",
-              "cg27535677","cg22497095","cg26865747")
+dmr_cpgs <- c("cg07017437","cg25653641","cg22572476","cg19488431",
+              "cg27535677","cg22497095","cg26865747","cg03759229",
+              "cg13565129","cg14654363","cg00990380")
 reg <- GenomicRanges::reduce(GenomicRanges::GRanges(
   anno[dmr_cpgs, "chr"],
   IRanges::IRanges(anno[dmr_cpgs, "pos"], width = 2)))
@@ -458,9 +479,7 @@ gr_go <- goregion(reg, all.cpg = tt$probe, collection = "GO",
 ```
 
 Run on our single MHC DMR, `goregion` **returns an error**: *"There are no genes
-annotated to the significant CpGs."* This is not a failure of the code — it is
-the *same fact* Part 2's annotation uncovered, now surfacing in the enrichment
-layer. The region sits over a pseudogene (COX8CP1) with no protein-coding gene
+annotated to the significant CpGs."*. The region sits over a pseudogene (COX8CP1) with no protein-coding gene
 in the EPIC annotation, so there is nothing to map to a GO term. Two lessons
 fall out of this:
 
@@ -515,7 +534,7 @@ kegg <- gometh(sig.cpg = sig.cpg, all.cpg = all.cpg,
                collection = "KEGG", array.type = "EPIC")
 ```
 
-Two arguments carry all the weight. `all.cpg` is the **universe** — it must be
+Two arguments carry all the weight. `all.cpg` is the **full tested set** — it must be
 every CpG that survived *your* QC and filtering, not the whole array manifest,
 or the test is biased toward whatever your pipeline happened to remove.
 `plot.bias = TRUE` draws the probe-number bias curve; glance at it once to
@@ -888,18 +907,18 @@ precisely.
 
 ## Summary
 
-- **Annotation turns probe IDs into biology.** Take coordinates, gene model,
+- **Annotation makes probe IDs biologically interpretable.** Take coordinates, gene model,
   and CpG-island relation all from **one genome build annotation set**; don't mix 
   annotations built from hg19 with those from hg38. The BIOS eQTM catalog provides some 
   annotation for likely effector genes, which can differ from the nearest gene. 
 - **Region analysis recovers signal that single-CpG testing misses** by
-  leveraging the spatial correlation of methylation. On our subset a
-  6-CpG MHC cluster reaches Šidák p = 1.2 × 10⁻¹⁰ while no single CpG clears the
-  EWAS significance threshold.
+  leveraging the spatial correlation of methylation. On our subset an
+  11-CpG MHC cluster reaches Šidák p = 2.6 × 10⁻¹⁶ while none of its CpGs comes
+  close to the single-CpG EWAS significance threshold.
 - **Match the DMR tool to your upstream model.** `comb-p` runs on summary
   statistics and therefore works after stratified meta-analysis. `DMRcate` needs line-level data and one design formula, so it
   cannot consume meta-analyzed results.
-- **Run enrichment three complementary ways.** `missMethyl::gometh` for
+- **Run enrichment multiple ways.** `missMethyl::gometh` for
   reproducible, probe-bias-corrected **gene-set** (GO/KEGG) tests;
   `knowYourCG::testEnrichment` for **CpG-centric** tests against regulatory-element
   databases (CGI, TFBS, chromatin state); and the EWAS Toolkit for the **trait**
