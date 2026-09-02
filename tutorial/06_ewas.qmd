@@ -283,7 +283,7 @@ knitr::include_graphics(data_path("06_manhattan.png"))
 
 ```{r}
 #| label: volcano
-#| fig-cap: "Volcano plot. Even the most significant CpGs shift methylation by only a few percent (Δβ), illustrating that EWAS effect sizes for complex phenotypes are typically small and require large samples to detect reliably."
+#| fig-cap: "Volcano plot. The x-axis is the EWAS effect size itself — the `ptsdCase` coefficient from the limma fit, on the M-value scale, adjusted for every covariate in the design. Colour marks the sign of that coefficient: teal for CpGs less methylated in cases, plum for those more methylated. Note that this is the adjusted effect, so its sign can differ from a raw case-minus-control β difference for probes where the covariates carry part of the signal. The three most significant probes are ringed and labelled. Even they move methylation only slightly, illustrating that EWAS effect sizes for complex phenotypes are typically small and require large samples to detect reliably."
 #| echo: false
 knitr::include_graphics(data_path("06_volcano.png"))
 ```
