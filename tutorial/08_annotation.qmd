@@ -396,9 +396,6 @@ expression data can help clarify why we are seeing this signal in the MHC.
 
 ![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the eleven inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.6 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
 
-@fig-dmr shows that eleven CpGs did not surpass genome-wide significance
-individually, but together they signal a significant region.
-
 ### DMRcate: the line-level alternative
 
 If you are using DMRcate, it operates on the M-value matrix directly:
