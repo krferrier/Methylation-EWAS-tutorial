@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: "An EWAS walkthrough: from raw IDATs to functional annotation"
-message: "If you use this tutorial, please cite both this repository and the Zenodo data record."
+message: "If you use this tutorial — in teaching, in a rotation project, or as the basis for your own analysis — please cite it. If you also used the checkpoint data, please cite the Zenodo record as well."
 type: software
 authors:
   - family-names: Ferrier

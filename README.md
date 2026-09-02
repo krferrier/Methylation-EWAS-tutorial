@@ -49,8 +49,8 @@ scripts/           the R and shell scripts used to (re)compute each checkpoint
 docs/              the rendered site, served by GitHub Pages
 get_data.sh        fetches the large checkpoints from Zenodo
 MANIFEST.md        every distributed file, its size, and per-tier checksums
-CHANGES.md         what changed in the v8.1 rebuild and which numbers moved
-DECISIONS.md       the analysis decisions and why they were made
+dev-notes/         maintainer notes: analysis decisions, change log, release checklist
+                   (not needed to read, render, or reuse the tutorial)
 ```
 
 ## Where the data is stored
@@ -111,17 +111,83 @@ outputs so the chapter renders without recomputing.
 
 ## Citing
 
-Please cite both the tutorial repository and the Zenodo data record.
+**If you use this tutorial — in teaching, in a rotation project, in a methods
+section, or as the basis for your own analysis — please cite it.** The MIT
+license does not require this, but academic credit is how work like this is
+sustained, and it costs you one line.
 
-- Tutorial (code and prose): this repository — see `CITATION.cff`.
-- Checkpoint data: **https://doi.org/10.5281/zenodo.22135215**
+There are two things to cite, and which you need depends on what you used:
 
-That is the *concept* DOI: it always resolves to the newest version of the data. To
-cite the exact files this tutorial was built from, use the version DOI
+- **The tutorial itself** (prose, code, or the approach) — cite the repository.
+- **The checkpoint data** (anything fetched by `get_data.sh`) — cite the Zenodo
+  record as well.
+
+### Cite the tutorial
+
+> Ferrier, K. (2026). *An EWAS walkthrough: from raw IDATs to functional
+> annotation.* https://github.com/krferrier/Methylation-EWAS-tutorial
+
+BibTeX:
+
+```bibtex
+@misc{ferrier2026ewaswalkthrough,
+  author       = {Ferrier, Kendra},
+  title        = {An {EWAS} walkthrough: from raw {IDAT}s to functional annotation},
+  year         = {2026},
+  howpublished = {\url{https://github.com/krferrier/Methylation-EWAS-tutorial}},
+  note         = {Rendered at \url{https://krferrier.github.io/Methylation-EWAS-tutorial/}}
+}
+```
+
+GitHub also reads `CITATION.cff` in this repository — use the **"Cite this
+repository"** button in the sidebar to get APA or BibTeX directly.
+
+### Cite the checkpoint data
+
+> Ferrier, K. (2026). *EWAS tutorial (GSE132203, Zhou EPIC mask.cm v8.1):
+> checkpoint data* [Data set]. Zenodo. https://doi.org/10.5281/zenodo.22135215
+
+```bibtex
+@dataset{ferrier2026ewasdata,
+  author    = {Ferrier, Kendra},
+  title     = {{EWAS} tutorial ({GSE132203}, {Zhou EPIC} mask.cm v8.1): checkpoint data},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.22135215}
+}
+```
+
+That is the *concept* DOI: it always resolves to the newest version of the data.
+To cite the exact files this tutorial was built from, use the version DOI
 https://doi.org/10.5281/zenodo.22135216 (record `22135216`).
+
+### Also cite the upstream sources
+
+The tutorial is a walkthrough over other people's data and methods. If your work
+depends on them, cite them directly rather than by way of this tutorial:
+
+- **The dataset** — Grady Trauma Project, NCBI GEO
+  [GSE132203](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132203). The
+  methylation data belongs to its original depositors; it appears here only as
+  derived intermediates for teaching.
+- **The probe mask** — Zhou, W., Laird, P. W., & Shen, H. (2017). Comprehensive
+  characterization, annotation and innovative use of Infinium DNA methylation
+  BeadChip probes. *Nucleic Acids Research*, 45(4), e22.
+  https://doi.org/10.1093/nar/gkw967
+- **The analysis tools** — `minfi`, `sesame`, `limma`, `sva`, `bacon`, `comb-p`,
+  `missMethyl`, `METAL` and the rest are cited in each chapter's reference list.
 
 ## License
 
-Code and prose: MIT (see `LICENSE`). The GSE132203 methylation data is the property of
-its original depositors and is redistributed here only as derived intermediates for
-teaching; cite the original study if you use it.
+**MIT** (see [`LICENSE`](LICENSE)) — for the tutorial's code and prose. You may
+use, modify, and redistribute it, including commercially, provided the copyright
+notice is preserved. Citation is requested as a scholarly courtesy (see
+[Citing](#citing)), not required by the license.
+
+Two things the MIT license here does **not** cover:
+
+- **The GSE132203 methylation data** is the property of its original depositors
+  and is redistributed only as derived intermediates for teaching. Its use is
+  governed by the terms of the GEO deposit, not by this repository's license.
+- **The software the tutorial calls** — Bioconductor packages, comb-p, METAL and
+  so on — carries each project's own license.
