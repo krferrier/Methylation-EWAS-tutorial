@@ -1157,3 +1157,71 @@ is unchanged.
 ### Numbers moved
 
 None.
+
+## 24. Chapter 06 figure restyle, and the volcano's x-axis moved to the model coefficient
+
+Both chapter 06 figures were redrawn for legibility, and the volcano's x-axis
+was changed to a different quantity. This was a figures-only pass: a standalone
+script read the existing `data/06_ewas.rds` and `data/08_annotation/annotated.rds`
+checkpoints and rewrote the two PNGs. No analysis was re-run, no checkpoint was
+rebuilt, and no published number moves.
+
+### Legibility
+
+Both plots were drawn at a theme base size of 11, which renders at roughly
+7 pt on the site's figure width — too small to read without zooming. Both moved
+to base size 16. The Manhattan's points went from 0.3 to 1.3 and its canvas from
+10.5 x 4.6 to 11.0 x 5.2 inches. The volcano's canvas went from 7.6 x 5.2 to
+9.8 x 6.2 inches.
+
+The volcano's point transparency was the other legibility problem. At alpha 0.10
+individual points below the dense central cone were nearly invisible; a first
+attempt to fix this by enlarging the points to 2.1 made the cone a solid block
+instead. The fix that worked was to leave the points at the Manhattan's 1.3 and
+raise alpha to 0.40. The rings marking the top three hits were reduced from
+size 5.4 / stroke 1.3 to 4.6 / stroke 1.2 so they no longer crowd their labels.
+
+### A clipped Bonferroni line
+
+The Manhattan's y-axis ceiling was computed as `max(7, ...)` over the plotted
+`-log10(p)` values. The Bonferroni threshold for this analysis sits at
+-log10 = 7.18, so the ceiling landed *below* the threshold line: the line was
+drawn at the very top edge of the panel and its "Bonferroni" label was clipped
+off the canvas entirely. A reader saw an unlabelled rule at the panel edge with
+no way to tell what it was. The ceiling now accounts for the threshold, and both
+the line and its label are visible. This was purely a plotting-limits bug; the
+threshold value itself (0.05 / 756,251 = 6.6e-08) was always correct and is
+unchanged.
+
+### The volcano now plots the EWAS effect size
+
+The volcano previously put `delta_beta` on the x-axis — the raw case-minus-control
+difference in mean beta, in percentage points. That quantity is easy to interpret
+but it is not what the EWAS estimates: it is an unadjusted group-mean difference,
+computed outside the model, ignoring sex, age, the six cell-type proportions, and
+the six surrogate variables. The x-axis is now `logFC`, the `ptsdCase` coefficient
+from the limma fit, on the M-value scale — the same quantity whose p-value supplies
+the y-axis. The two axes now describe the same estimate.
+
+The two quantities are not interchangeable, and the figure says so. They disagree
+in sign for 171,484 of the 756,251 probes tested — probes where the covariates
+account for part of a raw difference, or where adjustment reverses its direction.
+Because colour encodes the sign of the plotted quantity, those probes change
+colour between the old figure and the new one. The caption now states that the
+axis is the covariate-adjusted effect and warns that its sign can differ from a
+raw group-mean difference.
+
+Colour continues to encode direction and nothing else: teal for CpGs less
+methylated in cases, plum for those more methylated, matching the `neg`/`pos`
+entries in the `_setup.R` palette. The top-three rings are open dark gray rather
+than plum, so a ring does not read as a third colour level.
+
+The `delta_beta` column is untouched in the checkpoint and still appears in the
+chapter's top-six table alongside `logFC`, where the two are labelled and
+contrasted in the table caption.
+
+### Numbers moved
+
+None. The 171,484 sign-disagreement count is newly reported in this section and
+in the figure caption's reasoning, but it describes a property of the existing
+checkpoint rather than a new result.
