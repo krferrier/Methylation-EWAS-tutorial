@@ -1092,3 +1092,68 @@ significant region") was removed at the author's request: it referred to the
 figure by number and restated what the caption already says. The section now
 ends on the figure. Prose-only; figure numbering is unchanged (the DMR locus
 plot is still Figure 3) and no cross-reference is left dangling.
+
+---
+
+## 23. Maintainer notes relocated to `dev-notes/`, citation guidance expanded
+
+Repository housekeeping only. No chapter prose, no code chunk, no figure, and no
+analysis number changed; the site was not re-rendered because nothing under
+`tutorial/` was touched.
+
+### The three internal documents moved
+
+`CHANGES.md`, `DECISIONS.md` and `PUBLISHING.md` moved from the repository root
+into `dev-notes/` via `git mv`, so each file's history is preserved and
+`git log --follow` still works. `dev-notes/README.md` was added to say plainly
+that these are the author's working notes, that nothing in the directory is
+required to read, render, or reuse the tutorial, and that `CHANGES.md` records
+superseded numbers by design — the rendered tutorial is always authoritative
+over a figure quoted in an old changelog entry.
+
+Options considered and rejected: deleting the files from `main` (does not remove
+them from the public history without a force-push, and the repository is public
+with 8 commits); rewriting history with `git-filter-repo` (would invalidate the
+existing local clone for no real benefit); and a `dev`/`main` split (every merge
+would raise a modify/delete conflict on the three paths, in perpetuity). Keeping
+them public but clearly labeled was chosen on the view that the reasoning behind
+an analysis has teaching value of its own.
+
+The only references anywhere were two lines in the README's layout block,
+replaced by a single `dev-notes/` entry. Verified: zero remaining references to
+the old root paths outside the moved files' own prose.
+
+### README citation section rewritten
+
+`## Citing` now provides ready-to-paste citations in reference-list and BibTeX
+form for two distinct objects — the tutorial repository (`ferrier2026ewaswalkthrough`)
+and the Zenodo checkpoint data (`ferrier2026ewasdata`, concept DOI
+`10.5281/zenodo.22135215`) — with guidance on which applies to what, plus a
+pointer to GitHub's "Cite this repository" button, which reads `CITATION.cff`.
+
+A new `### Also cite the upstream sources` subsection directs users to cite the
+GSE132203 deposit, Zhou et al. 2017 (`10.1093/nar/gkw967`) for the probe mask,
+and the analysis packages directly, rather than by way of this tutorial.
+
+### License unchanged — MIT retained
+
+A non-commercial license was considered and declined. Points that informed the
+decision, recorded here because they will recur if the question is revisited:
+the MIT grant already published cannot be retracted for versions already
+distributed; the Zenodo record is CC-BY-4.0, which permits commercial use and
+would have had to change alongside it; and "academic/non-commercial" is not an
+OSI-open license, which affects GitHub's license detection and some
+institutions' reuse policies. Choice of license is a question for institutional
+research counsel, not one settled here.
+
+The `## License` section now states MIT explicitly, notes that the requested
+citation is a scholarly courtesy rather than a license condition (MIT requires
+only that the copyright notice be preserved), and carves out the two things the
+repository's license does not cover: the GSE132203 methylation data, governed by
+the terms of its GEO deposit, and the third-party software the tutorial calls.
+`CITATION.cff`'s `message` field was reworded to match; its `license: MIT` field
+is unchanged.
+
+### Numbers moved
+
+None.
