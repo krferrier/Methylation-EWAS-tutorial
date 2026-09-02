@@ -1083,3 +1083,12 @@ A local working copy showed a different Figure 3 than the site. The site is
 correct: the local checkout was on commit `32ecf6d` (Aug 27) carrying the
 **68,701-byte** superseded 6-CpG figure, while the deployed
 `08_dmr_locus.png` is the **134,155-byte** 11-CpG rebuild. Resolved by pulling.
+
+### Follow-up (`15be9ca`) — closing sentence removed
+
+The one-sentence paragraph that followed the DMR figure ("…eleven CpGs did not
+surpass genome-wide significance individually, but together they signal a
+significant region") was removed at the author's request: it referred to the
+figure by number and restated what the caption already says. The section now
+ends on the figure. Prose-only; figure numbering is unchanged (the DMR locus
+plot is still Figure 3) and no cross-reference is left dangling.
