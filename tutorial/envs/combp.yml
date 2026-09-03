@@ -1,0 +1,13 @@
+# Chapter 08, DMR section -- comb-p region calling.
+#
+# comb-p (the `combined-pvalues` package) runs on Python 2.7, which is why this
+# cannot be merged into either environment above. It is a standalone command-line
+# tool: you feed it a BED of per-CpG p-values and it returns regions.
+name: ewas-combp
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=2.7
+  - combined-pvalues
+  - bedtools

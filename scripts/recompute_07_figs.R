@@ -2,27 +2,28 @@
 suppressPackageStartupMessages({ library(data.table); library(ggplot2) })
 t0 <- Sys.time()
 D  <- "ewas_pipeline/run_grady"
+DA <- "ewas_pipeline/run_grady_all"
 out <- "repo/data"
 dir.create(file.path(out, "07_bacon"), showWarnings = FALSE, recursive = TRUE)
 
 ## The pipeline writes its own BACON diagnostics; copy them in under the names
 ## the chapter references rather than redrawing them.
-file.copy(file.path(D, "all/bacon_plots/PTSD_fit.jpg"),
+file.copy(file.path(DA, "bacon_plots/PTSD_fit.jpg"),
           file.path(out, "07_bacon/all_fit.jpg"), overwrite = TRUE)
-file.copy(file.path(D, "all/bacon_plots/PTSD_qqs.jpg"),
+file.copy(file.path(DA, "bacon_plots/PTSD_qqs.jpg"),
           file.path(out, "07_bacon/all_qqs.jpg"), overwrite = TRUE)
-file.copy(file.path(D, "strat/F/bacon_plots/F_PTSD_qqs.jpg"),
+file.copy(file.path(D, "F/bacon_plots/F_PTSD_qqs.jpg"),
           file.path(out, "07_bacon/F_qqs.jpg"), overwrite = TRUE)
-file.copy(file.path(D, "strat/M/bacon_plots/M_PTSD_qqs.jpg"),
+file.copy(file.path(D, "M/bacon_plots/M_PTSD_qqs.jpg"),
           file.path(out, "07_bacon/M_qqs.jpg"), overwrite = TRUE)
 
 lam <- function(p) { p <- p[is.finite(p) & p > 0]
                      median(qchisq(p, 1, lower.tail = FALSE)) / qchisq(0.5, 1) }
 
-A <- fread(file.path(D, "all/PTSD_ewas_bacon_results.csv.gz"))
-F <- fread(file.path(D, "strat/F/F_PTSD_ewas_bacon_results.csv.gz"))
-M <- fread(file.path(D, "strat/M/M_PTSD_ewas_bacon_results.csv.gz"))
-m <- fread(file.path(D, "meta_analysis/PTSD_ewas_meta_analysis_results_1.txt"))
+A <- fread(file.path(DA, "PTSD_ewas_bacon_results.csv.gz"))
+F <- fread(file.path(D, "F/F_PTSD_ewas_bacon_results.csv.gz"))
+M <- fread(file.path(D, "M/M_PTSD_ewas_bacon_results.csv.gz"))
+m <- fread(file.path(D, "PTSD_ewas_meta_analysis_results_1.txt"))
 setnames(m, "P-value", "P")
 
 ## ---- summary table -------------------------------------------------------
@@ -91,22 +92,11 @@ hits <- m[P < bonf, .(cpgid = MarkerName, Direction, P)]
 J <- merge(J, hits, by = "cpgid", all.x = TRUE)
 J[, sig := !is.na(P)]
 r_all <- cor(J$F_es, J$M_es)
-## Plot a random subsample of the null cloud; keep every hit.
-set.seed(42)
-bg <- J[sig == FALSE][sample(.N, min(60000, .N))]
-pc <- ggplot() +
-  geom_hline(yintercept = 0, color = "gray80") + geom_vline(xintercept = 0, color = "gray80") +
-  geom_point(data = bg, aes(F_es, M_es), color = "gray75", size = 0.3, alpha = 0.4) +
-  geom_point(data = J[sig == TRUE], aes(F_es, M_es, color = Direction), size = 2.6) +
-  scale_color_manual(values = c(`++` = "#C44E52", `--` = "#4C72B0",
-                                 `+-` = "#DD8452", `-+` = "#8172B3"), name = "Direction") +
-  labs(x = "Female stratum effect (BACON-adjusted)",
-       y = "Male stratum effect (BACON-adjusted)",
-       title = "Per-CpG PTSD effect sizes, female vs male",
-       subtitle = sprintf("Pearson r = %.3f genome-wide; colored = %d Bonferroni meta hits",
-                          r_all, nrow(hits))) +
-  theme_minimal(base_size = 11)
-ggsave(file.path(out, "07_effect_concordance.png"), plot = pc, width = 6.5, height = 5.5, dpi = 200)
+## NOTE: 07_effect_concordance.png is NOT written here. The genome-wide version of
+## this scatter was superseded by a single-panel figure restricted to the
+## meta-Bonferroni CpGs, which lives in newfigs_07.R together with the faceted
+## volcano and the foothills plot. Keep figure ownership in one place per file:
+## two scripts writing the same PNG means whichever ran last wins.
 
 ## ---- numbers the prose needs --------------------------------------------
 tt <- merge(hits, J[, .(cpgid, F_es, F_p, M_es, M_p)], by = "cpgid")

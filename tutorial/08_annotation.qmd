@@ -396,6 +396,58 @@ expression data can help clarify why we are seeing this signal in the MHC.
 
 ![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the eleven inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.6 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
 
+### `ENmix::combp`: the same method, but with R
+
+`comb-p` is a Python command-line tool, which means an extra environment to install for
+one step of one chapter. If you would rather stay in R, **`ENmix::combp`**
+[@xu2021enmix] implements the same Stouffer–Liptak–Kechris approach, and it takes the
+BED we just built with only a column rename. (The same package also offers `ipdmr`
+[@xu2020ipdmr], the authors' interval-p-value variant.)
+
+```{r enmix-combp, eval=FALSE}
+library(ENmix)
+
+bed <- data.table::fread("data/08_annotation/PTSD_ewas_annotated_results.bed")
+data.table::setnames(bed, c("chr", "start", "end", "p", "probe"))
+bed <- as.data.frame(bed)          # ENmix wants a plain data.frame
+bed$chr <- as.character(bed$chr)
+
+combp(data = bed,
+      dist.cutoff = 750,           # must exceed bin.size (see the warning below)
+      bin.size    = 310,           # ACF bin width
+      seed        = 1e-4,          # FDR threshold for seeding a region
+      nCores      = 4,
+      region_plot = FALSE, mht_plot = FALSE)
+# → resu_combp.csv  (chr, start, end, p, fdr, sidak, nprobe, probe)
+```
+
+It runs in about a minute on our 756,234-row BED and finds the same lead region: a
+12-CpG DMR at **chr6:28,633,494–28,633,743**, the MHC-proximal locus command-line
+comb-p reports as 11 CpGs at chr6:28,633,493–28,633,701. The probe lists overlap almost
+completely; ENmix extends the region by one CpG (`cg12763978`) at the 3′ end.
+
+::: {.callout-warning}
+## Two ways this differs from the command-line tool:
+**`bin.size` must be smaller than `dist.cutoff`.** ENmix builds its autocorrelation bins
+by `seq(bin.size, dist.cutoff, bin.size)`, so calling it with the shipped
+command-line settings (`--dist 200` with the default `bin.size = 310`) fails with
+`wrong sign in 'by' argument` rather than a message naming the problem. The `dist.cutoff
+= 750` above is chosen to exceed the default bin width.
+
+**The two implementations do not return the same region count.** With the settings above
+ENmix reports **8** candidate regions of which **7** clear Šidák < 0.05, where
+command-line comb-p at `--dist 200 --seed 1e-4` reports **3** candidates of which
+**1** clears Šidák. Both single out the same chr6 locus as by far the strongest —
+ENmix calls 12 CpGs there against comb-p's 11 — but ENmix is much more permissive
+about everything else. Some of that is the wider `dist.cutoff`, and some is that ENmix
+describes itself as a *modified* comb-p. Treat it as an R-native implementation of the
+same idea. Either method is okay, just make sure to report which one you used and its
+parameters.
+:::
+
+The DMR numbers in this chapter come from the command-line tool at the parameters shown
+above, which is what [chapter 07](07_pipeline.qmd)'s pipeline invokes.
+
 ### DMRcate: the line-level alternative
 
 If you are using DMRcate, it operates on the M-value matrix directly:

@@ -106,7 +106,6 @@ bonf <- 0.05 / nrow(tt)
 pm <- ggplot(pl, aes(x, -log10(p), color = factor(chrn %% 2))) +
   geom_point(size = 0.35, alpha = 0.75) +
   geom_hline(yintercept = -log10(bonf), color = "#C44E52", linewidth = 0.5) +
-  geom_hline(yintercept = -log10(1e-5), color = "gray45", linetype = "dashed", linewidth = 0.4) +
   scale_color_manual(values = c("0" = "#4C72B0", "1" = "#8FA8CC"), guide = "none") +
   scale_x_continuous(breaks = ctr, labels = names(ctr), expand = c(0.01, 0)) +
   labs(x = "Chromosome", y = expression(-log[10](p)),
@@ -117,7 +116,6 @@ ggsave(data_path("06_manhattan.png"), plot = pm, width = 10, height = 4.5, dpi =
 
 pv <- ggplot(tt, aes(delta_beta * 100, -log10(P.Value))) +
   geom_point(size = 0.35, alpha = 0.55, color = "#4C72B0") +
-  geom_hline(yintercept = -log10(1e-5), color = "gray45", linetype = "dashed", linewidth = 0.4) +
   labs(x = "Difference in methylation, case - control (percentage points)",
        y = expression(-log[10](p)), title = "Effect size versus significance") +
   theme_minimal(base_size = 11)

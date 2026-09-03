@@ -95,7 +95,42 @@ integrated SNP information across 1000 Genomes populations
 `sesame` package [@zhou2018sesame] and are the current community standard.
 :::
 
-### Getting the mask: YAME
+### Getting the mask
+
+There are two routes to the same mask. Take the first one unless you have a reason
+not to.
+
+#### Route 1 — the ready-made TSV (recommended)
+
+The eight mask codes this chapter uses are shipped with the tutorial data as a plain
+tab-delimited table, so you can filter probes with `fread()` and nothing else. No new
+software to install:
+
+```r
+library(data.table)
+mask <- fread("data/EPIC.hg38.mask.v81.8code.tsv.gz")
+
+dim(mask)                            # 866,553 probes x 10 columns
+sum(mask$mask_v81_8code)             # 90,832 probes flagged by the union
+
+# the probes to drop
+drop8 <- mask[mask_v81_8code == 1L, Probe_ID]
+```
+
+The table has one row per probe on the array and one 0/1 column per mask code, plus a
+`mask_v81_8code` column that is the row-wise OR of the eight — which is exactly the
+filter this chapter applies. Because the individual code columns are kept, you can
+also build a different combination: to mask on African-ancestry SNP flags only, OR
+the three `*_AFR_1pt` columns and ignore the rest.
+
+This file was generated from the official `.cm` release with YAME (below) and verified
+to reproduce all eight per-code counts and the 90,832-probe union exactly. It is a
+convenience layer, not a separate source of truth.
+
+#### Route 2 — from the official release with YAME
+
+Use this if you want a mask term the TSV does not carry (it ships 8 of the 24), a
+different array, or a newer mask version than the one pinned here.
 
 The v8.1 mask ships as `EPIC.hg38.mask.cm` — a bit-packed **CX-format** file rather
 than a table. It stores one bit per probe per mask term over the array's canonical

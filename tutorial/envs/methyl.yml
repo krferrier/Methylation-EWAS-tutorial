@@ -1,0 +1,51 @@
+# Chapters 01-06 and 08. Only directly-used packages are listed --
+# conda resolves the dependency tree from these.
+#
+# Two constraints are deliberate and load-bearing:
+#   r-base=4.2          pins the Bioconductor generation to 3.16, which is what
+#                       produced every checkpoint in the Zenodo record.
+#   r-matrixstats=1.0   matrixStats made `useNames = NA` defunct in 1.2.0;
+#                       Bioconductor 3.16's MatrixGenerics still passes it, so a
+#                       newer matrixStats breaks detectionP() and preprocessFunnorm().
+#
+# Everything else floats, so the solver can do its job on your platform.
+name: ewas-methyl
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.2
+  - r-matrixstats=1.0
+
+  # array I/O and preprocessing
+  - bioconductor-minfi
+  - bioconductor-illuminaio
+  - bioconductor-illuminahumanmethylationepicmanifest
+  - bioconductor-illuminahumanmethylationepicanno.ilm10b4.hg19
+  - bioconductor-watermelon
+  - bioconductor-geoquery
+  - bioconductor-biobase
+
+  # cell composition
+  - bioconductor-flowsorted.blood.epic
+  - bioconductor-genefilter
+
+  # batch effects, association testing, inflation
+  - bioconductor-sva
+  - bioconductor-limma
+  - bioconductor-bacon
+
+  # annotation and enrichment
+  - bioconductor-sesame
+  - bioconductor-sesamedata
+  - bioconductor-genomicranges
+  - bioconductor-rtracklayer
+  - bioconductor-missmethyl
+  - bioconductor-methylgsa
+
+  # data handling, figures, rendering
+  - r-data.table
+  - r-ggplot2
+  - r-knitr
+  - r-dt
+  - quarto

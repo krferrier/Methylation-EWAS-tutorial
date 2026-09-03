@@ -48,9 +48,7 @@ The dependency graph, conceptually:
 ```
 
 Because it is Snakemake, running `snakemake --cores N` would build every target
-in that graph in dependency order and skip anything already up to date. Here we
-call the underlying scripts directly, one stage at a time, so you can see what
-each rule actually does.
+in that graph in dependency order and skip anything already up to date. 
 
 ## 2. Configuration
 
@@ -149,16 +147,21 @@ uses the `PTSD` term as the main predictor to test for association:
 Rscript scripts/ewas.R \
   --pheno data/pheno.csv --methyl data/mvals.csv.gz \
   --assoc PTSD --stratified no \
-  --chunk-size 5000 --processing-type multicore --workers 4 \
-  --out-dir run_grady/all --out-prefix all --out-type .csv.gz
-# → run_grady/all/PTSD_ewas_results.csv.gz   (756,251 CpGs, ~1.9 h — see note)
+  --chunk-size 5000 --processing-type multicore --workers 8 \
+  --out-dir run_grady_all --out-type .csv.gz
+# → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)
 ```
+
+On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took
+**5 min 29 s** of EWAS time at 8 workers, and 6 min 16 s including the BACON step that
+follows. The two stratified analyses in the next section took 11 min 53 s together at
+4 workers each, running concurrently. [Setup](00_setup.qmd) has the memory figures and
+guidance on choosing `workers` for your own machine.
 
 
 ## Does the pipeline agree with chapter 06?
 
-It should, and checking is a good habit whenever you move an analysis between
-implementations. Chapter 06 fit this model with `limma::lmFit` + `eBayes`; the
+Chapter 06 fit this model with `limma::lmFit` + `eBayes`; the
 pipeline fits one `glm` per CpG. On this run:
 
 - **Effect estimates are identical** — the largest disagreement between the
@@ -174,12 +177,13 @@ pipeline fits one `glm` per CpG. On this run:
   which highlights the importance of being transparent about which method is used.
 
 Identical point estimates plus a small, explainable difference in the variance
-model gives confidence that the results we are seeing are consistent.
+model gives confidence that the results we are seeing are not an artifact of the 
+method used for association testing.
 
 
 ```{r}
 #| label: load-all
-allres <- fread("../ewas_pipeline/run_grady/all/PTSD_ewas_results.csv.gz")
+allres <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz")
 cat("columns:", paste(names(allres), collapse = ", "), "\n")
 cat("n CpGs:", nrow(allres), " | samples per model (n):", allres$n[1], "\n")
 setorder(allres, p.value)
@@ -194,20 +198,20 @@ tables by the stratify variable(s) and drops that variable from the phenotype fi
 being passed on to the EWAS step. 
 
 ```bash
-Rscript scripts/stratify.R --stratify sex --out-dir run_grady/strat --threads 4
-# → run_grady/strat/F/{F_mvals.fst, F_pheno.fst}
-# → run_grady/strat/M/{M_mvals.fst, M_pheno.fst}
+Rscript scripts/stratify.R --stratify sex --out-dir run_grady --threads 4
+# → run_grady/F/{F_mvals.fst, F_pheno.fst}
+# → run_grady/M/{M_mvals.fst, M_pheno.fst}
 
 for S in F M; do
   Rscript scripts/ewas.R \
-    --pheno run_grady/strat/$S/${S}_pheno.fst \
-    --methyl run_grady/strat/$S/${S}_mvals.fst \
+    --pheno run_grady/$S/${S}_pheno.fst \
+    --methyl run_grady/$S/${S}_mvals.fst \
     --assoc PTSD --stratified yes \
     --chunk-size 5000 --processing-type multicore --workers 4 \
-    --out-dir run_grady/strat/$S --out-prefix $S --out-type .csv.gz
+    --out-dir run_grady/$S --out-prefix $S --out-type .csv.gz
 done
-# → run_grady/strat/F/F_PTSD_ewas_results.csv.gz  (n = 45)
-# → run_grady/strat/M/M_PTSD_ewas_results.csv.gz  (n = 42)
+# → run_grady/F/F_PTSD_ewas_results.csv.gz  (n = 45)
+# → run_grady/M/M_PTSD_ewas_results.csv.gz  (n = 42)
 ```
 
 The female stratum has 45 samples, the male 42. Each within-stratum model is now
@@ -225,11 +229,16 @@ every statistic accordingly. The pipeline runs it on each analysis (or just the 
 EWAS results if no stratification is done):
 
 ```bash
-for R in all strat/F strat/M; do
+for S in F M; do
   Rscript scripts/run_bacon.R \
-    -i run_grady/$R/*_PTSD_ewas_results.csv.gz \
-    --out-dir run_grady/$R --out-type .csv.gz
+    -i run_grady/$S/${S}_PTSD_ewas_results.csv.gz \
+    --out-dir run_grady/$S --out-prefix $S --out-type .csv.gz
 done
+
+# the combined arm, whose output carries no group prefix
+Rscript scripts/run_bacon.R \
+  -i run_grady_all/PTSD_ewas_results.csv.gz \
+  --out-dir run_grady_all --out-type .csv.gz
 ```
 
 `run_bacon.R` uses fixed priors and seeds (`niter = 5000`, `nburnin = 2000`,
@@ -277,7 +286,7 @@ The two stratum QQs after correction:
 :::
 
 ::: {.callout-important}
-## BACON is not a license to ignore λ
+## BACON is not an excuse to ignore λ
 BACON corrects the *distribution* of test statistics; it does not manufacture
 signal. If your λ is inflated because of unmodeled batch or cell composition,
 the right response is to fix the model (chapters 04 and 05), not to lean on BACON. Use it for
@@ -294,8 +303,8 @@ command file is simple:
 bash scripts/metal_cmd.sh \
   run_grady/meta_analysis/PTSD_metal_commands.txt \
   run_grady/meta_analysis/PTSD_ewas_meta_analysis_results_ \
-  run_grady/strat/F/F_PTSD_ewas_bacon_results.csv.gz \
-  run_grady/strat/M/M_PTSD_ewas_bacon_results.csv.gz
+  run_grady/F/F_PTSD_ewas_bacon_results.csv.gz \
+  run_grady/M/M_PTSD_ewas_bacon_results.csv.gz
 
 software/metal/build/metal/metal run_grady/meta_analysis/PTSD_metal_commands.txt
 ```
@@ -319,7 +328,7 @@ ANALYZE HETEROGENEITY
 
 ```{r}
 #| label: load-meta
-meta <- fread("../ewas_pipeline/run_grady/meta_analysis/PTSD_ewas_meta_analysis_results_1.txt")
+meta <- fread("../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt")
 setorder(meta, `P-value`)
 cat("markers meta-analyzed:", nrow(meta), "\n\n")
 print(head(meta[, .(MarkerName, Effect, StdErr, `P-value`, Direction,
@@ -361,11 +370,12 @@ by one stratum alone**, with the other stratum's p-value above 0.05:
 Inverse-variance meta-analysis is a *weighted average*, not a concordance test.
 A single stratum with a large effect and a small SE can carry the pooled estimate
 past a genome-wide threshold on its own, and the pooled p-value says nothing
-about whether the second stratum agreed. Only `cg21102739` is nominally
-significant in both arms with matching sign — and even that one is under-powered.
+about whether the second stratum agreed. Only `cg09473383` is nominally
+significant in both arms with matching sign, and it clears 0.05 in the male stratum by
+the thinnest possible margin (P = 0.0499) — so even the one apparent replication here is
+not something to lean on.
 
-This is why you read `Direction` and `HetISq` alongside `P-value`, never instead
-of it. Two useful reflexes:
+This is why you read `Direction` and `HetISq` alongside `P-value`. Two tips:
 
 1. **Check the arms.** For every hit you plan to report, look up the per-stratum
    estimate, SE, and p-value. If one arm is flat, you have a stratum-specific
@@ -392,17 +402,42 @@ cat("CpGs with heterogeneity P < 0.05:",
 
 ## 9. Reading the run as a whole
 
-For the purposes of this tutorial, we ran the EWAS without stratification,
-the individual sex EWAS results, and the sex-combined meta-analysis EWAS results:
+For the purposes of this tutorial, we ran the EWAS with and without stratification, so 
+we show results for: an 'overall' EWAS model where sex is a covariate, female-only, male-only, 
+and sex-combined by meta-analysis:
 
 ![QQ plots of all four analyses (BACON-adjusted p-values), overlaid.](data/07_qq_overlay.png){#fig-qq-overlay width=75%}
 
-![Per-CpG PTSD effect sizes, female vs male stratum. Gray = not meta-significant; colored points are the meta-analysis top hits.](data/07_effect_concordance.png){#fig-concordance width=70%}
+The QQ plots show *how much* signal each analysis reports, but not *where* it sits or
+whether the analyses agree. A faceted volcano answers the first question — effect
+size against significance, one panel per analysis, on shared axes so the panels are
+directly comparable:
+
+![PTSD effect size against significance for each of the four analyses. The red line is the Bonferroni threshold and red points are the CpGs that clear it; the null cloud is thinned to 60,000 points per panel for legibility. Labels name every Bonferroni-significant CpG.](data/07_volcano_facets.png){#fig-volcano-facets}
+
+One feature stands out immediately. The stratified arms report far more Bonferroni hits (11 and 17)
+than the combined arm (2), despite having roughly half the samples each. While 
+it is possible some of these are true-positive signals, the small sample size and evidence of poor-fit 
+prior to BACON adjustment point towards these results being spurious or an artifact of the BACON adjustment. 
+
+Ranking the union of each analysis's strongest CpGs makes the disagreement explicit:
+
+![The union of each analysis's top 8 CpGs, with every analysis's result for each one. Point shape shows the direction of effect; the red line is Bonferroni. A CpG carried by only one analysis appears as one high point with three low ones.](data/07_foothills.png){#fig-foothills}
+
+Almost every CpG here is carried by a single analysis. Read across any column and you
+typically find one point above the Bonferroni line and three well below it — the same
+CpG, the same cohort, tested four ways, agreeing only occasionally. `cg22671410` is the
+clearest case: top of the female arm and top of the meta-analysis, but essentially null
+in the male arm and in the whole-cohort fit.
+
+That is the pattern @fig-concordance quantifies for the nine meta-analysis hits:
+
+![Female versus male effect size for the nine CpGs that clear Bonferroni in the meta-analysis. Bars are ±1 standard error; the solid diagonal is *y* = *x*, where both strata would agree exactly. Fill shows whether the two strata estimate the same sign.](data/07_effect_concordance.png){#fig-concordance width=70%}
 
 A few caveats about these results:
 
-- **The combined arm finds one CpG at Bonferroni; the stratified arms and the
-  meta-analysis find more.** The single-sex arms have an n that is too small to run
+- **The combined arm finds two CpGs at Bonferroni; the stratified arms and the
+  meta-analysis find many more.** The single-sex arms have an n that is too small to run
   an EWAS. The sex-strata results prior to BACON adjustment were deflated and
   inflated, and while BACON does adjust the stratum towards a lambda of 1,
   respectively, it likely did not perform an optimal adjustment. The inflation
@@ -410,6 +445,13 @@ A few caveats about these results:
   are none and is persisted in the meta-analysis results. This is not meant to be an
   argument against doing stratified analyses, but it does bring to light the importance of
   considering whether the sample size of your strata is sufficiently powered to do a stratified analysis.
+- **Those two are not the same as chapter 06's one.** Both analyses call
+  `cg15434749`. The pipeline additionally calls `cg20600436`, and the two runs agree on
+  its effect estimate to seven decimal places (0.1717060) — they differ only in the
+  variance model. Its BACON p is 2.33 × 10⁻⁸ from the per-probe `glm` and
+  6.73 × 10⁻⁸ from `eBayes`, against a threshold of 6.61 × 10⁻⁸. The second value misses
+  by under 2%. A CpG this close to an arbitrary cutoff is likely a true result, 87 samples is 
+  just too small to consistently detect it as genome-wide significant. 
 - **Heterogeneity sits at 5.4%** of CpGs below P = 0.05, against a 5% null
   expectation, with a median I² of 0. There is no evidence of systematic
   sex-differential methylation genome-wide. That does not mean that the heterogeneity

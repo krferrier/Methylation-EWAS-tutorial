@@ -1,5 +1,5 @@
 ---
-title: "Setup: the platform, the data, and the teaching subset"
+title: "Setup: getting the data onto your machine"
 ---
 
 ```{r}
@@ -8,79 +8,157 @@ title: "Setup: the platform, the data, and the teaching subset"
 source("_setup.R")
 ```
 
-## What is DNA methylation
+This notebook introduces the dataset the tutorial uses, shows how to get the raw
+files onto your own machine, and sets out what running everything costs in time,
+memory, and disk. It assumes the array background from
+[Background](00a_background.qmd).
 
-DNA methylation is an epigenetic mechanism that occurs when a methyl (CH3) group
-is added to a cytosine base in DNA. Methylated cytosines often occur directly next
-to a guanine nucleotide, which has led to the name of methylated sites as 'CpGs'
-(cytosine-phosphate-guanine). The added methyl group of a CpG can physically inhibit
-the cellular machinery necessary for gene expression, thus we can infer effects of gene
-expression from methylation status.
+## Building the software environment
 
-In the human genome, there are GC-rich regions known as CpG islands (CGIs). These regions
-typically span 500-1500 base pairs (bp) with greater than 60% GC-content. CGIs tend to be in the
-promoter regions of genes. While 70-80% of CpGs genome-wide are methylated, CGIs are
-predominantly unmethylated, particularly at active promoters. There are CpGs outside of CGIs, however, and based on their distance
-from the CGI they may be labeled as in the 'shore' (0-2kb), 'shelf' (2kb-4kb), or 'open sea' (
-greater than 4kb).
+Everything except the pipeline chapter needs **only R**. If you are new to computing,
+start there and ignore conda entirely — you will still be able to work through
+preprocessing, QC, cell composition, batch effects, the EWAS itself, and annotation.
 
-![CGI and relative regions](data/CGI.png)
+::: {.panel-tabset}
 
-The unique and important characteristic of methylation compared with genetic variants is that
-methylation status can change over time as a response to environmental factors and is reversible.
-For example, there are distinct methylation patterns observed between exposure to commercial tobacco
-smoking and people who have never smoked. After a person quits smoking, their methylation patterns
-revert back to a state more similar to that of someone who has never smoked.
+### R only (recommended if you are getting started)
 
-# Measuring Methylation
+You need **R 4.2.x** ([download from CRAN](https://cran.r-project.org/)) and, if you want, [RStudio](https://posit.co/download/rstudio-desktop/). Everything below is typed
+into the **Console** pane — the one with the `>` prompt. 
 
-Array technology, such as the Illumina Infinium Methylation EPIC array (v1, "850K"),
-estimate the methylation status at a CpG site by the fraction of DNA molecules carrying
-a methyl group at that specific genomic location. The EPIC array interrogates ~865,000
-CpGs across the genome. For each CpG it reports two intensities:
+The tutorial ships an installer as
+[`install_packages.R`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/install_packages.R),
+which installs the four CRAN and eighteen Bioconductor packages the chapters use. The
+simplest way to run it is to fetch and run it in one line, without downloading anything
+yourself:
 
-- **M** — signal from the *methylated* allele,
-- **U** — signal from the *unmethylated* allele.
+```r
+source("https://raw.githubusercontent.com/krferrier/Methylation-EWAS-tutorial/main/tutorial/install_packages.R")
+```
 
-From those two numbers we form the two estimates/metrics of methylation status used
-in methylation analyses:
+If you cloned the repository (see "First, get the sample sheet" below), you can run the
+local copy instead. In RStudio, set the working directory to `tutorial/` first — either
+**Session → Set Working Directory → Choose Directory…**, or open `tutorial/` as an
+RStudio Project so it is set for you every time:
 
-$$\beta = \frac{M}{M + U + \alpha}, \qquad M\text{-value} = \log_2\!\frac{M}{U}$$
+```r
+source("install_packages.R")
+```
 
-The **beta value** is the direct proportion of methylation and values range
-between $[0,1]$. While the beta value is easily interpretable, the distribution of
-beta values are often non-normal and thus violate assumptions of normality when
-they are used in linear regression modeling. Thus, the beta values are log-transformed
-to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in
-distribution, which makes it the better choice for statistical modeling.
-($\alpha \approx 100$ is a small offset that stabilizes betas where
-total intensity is low.)
+And if you do prefer a command line, the same script runs there:
 
-::: {.callout-tip}
-## Two probe designs
-Methylation array technology often uses two different probe chemistries.
+```bash
+Rscript install_packages.R
+```
 
-  - **Type I** probes use two beads (one for M, one for
-U) in the *same* color channel;
-  - **Type II** probes use a single bead and read M
-vs U in the *two* color channels. Type I probes are better suited for regions with
-high CpG density, but require double the physical space on the array per locus.
-Type II are more compact, but have reduced sensitivity in high density regions.
+If you would rather not run a script you have not read — a reasonable instinct — the
+whole installation is short enough to paste directly into the Console:
 
-Normalization is done to allow for these different probe types to be compared.
+```r
+repos <- "https://cloud.r-project.org"
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager", repos = repos)
+if (!requireNamespace("remotes",     quietly = TRUE)) install.packages("remotes",     repos = repos)
+
+# matrixStats must be pinned below 1.2.0, and installed BEFORE the rest
+if (!requireNamespace("matrixStats", quietly = TRUE) ||
+    packageVersion("matrixStats") >= "1.2.0") {
+  remotes::install_version("matrixStats", version = "1.0.0",
+                           repos = repos, upgrade = "never")
+}
+
+BiocManager::install(c(
+  "data.table", "ggplot2", "knitr", "DT",
+  "minfi", "illuminaio", "wateRmelon", "GEOquery", "Biobase",
+  "IlluminaHumanMethylationEPICmanifest",
+  "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
+  "FlowSorted.Blood.EPIC", "genefilter",
+  "sva", "limma", "bacon",
+  "sesame", "sesameData", "GenomicRanges", "rtracklayer",
+  "missMethyl", "methylGSA"
+), ask = FALSE, update = FALSE, upgrade = "never")
+```
+
+`BiocManager` maps R 4.2 to Bioconductor 3.16 automatically — the release that produced
+every number in this tutorial. Budget 20-40 minutes the first time — on Windows and
+macOS most packages arrive as pre-built binaries, but there are a lot of them; on Linux
+they build from source, which is slower.
+
+::: {.callout-note}
+## The pin order is not incidental
+`matrixStats` goes in first, on its own, and `upgrade = "never"` is on every call.
+`wateRmelon` and `sva` both depend on `matrixStats`, so installing them first would pull
+the current release and break chapters 01-02 with `useNames = NA is defunct`. The
+installer script does the same thing in the same order, and re-checks the pin when it
+finishes.
 :::
 
-A short history of the Illumina methylation platforms:
+::: {.callout-tip}
+## If `matrixStats` fails to build, you have an alternative
+On Windows and macOS, CRAN and Bioconductor ship **pre-built binaries** for R 4.2, so
+almost nothing here compiles. The one exception is the pinned `matrixStats`: CRAN's
+R-4.2 binary is version 1.3.0, and 1.0.0 is only available as source, so that single
+package needs a compiler — [Rtools](https://cran.r-project.org/bin/windows/Rtools/) on
+Windows, or `xcode-select --install` on macOS.
 
-| Array | CpGs (approx.) | Notes |
+If you would rather not install a compiler, you can use the 1.3.0 binary and disable
+the check that breaks, by putting this at the top of your session — before loading
+`minfi`:
+
+```r
+install.packages("matrixStats")                      # gets the 1.3.0 binary
+options(matrixStats.useNames.NA = "deprecated")      # downgrades the error to a warning
+```
+
+That hidden option exists in `matrixStats` 1.3.0 and turns the fatal
+`useNames = NA is defunct` back into a warning. It was **removed in 1.5.0**, so this
+works only if you stay on 1.3.0. Setting it in `.Rprofile` saves retyping it each
+session.
+:::
+
+The R version matters more than it looks. R 4.2 is what selects Bioconductor 3.16; on a
+newer R you would get a newer Bioconductor, and some results could shift.
+
+The non-R sections: **chapter 07** runs the EWAS through a Snakemake pipeline, and that
+genuinely needs conda. Chapter 06 already runs the same association test directly in R,
+so nothing analytical is lost — chapter 07 shows how to scale it up. The `comb-p`
+region-level section of chapter 08 also needs conda; the rest of that chapter does not.
+
+### conda
+
+If you already use conda, or you want to run chapter 07, three environments are defined in the
+repository's `envs/` directory. Chapter 07 needs Snakemake, and the region-level analysis
+in chapter 08 needs `comb-p`, which runs on Python 2.7 and cannot share an environment
+with Snakemake's Python 3:
+
+```bash
+conda env create -f envs/methyl.yml     # chapters 01-06, 08 -- R 4.2.3
+conda env create -f envs/smk.yml        # chapter 07         -- Snakemake
+conda env create -f envs/combp.yml      # chapter 08 DMRs    -- comb-p
+```
+
+| Environment | Chapters | Core tool |
 |---|---|---|
-| HumanMethylation27 | 27,000 | promoter-focused, largely retired |
-| HumanMethylation450 | 485,000 | the workhorse of the 2010s |
-| **MethylationEPIC v1** | **865,000** | **this tutorial** (GPL21145) |
-| MethylationEPIC v2 | 935,000 | current; different probe IDs |
+| `ewas-methyl` | 01-06, 08 | R 4.2.3, Bioconductor 3.16 |
+| `ewas-smk` | 07 | Snakemake 9.26.1 |
+| `ewas-combp` | 08 (DMR section) | comb-p on Python 2.7 |
 
-The dataset we will use in this tutorial is EPIC **v1**, but the same framework can be
-applied for other arrays.
+If you only want the R chapters, `envs/methyl.yml` is the only one you need.
+
+Each file lists only the packages the tutorial uses directly and lets conda resolve the
+rest. `envs/smk.yml` deliberately holds nothing but the workflow engine: the pipeline
+declares its own per-rule R environment and Snakemake builds it on first run, which is
+also where METAL is compiled from source.
+
+If you do not have conda, [Miniforge](https://github.com/conda-forge/miniforge) is a
+minimal installer that defaults to the conda-forge channel; its README covers macOS,
+Windows, and Linux.
+
+:::
+
+The exact software state that produced every number in this tutorial — full
+`sessionInfo()` with all chapters' packages loaded, plus troubleshooting for two
+version-compatibility problems you may hit — is recorded in
+[`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
 
 ## Raw Methylation data files
 
@@ -96,18 +174,489 @@ The filename encodes the physical location of the sample: `200932680028` is the
 **Sentrix barcode** (the BeadChip / "slide"), and `R01C01` is the **array
 position** (row 1, column 1) on that chip.
 
-For this tutorial, we are going to use a subset of 96 samples from the Grady Trauma Project,
-(GSE132203) which are available from the NCBI GEO database. IDAT pairs were downloaded directly
-from GEO's per-sample supplementary FTP area, e.g.:
+For this tutorial, we are going to use a subset of 96 samples from the Grady Trauma Project
+(GSE132203), which is available from the NCBI GEO database. GEO stores each sample's IDAT
+pair in its own per-sample supplementary FTP directory, e.g.:
 
 ```
 https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM3853nnn/GSM3853168/suppl/
 ```
 
-The subset of 96 samples is ~1.4 GB, which should be manageable for most to download and perform
-analyses on quickly on their local computer. The full Grady Trauma Project dataset has 795 samples
-and is ~6 GB and can be downloaded into R directly with `GEOquery::getGEOSuppFiles()` or
-`minfi::read.metharray.sheet()` + `read.metharray.exp()`; the mechanics are the same.
+Note the `GSM3853nnn` part: GEO buckets samples into directories of a thousand by
+replacing the last three digits of the accession with `nnn`. `GSM3853168` therefore
+lives under `GSM3853nnn`. The download scripts below construct this for you.
+
+The 96-sample subset is **192 files, 1.42 GB** — two IDATs per sample. Do not download
+these by hand from the GEO website; use one of the three options below.
+
+## First, get the sample sheet
+
+All three download options below read `data/sample_sheet.csv`, so you need that file
+before you can fetch anything. It is a 96-row table, one row per array, that pairs each
+GEO accession with the phenotype data for that sample. The download scripts use two of
+its columns: `sample_id` (the `GSMnnnnnnn` accession) and `Basename` (the filename stem
+of the array, without the `_Grn.idat.gz` / `_Red.idat.gz` suffix).
+
+The sample sheet ships with this tutorial's repository, so there are two ways to get it.
+
+::: {.panel-tabset}
+
+#### Clone the whole repository
+
+This gets you the sample sheet, the notebooks, and the helper scripts in one step, which
+is what you want if you plan to work through the tutorial yourself:
+
+```bash
+git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
+```
+
+The sample sheet is then at `Methylation-EWAS-tutorial/tutorial/data/sample_sheet.csv`, and the download commands below
+will work as written from that `tutorial/` directory.
+
+#### Download just the one file
+
+If you only want the sample sheet, you can download it directly from the GitHub repository [here](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/e43eea48807773eb6e48a3ebd8ffe5d7e1d084ab/tutorial/data/sample_sheet.csv).
+
+:::
+
+Either way, check that you have 96 samples plus a header row before continuing.
+
+::: {.callout-note}
+## The `Basename` column is a relative path
+`Basename` reads `idats/GSM3853168_200932680028_R01C01` — a path relative to `data/`,
+not an absolute one. That is why the download options below all write into
+`data/idats/`, and why `read.metharray()` further down composes the path as
+`file.path("data/idats", basename(ss$Basename))`. If you put the IDATs somewhere else,
+adjust that path rather than editing the sample sheet.
+:::
+
+## Downloading the 96-sample subset
+
+::: {.callout-tip}
+## Which option should I pick?
+The 96 sample subset is provided as an archive you'll need to download and unpack in Option 1. Option 2 is how to fetch the 
+files from the NCBI GEO ftp site programmatically using R. Option 3 is how to download the files programmatically using the 
+command line.
+
+:::
+
+### Option 1 — one archive from Zenodo (simplest)
+
+The subset is deposited as a single archive alongside the other tutorial data, so this is
+one download and one extraction, with no per-sample loop and no GEO path construction. You can either 
+access and download the archive from Zenodo manually from the
+[tutorial data record](https://doi.org/10.5281/zenodo.22135215) — that link always
+resolves to the newest version — or 
+you can use the provided bash script `get_data.sh` as follows:
+
+```bash
+./get_data.sh A_idats
+```
+
+If using the bash script, the 192 IDATs will be located in `data/idats/` relative to wherever the script was run. So, make 
+sure to run the script from the location you want the dataset to live. If you are downloading the archive manually, I recommend 
+following the same filepath structure such that the samples are all located in `data/idats/`, which is where the sample sheet's
+`Basename` column expects them.
+
+### Option 2 — from GEO, using R (works on macOS, Windows, and Linux)
+
+This reads the sample sheet, builds each GEO URL, and downloads all 192 files.
+It is safe to re-run: files already present are skipped, so an interrupted download
+resumes where it stopped.
+
+```r
+ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
+dir.create("data/idats", recursive = TRUE, showWarnings = FALSE)
+
+# R's default download timeout is 60 seconds, which is not enough for a 7 MB
+# file on a slow connection. Raise it or downloads will fail part-way through.
+options(timeout = max(600, getOption("timeout")))
+
+for (k in seq_len(nrow(ss))) {
+  gsm    <- ss$sample_id[k]                       # e.g. GSM3853168
+  stub   <- basename(ss$Basename[k])              # GSM3853168_200932680028_R01C01
+  bucket <- paste0(substr(gsm, 1, nchar(gsm) - 3), "nnn")   # GSM3853nnn
+
+  for (channel in c("Grn", "Red")) {
+    fname <- sprintf("%s_%s.idat.gz", stub, channel)
+    dest  <- file.path("data/idats", fname)
+    if (file.exists(dest)) next                   # already have it
+    url <- sprintf("https://ftp.ncbi.nlm.nih.gov/geo/samples/%s/%s/suppl/%s",
+                   bucket, gsm, fname)
+    # mode = "wb" is required on Windows: without it R corrupts binary files.
+    download.file(url, dest, mode = "wb", quiet = TRUE)
+  }
+  cat(sprintf("[%3d/%d] %s\n", k, nrow(ss), gsm))
+}
+
+cat("files downloaded:", length(list.files("data/idats")), "of 192\n")
+```
+
+### Option 3 — from GEO, using the command line
+
+::: {.panel-tabset}
+
+#### macOS / Linux
+
+`curl` is preinstalled on macOS. `-C -` resumes a partial file, so re-running is safe.
+
+```bash
+mkdir -p data/idats
+
+# Pull the accession (column 1) and Basename (column 11) out of the sample
+# sheet, stripping the quotes the CSV uses, then fetch both channels for each.
+awk -F, 'NR > 1 { gsub(/"/, "", $1); gsub(/"/, "", $11); print $1, $11 }' \
+    data/sample_sheet.csv |
+while read -r gsm basename_path; do
+  stub="$(basename "$basename_path")"        # GSM3853168_200932680028_R01C01
+  bucket="${gsm%???}nnn"                     # GSM3853nnn
+  for channel in Grn Red; do
+    f="${stub}_${channel}.idat.gz"
+    [ -s "data/idats/$f" ] && continue       # already downloaded
+    url="https://ftp.ncbi.nlm.nih.gov/geo/samples/${bucket}/${gsm}/suppl/${f}"
+    if curl -C - -sfL -o "data/idats/$f" "$url"; then
+      echo "ok    $f"
+    else
+      echo "FAIL  $f"
+    fi
+  done
+done
+
+ls data/idats/*.idat.gz | wc -l      # expect 192
+```
+
+#### Windows (PowerShell)
+
+Open **PowerShell** (not Command Prompt) and run:
+
+```powershell
+New-Item -ItemType Directory -Force -Path data\idats | Out-Null
+$ss = Import-Csv data\sample_sheet.csv
+
+foreach ($row in $ss) {
+    $gsm    = $row.sample_id
+    $stub   = Split-Path $row.Basename -Leaf
+    $bucket = $gsm.Substring(0, $gsm.Length - 3) + "nnn"
+
+    foreach ($channel in @("Grn", "Red")) {
+        $fname = "${stub}_${channel}.idat.gz"
+        $dest  = "data\idats\$fname"
+        if (Test-Path $dest) { continue }
+        $url = "https://ftp.ncbi.nlm.nih.gov/geo/samples/$bucket/$gsm/suppl/$fname"
+        Invoke-WebRequest -Uri $url -OutFile $dest
+    }
+    Write-Host "$($gsm) done"
+}
+
+(Get-ChildItem data\idats\*.idat.gz).Count    # expect 192
+```
+
+:::
+
+::: {.callout-note}
+## You do not need to unzip the IDATs
+`minfi` reads gzipped IDATs (`.idat.gz`) directly. Leave them compressed.
+:::
+
+## Reading the IDATs into R
+
+The sample sheet's `Basename` column holds the path stem of each array — everything
+except the `_Grn.idat.gz` / `_Red.idat.gz` suffix. `read.metharray()` takes those stems
+and pairs the two channels for you:
+
+```{r}
+#| label: read-idats
+#| eval: false
+library(minfi)
+
+ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
+
+RGset <- read.metharray(
+  basenames = file.path("data/idats", basename(ss$Basename)),
+  force     = TRUE          # see the callout below -- required for this dataset
+)
+
+RGset
+dim(RGset)                  # 1051943 addresses x 96 arrays
+```
+
+The result is an `RGChannelSet`: raw red and green intensities per address, with no
+normalization and no probe filtering yet. That object is the input to
+[Quality control](01_qc.qmd), and it is what the `B_qc` tier gives you if you skip
+this step.
+
+::: {.callout-warning}
+## `force = TRUE` is required here, and it is not a formality
+Without it this dataset fails with:
+
+```
+[read.metharray] Trying to parse IDAT files with different array size
+but seemingly all of the same type.
+```
+
+Ten of the twelve slides in this series were scanned with 1,052,641 addresses; the
+remaining two (`201220980045` and `201228780138`, 16 samples) carry 1,051,943.
+`read.metharray()` refuses to parse the different array sizes unless you set `force = TRUE`, which restricts the object to
+the addresses common to every array. This is why `dim(RGset)` reports the smaller
+number.
+
+This is a scanner-decoding difference, not a data-quality problem, and taking the
+intersection is the correct way to handle the situation. A probe missing from some arrays cannot be compared
+across all of them anyway. But do not automatically use `force = TRUE` on other
+data — if the array *types* genuinely differ (EPIC v1 mixed with v2, say), the same
+error is telling you something you should not override. Check what the sizes actually
+are before you force it:
+
+```{r}
+#| label: idat-sizes
+#| eval: false
+library(illuminaio)
+sizes <- sapply(file.path("data/idats", paste0(basename(ss$Basename), "_Grn.idat.gz")),
+                function(f) nrow(readIDAT(f)$Quants))
+table(sizes)
+```
+:::
+
+## Computational cost: time, memory, and disk
+
+Everything below was measured on the machine that produced this tutorial — 32 cores,
+126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.
+Your times will differ, but this should provide a general estimate to guide what sample
+size you can analyse with your computing resources. The expensive steps are cell-type
+deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending 
+on how it's run.
+
+### Benchmarks per chapter
+
+Each computationally intensive step of the tutorial was benchmarked for runtime and max memory needed. The table below shows one row per step. Memory is the peak **total across every R
+process**, which is what has to fit in RAM.
+
+| Chapter | Step                                         | Wall time | Peak memory |
+|---|----------------------------------------------|---:|---:|
+| [01 QC](01_qc.qmd) | Read 96 IDAT pairs (`read.metharray`)        | 2 min 21 s | 5.8 GB |
+| [01 QC](01_qc.qmd) | Detection *p*-values (`detectionP`)          | 48 s | 3.8 GB |
+| [02 Normalization](02_normalization.qmd) | Functional normalization (`preprocessFunnorm`) | 2 min 4 s | 12.5 GB |
+| [03 Probe filtering](03_probe_filtering.qmd) | Mask + detection-*p* + sex chromosomes       | 26 s | 5.6 GB |
+| [04 Cell composition](04_cell_composition.qmd) | Deconvolution (`estimateCellCounts2`, IDOL)  | 1 min 54 s | **15.0 GB** |
+| [05 Batch effects](05_batch_effects.qmd) | Stratified `ComBat` on slide                 | 57 s | 4.1 GB |
+| [05 Batch effects](05_batch_effects.qmd) | `num.sv` + `sva` at *k* = 6                  | 5 min 1 s | 8.9 GB |
+| [06 EWAS](06_ewas.qmd) | EWAS using `lmFit` + `eBayes` + BACON        | 18 s | 4.1 GB |
+| [Chapter 07](07_pipeline.qmd) | Non-stratified EWAS on 87 samples            | 6 min 16 s | 2.3 GB |
+| [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (45 and 42) run simultaneously | 11 min 53 s | 6.3 GB |
+| [08 Annotation](08_annotation.qmd) | GENCODE v41 join over 756,251 CpGs           | 11 s | 1.3 GB |
+
+On average, the whole tutorial should take you about 30 minutes of compute. The 
+potential limiting resource is memory. The normalization and cell-type deconvolution takes about 12.5GB and 15GB of 
+memory to run, respectively. Those using a laptop with 8GB of RAM may not be able to perform these steps on their 
+local computer. Saved checkpoints of these results are available in the Zenodo record so that you can still run the rest of the 
+steps in these chapters.
+
+For the Chapter 07 EWAS run using a snakemake pipeline, the first row is the whole cohort in one
+EWAS. The second splits it into two — here by sex, giving 45 and 42 samples — and runs
+those two in parallel, which is why the memory roughly triples even though each model
+is smaller. If you're limited by RAM, you can run each part sequentially instead of in 
+parallel so the max memory needed will be less than that of the single EWAS estimate. The amount of 
+memory required for the EWAS using snakemake can be further reduced by reducing the number of workers. 
+The trade-off for reducing the number of workers is that the wall time will increase. 
+
+::: {.callout-warning}
+## Time versus Memory tradeoffs
+You may have noticed that the EWAS method shown in Chapter 6 runs significantly faster than the EWAS performed using 
+snakemake in Chapter 07, but requires more memory than the EWAS run on the same sample size (the above paragraph explains 
+the higher memory requirements for a stratified analysis). 87 samples is quite small, and a full-scale EWAS will have 
+several hundreds to thousands of samples. The faster method shown in Chapter 06 will very quickly require more memory resources 
+than you have available as the number of samples you try to run at once increase. The Snakemake pipleine in Chapter 07 takes a bit longer,
+especially for smaller datasets, because part of what it's doing under the hood is breaking the big dataset into smaller, more 
+reasonably sized chunks. The Snakemake EWAS method was designed to minimize memory cost for full-scale analyses; the consequence of this 
+is longer runtimes.
+::: 
+
+Disk space can also be a constraint. The input files require the largest amount of space, but some of the intermediate files produced 
+can also be large. For the 87 sample subset, I would make sure you have at least 6BG of free disk space. 
+
+### Checking what resources your own machine has
+
+Before you plan a run, find out what you are working with. 
+
+#### Cores
+We can use R to determine the number of cores available on your machine. This uses base R and should work for Windows, Mac, or Linux OS. 
+```{r}
+#| label: check-resources
+#| eval: false
+# --- cores -----------------------------------------------------------------
+parallel::detectCores()                      # logical cores, incl. hyperthreading
+parallel::detectCores(logical = FALSE)       # physical cores
+```
+
+`detectCores()` reports *logical* cores, which on most laptops is twice the physical
+count. Set `workers` from the physical number.
+
+#### RAM
+You can check how much RAM is availabe to use with Task Manager on Windows, Activity Monitor on Mac, and System Monitor on Linux.
+
+- **Windows**:
+  - Press Ctrl + Shift + Esc to open Task Manager.
+  - Click on the Performance tab (the speedometer icon on the left or top).
+  - Select Memory in the left sidebar.
+  - View your In use, Available, and Free RAM amounts at the bottom of the screen.
+- **Mac**:
+  - Press Cmd + Space to open Spotlight, type Activity Monitor, and press Enter.
+  - Click on the Memory tab near the top of the window.
+  - Look at the bottom of the window at Memory Pressure and Physical Memory usage graphs to see how much RAM is free or used.
+- **Linux**: 
+  - Open your applications menu and search for System Monitor (or KSysGuard / Plasma System Monitor on KDE desktops).
+  - Click on the Resources tab (or Performance tab depending on your distribution).
+  - Look at the Memory section to see a live graph and numbers showing used and free RAM. 
+
+
+#### Disk Space
+You can check free disk space using a graphical user interface (GUI) by opening your system's built-in file manager or storage settings panel on Windows, Mac, and Linux. 
+
+- **Windows**:
+  - Open File Explorer (press Windows Key + E).
+  - Click on This PC in the left sidebar.
+  - Look at the Devices and drives section to see a visual bar and remaining free gigabytes for your drives (like the C: drive).
+  - Alternatively, open the Settings app, go to System, and select Storage for a detailed breakdown.
+- **Mac**:
+  - Click the Apple logo in the top-left corner of your screen.
+  - Select System Settings (or System Preferences on older versions).
+  - Click General in the sidebar, then select Storage.
+  - View a colorful breakdown of your used and available disk space.
+- **Linux**:
+  - Open your default file manager (such as Nautilus in GNOME or Dolphin in KDE).
+  - Click on Other Locations or look at the left sidebar under Devices or Hard Disk to see available storage.
+
+## Optional: the full 795-sample dataset
+
+If you want to try a full-scale model after finishing the tutorial, GEO also serves the
+entire series as one tar archive. It is **11.9 GB** compressed and expands to 1,590 IDAT
+files, so budget disk space and time accordingly — and expect the EWAS itself to take longer than the 87-sample walkthrough.
+
+::: {.panel-tabset}
+
+#### macOS / Linux command line
+
+```bash
+mkdir -p data/idats_full && cd data/idats_full
+curl -C - -O "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar"
+tar -xvf GSE132203_RAW.tar
+ls *.idat.gz | wc -l      # expect 1590
+```
+
+#### Windows (PowerShell)
+
+```powershell
+New-Item -ItemType Directory -Force -Path data\idats_full | Out-Null
+Set-Location data\idats_full
+$u = "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar"
+Invoke-WebRequest -Uri $u -OutFile GSE132203_RAW.tar
+tar -xvf GSE132203_RAW.tar      # tar ships with Windows 10 and later
+(Get-ChildItem *.idat.gz).Count
+```
+
+#### Web browser
+You can also manually download the full sample set by selecting the link for the `GSE132203_RAW.tar` from the Supplementary Files 
+section at the bottom of the [GEO Accession page for the Grady Trauma Project](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132203).
+
+:::
+
+The archive also contains the platform manifest and a `filelist.txt` inventory.
+
+### Building a sample sheet for the full series
+
+The 96-sample sheet was built for you, but for the full series you need to make your own.
+The phenotype data lives in the **series matrix file**, which `GEOquery` downloads and
+parses for you — you do not need to touch the tar archive to get it.
+
+Two details make this less tidy than it sounds, and both are shown in the code below.
+First, GEO packs the phenotype into columns named `characteristics_ch1`,
+`characteristics_ch1.1`, and so on, each holding a `"label: value"` *string* rather than a
+typed value; you have to split them and recover the label. Second, the Basename is not a
+column at all — it has to be recovered from the supplementary-file URL.
+
+```{r}
+#| label: full-sample-sheet
+#| eval: false
+library(GEOquery)
+
+# The series matrix is ~30 MB; the default 60-second timeout is not enough.
+options(timeout = max(1200, getOption("timeout")))
+
+# getGPL = FALSE skips the platform manifest, which we do not need here
+# and which is large.
+gse <- getGEO("GSE132203", GSEMatrix = TRUE, getGPL = FALSE)[[1]]
+pd  <- Biobase::pData(gse)
+nrow(pd)                     # 795 samples
+
+# Every "characteristics_ch1*" column holds a "label: value" string. Split on the
+# first colon, using the label GEO supplies as the column name.
+ch <- grep("^characteristics_ch1", names(pd), value = TRUE)
+pheno <- lapply(ch, function(k) {
+  v     <- as.character(pd[[k]])
+  label <- sub(":.*$", "", v[1])
+  value <- trimws(sub("^[^:]*:", "", v))
+  setNames(data.frame(value, stringsAsFactors = FALSE), make.names(label))
+})
+pheno <- do.call(cbind, pheno)
+
+# The Grn supplementary URL ends in "<GSM>_<slide>_<pos>_Grn.idat.gz". Strip that
+# suffix to recover the Basename stem minfi wants.
+stem <- sub("_Grn\\.idat\\.gz$", "", basename(as.character(pd$supplementary_file)))
+
+full <- data.frame(
+  sample_id  = pd$geo_accession,
+  series     = "GSE132203",
+  sentrix_id = pd$title,                       # e.g. 200928190033_R01C01
+  slide      = sub("_.*$", "", pd$title),
+  array_pos  = sub("^.*_", "", pd$title),
+  Basename   = file.path("idats_full", stem),  # matches the download path above
+  stringsAsFactors = FALSE
+)
+full <- cbind(full, pheno)
+
+# Everything out of the series matrix is text, including the numbers.
+for (k in c("age", "mergedcapsandpsswinthin30days",
+            "childabphyssexemot_ctq_01modandsev")) {
+  full[[k]] <- suppressWarnings(as.numeric(full[[k]]))
+}
+
+# Derive the two variables the tutorial models. PTSD is the CAPS/PSS indicator;
+# 50 samples have it missing and will drop out of any model that uses it.
+full$ptsd <- factor(ifelse(full$mergedcapsandpsswinthin30days == 1, "Case", "Control"),
+                    levels = c("Control", "Case"))
+full$sex  <- ifelse(full$gender == "Female", "F", "M")
+
+write.csv(full, "data/sample_sheet_full.csv", row.names = FALSE)
+table(full$ptsd, full$sex, useNA = "ifany")
+```
+
+Running that gives 795 rows and 24 columns, with this breakdown:
+
+|         | Female | Male |
+|---------|---:|---:|
+| Control | 375 | 182 |
+| Case    | 160 | 28  |
+| missing | 36  | 14  |
+
+Three things to notice before you model any of it. **PTSD status is more imbalanced
+than in the teaching subset** — 188 cases against 557 controls, and among males only 28
+cases — where the 96-sample subset was deliberately balanced on case/control and sex.
+And **50 samples have no PTSD value at all**, so they will be excluded from any model
+using that variable, exactly as 9 of the 96 do in this tutorial.
+
+
+```{r}
+#| label: verify-full-sheet
+#| eval: false
+ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
+i  <- match(ss$sample_id, full$sample_id)
+sum(!is.na(i))                                   # 96
+identical(basename(ss$Basename), basename(full$Basename[i]))   # TRUE
+```
+
+Note that `Basename` above points at `idats_full/`, matching the download commands in
+this section. If you put the full series somewhere else, change that one line rather
+than editing the sheet afterwards.
 
 ## The sample sheet
 
@@ -120,49 +669,10 @@ ss <- readRDS("data/sample_sheet.rds")
 ss <- ss[order(ss$slide, ss$array_pos), ]
 cat("Samples:", nrow(ss), " | Chips:", length(unique(ss$slide)), "\n")
 knitr::kable(head(ss[, c("sample_id","slide","array_pos","gender","age",
-                         "ptsd","childhood_abuse","race")], 8),
+                         "ptsd","race")], 8),
+             row.names = FALSE,
              caption = "First 8 rows of the sample sheet")
 ```
-
-## How the teaching subset was chosen
-
-The Grady Trauma Project was selected for this tutorial in specific because I wanted
-to be able to provide a walkthrough that shows:
-
-1. How to process from raw IDAT files,
-2. Uses whole blood as the tissue source since this is a common tissue used in methylation studies and requires some additional consideration in statistical modeling.
-3. Has available phenotype data for a disease or trait association testing, as well as sex and age demographic information.
-
-The resulting balance of the 96 samples chosen for the tutorial subset:
-
-```{r}
-#| label: subset-balance
-bal <- list(
-  PTSD          = table(ss$ptsd, useNA = "ifany"),
-  Sex           = table(ss$gender),
-  `Childhood abuse` = table(ss$childhood_abuse, useNA = "ifany"),
-  Race          = table(ss$race, useNA = "ifany")
-)
-bal
-cat("\nAge: range", paste(range(ss$age, na.rm=TRUE), collapse="-"),
-    "| mean", round(mean(ss$age, na.rm=TRUE), 1), "\n")
-cat("Chips carrying both PTSD classes:",
-    sum(tapply(ss$ptsd, ss$slide, function(x) length(unique(na.omit(x)))>1)),
-    "of", length(unique(ss$slide)), "\n")
-```
-
-::: {.callout-note}
-## A bonus lesson I can teach with the Grady Trauma Project
-This cohort is ~95% African American, which means in addition to the main tutorial
-lessons I wanted to achieve, I also get to showcase using **population-specific**
-SNP (single nucleotide polymorphism) masks. Differences in genomic architecture is
-observed across populations; a variant may be polymorphic in one population, but is
-not in another, and vice-versa. SNPs in close proximity to a CpG can impact the
-ability for the CpG probes to measure the methylation status accurately. Thus, CpGs
-near common SNPs are typically excluded from downstream analyses. However, not all
-populations share the same SNPs and masking with the wrong population may cause you
-to lose true-positive signals and retain false-positive signals.
-:::
 
 ## What the next notebook does
 

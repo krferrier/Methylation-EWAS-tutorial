@@ -88,8 +88,8 @@ cd Methylation-EWAS-tutorial
 `get_data.sh` verifies each tarball against `SHA256SUMS.txt` before extracting, and
 extracts in place so files land where the `.qmd` documents look for them.
 
-Starting from chapter 01 instead means downloading the 622 raw IDAT files from GEO
-yourself; `01_qc.qmd` documents how.
+Starting from chapter 01 instead means downloading the 192 raw IDAT files (96
+Grn/Red pairs, one pair per array) from GEO yourself; `01_qc.qmd` documents how.
 
 ## Rendering
 
@@ -159,7 +159,7 @@ repository"** button in the sidebar to get APA or BibTeX directly.
 
 That is the *concept* DOI: it always resolves to the newest version of the data.
 To cite the exact files this tutorial was built from, use the version DOI
-https://doi.org/10.5281/zenodo.22135216 (record `22135216`).
+https://doi.org/10.5281/zenodo.22287946 (record `22287946`).
 
 ### Also cite the upstream sources
 

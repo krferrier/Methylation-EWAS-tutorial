@@ -261,7 +261,6 @@ n_fdr  <- sum(tt$bacon.adj.P < 0.05)
 cat(sprintf("Probes tested: %s\n", format(nrow(tt), big.mark = ",")))
 cat(sprintf("Bonferroni-significant (p < %.2g): %d\n", bonf, n_bonf))
 cat(sprintf("FDR < 0.05: %d\n", n_fdr))
-cat(sprintf("Suggestive (p < 1e-5): %d\n", sum(tt$bacon.p < 1e-5)))
 knitr::kable(head(tt[order(tt$bacon.p),
                      c("probe","logFC","delta_beta","P.Value","bacon.p","bacon.adj.P")], 6),
              digits = c(0, 3, 4, 8, 8, 4), row.names = FALSE,
@@ -274,11 +273,24 @@ Only `r n_bonf` CpG passes Bonferroni and `r n_fdr` pass FDR < 0.05 — a border
 result that a study of this size cannot settle either way. With n = 87, a
 single marginal hit is not unexpected.
 
+The next two figures are the same Manhattan plot drawn twice, once on limma's
+uncorrected p-values and once on the BACON-adjusted ones. Plotting both is worth
+the space: it shows exactly what the correction did to your results, and it makes
+clear that the one CpG which clears Bonferroni does so *because of* the rescaling,
+not independently of it. Report the adjusted version.
+
 ```{r}
 #| label: manhattan
 #| fig-cap: "Manhattan plot of the EWAS, drawn on limma's uncorrected p-values. Nothing crosses the Bonferroni line (red) on this scale — the single CpG that clears Bonferroni does so only after BACON rescaling, which shifts it just past the threshold. A near-empty Manhattan is the expected result for a subtle psychiatric phenotype in a small teaching subset (n=87); the full-scale analysis (n≈800) and meta-analysis across cohorts is what powers genome-wide discovery for PTSD [@katrinli2020ptsd]."
 #| echo: false
 knitr::include_graphics(data_path("06_manhattan.png"))
+```
+
+```{r}
+#| label: manhattan-bacon
+#| fig-cap: "The same Manhattan plot drawn on the BACON-adjusted p-values — the ones the chapter recommends you report. The axes, the coordinates, and the Bonferroni line are identical to the previous figure; only the y-values change. Rescaling by the empirical null lifts `cg15434749` (filled point) just across Bonferroni and leaves `cg20600436` (open ring) passing FDR < 0.05 alone. Comparing the two panels is the point: BACON does not manufacture signal, it re-centres and re-scales the whole test-statistic distribution, and a CpG that was already at the top of the uncorrected plot is the one that moves across."
+#| echo: false
+knitr::include_graphics(data_path("06_manhattan_bacon.png"))
 ```
 
 ```{r}
@@ -387,12 +399,65 @@ Q  <- wF*(bF - beta_meta)^2 + wM*(bM - beta_meta)^2   # Cochran's Q, 1 df
 p_het <- pchisq(Q, df = 1, lower.tail = FALSE)
 ```
 
-In practice you run this across all CpGs at once, and the standard tool for it is
-**METAL** [@willer2010metal] — the same command-line meta-analyzer used for GWAS. It
-reads each stratum's results file, matches CpGs by ID, does the inverse-variance
-weighting and the heterogeneity test genome-wide, and writes a combined table. A
-concordant hit (same direction in both sexes, low heterogeneity) is far more credible
-than a hit seen in only one stratum.
+In practice you run this across all CpGs at once. The standard tool for it is **METAL**
+[@willer2010metal] — the same command-line meta-analyzer used for GWAS. It reads each
+stratum's results file, matches CpGs by ID, does the inverse-variance weighting and the
+heterogeneity test genome-wide, and writes a combined table. A concordant hit (same
+direction in both sexes, low heterogeneity) is far more credible than a hit seen in only
+one stratum. [Chapter 07](07_pipeline.qmd) runs the stratified EWAS and METAL as a
+managed workflow.
+
+### You do not need METAL for this
+
+METAL's `SCHEME STDERR` *is* inverse-variance-weighted fixed-effects meta-analysis. The
+single-CpG code above vectorizes directly, so the whole genome-wide meta-analysis is a
+dozen lines of R over the two strata's BACON-adjusted result tables:
+
+```r
+library(data.table)
+
+# each stratum's BACON-adjusted results: one row per CpG
+mF <- fread("F_PTSD_ewas_bacon_results.csv.gz")[, .(probe = cpgid,
+                                                    bF = bacon.es, seF = bacon.se)]
+mM <- fread("M_PTSD_ewas_bacon_results.csv.gz")[, .(probe = cpgid,
+                                                    bM = bacon.es, seM = bacon.se)]
+mt <- merge(mF, mM, by = "probe")          # CpGs tested in both strata
+
+mt[, wF := 1 / seF^2][, wM := 1 / seM^2]                      # precision weights
+mt[, beta_meta := (wF * bF + wM * bM) / (wF + wM)]            # combined effect
+mt[, se_meta   := sqrt(1 / (wF + wM))]                        # combined SE
+mt[, z_meta    := beta_meta / se_meta]
+mt[, p_meta    := 2 * pnorm(-abs(z_meta))]
+
+# heterogeneity, per CpG
+mt[, Q     := wF * (bF - beta_meta)^2 + wM * (bM - beta_meta)^2]   # Cochran's Q, 1 df
+mt[, p_het := pchisq(Q, df = 1, lower.tail = FALSE)]
+mt[, I2    := pmax(0, (Q - 1) / Q) * 100]
+
+# direction string, the way METAL reports it
+mt[, direction := paste0(ifelse(bF > 0, "+", "-"), ifelse(bM > 0, "+", "-"))]
+
+setorder(mt, p_meta)
+```
+
+This is not an approximation. Run against the same two strata this tutorial
+meta-analyzes with METAL, across all 756,251 CpGs tested in both, it returns the
+**identical** answer: the same top hit (`cg22671410`, *p* = 2.027 × 10⁻¹³, direction
+`+-`, *I²* = 0), the same **9** CpGs below the Bonferroni threshold of 6.61 × 10⁻⁸, the
+same 50 at FDR < 0.05, and a rank correlation of 1 between the two sets of p-values.
+METAL writes its effect and standard error columns rounded to four decimal places, and
+once you round the R result the same way, the largest disagreement across all 756,251
+CpGs is **exactly zero**.
+
+::: {.callout-tip}
+## So when is METAL worth it?
+Not for the arithmetic — for the bookkeeping. METAL handles allele/strand alignment
+(irrelevant for methylation, central for GWAS), reads many cohort files with
+inconsistent column names, tracks sample sizes per marker, and applies genomic-control
+correction on request. For a two-stratum methylation meta-analysis where you control
+both input files, the R above is easier to audit and keeps everything in one language.
+For a multi-cohort consortium meta-analysis, use METAL.
+:::
 
 ## 8. When you don't have IDATs
 

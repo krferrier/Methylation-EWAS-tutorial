@@ -1,0 +1,92 @@
+---
+title: "Background: DNA methylation and how it is measured"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+```
+
+This notebook covers background on DNA methylation and the array technology used to measure DNA methylation. If you are already familiar with methylation arrays, skip ahead to
+[Setup](00_setup.qmd).
+
+# What is DNA methylation
+
+DNA methylation is an epigenetic mechanism that occurs when a methyl (CH3) group
+is added to a cytosine base in DNA. Methylated cytosines often occur directly next
+to a guanine nucleotide, which has led to the name of methylated sites as 'CpGs'
+(cytosine-phosphate-guanine). The added methyl group of a CpG can physically inhibit
+the cellular machinery necessary for gene expression, thus we can infer effects of gene
+expression from methylation status.
+
+In the human genome, there are GC-rich regions known as CpG islands (CGIs). These regions
+typically span 500-1500 base pairs (bp) with greater than 60% GC-content. CGIs tend to be in the
+promoter regions of genes. While 70-80% of CpGs genome-wide are methylated, CGIs are
+predominantly unmethylated, particularly at active promoters. There are CpGs outside of CGIs, however, and based on their distance
+from the CGI they may be labeled as in the 'shore' (0-2kb), 'shelf' (2kb-4kb), or 'open sea' (
+greater than 4kb).
+
+![CGI and relative regions](data/CGI.png)
+
+The unique and important characteristic of methylation compared with genetic variants is that
+methylation status can change over time as a response to environmental factors and is reversible.
+For example, there are distinct methylation patterns observed between exposure to commercial tobacco
+smoking and people who have never smoked. After a person quits smoking, their methylation patterns
+revert back to a state more similar to that of someone who has never smoked.
+
+# Measuring methylation
+
+Array technology, such as the Illumina Infinium Methylation EPIC array (v1, "850K"),
+estimate the methylation status at a CpG site by the fraction of DNA molecules carrying
+a methyl group at that specific genomic location. The EPIC array interrogates ~865,000
+CpGs across the genome. For each CpG it reports two intensities:
+
+- **M** — signal from the *methylated* allele,
+- **U** — signal from the *unmethylated* allele.
+
+From those two numbers we form the two estimates/metrics of methylation status used
+in methylation analyses:
+
+$$\beta = \frac{M}{M + U + \alpha}, \qquad M\text{-value} = \log_2\!\frac{M}{U}$$
+
+The **beta value** is the direct proportion of methylation and values range
+between $[0,1]$. While the beta value is easily interpretable, the distribution of
+beta values are often non-normal and thus violate assumptions of normality when
+they are used in linear regression modeling. Thus, the beta values are log-transformed
+to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in
+distribution, which makes it the better choice for statistical modeling.
+($\alpha \approx 100$ is a small offset that stabilizes betas where
+total intensity is low.)
+
+::: {.callout-tip}
+## Two probe designs
+Methylation array technology often uses two different probe chemistries.
+
+  - **Type I** probes use two beads (one for M, one for
+U) in the *same* color channel;
+  - **Type II** probes use a single bead and read M
+vs U in the *two* color channels. Type I probes are better suited for regions with
+high CpG density, but require double the physical space on the array per locus.
+Type II are more compact, but have reduced sensitivity in high density regions.
+
+Normalization is done to allow for these different probe types to be compared.
+:::
+
+A short history of the Illumina methylation platforms:
+
+| Array | CpGs (approx.) | Notes |
+|---|---|---|
+| HumanMethylation27 | 27,000 | promoter-focused, largely retired |
+| HumanMethylation450 | 485,000 | the workhorse of the 2010s |
+| **MethylationEPIC v1** | **865,000** | **this tutorial** (GPL21145) |
+| MethylationEPIC v2 | 935,000 | current; different probe IDs |
+
+The dataset we will use in this tutorial is EPIC **v1**, but the same framework can be
+applied for other arrays.
+
+# Where to go next
+
+[Setup](00_setup.qmd) introduces the Grady Trauma Project subset, shows how to
+download the raw IDAT files, and lays out what running the whole tutorial costs
+in time, memory, and disk.

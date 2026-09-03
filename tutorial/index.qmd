@@ -1,61 +1,98 @@
 ---
 title: "Epigenome-Wide Association Studies: a hands-on tutorial"
+subtitle: "From raw IDATs to annotated hits, using the Grady Trauma Project (GSE132203)"
 ---
 
-## Overview
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+ss <- readRDS("data/sample_sheet.rds")
+ss <- ss[order(ss$slide, ss$array_pos), ]
+```
 
-This tutorial's intended audience is graduate students, but I hope this resource is
-useful to anyone who wants to learn about array-based
-DNA methylation analysis. It walks through how to process from raw Illumina IDAT
-files, or a partially processed methylation dataset, to perform an Epigenome-wide 
-association study (EWAS). I also include direction and resources for secondary 
-analyses and annotation and interpretation of results. Everything is run on real 
-data from the Grady Trauma Project; data for this project and others can be accessed
-at the NCBI GEO database website. Learning objectives:
+## Who this is for
 
-- understand what methylation data is and how it is measured with array technology
-- read raw two-channel IDATs into R;
-- run the quality-control checks on the raw or processed methylation data;
-- know the different methods for normalization and how to do it yourself;
-- learn about probe filtering, including which probes are unreliable and how ancestry-aware masks work;
-- estimate blood cell composition; 
-- diagnose and correct technical batch structure;
-- how to create a proxy for smoking;
-- fit an epigenome-wide model;
-- and, annotate the top CpGs and regions.
+This tutorial is written for rotation students and anyone new to array-based
+DNA methylation analysis. It walks the full path from **raw Illumina IDAT
+files** to a set of **annotated, genome-wide association results**, running
+every step for real on a teaching subset of a public dataset. By the end you
+will have:
+
+- read raw two-channel IDATs into R and understood what the numbers mean;
+- run the quality-control checks that decide which samples and probes to trust;
+- normalized the data and filtered unreliable probes using ancestry-aware masks;
+- estimated blood cell composition and diagnosed technical batch structure;
+- fit an epigenome-wide model, run it reproducibly as a Snakemake pipeline, and annotated the top CpGs and regions.
 
 ## The dataset
 
-The *Grady Trauma Project* (**GSE132203**) is a dataset including whole-blood Illumina
-MethylationEPIC (v1, 850K) profiles from an adult cohort designed to study trauma exposure and PTSD. 
-It was chosen for this tutorial because it includes important characteristics for teaching:
+We use **GSE132203**, the *Grady Trauma Project* — whole-blood Illumina
+MethylationEPIC (v1, 850K) profiles from an adult cohort deeply phenotyped for
+trauma exposure and PTSD. It was chosen for teaching because it is unusually
+complete:
 
-| Feature | Why it matters|
+| Feature | Why it matters for teaching |
 |---|---|
-| Raw IDATs deposited | Lets us start from the true beginning, not a processed matrix. This is not always an option in reality, but it's important to understand how we get from raw data to the data used in an analysis.  |
-| Deposited cell-type proportions | estimating blood cell proportions is shown in the tutorial, but this provides an opportunity to validate our findings against the original study. |
-| Sentrix barcodes in filenames | the sentrix barcodes in the file names provide the technical variables chip and array position |
-| Explicit age & sex, multiple exposures | The phenotypes provided in the GEO datasets are often sparse, but the Grady Trauma Project provides many of the covariates I strongly recommend to include in modeling, as well as several candidate phenotypes for association testing. |
+| Raw IDATs deposited | Lets us start from the true beginning, not a processed matrix |
+| N = 795 (we use a **96-sample subset**) | Big enough to be realistic, small enough to run live |
+| Deposited cell-type proportions | An **answer key** to validate our own deconvolution |
+| Sentrix barcodes in filenames | Real chip/position structure for the batch-effects lesson |
+| Explicit age & sex, multiple exposures | Proper covariate modeling, several candidate outcomes |
 
+## How the teaching subset was chosen
 
-For the purposes of the tutorial, a subset (n = 96) of the whole cohort (N = 795) is used to keep every step quick and executable with a standard laptop. The 96 samples
-(12 full EPIC BeadChips × 8 positions) are balanced on PTSD status and biological sex. All 12 chips carry both PTSD cases and controls so the
-phenotype is not confounded with chip. See the [Setup](00_setup.qmd) notebook
-for exactly how the subset was chosen.
+The Grady Trauma Project was selected for this tutorial in specific because I wanted
+to be able to provide a walkthrough that shows:
+
+1. How to process from raw IDAT files,
+2. Uses whole blood as the tissue source since this is a common tissue used in methylation studies and requires some additional consideration in statistical modeling.
+3. Has available phenotype data for a disease or trait association testing, as well as sex and age demographic information.
+
+The resulting balance of the 96 samples chosen for the tutorial subset:
+
+```{r}
+#| label: subset-balance
+bal <- list(
+  PTSD          = table(ss$ptsd, useNA = "ifany"),
+  Sex           = table(ss$gender),
+  Race          = table(ss$race, useNA = "ifany")
+)
+bal
+cat("\nAge: range", paste(range(ss$age, na.rm=TRUE), collapse="-"),
+    "| mean", round(mean(ss$age, na.rm=TRUE), 1), "\n")
+cat("Chips carrying both PTSD classes:",
+    sum(tapply(ss$ptsd, ss$slide, function(x) length(unique(na.omit(x)))>1)),
+    "of", length(unique(ss$slide)), "\n")
+```
+
+::: {.callout-note}
+## A bonus lesson I can teach with the Grady Trauma Project
+This cohort is ~95% African American, which means in addition to the main tutorial
+lessons I wanted to achieve, I also get to showcase using **population-specific**
+SNP (single nucleotide polymorphism) masks. Differences in genomic architecture is
+observed across populations; a variant may be polymorphic in one population, but is
+not in another, and vice-versa. SNPs in close proximity to a CpG can impact the
+ability for the CpG probes to measure the methylation status accurately. Thus, CpGs
+near common SNPs are typically excluded from downstream analyses. However, not all
+populations share the same SNPs and masking with the wrong population may cause you
+to lose true-positive signals and retain false-positive signals.
+:::
 
 ## How the notebooks fit together
 
 The preprocessing-through-analysis arc maps onto these notebooks:
 
-1. **[Setup](00_setup.qmd)** — methylation and platform background, how the data were obtained, the subset.
-2. **[Quality control](01_qc.qmd)** — detection p-values, intensity, predicted sex, SNP identity.
-3. **[Normalization](02_normalization.qmd)** — within- and between-array normalization.
-4. **[Probe filtering](03_probe_filtering.qmd)** — problematic mapping and ancestry-aware SNP masks.
-5. **[Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.
-6. **[Batch effects](05_batch_effects.qmd)** — chip/position diagnosis; decide whether and how to correct.
-7. **[EWAS](06_ewas.qmd)** — basic single site association testing with R.
-8. **[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow.
-9. **[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.
+1. **[Background](00a_background.qmd)** — what DNA methylation is and how arrays measure it. Skip it if you already work with methylation data.
+2. **[Setup](00_setup.qmd)** — downloading the raw IDATs, reading them into R, and what the whole tutorial costs in time, memory, and disk.
+3. **[Quality control](01_qc.qmd)** — detection p-values, intensity, predicted sex, SNP identity.
+4. **[Normalization](02_normalization.qmd)** — within- and between-array normalization.
+5. **[Probe filtering](03_probe_filtering.qmd)** — detection-p, cross-reactive, and ancestry-aware SNP masks.
+6. **[Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.
+7. **[Batch effects](05_batch_effects.qmd)** — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.
+8. **[EWAS](06_ewas.qmd)** — the association model, adjusted for sex, age, smoking, array position, cell composition, and surrogate variables.
+9. **[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.
+10. **[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.
 
 Each notebook loads the object saved by the previous one, so you can work
 through them in order or jump to any step and pick up the saved checkpoint.

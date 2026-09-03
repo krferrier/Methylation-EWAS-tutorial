@@ -21,7 +21,7 @@ identifiers:
     value: "10.5281/zenodo.22135215"
     description: "Concept DOI for the checkpoint data (always the newest version)"
   - type: doi
-    value: "10.5281/zenodo.22135216"
+    value: "10.5281/zenodo.22287946"
     description: "Version DOI for the checkpoint data used to build this tutorial"
 references:
   - type: data

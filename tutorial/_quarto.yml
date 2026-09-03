@@ -4,6 +4,7 @@ project:
   render:
     - index.qmd
     - 00b_dataset_catalog.qmd
+    - 00a_background.qmd
     - 00_setup.qmd
     - 01_qc.qmd
     - 02_normalization.qmd
@@ -23,6 +24,8 @@ website:
         href: index.qmd
       - text: "Choosing a dataset"
         href: 00b_dataset_catalog.qmd
+      - text: "Background"
+        href: 00a_background.qmd
       - section: "Data preprocessing"
         contents:
           - 00_setup.qmd

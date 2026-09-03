@@ -1158,6 +1158,142 @@ is unchanged.
 
 None.
 
+## 26. R-only installation route, R alternatives to METAL and comb-p, and the Zenodo record bump
+
+### Installing without conda
+
+Earlier revisions presented conda as the only way to build the software
+environment. That is wrong for most of this tutorial: conda is required only for
+chapter 07 (Snakemake) and the comb-p section of chapter 08 (Python 2.7).
+Chapters 01-06 and the rest of 08 are plain R and Bioconductor.
+
+`install_packages.R` is a new top-level script that installs the four CRAN and
+eighteen Bioconductor packages the chapters use. Verified against the live
+package indexes rather than asserted: all 23 package names resolve under their R
+names in Bioconductor 3.16 and CRAN, and `BiocManager::version()` returns `3.16`
+on R 4.2.3, so the R version alone selects the correct Bioconductor release.
+
+The `matrixStats` pin is load-bearing and installed first, on its own, with
+`upgrade = "never"` on every subsequent call. `wateRmelon` and `sva` both depend
+on `matrixStats` but declare no version floor, so installing them first would
+pull the current release and break chapters 01-02 with `useNames = NA is
+defunct`. Current CRAN is **1.5.0**; the pinned **1.0.0** is still in the CRAN
+Archive.
+
+A no-compiler fallback was found and tested. CRAN's R-4.2 Windows binary for
+`matrixStats` is **1.3.0** — the broken version — and it is the only one of the
+23 without a usable binary. But 1.3.0 still honours
+`options(matrixStats.useNames.NA = "deprecated")`, which was confirmed to
+suppress the defunct error in a scratch library. That option is documented in
+the chapter and re-checked by the installer. (Only `"deprecated"` works;
+`"warning"` and `"ignore"` are rejected by the option's own validator.)
+
+The section is now written for the RStudio Console rather than a terminal, with
+three routes: `source()` on the raw GitHub URL, `source("install_packages.R")`
+from a clone, and `Rscript install_packages.R` for those who prefer a shell. A
+copy-pasteable block is included for readers who would rather not run a script
+they have not read. Relative paths assume `tutorial/` as the working directory,
+so the clone route names **Session -> Set Working Directory** or opening
+`tutorial/` as an RStudio Project.
+
+`SESSIONINFO.md` and `envs/{methyl,smk,combp}.yml` are now shipped in
+`tutorial/`, which is where the chapter's URLs and `conda env create -f`
+commands resolve from.
+
+### A meta-analysis alternative to METAL (chapter 06)
+
+Chapter 06 gained a subsection showing that plain R inverse-variance-weighted
+fixed-effects meta-analysis reproduces METAL exactly on this data. Across all
+**756,251** CpGs tested in both strata it returns the same top hit
+(`cg22671410`, *p* = 2.027e-13, direction `+-`, *I2* = 0), the same **9** CpGs
+below the Bonferroni threshold of 6.611562e-08, the same **50** at FDR < 0.05,
+and a Spearman rank correlation of **1** between the two sets of p-values.
+
+METAL writes its effect and standard error columns rounded to four decimal
+places. Once the R result is rounded the same way, the largest disagreement
+across all 756,251 CpGs is **exactly zero** — so the residual difference is
+METAL's output precision, not its arithmetic.
+
+The accompanying callout states what METAL is still for: allele and strand
+alignment, heterogeneous cohort files, per-marker sample sizes, and optional
+genomic-control correction. None of those bind on a two-stratum methylation
+meta-analysis where you control both input files.
+
+### `ENmix::combp`, an R implementation of comb-p (chapter 08)
+
+`ENmix` **1.34.0** was already installed and exports `combp`. Its expected input
+schema is `chr, start, end, p, probe` — a direct rename of the BED the chapter
+already builds for the command-line tool.
+
+Two behaviours were found by running it, and both are documented:
+
+- **`bin.size` must be smaller than `dist.cutoff`.** ENmix builds its
+  autocorrelation bins with `seq(bin.size, dist.cutoff, bin.size)`, so calling it
+  with the shipped command-line settings (`--dist 200` against the default
+  `bin.size = 310`) fails with `wrong sign in 'by' argument` rather than a
+  message naming the problem.
+- **The two implementations do not agree on region count.** At `dist.cutoff =
+  750`, ENmix reports **8** candidate regions of which **7** clear Sidak < 0.05.
+  Command-line comb-p at `--dist 200 --seed 1e-4` reports **3** candidates of
+  which **1** clears Sidak. Both rank the chr6:28.63 Mb locus first by a wide
+  margin — ENmix calls **12** CpGs there against comb-p's 11 — but ENmix is far
+  more permissive about the rest.
+
+  A first draft of this comparison said "8 regions versus one Sidak-significant
+  region", which compared a candidate count against a significant count. The
+  error came from reading ENmix's `sidak` column as if the values were `0` and
+  `1`; they are in scientific notation (`2.3e-07`, `1.2e-06`), so seven of the
+  eight are significant, not one. Both counts are now stated on the same footing
+  in the chapter and here.
+
+The chapter's DMR numbers still come from the command-line tool at the
+parameters shown, which is what chapter 07's pipeline invokes. Either method is
+acceptable provided the choice and its parameters are reported.
+
+Two citations were added: `xu2020ipdmr` (the ipDMR method paper, which is what
+`combp` implements) and `xu2021enmix` (the pipeline paper the package's own
+`citation()` returns). `references.bib` is now 49 entries. `xu2021enmix`
+originally carried `pages = {216}`; Crossref reports **216** as the
+`article-number` with no page range, so the field was corrected to `eid`.
+
+### Zenodo record bumped to 22287946
+
+A new version was published with the eight rebuilt tiers, including the new
+`A_idats` tier. This was a **functional break**, not a cosmetic one:
+`get_data.sh` was pinned to `ZENODO_RECORD=22135216`, and that record has no
+`A_idats` file — the documented `./get_data.sh A_idats` command returned **HTTP
+404**. The new record serves it (HTTP 206 on a range request).
+
+Updated to the new version DOI `10.5281/zenodo.22287946` (record `22287946`):
+`get_data.sh` (both the default and the doc comment), `CITATION.cff`,
+`README.md`, and `MANIFEST.md`. `00_setup.qmd`'s manual-download link pointed at
+the old record by number; it now points at the **concept** DOI
+`10.5281/zenodo.22135215`, which always resolves to the newest version and will
+not go stale on the next deposit. The concept DOI is unchanged everywhere else.
+Prior mentions in `dev-notes/` were left alone: they are history.
+
+Integrity verified against the published record: all six rebuilt tarballs match
+`SHA256SUMS.txt` byte-for-byte, and the two carried-forward tiers (`B_qc`,
+`C_normalized`) have identical checksums in the old and new records.
+
+Tier sizes that changed between record 22135216 and 22287946:
+
+| Tier | Old bytes | New bytes |
+|---|---:|---:|
+| A_idats | absent | 1,391,172,407 |
+| D_filtered | 1,101,816,034 | 1,104,579,261 |
+| E_model_inputs | 511,166,905 | 511,092,881 |
+| F_ewas_results | 116,844,112 | 117,051,542 |
+| G_pipeline_run | 219,738,370 | 277,788,483 |
+| H_annotation | 306,431,838 | 293,956,117 |
+
+### Numbers moved
+
+None. The chapter 06 meta-analysis subsection re-derives the existing chapter 07
+figures by a second route and agrees with them exactly; the ENmix region count
+of 8 is reported as that tool's own output at its own parameters, not as a
+replacement for the chapter's DMR result.
+
 ## 24. Chapter 06 figure restyle, and the volcano's x-axis moved to the model coefficient
 
 Both chapter 06 figures were redrawn for legibility, and the volcano's x-axis
@@ -1225,3 +1361,89 @@ contrasted in the table caption.
 None. The 171,484 sign-disagreement count is newly reported in this section and
 in the figure caption's reasoning, but it describes a property of the existing
 checkpoint rather than a new result.
+
+## 25. Background split into its own notebook, subset rationale moved to the index, and every chapter benchmarked
+
+### Three-way restructure of the front matter
+
+`00_setup.qmd` had grown to cover array biology, the dataset, the download routes, and
+the cost of running everything. Three sections moved out:
+
+- **`00a_background.qmd` (new)** — "What is DNA methylation" and "Measuring methylation",
+  including the CpG-island schematic, the beta/M-value definitions, and the two-probe-design
+  callout. Registered in `_quarto.yml` between "Choosing a dataset" and Setup, and
+  written so a reader who already works with methylation arrays can skip it.
+- **`index.qmd`** — "How the teaching subset was chosen", the `subset-balance` chunk, and
+  the population-mask "bonus lesson" callout. The index previously had no R chunk at all,
+  so it gained a setup block that sources `_setup.R` and loads `data/sample_sheet.rds`.
+- **`00_setup.qmd`** — retitled "Setup: getting the data onto your machine", which is now
+  what it does. Down from 23,908 B to a tighter document plus the new material below.
+
+### How to obtain the sample sheet
+
+All three IDAT download routes read `data/sample_sheet.csv`, and nothing told the reader
+where to get it — the gap a beta-testing student hit. A new section documents two routes,
+both tested verbatim: cloning the repository (the file is tracked at
+`tutorial/data/sample_sheet.csv`), and fetching the single file from its raw GitHub URL,
+which returns HTTP 200 and is byte-identical to the repo copy. A callout explains that
+`Basename` is a path relative to `data/`, which is why every route writes into
+`data/idats/`.
+
+### `childhood_abuse` dropped from both tables
+
+The variable is never modelled or discussed anywhere in the tutorial, so it was removed
+from the sample-sheet preview in `00_setup.qmd` and from the subset-balance tabulation now
+in `index.qmd`. It still appears in chapter 01's missingness table as a *candidate* model
+variable, which is a separate editorial question.
+
+### Every chapter benchmarked
+
+The setup chapter previously carried only the two Snakemake EWAS rows and a sentence
+admitting the earlier chapters were untimed. All nine substantial steps are now measured:
+
+| Chapter | Step | Wall time | Peak memory |
+|---|---|---:|---:|
+| 01 QC | Read 96 IDAT pairs (read.metharray) | 2 min 21 s | 5.8 GB |
+| 01 QC | Detection p-values (detectionP) | 48 s | 3.8 GB |
+| 02 Normalization | Functional normalization (preprocessFunnorm) | 2 min 4 s | 12.5 GB |
+| 03 Probe filtering | v8.1 mask + detP + sex chromosomes | 26 s | 5.6 GB |
+| 04 Cell composition | Deconvolution (estimateCellCounts2, IDOL) | 1 min 54 s | 15.0 GB |
+| 05 Batch effects | Stratified ComBat on slide | 57 s | 4.1 GB |
+| 05 Batch effects | num.sv + SVA at k = 6 | 5 min 1 s | 8.9 GB |
+| 06 EWAS | limma lmFit + eBayes + BACON | 18 s | 4.1 GB |
+| 08 Annotation | gencode v41 join onto 756,251 CpGs | 11 s | 1.3 GB |
+
+Total compute for the whole tutorial is about **14 minutes**, with a **15.0 GB
+high-water mark**.
+
+Method: wall-clock timing around each step, and memory by sampling the resident set size
+of every R process once a second, then taking the peak of the per-second totals.
+`/usr/bin/time -v` was not used for the multi-process rows because it reports the maximum
+RSS of a single process — on the two-stratum pipeline row that gives 2.1 GB where the true
+requirement is 6.3 GB, a threefold understatement. Every benchmark asserts its chapter's
+frozen anchors before recording a time, so a run that silently moved a published number
+fails rather than reporting: 1,051,943 × 96 addresses, 866,238 detection rows, the 90,832
+mask union, 756,273 retained probes, `num.sv` = 15, design ncol 24 / residual df 63,
+λ = 1.0217, top hit `cg15434749`, and 647,034 gene-mapped CpGs.
+
+### Two prose claims the measurements corrected
+
+- **The memory peak is not functional normalization.** It is cell-type deconvolution in
+  chapter 04 at 15.0 GB, with funnorm second at 12.5 GB. The callout asserted funnorm
+  without a measurement behind it.
+- **The RAM floor is 16 GB, not "16 GB is comfortable."** At a 15.0 GB peak, 16 GB leaves
+  almost no headroom. The guidance for 8 GB machines now points at the `C_normalized` and
+  `E_model_inputs` tiers, which skip precisely the two heaviest steps.
+
+### Two environment fixes required to run the benchmarks
+
+Neither affects any published number, but both would hit a student running the
+preprocessing chapters in a current Bioconductor environment:
+
+- **`matrixStats` pinned to 1.0.0.** From 1.2.0 the `useNames = NA` argument is defunct,
+  and `minfi` 1.44's `detectionP` and `preprocessFunnorm` both pass it. With 1.3.0
+  installed, both steps abort. This was latent rather than introduced — every chapter
+  resumes from a checkpoint, so these calls had never been executed in this environment.
+- **`preprocessCore` rebuilt with `--disable-threading`.** Its threaded quantile
+  normalization fails under the build sandbox with `pthread_create() is 22`. A sandbox
+  limitation, not a tutorial defect.

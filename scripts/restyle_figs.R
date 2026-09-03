@@ -248,12 +248,8 @@ bonf <- 0.05 / ew$n_tested
 p06m <- ggplot(pl, aes(x, -log10(P.Value), colour = factor(chrn %% 2))) +
   geom_point(size = 0.3, alpha = 0.7) +
   geom_hline(yintercept = -log10(bonf), colour = plum, linewidth = 0.5) +
-  geom_hline(yintercept = 5, colour = gry, linetype = 2, linewidth = 0.4) +
   annotate("text", x = max(pl$x), y = -log10(bonf), vjust = -0.6, hjust = 1,
            label = "Bonferroni", colour = plum, size = 3,
-           family = if (nzchar(.ewas_family)) .ewas_family else NULL) +
-  annotate("text", x = max(pl$x), y = 5, vjust = -0.6, hjust = 1,
-           label = "suggestive, p = 1e-5", colour = gry, size = 3,
            family = if (nzchar(.ewas_family)) .ewas_family else NULL) +
   scale_colour_manual(values = c(`0` = teal_d, `1` = teal_l), guide = "none") +
   scale_x_continuous(breaks = ctr$x, labels = ctr$chrn, expand = c(0.008, 0)) +
@@ -274,7 +270,6 @@ lab <- head(tt[order(P.Value)], 3)
 p06v <- ggplot(tt, aes(dbp, -log10(P.Value))) +
   geom_vline(xintercept = 0, colour = gry_l, linewidth = 0.4) +
   geom_point(size = 0.3, alpha = 0.45, colour = teal) +
-  geom_hline(yintercept = 5, colour = gry, linetype = 2, linewidth = 0.4) +
   geom_point(data = lab, colour = plum, size = 2) +
   ggrepel::geom_text_repel(data = lab, aes(label = probe), size = 3,
                            colour = plum, min.segment.length = 0,
@@ -295,15 +290,16 @@ save_fig(p06v, data_path("06_volcano.png"), 7.6, 5.2, dpi = DENSE)
 ## Snakemake run itself is not re-executed, so every p-value is as-run.
 ## ---------------------------------------------------------------------------
 D <- "../ewas_pipeline/run_grady"
+DA <- "../ewas_pipeline/run_grady_all"
 lam <- function(p) { p <- p[is.finite(p) & p > 0]
                      median(qchisq(p, 1, lower.tail = FALSE)) / qchisq(0.5, 1) }
 qqdt <- function(p, lab) { p <- sort(p[is.finite(p) & p > 0])
   data.table(analysis = lab, obs = -log10(p), exp = -log10(ppoints(length(p)))) }
 
-A <- fread(file.path(D, "all/PTSD_ewas_bacon_results.csv.gz"))
-Fm <- fread(file.path(D, "strat/F/F_PTSD_ewas_bacon_results.csv.gz"))
-Mm <- fread(file.path(D, "strat/M/M_PTSD_ewas_bacon_results.csv.gz"))
-me <- fread(file.path(D, "meta_analysis/PTSD_ewas_meta_analysis_results_1.txt"))
+A <- fread(file.path(DA, "PTSD_ewas_bacon_results.csv.gz"))
+Fm <- fread(file.path(D, "F/F_PTSD_ewas_bacon_results.csv.gz"))
+Mm <- fread(file.path(D, "M/M_PTSD_ewas_bacon_results.csv.gz"))
+me <- fread(file.path(D, "PTSD_ewas_meta_analysis_results_1.txt"))
 setnames(me, "P-value", "P")
 
 ## [07a] meta QQ, with a 95% concentration band so "on the line" is quantified.

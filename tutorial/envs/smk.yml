@@ -1,0 +1,19 @@
+# Chapter 07 -- running the EWAS as a Snakemake workflow.
+#
+# This environment holds ONLY the workflow engine. The pipeline declares its own
+# per-rule R environment (envs/ewas.yaml in the EWAS repo) and Snakemake builds
+# it on first run, because the profile sets `software-deployment-method: conda`.
+# That is also where METAL is compiled from source. Nothing R-related belongs here.
+#
+# snakemake-minimal excludes the reporting/GUI extras the pipeline does not use.
+# pandas is needed by the pipeline's config handling.
+name: ewas-smk
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - snakemake-minimal>=9.3.3
+  - pandas
+  - conda
+  - pip
