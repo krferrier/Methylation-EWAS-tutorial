@@ -1168,10 +1168,11 @@ chapter 07 (Snakemake) and the comb-p section of chapter 08 (Python 2.7).
 Chapters 01-06 and the rest of 08 are plain R and Bioconductor.
 
 `install_packages.R` is a new top-level script that installs the four CRAN and
-eighteen Bioconductor packages the chapters use. Verified against the live
-package indexes rather than asserted: all 23 package names resolve under their R
-names in Bioconductor 3.16 and CRAN, and `BiocManager::version()` returns `3.16`
-on R 4.2.3, so the R version alone selects the correct Bioconductor release.
+eighteen Bioconductor packages the chapters use, plus `matrixStats` installed
+ahead of them by the version pin below — 23 in total. Verified against the live
+package indexes rather than asserted: all 23 names resolve under their R names in
+Bioconductor 3.16 and CRAN, and `BiocManager::version()` returns `3.16` on
+R 4.2.3, so the R version alone selects the correct Bioconductor release.
 
 The `matrixStats` pin is load-bearing and installed first, on its own, with
 `upgrade = "never"` on every subsequent call. `wateRmelon` and `sva` both depend
