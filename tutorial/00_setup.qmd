@@ -474,7 +474,7 @@ is longer runtimes.
 ::: 
 
 Disk space can also be a constraint. The input files require the largest amount of space, but some of the intermediate files produced 
-can also be large. For the 87 sample subset, I would make sure you have at least 6BG of free disk space. 
+can also be large. For the 87 sample subset, I would make sure you have at least 6 GB of free disk space. 
 
 ### Checking what resources your own machine has
 

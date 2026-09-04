@@ -6175,7 +6175,7 @@ but seemingly all of the same type.</code></pre>
 <p>You may have noticed that the EWAS method shown in Chapter 6 runs significantly faster than the EWAS performed using snakemake in Chapter 07, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 87 samples at 8 workers. Those two numbers are not fixed in the same way, though. The pipeline’s memory is a function of how many workers you give it, so it is a dial you control; the Chapter 06 approach holds the whole matrix in one process, so its memory is set by the data and grows with the cohort. 87 samples is quite small, and a full-scale EWAS will have several hundreds to thousands of samples. The faster method shown in Chapter 06 will very quickly require more memory resources than you have available as the number of samples you try to run at once increase. The Snakemake pipleine in Chapter 07 takes a bit longer, especially for smaller datasets, because part of what it’s doing under the hood is breaking the big dataset into smaller, more reasonably sized chunks. The Snakemake EWAS method was designed to minimize memory cost for full-scale analyses; the consequence of this is longer runtimes.</p>
 </div>
 </div>
-<p>Disk space can also be a constraint. The input files require the largest amount of space, but some of the intermediate files produced can also be large. For the 87 sample subset, I would make sure you have at least 6BG of free disk space.</p>
+<p>Disk space can also be a constraint. The input files require the largest amount of space, but some of the intermediate files produced can also be large. For the 87 sample subset, I would make sure you have at least 6 GB of free disk space.</p>
 </section>
 <section id="checking-what-resources-your-own-machine-has" class="level3">
 <h3 class="anchored" data-anchor-id="checking-what-resources-your-own-machine-has">Checking what resources your own machine has</h3>
@@ -7420,7 +7420,7 @@ but seemingly all of the same type.</code></pre>
 <span id="cb25-480"><a href="#cb25-480" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> </span>
 <span id="cb25-481"><a href="#cb25-481" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-482"><a href="#cb25-482" aria-hidden="true" tabindex="-1"></a><span class="ex">Disk</span> space can also be a constraint. The input files require the largest amount of space, but some of the intermediate files produced </span>
-<span id="cb25-483"><a href="#cb25-483" aria-hidden="true" tabindex="-1"></a><span class="ex">can</span> also be large. For the 87 sample subset, I would make sure you have at least 6BG of free disk space. </span>
+<span id="cb25-483"><a href="#cb25-483" aria-hidden="true" tabindex="-1"></a><span class="ex">can</span> also be large. For the 87 sample subset, I would make sure you have at least 6 GB of free disk space. </span>
 <span id="cb25-484"><a href="#cb25-484" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-485"><a href="#cb25-485" aria-hidden="true" tabindex="-1"></a><span class="co">### Checking what resources your own machine has</span></span>
 <span id="cb25-486"><a href="#cb25-486" aria-hidden="true" tabindex="-1"></a></span>
