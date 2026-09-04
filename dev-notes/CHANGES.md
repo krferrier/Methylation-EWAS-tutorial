@@ -1635,3 +1635,54 @@ PowerShell commands could not be run on this machine at all.
 ### Numbers moved
 
 None.
+
+## 30. Two corrections from real `lscpu` output
+
+Section 29 shipped Linux core-count commands that could not be tested here — the
+sandbox has no `/sys/devices/system/cpu`, so `lscpu` exits with "failed to
+determine number of CPUs". The author supplied real output from the benchmarking
+machine, and it falsified both of the claims that rested on that gap.
+
+### The documented `grep` matched nothing
+
+Recent `lscpu` (util-linux) indents its output under group headings:
+
+```
+CPU(s):                      32
+  On-line CPU(s) list:       0-31
+    Thread(s) per core:      2
+    Core(s) per socket:      24
+    Socket(s):               1
+```
+
+So the shipped `lscpu | grep '^Core(s) per socket'` anchored to the start of the
+line and returned **nothing** — silently, with exit status 1 and no message.
+Verified against the real output: the anchored form produces no output, while an
+unanchored match finds both fields.
+
+Replaced with a single unanchored `awk` that returns the physical count directly,
+checked against that same output and returning **24**:
+
+```bash
+lscpu | awk -F: '/Core\(s\) per socket/{c=$2} /Socket\(s\)/{s=$2} END{print c*s}'
+```
+
+The indentation trap is now stated in the chapter, since a reader who adapts the
+old pattern will hit it again.
+
+### "Twice the physical count" is not reliable
+
+The chapter said `detectCores()` reports logical cores, "which on most laptops is
+twice the physical count". The benchmarking machine is a **Core i9-14900K**: 32
+logical against **24** physical, a factor of 1.33. Intel's hybrid designs (12th
+generation and later) pair hyperthreaded performance cores with single-threaded
+efficiency cores, so the doubling rule does not hold. Rewritten to say so, using
+that machine as the worked example.
+
+Both descriptions of the benchmarking machine — in the cost section and in
+chapter 07 — now read "32 logical cores (24 physical)" rather than "32 cores",
+since the chapter now asks readers to distinguish the two.
+
+### Numbers moved
+
+None of the analysis. The machine description gains its physical core count.

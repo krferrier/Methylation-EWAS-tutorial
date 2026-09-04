@@ -5918,7 +5918,7 @@ sex:</code></pre>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--chunk-size</span> 5000 <span class="at">--processing-type</span> multicore <span class="at">--workers</span> 8 <span class="dt">\</span></span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--out-dir</span> run_grady_all <span class="at">--out-type</span> .csv.gz</span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took <strong>5 min 24 s</strong> of EWAS time at 8 workers, and 6 min 12 s including the BACON step that follows. The two stratified analyses in the next section took 11 min 37 s together at 4 workers each, running concurrently. <a href="./00_setup.html">Setup</a> has the memory figures and guidance on choosing <code>workers</code> for your own machine.</p>
+<p>On the machine that produced this tutorial — 32 logical cores (24 physical), 126 GB RAM — that took <strong>5 min 24 s</strong> of EWAS time at 8 workers, and 6 min 12 s including the BACON step that follows. The two stratified analyses in the next section took 11 min 37 s together at 4 workers each, running concurrently. <a href="./00_setup.html">Setup</a> has the memory figures and guidance on choosing <code>workers</code> for your own machine.</p>
 <section id="does-the-pipeline-agree-with-chapter-06" class="level3">
 <h3 class="anchored" data-anchor-id="does-the-pipeline-agree-with-chapter-06">Does the pipeline agree with chapter 06?</h3>
 <p>Chapter 06 fit this model with <code>limma::lmFit</code> + <code>eBayes</code>; the pipeline fits one <code>glm</code> per CpG. On this run:</p>
@@ -6964,7 +6964,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-156"><a href="#cb36-156" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)</span></span>
 <span id="cb36-157"><a href="#cb36-157" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-158"><a href="#cb36-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a>On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took</span>
+<span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a>On the machine that produced this tutorial — 32 logical cores (24 physical), 126 GB RAM — that took</span>
 <span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a>**5 min 24 s** of EWAS time at 8 workers, and 6 min 12 s including the BACON step that</span>
 <span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a>follows. The two stratified analyses in the next section took 11 min 37 s together at</span>
 <span id="cb36-162"><a href="#cb36-162" aria-hidden="true" tabindex="-1"></a>4 workers each, running concurrently. <span class="co">[</span><span class="ot">Setup</span><span class="co">](00_setup.qmd)</span> has the memory figures and</span>

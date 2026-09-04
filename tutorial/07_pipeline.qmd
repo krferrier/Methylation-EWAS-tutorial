@@ -152,7 +152,7 @@ Rscript scripts/ewas.R \
 # → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)
 ```
 
-On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took
+On the machine that produced this tutorial — 32 logical cores (24 physical), 126 GB RAM — that took
 **5 min 24 s** of EWAS time at 8 workers, and 6 min 12 s including the BACON step that
 follows. The two stratified analyses in the next section took 11 min 37 s together at
 4 workers each, running concurrently. [Setup](00_setup.qmd) has the memory figures and

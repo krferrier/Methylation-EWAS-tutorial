@@ -419,8 +419,8 @@ table(sizes)
 
 ## Computational cost: time, memory, and disk {#sec-cost}
 
-Everything below was measured on the machine that produced this tutorial — 32 cores,
-126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.
+Everything below was measured on the machine that produced this tutorial — 32 logical
+cores (24 physical), 126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.
 Your times will differ, but this should provide a general estimate to guide what sample
 size you can analyse with your computing resources. The expensive steps are cell-type
 deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending 
@@ -491,8 +491,11 @@ parallel::detectCores()                      # logical cores, incl. hyperthreadi
 parallel::detectCores(logical = FALSE)       # physical cores
 ```
 
-`detectCores()` reports *logical* cores, which on most laptops is twice the physical
-count. Set `workers` from the physical number.
+`detectCores()` reports *logical* cores. With hyperthreading that is often twice the
+physical count, but do not count on the factor of two: Intel's hybrid designs (12th
+generation and later) pair hyperthreaded performance cores with single-threaded
+efficiency cores, so the machine these benchmarks were run on — a Core i9-14900K —
+reports **32 logical against 24 physical**. Set `workers` from the physical number.
 
 If you would rather not open R, or want to confirm what R is reporting:
 
@@ -508,10 +511,15 @@ sysctl -n hw.physicalcpu     # physical cores -- use this for `workers`
 ##### Linux
 
 ```bash
-nproc                                    # logical cores
-lscpu | grep '^Core(s) per socket'       # physical cores per socket
-lscpu | grep '^Socket(s)'                # multiply the two for the physical total
+nproc     # logical cores, incl. hyperthreading
+
+# physical cores = "Core(s) per socket" x "Socket(s)"
+lscpu | awk -F: '/Core\(s\) per socket/{c=$2} /Socket\(s\)/{s=$2} END{print c*s}'
 ```
+
+Recent `lscpu` versions indent their output under group headings, so anchoring a
+pattern to the start of the line (`grep '^Core(s) per socket'`) silently matches
+nothing. The `awk` above does not anchor, and works either way.
 
 ##### Windows
 

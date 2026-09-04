@@ -6078,7 +6078,7 @@ but seemingly all of the same type.</code></pre>
 </section>
 <section id="sec-cost" class="level2">
 <h2 class="anchored" data-anchor-id="sec-cost">Computational cost: time, memory, and disk</h2>
-<p>Everything below was measured on the machine that produced this tutorial — 32 cores, 126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs. Your times will differ, but this should provide a general estimate to guide what sample size you can analyse with your computing resources. The expensive steps are cell-type deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending on how it’s run.</p>
+<p>Everything below was measured on the machine that produced this tutorial — 32 logical cores (24 physical), 126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs. Your times will differ, but this should provide a general estimate to guide what sample size you can analyse with your computing resources. The expensive steps are cell-type deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending on how it’s run.</p>
 <section id="benchmarks-per-chapter" class="level3">
 <h3 class="anchored" data-anchor-id="benchmarks-per-chapter">Benchmarks per chapter</h3>
 <p>Each computationally intensive step of the tutorial was benchmarked for runtime and max memory needed. The table below shows one row per step. Memory is the peak <strong>total across every R process</strong>, which is what has to fit in RAM.</p>
@@ -6191,7 +6191,7 @@ but seemingly all of the same type.</code></pre>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>parallel<span class="sc">::</span><span class="fu">detectCores</span>(<span class="at">logical =</span> <span class="cn">FALSE</span>)       <span class="co"># physical cores</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p><code>detectCores()</code> reports <em>logical</em> cores, which on most laptops is twice the physical count. Set <code>workers</code> from the physical number.</p>
+<p><code>detectCores()</code> reports <em>logical</em> cores. With hyperthreading that is often twice the physical count, but do not count on the factor of two: Intel’s hybrid designs (12th generation and later) pair hyperthreaded performance cores with single-threaded efficiency cores, so the machine these benchmarks were run on — a Core i9-14900K — reports <strong>32 logical against 24 physical</strong>. Set <code>workers</code> from the physical number.</p>
 <p>If you would rather not open R, or want to confirm what R is reporting:</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href>macOS</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href>Linux</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-3" role="tab" aria-controls="tabset-4-3" aria-selected="false" href>Windows</a></li></ul>
@@ -6201,9 +6201,11 @@ but seemingly all of the same type.</code></pre>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">sysctl</span> <span class="at">-n</span> hw.physicalcpu     <span class="co"># physical cores -- use this for `workers`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nproc</span>                                    <span class="co"># logical cores</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">lscpu</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;^Core(s) per socket&#39;</span>       <span class="co"># physical cores per socket</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ex">lscpu</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;^Socket(s)&#39;</span>                <span class="co"># multiply the two for the physical total</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nproc</span>     <span class="co"># logical cores, incl. hyperthreading</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># physical cores = &quot;Core(s) per socket&quot; x &quot;Socket(s)&quot;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="ex">lscpu</span> <span class="kw">|</span> <span class="fu">awk</span> <span class="at">-F:</span> <span class="st">&#39;/Core\(s\) per socket/{c=$2} /Socket\(s\)/{s=$2} END{print c*s}&#39;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Recent <code>lscpu</code> versions indent their output under group headings, so anchoring a pattern to the start of the line (<code>grep &#39;^Core(s) per socket&#39;</code>) silently matches nothing. The <code>awk</code> above does not anchor, and works either way.</p>
 </div>
 <div id="tabset-4-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-3-tab">
 <ul>
@@ -7428,8 +7430,8 @@ but seemingly all of the same type.</code></pre>
 <span id="cb33-425"><a href="#cb33-425" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-426"><a href="#cb33-426" aria-hidden="true" tabindex="-1"></a><span class="st">## Computational cost: time, memory, and disk {#sec-cost}</span></span>
 <span id="cb33-427"><a href="#cb33-427" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-428"><a href="#cb33-428" aria-hidden="true" tabindex="-1"></a><span class="st">Everything below was measured on the machine that produced this tutorial — 32 cores,</span></span>
-<span id="cb33-429"><a href="#cb33-429" aria-hidden="true" tabindex="-1"></a><span class="st">126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.</span></span>
+<span id="cb33-428"><a href="#cb33-428" aria-hidden="true" tabindex="-1"></a><span class="st">Everything below was measured on the machine that produced this tutorial — 32 logical</span></span>
+<span id="cb33-429"><a href="#cb33-429" aria-hidden="true" tabindex="-1"></a><span class="st">cores (24 physical), 126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.</span></span>
 <span id="cb33-430"><a href="#cb33-430" aria-hidden="true" tabindex="-1"></a><span class="st">Your times will differ, but this should provide a general estimate to guide what sample</span></span>
 <span id="cb33-431"><a href="#cb33-431" aria-hidden="true" tabindex="-1"></a><span class="st">size you can analyse with your computing resources. The expensive steps are cell-type</span></span>
 <span id="cb33-432"><a href="#cb33-432" aria-hidden="true" tabindex="-1"></a><span class="st">deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending </span></span>
@@ -7500,291 +7502,299 @@ but seemingly all of the same type.</code></pre>
 <span id="cb33-499"><a href="#cb33-499" aria-hidden="true" tabindex="-1"></a><span class="ex">parallel::detectCores</span><span class="er">(</span><span class="ex">logical</span> = FALSE<span class="kw">)</span>       <span class="co"># physical cores</span></span>
 <span id="cb33-500"><a href="#cb33-500" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
 <span id="cb33-501"><a href="#cb33-501" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-502"><a href="#cb33-502" aria-hidden="true" tabindex="-1"></a><span class="kw">`</span>detectCores<span class="er">(</span><span class="kw">)`</span> <span class="ex">reports</span> <span class="pp">*</span>logical<span class="pp">*</span> cores, which on most laptops is twice the physical</span>
-<span id="cb33-503"><a href="#cb33-503" aria-hidden="true" tabindex="-1"></a><span class="ex">count.</span> Set <span class="kw">`</span>workers<span class="kw">`</span> <span class="ex">from</span> the physical number.</span>
-<span id="cb33-504"><a href="#cb33-504" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-505"><a href="#cb33-505" aria-hidden="true" tabindex="-1"></a><span class="ex">If</span> you would rather not open R, or want to confirm what R is reporting:</span>
-<span id="cb33-506"><a href="#cb33-506" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-507"><a href="#cb33-507" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> {.panel-tabset}</span>
-<span id="cb33-508"><a href="#cb33-508" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-509"><a href="#cb33-509" aria-hidden="true" tabindex="-1"></a><span class="co">##### macOS</span></span>
-<span id="cb33-510"><a href="#cb33-510" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-511"><a href="#cb33-511" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
-<span id="cb33-512"><a href="#cb33-512" aria-hidden="true" tabindex="-1"></a><span class="ex">sysctl</span> <span class="at">-n</span> hw.logicalcpu      <span class="co"># logical cores, incl. hyperthreading</span></span>
-<span id="cb33-513"><a href="#cb33-513" aria-hidden="true" tabindex="-1"></a><span class="ex">sysctl</span> <span class="at">-n</span> hw.physicalcpu     <span class="co"># physical cores -- use this for `workers`</span></span>
-<span id="cb33-514"><a href="#cb33-514" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
-<span id="cb33-515"><a href="#cb33-515" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-516"><a href="#cb33-516" aria-hidden="true" tabindex="-1"></a><span class="co">##### Linux</span></span>
-<span id="cb33-517"><a href="#cb33-517" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-518"><a href="#cb33-518" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
-<span id="cb33-519"><a href="#cb33-519" aria-hidden="true" tabindex="-1"></a><span class="fu">nproc</span>                                    <span class="co"># logical cores</span></span>
-<span id="cb33-520"><a href="#cb33-520" aria-hidden="true" tabindex="-1"></a><span class="ex">lscpu</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;^Core(s) per socket&#39;</span>       <span class="co"># physical cores per socket</span></span>
-<span id="cb33-521"><a href="#cb33-521" aria-hidden="true" tabindex="-1"></a><span class="ex">lscpu</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;^Socket(s)&#39;</span>                <span class="co"># multiply the two for the physical total</span></span>
-<span id="cb33-522"><a href="#cb33-522" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
+<span id="cb33-502"><a href="#cb33-502" aria-hidden="true" tabindex="-1"></a><span class="kw">`</span>detectCores<span class="er">(</span><span class="kw">)`</span> <span class="ex">reports</span> <span class="pp">*</span>logical<span class="pp">*</span> cores. With hyperthreading that is often twice the</span>
+<span id="cb33-503"><a href="#cb33-503" aria-hidden="true" tabindex="-1"></a><span class="ex">physical</span> count, but do not count on the factor of two: Intel<span class="st">&#39;s hybrid designs (12th</span></span>
+<span id="cb33-504"><a href="#cb33-504" aria-hidden="true" tabindex="-1"></a><span class="st">generation and later) pair hyperthreaded performance cores with single-threaded</span></span>
+<span id="cb33-505"><a href="#cb33-505" aria-hidden="true" tabindex="-1"></a><span class="st">efficiency cores, so the machine these benchmarks were run on — a Core i9-14900K —</span></span>
+<span id="cb33-506"><a href="#cb33-506" aria-hidden="true" tabindex="-1"></a><span class="st">reports **32 logical against 24 physical**. Set `workers` from the physical number.</span></span>
+<span id="cb33-507"><a href="#cb33-507" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-508"><a href="#cb33-508" aria-hidden="true" tabindex="-1"></a><span class="st">If you would rather not open R, or want to confirm what R is reporting:</span></span>
+<span id="cb33-509"><a href="#cb33-509" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-510"><a href="#cb33-510" aria-hidden="true" tabindex="-1"></a><span class="st">::: {.panel-tabset}</span></span>
+<span id="cb33-511"><a href="#cb33-511" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-512"><a href="#cb33-512" aria-hidden="true" tabindex="-1"></a><span class="st">##### macOS</span></span>
+<span id="cb33-513"><a href="#cb33-513" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-514"><a href="#cb33-514" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
+<span id="cb33-515"><a href="#cb33-515" aria-hidden="true" tabindex="-1"></a><span class="st">sysctl -n hw.logicalcpu      # logical cores, incl. hyperthreading</span></span>
+<span id="cb33-516"><a href="#cb33-516" aria-hidden="true" tabindex="-1"></a><span class="st">sysctl -n hw.physicalcpu     # physical cores -- use this for `workers`</span></span>
+<span id="cb33-517"><a href="#cb33-517" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb33-518"><a href="#cb33-518" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-519"><a href="#cb33-519" aria-hidden="true" tabindex="-1"></a><span class="st">##### Linux</span></span>
+<span id="cb33-520"><a href="#cb33-520" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-521"><a href="#cb33-521" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
+<span id="cb33-522"><a href="#cb33-522" aria-hidden="true" tabindex="-1"></a><span class="st">nproc     # logical cores, incl. hyperthreading</span></span>
 <span id="cb33-523"><a href="#cb33-523" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-524"><a href="#cb33-524" aria-hidden="true" tabindex="-1"></a><span class="co">##### Windows</span></span>
-<span id="cb33-525"><a href="#cb33-525" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-526"><a href="#cb33-526" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Press Ctrl + Shift + Esc to open Task Manager.</span>
-<span id="cb33-527"><a href="#cb33-527" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click on the Performance tab <span class="er">(</span><span class="ex">the</span> speedometer icon on the left or top<span class="kw">)</span><span class="bu">.</span></span>
-<span id="cb33-528"><a href="#cb33-528" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Select CPU in the left sidebar.</span>
-<span id="cb33-529"><a href="#cb33-529" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Read <span class="pp">**</span>Cores<span class="pp">**</span> and <span class="pp">**</span>Logical processors<span class="pp">**</span> in the lower-right block of stats. Set</span>
-<span id="cb33-530"><a href="#cb33-530" aria-hidden="true" tabindex="-1"></a>  <span class="kw">`</span>workers<span class="kw">`</span> <span class="ex">from</span> <span class="pp">**</span>Cores<span class="pp">**</span>.</span>
+<span id="cb33-524"><a href="#cb33-524" aria-hidden="true" tabindex="-1"></a><span class="st"># physical cores = &quot;Core(s) per socket&quot; x &quot;Socket(s)&quot;</span></span>
+<span id="cb33-525"><a href="#cb33-525" aria-hidden="true" tabindex="-1"></a><span class="st">lscpu | awk -F: &#39;</span>/Core\(s\) per socket/{c=<span class="va">$2</span>} /Socket\(s\)/{s=<span class="va">$2</span>} END{print c<span class="pp">*</span>s}<span class="st">&#39;</span></span>
+<span id="cb33-526"><a href="#cb33-526" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb33-527"><a href="#cb33-527" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-528"><a href="#cb33-528" aria-hidden="true" tabindex="-1"></a><span class="st">Recent `lscpu` versions indent their output under group headings, so anchoring a</span></span>
+<span id="cb33-529"><a href="#cb33-529" aria-hidden="true" tabindex="-1"></a><span class="st">pattern to the start of the line (`grep &#39;</span>^Core<span class="er">(</span><span class="ex">s</span><span class="kw">)</span> <span class="ex">per</span> socket<span class="st">&#39;`) silently matches</span></span>
+<span id="cb33-530"><a href="#cb33-530" aria-hidden="true" tabindex="-1"></a><span class="st">nothing. The `awk` above does not anchor, and works either way.</span></span>
 <span id="cb33-531"><a href="#cb33-531" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-532"><a href="#cb33-532" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span></span>
+<span id="cb33-532"><a href="#cb33-532" aria-hidden="true" tabindex="-1"></a><span class="st">##### Windows</span></span>
 <span id="cb33-533"><a href="#cb33-533" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-534"><a href="#cb33-534" aria-hidden="true" tabindex="-1"></a><span class="co">#### RAM</span></span>
-<span id="cb33-535"><a href="#cb33-535" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-536"><a href="#cb33-536" aria-hidden="true" tabindex="-1"></a><span class="ex">You</span> can check how much RAM is available to use with Task Manager on Windows, Activity Monitor on Mac, and System Monitor on Linux.</span>
-<span id="cb33-537"><a href="#cb33-537" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-538"><a href="#cb33-538" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> {.panel-tabset}</span>
+<span id="cb33-534"><a href="#cb33-534" aria-hidden="true" tabindex="-1"></a><span class="st">- Press Ctrl + Shift + Esc to open Task Manager.</span></span>
+<span id="cb33-535"><a href="#cb33-535" aria-hidden="true" tabindex="-1"></a><span class="st">- Click on the Performance tab (the speedometer icon on the left or top).</span></span>
+<span id="cb33-536"><a href="#cb33-536" aria-hidden="true" tabindex="-1"></a><span class="st">- Select CPU in the left sidebar.</span></span>
+<span id="cb33-537"><a href="#cb33-537" aria-hidden="true" tabindex="-1"></a><span class="st">- Read **Cores** and **Logical processors** in the lower-right block of stats. Set</span></span>
+<span id="cb33-538"><a href="#cb33-538" aria-hidden="true" tabindex="-1"></a><span class="st">  `workers` from **Cores**.</span></span>
 <span id="cb33-539"><a href="#cb33-539" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-540"><a href="#cb33-540" aria-hidden="true" tabindex="-1"></a><span class="co">##### macOS</span></span>
+<span id="cb33-540"><a href="#cb33-540" aria-hidden="true" tabindex="-1"></a><span class="st">:::</span></span>
 <span id="cb33-541"><a href="#cb33-541" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-542"><a href="#cb33-542" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Press Cmd + Space to open Spotlight, type Activity Monitor, and press Enter.</span>
-<span id="cb33-543"><a href="#cb33-543" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click on the Memory tab near the top of the window.</span>
-<span id="cb33-544"><a href="#cb33-544" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Look at the bottom of the window at Memory Pressure and Physical Memory usage graphs to see how much RAM is free or used.</span>
+<span id="cb33-542"><a href="#cb33-542" aria-hidden="true" tabindex="-1"></a><span class="st">#### RAM</span></span>
+<span id="cb33-543"><a href="#cb33-543" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-544"><a href="#cb33-544" aria-hidden="true" tabindex="-1"></a><span class="st">You can check how much RAM is available to use with Task Manager on Windows, Activity Monitor on Mac, and System Monitor on Linux.</span></span>
 <span id="cb33-545"><a href="#cb33-545" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-546"><a href="#cb33-546" aria-hidden="true" tabindex="-1"></a><span class="ex">From</span> a terminal:</span>
+<span id="cb33-546"><a href="#cb33-546" aria-hidden="true" tabindex="-1"></a><span class="st">::: {.panel-tabset}</span></span>
 <span id="cb33-547"><a href="#cb33-547" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-548"><a href="#cb33-548" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
-<span id="cb33-549"><a href="#cb33-549" aria-hidden="true" tabindex="-1"></a><span class="ex">sysctl</span> <span class="at">-n</span> hw.memsize <span class="kw">|</span> <span class="fu">awk</span> <span class="st">&#39;{ printf &quot;%.1f GB installed\n&quot;, $1/1024/1024/1024 }&#39;</span></span>
-<span id="cb33-550"><a href="#cb33-550" aria-hidden="true" tabindex="-1"></a><span class="ex">vm_stat</span>                      <span class="co"># live breakdown of free / active / wired pages</span></span>
-<span id="cb33-551"><a href="#cb33-551" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
-<span id="cb33-552"><a href="#cb33-552" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-553"><a href="#cb33-553" aria-hidden="true" tabindex="-1"></a><span class="co">##### Linux</span></span>
-<span id="cb33-554"><a href="#cb33-554" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-555"><a href="#cb33-555" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Open your applications menu and search for System Monitor <span class="er">(</span><span class="ex">or</span> KSysGuard / Plasma System Monitor on KDE desktops<span class="kw">)</span><span class="bu">.</span></span>
-<span id="cb33-556"><a href="#cb33-556" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click on the Resources tab <span class="er">(</span><span class="ex">or</span> Performance tab depending on your distribution<span class="kw">)</span><span class="bu">.</span></span>
-<span id="cb33-557"><a href="#cb33-557" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Look at the Memory section to see a live graph and numbers showing used and free RAM.</span>
-<span id="cb33-558"><a href="#cb33-558" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-559"><a href="#cb33-559" aria-hidden="true" tabindex="-1"></a><span class="ex">From</span> a terminal:</span>
+<span id="cb33-548"><a href="#cb33-548" aria-hidden="true" tabindex="-1"></a><span class="st">##### macOS</span></span>
+<span id="cb33-549"><a href="#cb33-549" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-550"><a href="#cb33-550" aria-hidden="true" tabindex="-1"></a><span class="st">- Press Cmd + Space to open Spotlight, type Activity Monitor, and press Enter.</span></span>
+<span id="cb33-551"><a href="#cb33-551" aria-hidden="true" tabindex="-1"></a><span class="st">- Click on the Memory tab near the top of the window.</span></span>
+<span id="cb33-552"><a href="#cb33-552" aria-hidden="true" tabindex="-1"></a><span class="st">- Look at the bottom of the window at Memory Pressure and Physical Memory usage graphs to see how much RAM is free or used.</span></span>
+<span id="cb33-553"><a href="#cb33-553" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-554"><a href="#cb33-554" aria-hidden="true" tabindex="-1"></a><span class="st">From a terminal:</span></span>
+<span id="cb33-555"><a href="#cb33-555" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-556"><a href="#cb33-556" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
+<span id="cb33-557"><a href="#cb33-557" aria-hidden="true" tabindex="-1"></a><span class="st">sysctl -n hw.memsize | awk &#39;</span>{ printf <span class="st">&quot;%.1f GB installed\n&quot;</span>, <span class="va">$1</span>/1024/1024/1024 }<span class="st">&#39;</span></span>
+<span id="cb33-558"><a href="#cb33-558" aria-hidden="true" tabindex="-1"></a><span class="st">vm_stat                      # live breakdown of free / active / wired pages</span></span>
+<span id="cb33-559"><a href="#cb33-559" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
 <span id="cb33-560"><a href="#cb33-560" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-561"><a href="#cb33-561" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
-<span id="cb33-562"><a href="#cb33-562" aria-hidden="true" tabindex="-1"></a><span class="fu">free</span> <span class="at">-h</span>                      <span class="co"># &#39;total&#39; is installed, &#39;available&#39; is what you can use</span></span>
-<span id="cb33-563"><a href="#cb33-563" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
-<span id="cb33-564"><a href="#cb33-564" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-565"><a href="#cb33-565" aria-hidden="true" tabindex="-1"></a><span class="co">##### Windows</span></span>
+<span id="cb33-561"><a href="#cb33-561" aria-hidden="true" tabindex="-1"></a><span class="st">##### Linux</span></span>
+<span id="cb33-562"><a href="#cb33-562" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-563"><a href="#cb33-563" aria-hidden="true" tabindex="-1"></a><span class="st">- Open your applications menu and search for System Monitor (or KSysGuard / Plasma System Monitor on KDE desktops).</span></span>
+<span id="cb33-564"><a href="#cb33-564" aria-hidden="true" tabindex="-1"></a><span class="st">- Click on the Resources tab (or Performance tab depending on your distribution).</span></span>
+<span id="cb33-565"><a href="#cb33-565" aria-hidden="true" tabindex="-1"></a><span class="st">- Look at the Memory section to see a live graph and numbers showing used and free RAM.</span></span>
 <span id="cb33-566"><a href="#cb33-566" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-567"><a href="#cb33-567" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Press Ctrl + Shift + Esc to open Task Manager.</span>
-<span id="cb33-568"><a href="#cb33-568" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click on the Performance tab <span class="er">(</span><span class="ex">the</span> speedometer icon on the left or top<span class="kw">)</span><span class="bu">.</span></span>
-<span id="cb33-569"><a href="#cb33-569" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Select Memory in the left sidebar.</span>
-<span id="cb33-570"><a href="#cb33-570" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> View your In use, Available, and Free RAM amounts at the bottom of the screen.</span>
-<span id="cb33-571"><a href="#cb33-571" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-572"><a href="#cb33-572" aria-hidden="true" tabindex="-1"></a><span class="ex">From</span> PowerShell:</span>
-<span id="cb33-573"><a href="#cb33-573" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-574"><a href="#cb33-574" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>powershell</span>
-<span id="cb33-575"><a href="#cb33-575" aria-hidden="true" tabindex="-1"></a><span class="ex">Get-CimInstance</span> Win32_ComputerSystem <span class="kw">|</span></span>
-<span id="cb33-576"><a href="#cb33-576" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Select-Object</span> @{n=<span class="st">&#39;InstalledGB&#39;</span><span class="kw">;</span><span class="va">e</span><span class="op">=</span><span class="dt">{[math]::Round(</span><span class="va">$_</span><span class="dt">.TotalPhysicalMemory/1GB</span><span class="op">,</span><span class="dt">1)}</span>}</span>
-<span id="cb33-577"><a href="#cb33-577" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
-<span id="cb33-578"><a href="#cb33-578" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-579"><a href="#cb33-579" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span></span>
-<span id="cb33-580"><a href="#cb33-580" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-581"><a href="#cb33-581" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> {.callout-note}</span>
-<span id="cb33-582"><a href="#cb33-582" aria-hidden="true" tabindex="-1"></a><span class="co">## &quot;Available&quot; is the number that matters</span></span>
-<span id="cb33-583"><a href="#cb33-583" aria-hidden="true" tabindex="-1"></a><span class="ex">Installed</span> RAM is the headline figure, but the operating system and everything else</span>
-<span id="cb33-584"><a href="#cb33-584" aria-hidden="true" tabindex="-1"></a><span class="ex">you</span> have open are already using some of it. Compare the peak-memory column in the</span>
-<span id="cb33-585"><a href="#cb33-585" aria-hidden="true" tabindex="-1"></a><span class="ex">table</span> above against <span class="pp">**</span>available<span class="pp">**</span> memory, not installed.</span>
-<span id="cb33-586"><a href="#cb33-586" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span></span>
-<span id="cb33-587"><a href="#cb33-587" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-588"><a href="#cb33-588" aria-hidden="true" tabindex="-1"></a><span class="co">#### Disk Space</span></span>
-<span id="cb33-589"><a href="#cb33-589" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-590"><a href="#cb33-590" aria-hidden="true" tabindex="-1"></a><span class="ex">You</span> can check free disk space using a graphical user interface <span class="er">(</span><span class="ex">GUI</span><span class="kw">)</span> <span class="ex">by</span> opening your system<span class="st">&#39;s built-in file manager or storage settings panel on Windows, Mac, and Linux. </span></span>
-<span id="cb33-591"><a href="#cb33-591" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-592"><a href="#cb33-592" aria-hidden="true" tabindex="-1"></a><span class="st">::: {.panel-tabset}</span></span>
-<span id="cb33-593"><a href="#cb33-593" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-594"><a href="#cb33-594" aria-hidden="true" tabindex="-1"></a><span class="st">##### macOS</span></span>
+<span id="cb33-567"><a href="#cb33-567" aria-hidden="true" tabindex="-1"></a><span class="st">From a terminal:</span></span>
+<span id="cb33-568"><a href="#cb33-568" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-569"><a href="#cb33-569" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
+<span id="cb33-570"><a href="#cb33-570" aria-hidden="true" tabindex="-1"></a><span class="st">free -h                      # &#39;</span>total<span class="st">&#39; is installed, &#39;</span>available<span class="st">&#39; is what you can use</span></span>
+<span id="cb33-571"><a href="#cb33-571" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb33-572"><a href="#cb33-572" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-573"><a href="#cb33-573" aria-hidden="true" tabindex="-1"></a><span class="st">##### Windows</span></span>
+<span id="cb33-574"><a href="#cb33-574" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-575"><a href="#cb33-575" aria-hidden="true" tabindex="-1"></a><span class="st">- Press Ctrl + Shift + Esc to open Task Manager.</span></span>
+<span id="cb33-576"><a href="#cb33-576" aria-hidden="true" tabindex="-1"></a><span class="st">- Click on the Performance tab (the speedometer icon on the left or top).</span></span>
+<span id="cb33-577"><a href="#cb33-577" aria-hidden="true" tabindex="-1"></a><span class="st">- Select Memory in the left sidebar.</span></span>
+<span id="cb33-578"><a href="#cb33-578" aria-hidden="true" tabindex="-1"></a><span class="st">- View your In use, Available, and Free RAM amounts at the bottom of the screen.</span></span>
+<span id="cb33-579"><a href="#cb33-579" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-580"><a href="#cb33-580" aria-hidden="true" tabindex="-1"></a><span class="st">From PowerShell:</span></span>
+<span id="cb33-581"><a href="#cb33-581" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-582"><a href="#cb33-582" aria-hidden="true" tabindex="-1"></a><span class="st">```powershell</span></span>
+<span id="cb33-583"><a href="#cb33-583" aria-hidden="true" tabindex="-1"></a><span class="st">Get-CimInstance Win32_ComputerSystem |</span></span>
+<span id="cb33-584"><a href="#cb33-584" aria-hidden="true" tabindex="-1"></a><span class="st">  Select-Object @{n=&#39;</span>InstalledGB<span class="st">&#39;;e={[math]::Round($_.TotalPhysicalMemory/1GB,1)}}</span></span>
+<span id="cb33-585"><a href="#cb33-585" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb33-586"><a href="#cb33-586" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-587"><a href="#cb33-587" aria-hidden="true" tabindex="-1"></a><span class="st">:::</span></span>
+<span id="cb33-588"><a href="#cb33-588" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-589"><a href="#cb33-589" aria-hidden="true" tabindex="-1"></a><span class="st">::: {.callout-note}</span></span>
+<span id="cb33-590"><a href="#cb33-590" aria-hidden="true" tabindex="-1"></a><span class="st">## &quot;Available&quot; is the number that matters</span></span>
+<span id="cb33-591"><a href="#cb33-591" aria-hidden="true" tabindex="-1"></a><span class="st">Installed RAM is the headline figure, but the operating system and everything else</span></span>
+<span id="cb33-592"><a href="#cb33-592" aria-hidden="true" tabindex="-1"></a><span class="st">you have open are already using some of it. Compare the peak-memory column in the</span></span>
+<span id="cb33-593"><a href="#cb33-593" aria-hidden="true" tabindex="-1"></a><span class="st">table above against **available** memory, not installed.</span></span>
+<span id="cb33-594"><a href="#cb33-594" aria-hidden="true" tabindex="-1"></a><span class="st">:::</span></span>
 <span id="cb33-595"><a href="#cb33-595" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-596"><a href="#cb33-596" aria-hidden="true" tabindex="-1"></a><span class="st">- Click the Apple logo in the top-left corner of your screen.</span></span>
-<span id="cb33-597"><a href="#cb33-597" aria-hidden="true" tabindex="-1"></a><span class="st">- Select System Settings (or System Preferences on older versions).</span></span>
-<span id="cb33-598"><a href="#cb33-598" aria-hidden="true" tabindex="-1"></a><span class="st">- Click General in the sidebar, then select Storage.</span></span>
-<span id="cb33-599"><a href="#cb33-599" aria-hidden="true" tabindex="-1"></a><span class="st">- View a colorful breakdown of your used and available disk space.</span></span>
-<span id="cb33-600"><a href="#cb33-600" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-601"><a href="#cb33-601" aria-hidden="true" tabindex="-1"></a><span class="st">From a terminal, checking the disk holding the current folder:</span></span>
-<span id="cb33-602"><a href="#cb33-602" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-603"><a href="#cb33-603" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
-<span id="cb33-604"><a href="#cb33-604" aria-hidden="true" tabindex="-1"></a><span class="st">df -h .                      # look at the &#39;</span>Avail<span class="st">&#39; column</span></span>
-<span id="cb33-605"><a href="#cb33-605" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-606"><a href="#cb33-606" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-607"><a href="#cb33-607" aria-hidden="true" tabindex="-1"></a><span class="st">##### Linux</span></span>
+<span id="cb33-596"><a href="#cb33-596" aria-hidden="true" tabindex="-1"></a><span class="st">#### Disk Space</span></span>
+<span id="cb33-597"><a href="#cb33-597" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-598"><a href="#cb33-598" aria-hidden="true" tabindex="-1"></a><span class="st">You can check free disk space using a graphical user interface (GUI) by opening your system&#39;</span>s built-in file manager or storage settings panel on Windows, Mac, and Linux. </span>
+<span id="cb33-599"><a href="#cb33-599" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-600"><a href="#cb33-600" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> {.panel-tabset}</span>
+<span id="cb33-601"><a href="#cb33-601" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-602"><a href="#cb33-602" aria-hidden="true" tabindex="-1"></a><span class="co">##### macOS</span></span>
+<span id="cb33-603"><a href="#cb33-603" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-604"><a href="#cb33-604" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click the Apple logo in the top-left corner of your screen.</span>
+<span id="cb33-605"><a href="#cb33-605" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Select System Settings <span class="er">(</span><span class="ex">or</span> System Preferences on older versions<span class="kw">)</span><span class="bu">.</span></span>
+<span id="cb33-606"><a href="#cb33-606" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click General in the sidebar, then select Storage.</span>
+<span id="cb33-607"><a href="#cb33-607" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> View a colorful breakdown of your used and available disk space.</span>
 <span id="cb33-608"><a href="#cb33-608" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-609"><a href="#cb33-609" aria-hidden="true" tabindex="-1"></a><span class="st">- Open your default file manager (such as Nautilus in GNOME or Dolphin in KDE).</span></span>
-<span id="cb33-610"><a href="#cb33-610" aria-hidden="true" tabindex="-1"></a><span class="st">- Click on Other Locations or look at the left sidebar under Devices or Hard Disk to see available storage.</span></span>
-<span id="cb33-611"><a href="#cb33-611" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-612"><a href="#cb33-612" aria-hidden="true" tabindex="-1"></a><span class="st">From a terminal, checking the disk holding the current folder:</span></span>
-<span id="cb33-613"><a href="#cb33-613" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-614"><a href="#cb33-614" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
-<span id="cb33-615"><a href="#cb33-615" aria-hidden="true" tabindex="-1"></a><span class="st">df -h .                      # look at the &#39;</span>Avail<span class="st">&#39; column</span></span>
-<span id="cb33-616"><a href="#cb33-616" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-617"><a href="#cb33-617" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-618"><a href="#cb33-618" aria-hidden="true" tabindex="-1"></a><span class="st">##### Windows</span></span>
+<span id="cb33-609"><a href="#cb33-609" aria-hidden="true" tabindex="-1"></a><span class="ex">From</span> a terminal, checking the disk holding the current folder:</span>
+<span id="cb33-610"><a href="#cb33-610" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-611"><a href="#cb33-611" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
+<span id="cb33-612"><a href="#cb33-612" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span> .                      <span class="co"># look at the &#39;Avail&#39; column</span></span>
+<span id="cb33-613"><a href="#cb33-613" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
+<span id="cb33-614"><a href="#cb33-614" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-615"><a href="#cb33-615" aria-hidden="true" tabindex="-1"></a><span class="co">##### Linux</span></span>
+<span id="cb33-616"><a href="#cb33-616" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-617"><a href="#cb33-617" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Open your default file manager <span class="er">(</span><span class="ex">such</span> as Nautilus in GNOME or Dolphin in KDE<span class="kw">)</span><span class="bu">.</span></span>
+<span id="cb33-618"><a href="#cb33-618" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click on Other Locations or look at the left sidebar under Devices or Hard Disk to see available storage.</span>
 <span id="cb33-619"><a href="#cb33-619" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-620"><a href="#cb33-620" aria-hidden="true" tabindex="-1"></a><span class="st">- Open File Explorer (press Windows Key + E).</span></span>
-<span id="cb33-621"><a href="#cb33-621" aria-hidden="true" tabindex="-1"></a><span class="st">- Click on This PC in the left sidebar.</span></span>
-<span id="cb33-622"><a href="#cb33-622" aria-hidden="true" tabindex="-1"></a><span class="st">- Look at the Devices and drives section to see a visual bar and remaining free gigabytes for your drives (like the C: drive).</span></span>
-<span id="cb33-623"><a href="#cb33-623" aria-hidden="true" tabindex="-1"></a><span class="st">- Alternatively, open the Settings app, go to System, and select Storage for a detailed breakdown.</span></span>
-<span id="cb33-624"><a href="#cb33-624" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-625"><a href="#cb33-625" aria-hidden="true" tabindex="-1"></a><span class="st">From PowerShell:</span></span>
-<span id="cb33-626"><a href="#cb33-626" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-627"><a href="#cb33-627" aria-hidden="true" tabindex="-1"></a><span class="st">```powershell</span></span>
-<span id="cb33-628"><a href="#cb33-628" aria-hidden="true" tabindex="-1"></a><span class="st">Get-PSDrive -PSProvider FileSystem |</span></span>
-<span id="cb33-629"><a href="#cb33-629" aria-hidden="true" tabindex="-1"></a><span class="st">  Select-Object Name, @{n=&#39;</span>FreeGB<span class="st">&#39;;e={[math]::Round($_.Free/1GB,1)}}</span></span>
-<span id="cb33-630"><a href="#cb33-630" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-631"><a href="#cb33-631" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-632"><a href="#cb33-632" aria-hidden="true" tabindex="-1"></a><span class="st">:::</span></span>
-<span id="cb33-633"><a href="#cb33-633" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-634"><a href="#cb33-634" aria-hidden="true" tabindex="-1"></a><span class="st">## Optional: the full 795-sample dataset {#sec-full-series}</span></span>
-<span id="cb33-635"><a href="#cb33-635" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-636"><a href="#cb33-636" aria-hidden="true" tabindex="-1"></a><span class="st">If you want to try a full-scale model after finishing the tutorial, GEO also serves the</span></span>
-<span id="cb33-637"><a href="#cb33-637" aria-hidden="true" tabindex="-1"></a><span class="st">entire series as one tar archive. It is **11.9 GB** compressed and expands to 1,590 IDAT</span></span>
-<span id="cb33-638"><a href="#cb33-638" aria-hidden="true" tabindex="-1"></a><span class="st">files, so budget disk space and time accordingly — and expect the EWAS itself to take longer than the 87-sample walkthrough.</span></span>
+<span id="cb33-620"><a href="#cb33-620" aria-hidden="true" tabindex="-1"></a><span class="ex">From</span> a terminal, checking the disk holding the current folder:</span>
+<span id="cb33-621"><a href="#cb33-621" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-622"><a href="#cb33-622" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
+<span id="cb33-623"><a href="#cb33-623" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span> .                      <span class="co"># look at the &#39;Avail&#39; column</span></span>
+<span id="cb33-624"><a href="#cb33-624" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
+<span id="cb33-625"><a href="#cb33-625" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-626"><a href="#cb33-626" aria-hidden="true" tabindex="-1"></a><span class="co">##### Windows</span></span>
+<span id="cb33-627"><a href="#cb33-627" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-628"><a href="#cb33-628" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Open File Explorer <span class="er">(</span><span class="ex">press</span> Windows Key + E<span class="kw">)</span><span class="bu">.</span></span>
+<span id="cb33-629"><a href="#cb33-629" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Click on This PC in the left sidebar.</span>
+<span id="cb33-630"><a href="#cb33-630" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Look at the Devices and drives section to see a visual bar and remaining free gigabytes for your drives <span class="er">(</span><span class="ex">like</span> the C: drive<span class="kw">)</span><span class="bu">.</span></span>
+<span id="cb33-631"><a href="#cb33-631" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span> Alternatively, open the Settings app, go to System, and select Storage for a detailed breakdown.</span>
+<span id="cb33-632"><a href="#cb33-632" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-633"><a href="#cb33-633" aria-hidden="true" tabindex="-1"></a><span class="ex">From</span> PowerShell:</span>
+<span id="cb33-634"><a href="#cb33-634" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-635"><a href="#cb33-635" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>powershell</span>
+<span id="cb33-636"><a href="#cb33-636" aria-hidden="true" tabindex="-1"></a><span class="ex">Get-PSDrive</span> <span class="at">-PSProvider</span> FileSystem <span class="kw">|</span></span>
+<span id="cb33-637"><a href="#cb33-637" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Select-Object</span> Name, @{n=<span class="st">&#39;FreeGB&#39;</span><span class="kw">;</span><span class="va">e</span><span class="op">=</span><span class="dt">{[math]::Round(</span><span class="va">$_</span><span class="dt">.Free/1GB</span><span class="op">,</span><span class="dt">1)}</span>}</span>
+<span id="cb33-638"><a href="#cb33-638" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
 <span id="cb33-639"><a href="#cb33-639" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-640"><a href="#cb33-640" aria-hidden="true" tabindex="-1"></a><span class="st">::: {.panel-tabset}</span></span>
+<span id="cb33-640"><a href="#cb33-640" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span></span>
 <span id="cb33-641"><a href="#cb33-641" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-642"><a href="#cb33-642" aria-hidden="true" tabindex="-1"></a><span class="st">#### macOS / Linux command line</span></span>
+<span id="cb33-642"><a href="#cb33-642" aria-hidden="true" tabindex="-1"></a><span class="co">## Optional: the full 795-sample dataset {#sec-full-series}</span></span>
 <span id="cb33-643"><a href="#cb33-643" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-644"><a href="#cb33-644" aria-hidden="true" tabindex="-1"></a><span class="st">```bash</span></span>
-<span id="cb33-645"><a href="#cb33-645" aria-hidden="true" tabindex="-1"></a><span class="st">mkdir -p data/idats_full &amp;&amp; cd data/idats_full</span></span>
-<span id="cb33-646"><a href="#cb33-646" aria-hidden="true" tabindex="-1"></a><span class="st">curl -C - -O &quot;https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar&quot;</span></span>
-<span id="cb33-647"><a href="#cb33-647" aria-hidden="true" tabindex="-1"></a><span class="st">tar -xvf GSE132203_RAW.tar</span></span>
-<span id="cb33-648"><a href="#cb33-648" aria-hidden="true" tabindex="-1"></a><span class="st">ls *.idat.gz | wc -l      # expect 1590</span></span>
-<span id="cb33-649"><a href="#cb33-649" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-650"><a href="#cb33-650" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-651"><a href="#cb33-651" aria-hidden="true" tabindex="-1"></a><span class="st">#### Windows (PowerShell)</span></span>
-<span id="cb33-652"><a href="#cb33-652" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-653"><a href="#cb33-653" aria-hidden="true" tabindex="-1"></a><span class="st">```powershell</span></span>
-<span id="cb33-654"><a href="#cb33-654" aria-hidden="true" tabindex="-1"></a><span class="st">New-Item -ItemType Directory -Force -Path data\idats_full | Out-Null</span></span>
-<span id="cb33-655"><a href="#cb33-655" aria-hidden="true" tabindex="-1"></a><span class="st">Set-Location data\idats_full</span></span>
-<span id="cb33-656"><a href="#cb33-656" aria-hidden="true" tabindex="-1"></a><span class="st">$u = &quot;https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar&quot;</span></span>
-<span id="cb33-657"><a href="#cb33-657" aria-hidden="true" tabindex="-1"></a><span class="st">Invoke-WebRequest -Uri $u -OutFile GSE132203_RAW.tar</span></span>
-<span id="cb33-658"><a href="#cb33-658" aria-hidden="true" tabindex="-1"></a><span class="st">tar -xvf GSE132203_RAW.tar      # tar ships with Windows 10 and later</span></span>
-<span id="cb33-659"><a href="#cb33-659" aria-hidden="true" tabindex="-1"></a><span class="st">(Get-ChildItem *.idat.gz).Count</span></span>
-<span id="cb33-660"><a href="#cb33-660" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-661"><a href="#cb33-661" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-662"><a href="#cb33-662" aria-hidden="true" tabindex="-1"></a><span class="st">#### Web browser</span></span>
-<span id="cb33-663"><a href="#cb33-663" aria-hidden="true" tabindex="-1"></a><span class="st">You can also manually download the full sample set by selecting the link for the `GSE132203_RAW.tar` from the Supplementary Files </span></span>
-<span id="cb33-664"><a href="#cb33-664" aria-hidden="true" tabindex="-1"></a><span class="st">section at the bottom of the [GEO Accession page for the Grady Trauma Project](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132203).</span></span>
-<span id="cb33-665"><a href="#cb33-665" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-666"><a href="#cb33-666" aria-hidden="true" tabindex="-1"></a><span class="st">:::</span></span>
-<span id="cb33-667"><a href="#cb33-667" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-668"><a href="#cb33-668" aria-hidden="true" tabindex="-1"></a><span class="st">The archive also contains the platform manifest and a `filelist.txt` inventory.</span></span>
+<span id="cb33-644"><a href="#cb33-644" aria-hidden="true" tabindex="-1"></a><span class="ex">If</span> you want to try a full-scale model after finishing the tutorial, GEO also serves the</span>
+<span id="cb33-645"><a href="#cb33-645" aria-hidden="true" tabindex="-1"></a><span class="ex">entire</span> series as one tar archive. It is <span class="pp">**</span>11.9 GB<span class="pp">**</span> compressed and expands to 1,590 IDAT</span>
+<span id="cb33-646"><a href="#cb33-646" aria-hidden="true" tabindex="-1"></a><span class="ex">files,</span> so budget disk space and time accordingly — and expect the EWAS itself to take longer than the 87-sample walkthrough.</span>
+<span id="cb33-647"><a href="#cb33-647" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-648"><a href="#cb33-648" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span> {.panel-tabset}</span>
+<span id="cb33-649"><a href="#cb33-649" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-650"><a href="#cb33-650" aria-hidden="true" tabindex="-1"></a><span class="co">#### macOS / Linux command line</span></span>
+<span id="cb33-651"><a href="#cb33-651" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-652"><a href="#cb33-652" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>bash</span>
+<span id="cb33-653"><a href="#cb33-653" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> data/idats_full <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> data/idats_full</span>
+<span id="cb33-654"><a href="#cb33-654" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-C</span> <span class="at">-</span> <span class="at">-O</span> <span class="st">&quot;https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar&quot;</span></span>
+<span id="cb33-655"><a href="#cb33-655" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-xvf</span> GSE132203_RAW.tar</span>
+<span id="cb33-656"><a href="#cb33-656" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="pp">*</span>.idat.gz <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span>      <span class="co"># expect 1590</span></span>
+<span id="cb33-657"><a href="#cb33-657" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
+<span id="cb33-658"><a href="#cb33-658" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-659"><a href="#cb33-659" aria-hidden="true" tabindex="-1"></a><span class="co">#### Windows (PowerShell)</span></span>
+<span id="cb33-660"><a href="#cb33-660" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-661"><a href="#cb33-661" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span>powershell</span>
+<span id="cb33-662"><a href="#cb33-662" aria-hidden="true" tabindex="-1"></a><span class="ex">New-Item</span> <span class="at">-ItemType</span> Directory <span class="at">-Force</span> <span class="at">-Path</span> data<span class="dt">\i</span>dats_full <span class="kw">|</span> <span class="ex">Out-Null</span></span>
+<span id="cb33-663"><a href="#cb33-663" aria-hidden="true" tabindex="-1"></a><span class="ex">Set-Location</span> data<span class="dt">\i</span>dats_full</span>
+<span id="cb33-664"><a href="#cb33-664" aria-hidden="true" tabindex="-1"></a><span class="va">$u</span> = <span class="st">&quot;https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar&quot;</span></span>
+<span id="cb33-665"><a href="#cb33-665" aria-hidden="true" tabindex="-1"></a><span class="ex">Invoke-WebRequest</span> <span class="at">-Uri</span> <span class="va">$u</span> <span class="at">-OutFile</span> GSE132203_RAW.tar</span>
+<span id="cb33-666"><a href="#cb33-666" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-xvf</span> GSE132203_RAW.tar      <span class="co"># tar ships with Windows 10 and later</span></span>
+<span id="cb33-667"><a href="#cb33-667" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="ex">Get-ChildItem</span> <span class="pp">*</span>.idat.gz<span class="kw">)</span><span class="ex">.Count</span></span>
+<span id="cb33-668"><a href="#cb33-668" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
 <span id="cb33-669"><a href="#cb33-669" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-670"><a href="#cb33-670" aria-hidden="true" tabindex="-1"></a><span class="st">### Building a sample sheet for the full series</span></span>
-<span id="cb33-671"><a href="#cb33-671" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-672"><a href="#cb33-672" aria-hidden="true" tabindex="-1"></a><span class="st">The 96-sample sheet was built for you, but for the full series you need to make your own.</span></span>
-<span id="cb33-673"><a href="#cb33-673" aria-hidden="true" tabindex="-1"></a><span class="st">The phenotype data lives in the **series matrix file**, which `GEOquery` downloads and</span></span>
-<span id="cb33-674"><a href="#cb33-674" aria-hidden="true" tabindex="-1"></a><span class="st">parses for you — you do not need to touch the tar archive to get it.</span></span>
+<span id="cb33-670"><a href="#cb33-670" aria-hidden="true" tabindex="-1"></a><span class="co">#### Web browser</span></span>
+<span id="cb33-671"><a href="#cb33-671" aria-hidden="true" tabindex="-1"></a><span class="ex">You</span> can also manually download the full sample set by selecting the link for the <span class="kw">`</span>GSE132203_RAW.tar<span class="kw">`</span> <span class="ex">from</span> the Supplementary Files </span>
+<span id="cb33-672"><a href="#cb33-672" aria-hidden="true" tabindex="-1"></a><span class="ex">section</span> at the bottom of the [GEO Accession page for the Grady Trauma Project]<span class="er">(</span><span class="ex">https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132203</span><span class="kw">)</span><span class="bu">.</span></span>
+<span id="cb33-673"><a href="#cb33-673" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-674"><a href="#cb33-674" aria-hidden="true" tabindex="-1"></a><span class="ex">:::</span></span>
 <span id="cb33-675"><a href="#cb33-675" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-676"><a href="#cb33-676" aria-hidden="true" tabindex="-1"></a><span class="st">Two details make this less tidy than it sounds, and both are shown in the code below.</span></span>
-<span id="cb33-677"><a href="#cb33-677" aria-hidden="true" tabindex="-1"></a><span class="st">First, GEO packs the phenotype into columns named `characteristics_ch1`,</span></span>
-<span id="cb33-678"><a href="#cb33-678" aria-hidden="true" tabindex="-1"></a><span class="st">`characteristics_ch1.1`, and so on, each holding a `&quot;label: value&quot;` *string* rather than a</span></span>
-<span id="cb33-679"><a href="#cb33-679" aria-hidden="true" tabindex="-1"></a><span class="st">typed value; you have to split them and recover the label. Second, the Basename is not a</span></span>
-<span id="cb33-680"><a href="#cb33-680" aria-hidden="true" tabindex="-1"></a><span class="st">column at all — it has to be recovered from the supplementary-file URL.</span></span>
-<span id="cb33-681"><a href="#cb33-681" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-684"><a href="#cb33-684" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb33-685"><a href="#cb33-685" aria-hidden="true" tabindex="-1"></a><span class="st">#| label: full-sample-sheet</span></span>
-<span id="cb33-686"><a href="#cb33-686" aria-hidden="true" tabindex="-1"></a><span class="st">#| eval: false</span></span>
-<span id="cb33-687"><a href="#cb33-687" aria-hidden="true" tabindex="-1"></a><span class="st">library(GEOquery)</span></span>
-<span id="cb33-688"><a href="#cb33-688" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-689"><a href="#cb33-689" aria-hidden="true" tabindex="-1"></a><span class="st"># The series matrix is ~30 MB; the default 60-second timeout is not enough.</span></span>
-<span id="cb33-690"><a href="#cb33-690" aria-hidden="true" tabindex="-1"></a><span class="st">options(timeout = max(1200, getOption(&quot;timeout&quot;)))</span></span>
-<span id="cb33-691"><a href="#cb33-691" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-692"><a href="#cb33-692" aria-hidden="true" tabindex="-1"></a><span class="st"># getGPL = FALSE skips the platform manifest, which we do not need here</span></span>
-<span id="cb33-693"><a href="#cb33-693" aria-hidden="true" tabindex="-1"></a><span class="st"># and which is large.</span></span>
-<span id="cb33-694"><a href="#cb33-694" aria-hidden="true" tabindex="-1"></a><span class="st">gse &lt;- getGEO(&quot;GSE132203&quot;, GSEMatrix = TRUE, getGPL = FALSE)[[1]]</span></span>
-<span id="cb33-695"><a href="#cb33-695" aria-hidden="true" tabindex="-1"></a><span class="st">pd  &lt;- Biobase::pData(gse)</span></span>
-<span id="cb33-696"><a href="#cb33-696" aria-hidden="true" tabindex="-1"></a><span class="st">nrow(pd)                     # 795 samples</span></span>
-<span id="cb33-697"><a href="#cb33-697" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-698"><a href="#cb33-698" aria-hidden="true" tabindex="-1"></a><span class="st"># Every &quot;characteristics_ch1*&quot; column holds a &quot;label: value&quot; string. Split on the</span></span>
-<span id="cb33-699"><a href="#cb33-699" aria-hidden="true" tabindex="-1"></a><span class="st"># first colon, using the label GEO supplies as the column name.</span></span>
-<span id="cb33-700"><a href="#cb33-700" aria-hidden="true" tabindex="-1"></a><span class="st">ch &lt;- grep(&quot;^characteristics_ch1&quot;, names(pd), value = TRUE)</span></span>
-<span id="cb33-701"><a href="#cb33-701" aria-hidden="true" tabindex="-1"></a><span class="st">pheno &lt;- lapply(ch, function(k) {</span></span>
-<span id="cb33-702"><a href="#cb33-702" aria-hidden="true" tabindex="-1"></a><span class="st">  v     &lt;- as.character(pd[[k]])</span></span>
-<span id="cb33-703"><a href="#cb33-703" aria-hidden="true" tabindex="-1"></a><span class="st">  label &lt;- sub(&quot;:.*$&quot;, &quot;&quot;, v[1])</span></span>
-<span id="cb33-704"><a href="#cb33-704" aria-hidden="true" tabindex="-1"></a><span class="st">  value &lt;- trimws(sub(&quot;^[^:]*:&quot;, &quot;&quot;, v))</span></span>
-<span id="cb33-705"><a href="#cb33-705" aria-hidden="true" tabindex="-1"></a><span class="st">  setNames(data.frame(value, stringsAsFactors = FALSE), make.names(label))</span></span>
-<span id="cb33-706"><a href="#cb33-706" aria-hidden="true" tabindex="-1"></a><span class="st">})</span></span>
-<span id="cb33-707"><a href="#cb33-707" aria-hidden="true" tabindex="-1"></a><span class="st">pheno &lt;- do.call(cbind, pheno)</span></span>
-<span id="cb33-708"><a href="#cb33-708" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-709"><a href="#cb33-709" aria-hidden="true" tabindex="-1"></a><span class="st"># The Grn supplementary URL ends in &quot;&lt;GSM&gt;_&lt;slide&gt;_&lt;pos&gt;_Grn.idat.gz&quot;. Strip that</span></span>
-<span id="cb33-710"><a href="#cb33-710" aria-hidden="true" tabindex="-1"></a><span class="st"># suffix to recover the Basename stem minfi wants.</span></span>
-<span id="cb33-711"><a href="#cb33-711" aria-hidden="true" tabindex="-1"></a><span class="st">stem &lt;- sub(&quot;_Grn\\.idat\\.gz$&quot;, &quot;&quot;, basename(as.character(pd$supplementary_file)))</span></span>
-<span id="cb33-712"><a href="#cb33-712" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-713"><a href="#cb33-713" aria-hidden="true" tabindex="-1"></a><span class="st">full &lt;- data.frame(</span></span>
-<span id="cb33-714"><a href="#cb33-714" aria-hidden="true" tabindex="-1"></a><span class="st">  sample_id  = pd$geo_accession,</span></span>
-<span id="cb33-715"><a href="#cb33-715" aria-hidden="true" tabindex="-1"></a><span class="st">  series     = &quot;GSE132203&quot;,</span></span>
-<span id="cb33-716"><a href="#cb33-716" aria-hidden="true" tabindex="-1"></a><span class="st">  sentrix_id = pd$title,                       # e.g. 200928190033_R01C01</span></span>
-<span id="cb33-717"><a href="#cb33-717" aria-hidden="true" tabindex="-1"></a><span class="st">  slide      = sub(&quot;_.*$&quot;, &quot;&quot;, pd$title),</span></span>
-<span id="cb33-718"><a href="#cb33-718" aria-hidden="true" tabindex="-1"></a><span class="st">  array_pos  = sub(&quot;^.*_&quot;, &quot;&quot;, pd$title),</span></span>
-<span id="cb33-719"><a href="#cb33-719" aria-hidden="true" tabindex="-1"></a><span class="st">  Basename   = file.path(&quot;idats_full&quot;, stem),  # matches the download path above</span></span>
-<span id="cb33-720"><a href="#cb33-720" aria-hidden="true" tabindex="-1"></a><span class="st">  stringsAsFactors = FALSE</span></span>
-<span id="cb33-721"><a href="#cb33-721" aria-hidden="true" tabindex="-1"></a><span class="st">)</span></span>
-<span id="cb33-722"><a href="#cb33-722" aria-hidden="true" tabindex="-1"></a><span class="st">full &lt;- cbind(full, pheno)</span></span>
-<span id="cb33-723"><a href="#cb33-723" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-724"><a href="#cb33-724" aria-hidden="true" tabindex="-1"></a><span class="st"># Everything out of the series matrix is text, including the numbers.</span></span>
-<span id="cb33-725"><a href="#cb33-725" aria-hidden="true" tabindex="-1"></a><span class="st">for (k in c(&quot;age&quot;, &quot;mergedcapsandpsswinthin30days&quot;,</span></span>
-<span id="cb33-726"><a href="#cb33-726" aria-hidden="true" tabindex="-1"></a><span class="st">            &quot;childabphyssexemot_ctq_01modandsev&quot;)) {</span></span>
-<span id="cb33-727"><a href="#cb33-727" aria-hidden="true" tabindex="-1"></a><span class="st">  full[[k]] &lt;- suppressWarnings(as.numeric(full[[k]]))</span></span>
-<span id="cb33-728"><a href="#cb33-728" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb33-729"><a href="#cb33-729" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-730"><a href="#cb33-730" aria-hidden="true" tabindex="-1"></a><span class="st"># Derive the two variables the tutorial models. PTSD is the CAPS/PSS indicator;</span></span>
-<span id="cb33-731"><a href="#cb33-731" aria-hidden="true" tabindex="-1"></a><span class="st"># 50 samples have it missing and will drop out of any model that uses it.</span></span>
-<span id="cb33-732"><a href="#cb33-732" aria-hidden="true" tabindex="-1"></a><span class="st">full$ptsd &lt;- factor(ifelse(full$mergedcapsandpsswinthin30days == 1, &quot;Case&quot;, &quot;Control&quot;),</span></span>
-<span id="cb33-733"><a href="#cb33-733" aria-hidden="true" tabindex="-1"></a><span class="st">                    levels = c(&quot;Control&quot;, &quot;Case&quot;))</span></span>
-<span id="cb33-734"><a href="#cb33-734" aria-hidden="true" tabindex="-1"></a><span class="st">full$sex  &lt;- ifelse(full$gender == &quot;Female&quot;, &quot;F&quot;, &quot;M&quot;)</span></span>
-<span id="cb33-735"><a href="#cb33-735" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-736"><a href="#cb33-736" aria-hidden="true" tabindex="-1"></a><span class="st">write.csv(full, &quot;data/sample_sheet_full.csv&quot;, row.names = FALSE)</span></span>
-<span id="cb33-737"><a href="#cb33-737" aria-hidden="true" tabindex="-1"></a><span class="st">table(full$ptsd, full$sex, useNA = &quot;ifany&quot;)</span></span>
-<span id="cb33-738"><a href="#cb33-738" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-739"><a href="#cb33-739" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-740"><a href="#cb33-740" aria-hidden="true" tabindex="-1"></a><span class="st">Running that gives 795 rows and 24 columns, with this breakdown:</span></span>
-<span id="cb33-741"><a href="#cb33-741" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-742"><a href="#cb33-742" aria-hidden="true" tabindex="-1"></a><span class="st">|         | Female | Male |</span></span>
-<span id="cb33-743"><a href="#cb33-743" aria-hidden="true" tabindex="-1"></a><span class="st">|---------|---:|---:|</span></span>
-<span id="cb33-744"><a href="#cb33-744" aria-hidden="true" tabindex="-1"></a><span class="st">| Control | 375 | 182 |</span></span>
-<span id="cb33-745"><a href="#cb33-745" aria-hidden="true" tabindex="-1"></a><span class="st">| Case    | 160 | 28  |</span></span>
-<span id="cb33-746"><a href="#cb33-746" aria-hidden="true" tabindex="-1"></a><span class="st">| missing | 36  | 14  |</span></span>
+<span id="cb33-676"><a href="#cb33-676" aria-hidden="true" tabindex="-1"></a><span class="ex">The</span> archive also contains the platform manifest and a <span class="kw">`</span>filelist.txt<span class="kw">`</span> <span class="ex">inventory.</span></span>
+<span id="cb33-677"><a href="#cb33-677" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-678"><a href="#cb33-678" aria-hidden="true" tabindex="-1"></a><span class="co">### Building a sample sheet for the full series</span></span>
+<span id="cb33-679"><a href="#cb33-679" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-680"><a href="#cb33-680" aria-hidden="true" tabindex="-1"></a><span class="ex">The</span> 96-sample sheet was built for you, but for the full series you need to make your own.</span>
+<span id="cb33-681"><a href="#cb33-681" aria-hidden="true" tabindex="-1"></a><span class="ex">The</span> phenotype data lives in the <span class="pp">**</span>series matrix file<span class="pp">**</span>, which <span class="kw">`</span>GEOquery<span class="kw">`</span> <span class="ex">downloads</span> and</span>
+<span id="cb33-682"><a href="#cb33-682" aria-hidden="true" tabindex="-1"></a><span class="ex">parses</span> for you — you do not need to touch the tar archive to get it.</span>
+<span id="cb33-683"><a href="#cb33-683" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-684"><a href="#cb33-684" aria-hidden="true" tabindex="-1"></a><span class="ex">Two</span> details make this less tidy than it sounds, and both are shown in the code below.</span>
+<span id="cb33-685"><a href="#cb33-685" aria-hidden="true" tabindex="-1"></a><span class="ex">First,</span> GEO packs the phenotype into columns named <span class="kw">`</span>characteristics_ch1<span class="kw">`</span><span class="ex">,</span></span>
+<span id="cb33-686"><a href="#cb33-686" aria-hidden="true" tabindex="-1"></a><span class="kw">`</span>characteristics_ch1.1<span class="kw">`</span><span class="ex">,</span> and so on, each holding a <span class="kw">`</span><span class="st">&quot;label: value&quot;</span><span class="kw">`</span> <span class="ex">*string*</span> rather than a</span>
+<span id="cb33-687"><a href="#cb33-687" aria-hidden="true" tabindex="-1"></a><span class="ex">typed</span> value<span class="kw">;</span> <span class="ex">you</span> have to split them and recover the label. Second, the Basename is not a</span>
+<span id="cb33-688"><a href="#cb33-688" aria-hidden="true" tabindex="-1"></a><span class="ex">column</span> at all — it has to be recovered from the supplementary-file URL.</span>
+<span id="cb33-689"><a href="#cb33-689" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-692"><a href="#cb33-692" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb33-693"><a href="#cb33-693" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: full-sample-sheet</span></span>
+<span id="cb33-694"><a href="#cb33-694" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb33-695"><a href="#cb33-695" aria-hidden="true" tabindex="-1"></a><span class="ex">library</span><span class="er">(</span><span class="ex">GEOquery</span><span class="kw">)</span></span>
+<span id="cb33-696"><a href="#cb33-696" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-697"><a href="#cb33-697" aria-hidden="true" tabindex="-1"></a><span class="co"># The series matrix is ~30 MB; the default 60-second timeout is not enough.</span></span>
+<span id="cb33-698"><a href="#cb33-698" aria-hidden="true" tabindex="-1"></a><span class="ex">options</span><span class="er">(</span><span class="fu">timeout</span> = max<span class="er">(</span><span class="ex">1200,</span> getOption<span class="er">(</span><span class="st">&quot;timeout&quot;</span><span class="kw">)))</span></span>
+<span id="cb33-699"><a href="#cb33-699" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-700"><a href="#cb33-700" aria-hidden="true" tabindex="-1"></a><span class="co"># getGPL = FALSE skips the platform manifest, which we do not need here</span></span>
+<span id="cb33-701"><a href="#cb33-701" aria-hidden="true" tabindex="-1"></a><span class="co"># and which is large.</span></span>
+<span id="cb33-702"><a href="#cb33-702" aria-hidden="true" tabindex="-1"></a><span class="ex">gse</span> <span class="op">&lt;</span>- getGEO<span class="er">(</span><span class="st">&quot;GSE132203&quot;</span><span class="ex">,</span> GSEMatrix = TRUE, getGPL = FALSE<span class="kw">)</span><span class="ex">[[1]]</span></span>
+<span id="cb33-703"><a href="#cb33-703" aria-hidden="true" tabindex="-1"></a><span class="ex">pd</span>  <span class="op">&lt;</span>- Biobase::pData<span class="er">(</span><span class="ex">gse</span><span class="kw">)</span></span>
+<span id="cb33-704"><a href="#cb33-704" aria-hidden="true" tabindex="-1"></a><span class="ex">nrow</span><span class="er">(</span><span class="ex">pd</span><span class="kw">)</span>                     <span class="co"># 795 samples</span></span>
+<span id="cb33-705"><a href="#cb33-705" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-706"><a href="#cb33-706" aria-hidden="true" tabindex="-1"></a><span class="co"># Every &quot;characteristics_ch1*&quot; column holds a &quot;label: value&quot; string. Split on the</span></span>
+<span id="cb33-707"><a href="#cb33-707" aria-hidden="true" tabindex="-1"></a><span class="co"># first colon, using the label GEO supplies as the column name.</span></span>
+<span id="cb33-708"><a href="#cb33-708" aria-hidden="true" tabindex="-1"></a><span class="ex">ch</span> <span class="op">&lt;</span>- grep<span class="er">(</span><span class="st">&quot;^characteristics_ch1&quot;</span><span class="ex">,</span> names<span class="er">(</span><span class="ex">pd</span><span class="kw">)</span><span class="ex">,</span> value = TRUE<span class="kw">)</span></span>
+<span id="cb33-709"><a href="#cb33-709" aria-hidden="true" tabindex="-1"></a><span class="ex">pheno</span> <span class="op">&lt;</span>- lapply<span class="er">(</span><span class="ex">ch,</span> function<span class="er">(</span><span class="ex">k</span><span class="kw">)</span> <span class="kw">{</span></span>
+<span id="cb33-710"><a href="#cb33-710" aria-hidden="true" tabindex="-1"></a>  <span class="ex">v</span>     <span class="op">&lt;</span>- as.character<span class="er">(</span><span class="va">pd</span><span class="op">[</span>[k<span class="op">]</span><span class="ex">]</span><span class="kw">)</span></span>
+<span id="cb33-711"><a href="#cb33-711" aria-hidden="true" tabindex="-1"></a>  <span class="ex">label</span> <span class="op">&lt;</span>- sub<span class="er">(</span><span class="st">&quot;:.*$&quot;</span><span class="ex">,</span> <span class="st">&quot;&quot;</span>, v<span class="pp">[</span><span class="ss">1</span><span class="pp">]</span><span class="kw">)</span></span>
+<span id="cb33-712"><a href="#cb33-712" aria-hidden="true" tabindex="-1"></a>  <span class="ex">value</span> <span class="op">&lt;</span>- trimws<span class="er">(</span><span class="ex">sub</span><span class="er">(</span><span class="st">&quot;^[^:]*:&quot;</span><span class="ex">,</span> <span class="st">&quot;&quot;</span>, v<span class="kw">))</span></span>
+<span id="cb33-713"><a href="#cb33-713" aria-hidden="true" tabindex="-1"></a>  <span class="ex">setNames</span><span class="er">(</span><span class="ex">data.frame</span><span class="er">(</span><span class="ex">value,</span> stringsAsFactors = FALSE<span class="kw">)</span><span class="ex">,</span> make.names<span class="er">(</span><span class="ex">label</span><span class="kw">))</span></span>
+<span id="cb33-714"><a href="#cb33-714" aria-hidden="true" tabindex="-1"></a><span class="kw">})</span></span>
+<span id="cb33-715"><a href="#cb33-715" aria-hidden="true" tabindex="-1"></a><span class="ex">pheno</span> <span class="op">&lt;</span>- do.call<span class="er">(</span><span class="ex">cbind,</span> pheno<span class="kw">)</span></span>
+<span id="cb33-716"><a href="#cb33-716" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-717"><a href="#cb33-717" aria-hidden="true" tabindex="-1"></a><span class="co"># The Grn supplementary URL ends in &quot;&lt;GSM&gt;_&lt;slide&gt;_&lt;pos&gt;_Grn.idat.gz&quot;. Strip that</span></span>
+<span id="cb33-718"><a href="#cb33-718" aria-hidden="true" tabindex="-1"></a><span class="co"># suffix to recover the Basename stem minfi wants.</span></span>
+<span id="cb33-719"><a href="#cb33-719" aria-hidden="true" tabindex="-1"></a><span class="ex">stem</span> <span class="op">&lt;</span>- sub<span class="er">(</span><span class="st">&quot;_Grn</span><span class="dt">\\</span><span class="st">.idat</span><span class="dt">\\</span><span class="st">.gz$&quot;</span><span class="ex">,</span> <span class="st">&quot;&quot;</span>, basename<span class="er">(</span><span class="ex">as.character</span><span class="er">(</span><span class="ex">pd</span><span class="va">$supplementary_file</span><span class="kw">)))</span></span>
+<span id="cb33-720"><a href="#cb33-720" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-721"><a href="#cb33-721" aria-hidden="true" tabindex="-1"></a><span class="ex">full</span> <span class="op">&lt;</span>- data.frame<span class="er">(</span></span>
+<span id="cb33-722"><a href="#cb33-722" aria-hidden="true" tabindex="-1"></a>  <span class="ex">sample_id</span>  = pd<span class="va">$geo_accession</span>,</span>
+<span id="cb33-723"><a href="#cb33-723" aria-hidden="true" tabindex="-1"></a>  <span class="ex">series</span>     = <span class="st">&quot;GSE132203&quot;</span>,</span>
+<span id="cb33-724"><a href="#cb33-724" aria-hidden="true" tabindex="-1"></a>  <span class="ex">sentrix_id</span> = pd<span class="va">$title</span>,                       <span class="co"># e.g. 200928190033_R01C01</span></span>
+<span id="cb33-725"><a href="#cb33-725" aria-hidden="true" tabindex="-1"></a>  <span class="ex">slide</span>      = sub<span class="er">(</span><span class="st">&quot;_.*$&quot;</span><span class="ex">,</span> <span class="st">&quot;&quot;</span>, pd<span class="va">$title</span><span class="kw">)</span><span class="ex">,</span></span>
+<span id="cb33-726"><a href="#cb33-726" aria-hidden="true" tabindex="-1"></a>  <span class="ex">array_pos</span>  = sub<span class="er">(</span><span class="st">&quot;^.*_&quot;</span><span class="ex">,</span> <span class="st">&quot;&quot;</span>, pd<span class="va">$title</span><span class="kw">)</span><span class="ex">,</span></span>
+<span id="cb33-727"><a href="#cb33-727" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Basename</span>   = file.path<span class="er">(</span><span class="st">&quot;idats_full&quot;</span><span class="ex">,</span> stem<span class="kw">)</span><span class="ex">,</span>  <span class="co"># matches the download path above</span></span>
+<span id="cb33-728"><a href="#cb33-728" aria-hidden="true" tabindex="-1"></a>  <span class="ex">stringsAsFactors</span> = FALSE</span>
+<span id="cb33-729"><a href="#cb33-729" aria-hidden="true" tabindex="-1"></a><span class="kw">)</span></span>
+<span id="cb33-730"><a href="#cb33-730" aria-hidden="true" tabindex="-1"></a><span class="ex">full</span> <span class="op">&lt;</span>- cbind<span class="er">(</span><span class="ex">full,</span> pheno<span class="kw">)</span></span>
+<span id="cb33-731"><a href="#cb33-731" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-732"><a href="#cb33-732" aria-hidden="true" tabindex="-1"></a><span class="co"># Everything out of the series matrix is text, including the numbers.</span></span>
+<span id="cb33-733"><a href="#cb33-733" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="kw">(</span><span class="ex">k</span> in c<span class="er">(</span><span class="st">&quot;age&quot;</span><span class="ex">,</span> <span class="st">&quot;mergedcapsandpsswinthin30days&quot;</span>,</span>
+<span id="cb33-734"><a href="#cb33-734" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;childabphyssexemot_ctq_01modandsev&quot;</span><span class="kw">))</span> <span class="kw">{</span></span>
+<span id="cb33-735"><a href="#cb33-735" aria-hidden="true" tabindex="-1"></a>  <span class="va">full</span><span class="op">[</span>[k<span class="op">]</span><span class="ex">]</span> <span class="op">&lt;</span>- suppressWarnings<span class="er">(</span><span class="ex">as.numeric</span><span class="er">(</span><span class="va">full</span><span class="op">[</span>[k<span class="op">]</span><span class="ex">]</span><span class="kw">))</span></span>
+<span id="cb33-736"><a href="#cb33-736" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span></span>
+<span id="cb33-737"><a href="#cb33-737" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-738"><a href="#cb33-738" aria-hidden="true" tabindex="-1"></a><span class="co"># Derive the two variables the tutorial models. PTSD is the CAPS/PSS indicator;</span></span>
+<span id="cb33-739"><a href="#cb33-739" aria-hidden="true" tabindex="-1"></a><span class="co"># 50 samples have it missing and will drop out of any model that uses it.</span></span>
+<span id="cb33-740"><a href="#cb33-740" aria-hidden="true" tabindex="-1"></a><span class="ex">full</span><span class="va">$ptsd</span> <span class="op">&lt;</span>- factor<span class="er">(</span><span class="ex">ifelse</span><span class="er">(</span><span class="ex">full</span><span class="va">$mergedcapsandpsswinthin30days</span> == 1, <span class="st">&quot;Case&quot;</span>, <span class="st">&quot;Control&quot;</span><span class="kw">)</span><span class="ex">,</span></span>
+<span id="cb33-741"><a href="#cb33-741" aria-hidden="true" tabindex="-1"></a>                    <span class="ex">levels</span> = c<span class="er">(</span><span class="st">&quot;Control&quot;</span><span class="ex">,</span> <span class="st">&quot;Case&quot;</span><span class="kw">))</span></span>
+<span id="cb33-742"><a href="#cb33-742" aria-hidden="true" tabindex="-1"></a><span class="ex">full</span><span class="va">$sex</span>  <span class="op">&lt;</span>- ifelse<span class="er">(</span><span class="ex">full</span><span class="va">$gender</span> == <span class="st">&quot;Female&quot;</span>, <span class="st">&quot;F&quot;</span>, <span class="st">&quot;M&quot;</span><span class="kw">)</span></span>
+<span id="cb33-743"><a href="#cb33-743" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-744"><a href="#cb33-744" aria-hidden="true" tabindex="-1"></a><span class="ex">write.csv</span><span class="er">(</span><span class="ex">full,</span> <span class="st">&quot;data/sample_sheet_full.csv&quot;</span>, row.names = FALSE<span class="kw">)</span></span>
+<span id="cb33-745"><a href="#cb33-745" aria-hidden="true" tabindex="-1"></a><span class="ex">table</span><span class="er">(</span><span class="ex">full</span><span class="va">$ptsd</span><span class="ex">,</span> full<span class="va">$sex</span>, useNA = <span class="st">&quot;ifany&quot;</span><span class="kw">)</span></span>
+<span id="cb33-746"><a href="#cb33-746" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
 <span id="cb33-747"><a href="#cb33-747" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-748"><a href="#cb33-748" aria-hidden="true" tabindex="-1"></a><span class="st">Three things to notice before you model any of it. **PTSD status is more imbalanced</span></span>
-<span id="cb33-749"><a href="#cb33-749" aria-hidden="true" tabindex="-1"></a><span class="st">than in the teaching subset** — 188 cases against 557 controls, and among males only 28</span></span>
-<span id="cb33-750"><a href="#cb33-750" aria-hidden="true" tabindex="-1"></a><span class="st">cases — where the 96-sample subset was deliberately balanced on case/control and sex.</span></span>
-<span id="cb33-751"><a href="#cb33-751" aria-hidden="true" tabindex="-1"></a><span class="st">And **50 samples have no PTSD value at all**, so they will be excluded from any model</span></span>
-<span id="cb33-752"><a href="#cb33-752" aria-hidden="true" tabindex="-1"></a><span class="st">using that variable, exactly as 9 of the 96 do in this tutorial.</span></span>
-<span id="cb33-753"><a href="#cb33-753" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-754"><a href="#cb33-754" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-757"><a href="#cb33-757" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb33-758"><a href="#cb33-758" aria-hidden="true" tabindex="-1"></a><span class="st">#| label: verify-full-sheet</span></span>
-<span id="cb33-759"><a href="#cb33-759" aria-hidden="true" tabindex="-1"></a><span class="st">#| eval: false</span></span>
-<span id="cb33-760"><a href="#cb33-760" aria-hidden="true" tabindex="-1"></a><span class="st">ss &lt;- read.csv(&quot;data/sample_sheet.csv&quot;, stringsAsFactors = FALSE)</span></span>
-<span id="cb33-761"><a href="#cb33-761" aria-hidden="true" tabindex="-1"></a><span class="st">i  &lt;- match(ss$sample_id, full$sample_id)</span></span>
-<span id="cb33-762"><a href="#cb33-762" aria-hidden="true" tabindex="-1"></a><span class="st">sum(!is.na(i))                                   # 96</span></span>
-<span id="cb33-763"><a href="#cb33-763" aria-hidden="true" tabindex="-1"></a><span class="st">identical(basename(ss$Basename), basename(full$Basename[i]))   # TRUE</span></span>
-<span id="cb33-764"><a href="#cb33-764" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-765"><a href="#cb33-765" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-766"><a href="#cb33-766" aria-hidden="true" tabindex="-1"></a><span class="st">Note that `Basename` above points at `idats_full/`, matching the download commands in</span></span>
-<span id="cb33-767"><a href="#cb33-767" aria-hidden="true" tabindex="-1"></a><span class="st">this section. If you put the full series somewhere else, change that one line rather</span></span>
-<span id="cb33-768"><a href="#cb33-768" aria-hidden="true" tabindex="-1"></a><span class="st">than editing the sheet afterwards.</span></span>
-<span id="cb33-769"><a href="#cb33-769" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-770"><a href="#cb33-770" aria-hidden="true" tabindex="-1"></a><span class="st">## The sample sheet {#sec-sample-sheet}</span></span>
-<span id="cb33-771"><a href="#cb33-771" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-772"><a href="#cb33-772" aria-hidden="true" tabindex="-1"></a><span class="st">`minfi` reads IDATs given a **Basename** (the path up to `_Grn/_Red`). We pair</span></span>
-<span id="cb33-773"><a href="#cb33-773" aria-hidden="true" tabindex="-1"></a><span class="st">each Basename with the phenotype row for that GSM. Here is the first 8 rows of the sample sheet:</span></span>
-<span id="cb33-774"><a href="#cb33-774" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-777"><a href="#cb33-777" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb33-778"><a href="#cb33-778" aria-hidden="true" tabindex="-1"></a><span class="st">#| label: sample-sheet</span></span>
-<span id="cb33-779"><a href="#cb33-779" aria-hidden="true" tabindex="-1"></a><span class="st">ss &lt;- readRDS(&quot;data/sample_sheet.rds&quot;)</span></span>
-<span id="cb33-780"><a href="#cb33-780" aria-hidden="true" tabindex="-1"></a><span class="st">ss &lt;- ss[order(ss$slide, ss$array_pos), ]</span></span>
-<span id="cb33-781"><a href="#cb33-781" aria-hidden="true" tabindex="-1"></a><span class="st">cat(&quot;Samples:&quot;, nrow(ss), &quot; | Chips:&quot;, length(unique(ss$slide)), &quot;\n&quot;)</span></span>
-<span id="cb33-782"><a href="#cb33-782" aria-hidden="true" tabindex="-1"></a><span class="st">knitr::kable(head(ss[, c(&quot;sample_id&quot;,&quot;slide&quot;,&quot;array_pos&quot;,&quot;gender&quot;,&quot;age&quot;,</span></span>
-<span id="cb33-783"><a href="#cb33-783" aria-hidden="true" tabindex="-1"></a><span class="st">                         &quot;ptsd&quot;,&quot;race&quot;)], 8),</span></span>
-<span id="cb33-784"><a href="#cb33-784" aria-hidden="true" tabindex="-1"></a><span class="st">             row.names = FALSE,</span></span>
-<span id="cb33-785"><a href="#cb33-785" aria-hidden="true" tabindex="-1"></a><span class="st">             caption = &quot;First 8 rows of the sample sheet&quot;)</span></span>
-<span id="cb33-786"><a href="#cb33-786" aria-hidden="true" tabindex="-1"></a><span class="st">```</span></span>
-<span id="cb33-787"><a href="#cb33-787" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-788"><a href="#cb33-788" aria-hidden="true" tabindex="-1"></a><span class="st">## What the next notebook does {#sec-next}</span></span>
-<span id="cb33-789"><a href="#cb33-789" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-790"><a href="#cb33-790" aria-hidden="true" tabindex="-1"></a><span class="st">With the sample sheet provided, the [QC notebook](01_qc.qmd) reads all 96 IDAT</span></span>
-<span id="cb33-791"><a href="#cb33-791" aria-hidden="true" tabindex="-1"></a><span class="st">pairs into a single `RGChannelSet` and runs the quality checks that decide which</span></span>
-<span id="cb33-792"><a href="#cb33-792" aria-hidden="true" tabindex="-1"></a><span class="st">samples are trustworthy before we begin normalization.</span></span>
+<span id="cb33-748"><a href="#cb33-748" aria-hidden="true" tabindex="-1"></a><span class="ex">Running</span> that gives 795 rows and 24 columns, with this breakdown:</span>
+<span id="cb33-749"><a href="#cb33-749" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-750"><a href="#cb33-750" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span>         <span class="kw">|</span> <span class="ex">Female</span> <span class="kw">|</span> <span class="ex">Male</span> <span class="kw">|</span></span>
+<span id="cb33-751"><a href="#cb33-751" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span><span class="ex">---------</span><span class="kw">|</span><span class="ex">---:</span><span class="kw">|</span><span class="ex">---:</span><span class="kw">|</span></span>
+<span id="cb33-752"><a href="#cb33-752" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">Control</span> <span class="kw">|</span> <span class="ex">375</span> <span class="kw">|</span> <span class="ex">182</span> <span class="kw">|</span></span>
+<span id="cb33-753"><a href="#cb33-753" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">Case</span>    <span class="kw">|</span> <span class="ex">160</span> <span class="kw">|</span> <span class="ex">28</span>  <span class="kw">|</span></span>
+<span id="cb33-754"><a href="#cb33-754" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">missing</span> <span class="kw">|</span> <span class="ex">36</span>  <span class="kw">|</span> <span class="ex">14</span>  <span class="kw">|</span></span>
+<span id="cb33-755"><a href="#cb33-755" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-756"><a href="#cb33-756" aria-hidden="true" tabindex="-1"></a><span class="ex">Three</span> things to notice before you model any of it. <span class="pp">**</span>PTSD status is more imbalanced</span>
+<span id="cb33-757"><a href="#cb33-757" aria-hidden="true" tabindex="-1"></a><span class="ex">than</span> in the teaching subset<span class="pp">**</span> — 188 cases against 557 controls, and among males only 28</span>
+<span id="cb33-758"><a href="#cb33-758" aria-hidden="true" tabindex="-1"></a><span class="ex">cases</span> — where the 96-sample subset was deliberately balanced on case/control and sex.</span>
+<span id="cb33-759"><a href="#cb33-759" aria-hidden="true" tabindex="-1"></a><span class="ex">And</span> <span class="pp">**</span>50 samples have no PTSD value at all<span class="pp">**</span>, so they will be excluded from any model</span>
+<span id="cb33-760"><a href="#cb33-760" aria-hidden="true" tabindex="-1"></a><span class="ex">using</span> that variable, exactly as 9 of the 96 do in this tutorial.</span>
+<span id="cb33-761"><a href="#cb33-761" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-762"><a href="#cb33-762" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-765"><a href="#cb33-765" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb33-766"><a href="#cb33-766" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: verify-full-sheet</span></span>
+<span id="cb33-767"><a href="#cb33-767" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb33-768"><a href="#cb33-768" aria-hidden="true" tabindex="-1"></a><span class="ex">ss</span> <span class="op">&lt;</span>- read.csv<span class="er">(</span><span class="st">&quot;data/sample_sheet.csv&quot;</span><span class="ex">,</span> stringsAsFactors = FALSE<span class="kw">)</span></span>
+<span id="cb33-769"><a href="#cb33-769" aria-hidden="true" tabindex="-1"></a><span class="ex">i</span>  <span class="op">&lt;</span>- match<span class="er">(</span><span class="ex">ss</span><span class="va">$sample_id</span><span class="ex">,</span> full<span class="va">$sample_id</span><span class="kw">)</span></span>
+<span id="cb33-770"><a href="#cb33-770" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span><span class="er">(</span><span class="ex">!is.na</span><span class="er">(</span><span class="ex">i</span><span class="kw">))</span>                                   <span class="co"># 96</span></span>
+<span id="cb33-771"><a href="#cb33-771" aria-hidden="true" tabindex="-1"></a><span class="ex">identical</span><span class="er">(</span><span class="fu">basename</span><span class="er">(</span><span class="ex">ss</span><span class="va">$Basename</span><span class="kw">)</span><span class="ex">,</span> basename<span class="er">(</span><span class="ex">full</span><span class="va">$Basename</span><span class="ex">[i]</span><span class="kw">))</span>   <span class="co"># TRUE</span></span>
+<span id="cb33-772"><a href="#cb33-772" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
+<span id="cb33-773"><a href="#cb33-773" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-774"><a href="#cb33-774" aria-hidden="true" tabindex="-1"></a><span class="ex">Note</span> that <span class="kw">`</span>Basename<span class="kw">`</span> <span class="ex">above</span> points at <span class="kw">`</span>idats_full/<span class="kw">`</span><span class="ex">,</span> matching the download commands in</span>
+<span id="cb33-775"><a href="#cb33-775" aria-hidden="true" tabindex="-1"></a><span class="ex">this</span> section. If you put the full series somewhere else, change that one line rather</span>
+<span id="cb33-776"><a href="#cb33-776" aria-hidden="true" tabindex="-1"></a><span class="ex">than</span> editing the sheet afterwards.</span>
+<span id="cb33-777"><a href="#cb33-777" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-778"><a href="#cb33-778" aria-hidden="true" tabindex="-1"></a><span class="co">## The sample sheet {#sec-sample-sheet}</span></span>
+<span id="cb33-779"><a href="#cb33-779" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-780"><a href="#cb33-780" aria-hidden="true" tabindex="-1"></a><span class="kw">`</span>minfi<span class="kw">`</span> <span class="ex">reads</span> IDATs given a <span class="pp">**</span>Basename<span class="pp">**</span> <span class="er">(</span><span class="ex">the</span> path up to <span class="kw">`</span><span class="ex">_Grn/_Red</span><span class="kw">`)</span><span class="bu">.</span> We pair</span>
+<span id="cb33-781"><a href="#cb33-781" aria-hidden="true" tabindex="-1"></a><span class="ex">each</span> Basename with the phenotype row for that GSM. Here is the first 8 rows of the sample sheet:</span>
+<span id="cb33-782"><a href="#cb33-782" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-785"><a href="#cb33-785" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb33-786"><a href="#cb33-786" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sample-sheet</span></span>
+<span id="cb33-787"><a href="#cb33-787" aria-hidden="true" tabindex="-1"></a><span class="ex">ss</span> <span class="op">&lt;</span>- readRDS<span class="er">(</span><span class="st">&quot;data/sample_sheet.rds&quot;</span><span class="kw">)</span></span>
+<span id="cb33-788"><a href="#cb33-788" aria-hidden="true" tabindex="-1"></a><span class="ex">ss</span> <span class="op">&lt;</span>- ss[order<span class="er">(</span><span class="ex">ss</span><span class="va">$slide</span><span class="ex">,</span> ss<span class="va">$array_pos</span><span class="kw">)</span><span class="ex">,</span> ]</span>
+<span id="cb33-789"><a href="#cb33-789" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span><span class="er">(</span><span class="st">&quot;Samples:&quot;</span><span class="ex">,</span> nrow<span class="er">(</span><span class="ex">ss</span><span class="kw">)</span><span class="ex">,</span> <span class="st">&quot; | Chips:&quot;</span>, length<span class="er">(</span><span class="ex">unique</span><span class="er">(</span><span class="ex">ss</span><span class="va">$slide</span><span class="kw">))</span><span class="ex">,</span> <span class="st">&quot;\n&quot;</span><span class="kw">)</span></span>
+<span id="cb33-790"><a href="#cb33-790" aria-hidden="true" tabindex="-1"></a><span class="ex">knitr::kable</span><span class="er">(</span><span class="fu">head</span><span class="er">(</span><span class="va">ss</span><span class="op">[</span>, c(<span class="st">&quot;sample_id&quot;</span>,<span class="st">&quot;slide&quot;</span>,<span class="st">&quot;array_pos&quot;</span>,<span class="st">&quot;gender&quot;</span>,<span class="st">&quot;age&quot;</span>,</span>
+<span id="cb33-791"><a href="#cb33-791" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;ptsd&quot;</span>,<span class="st">&quot;race&quot;</span>)<span class="op">]</span><span class="ex">,</span> 8<span class="kw">)</span><span class="ex">,</span></span>
+<span id="cb33-792"><a href="#cb33-792" aria-hidden="true" tabindex="-1"></a>             <span class="ex">row.names</span> = FALSE,</span>
+<span id="cb33-793"><a href="#cb33-793" aria-hidden="true" tabindex="-1"></a>             <span class="ex">caption</span> = <span class="st">&quot;First 8 rows of the sample sheet&quot;</span><span class="kw">)</span></span>
+<span id="cb33-794"><a href="#cb33-794" aria-hidden="true" tabindex="-1"></a><span class="kw">```</span></span>
+<span id="cb33-795"><a href="#cb33-795" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-796"><a href="#cb33-796" aria-hidden="true" tabindex="-1"></a><span class="co">## What the next notebook does {#sec-next}</span></span>
+<span id="cb33-797"><a href="#cb33-797" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-798"><a href="#cb33-798" aria-hidden="true" tabindex="-1"></a><span class="ex">With</span> the sample sheet provided, the [QC notebook]<span class="er">(</span><span class="ex">01_qc.qmd</span><span class="kw">)</span> <span class="ex">reads</span> all 96 IDAT</span>
+<span id="cb33-799"><a href="#cb33-799" aria-hidden="true" tabindex="-1"></a><span class="ex">pairs</span> into a single <span class="kw">`</span>RGChannelSet<span class="kw">`</span> <span class="ex">and</span> runs the quality checks that decide which</span>
+<span id="cb33-800"><a href="#cb33-800" aria-hidden="true" tabindex="-1"></a><span class="ex">samples</span> are trustworthy before we begin normalization.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
