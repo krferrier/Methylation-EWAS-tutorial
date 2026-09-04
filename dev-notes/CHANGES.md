@@ -1775,3 +1775,82 @@ treatment, and the **6** inside one now match the flat chapter links.
 ### Numbers moved
 
 None. CSS only.
+
+## 33. A malformed `@import` was silently deleting every Bootstrap CSS variable
+
+Reported as "three different fonts in the sidebar", with chapters that have
+sub-navigation looking sans and chapters without looking serif. The sidebar was
+the symptom; the cause was site-wide.
+
+### What was happening
+
+Bootswatch cosmo emits a webfont import (`cosmo.scss:78-80`):
+
+```scss
+$web-font-path: "https://fonts.googleapis.com/css2?family=Source+Sans+Pro:..." !default;
+@if $web-font-path { @import url($web-font-path); }
+```
+
+In Quarto's compiled output that at-rule **lost its terminating semicolon**.
+Confirmed at the byte level in the `data:text/css` href:
+`...display%3Dswap%22%3Aroot%2C...` — the closing quote is followed directly by
+`:root`, with no `%3B` and no literal `;` anywhere.
+
+`@import` is a statement at-rule. Without a `;` the parser keeps consuming, hits
+`{`, treats the following block as the at-rule's body, decides the at-rule is
+invalid, and **discards the whole thing** — block included. The block in question
+is `:root,[data-bs-theme=light]{...}`: **119 `--bs-*` variables**.
+
+The visible consequence was that `body { font-family: var(--bs-body-font-family) }`
+resolved to nothing and fell back to the browser default — a serif. Any element
+that named a family explicitly (the sidebar group headers, and via them the
+chapters carrying sub-navigation) stayed sans. Hence sans-versus-serif in one
+list.
+
+It was never only the sidebar. Also dead, and now restored:
+
+| variable | intended | was falling back to |
+|---|---|---|
+| `--bs-body-font-family` | Source Sans 3 | browser default serif |
+| `--bs-body-color` | `#24211C` | browser default black |
+| `--bs-link-color` | `#1A6B75` (the teal) | browser default blue |
+| `--bs-code-color` | `#8C3A4A` | inherited |
+
+So body text across all twelve chapters was rendering in the wrong typeface, and
+prose links in the wrong colour, since the theme was introduced.
+
+### The fix
+
+One line in the defaults layer of `theme.scss`:
+
+```scss
+$web-font-path: false;
+```
+
+The `!default` on cosmo's declaration means our value wins and the `@if` never
+fires, so the malformed at-rule is never emitted. The remote font was redundant
+anyway: Source Sans 3, Source Serif 4 and JetBrains Mono are all self-hosted here
+(10 `@font-face` blocks, embedded as base64 woff2 — verified still present after
+the change).
+
+A side benefit: this ends the blocked `fonts.googleapis.com` fetch that every
+render had been logging. That warning had previously been dismissed as cosmetic —
+it was not.
+
+The sidebar override from section 32 also gained `font-family: inherit`, so it no
+longer depends on the group-header rule above it for its family.
+
+### Verified after the change
+
+- `@import` occurrences in the compiled CSS: **0** (was 1, malformed)
+- `--bs-body-font-family` now defined inside a standalone, parseable
+  `:root,[data-bs-theme=light]` block
+- resolved family, by element: plain chapter `var(--bs-body-font-family)`;
+  chapter with sub-nav `inherit`; top-level link `var(--bs-body-font-family)`;
+  group header the explicit Source Sans 3 stack — **all four now the same sans**
+- 119 variables restored; of the 376 `--bs-*` names referenced via `var()` across
+  the sheet, 69 were being satisfied by this block and are no longer dead
+
+### Numbers moved
+
+None. Presentation only.

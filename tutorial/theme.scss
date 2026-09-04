@@ -46,6 +46,23 @@ $link-color: $teal-700;
 // ---------------------------------------------------------------------------
 // Typography
 // ---------------------------------------------------------------------------
+
+// Bootswatch cosmo ships `@import url($web-font-path)` for Source Sans Pro
+// (cosmo.scss:78-80). In Quarto's compiled output that at-rule loses its
+// terminating semicolon, so the browser reads it as invalid -- and CSS error
+// recovery then swallows the block that follows it, which is
+// `:root,[data-bs-theme=light]{...}`: every single --bs-* variable. The visible
+// symptom was `body { font-family: var(--bs-body-font-family) }` resolving to
+// nothing and falling back to the browser's default serif, so any element
+// WITHOUT an explicit family rendered serif while elements that named a family
+// rendered sans.
+//
+// We self-host Source Sans 3, Source Serif 4 and JetBrains Mono (see the
+// @font-face mixin below), so the remote font was never needed. Setting the
+// guard to false drops the malformed at-rule entirely -- which also ends the
+// blocked fonts.googleapis.com fetch logged on every render.
+$web-font-path: false;
+
 $font-family-sans-serif: "Source Sans 3", -apple-system, BlinkMacSystemFont,
                          "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 $font-family-serif:      "Source Serif 4", Georgia, Cambria, "Times New Roman", serif;
@@ -292,6 +309,7 @@ caption, .figure-caption, figcaption {
   // chapter link resolves to (0.925rem / 400 from the two rules above, and
   // `.sidebar-navigation a { color: inherit }` from the Quarto default).
   .sidebar-section .sidebar-item-section > .sidebar-item-container > .sidebar-item-text {
+    font-family: inherit;   // the rule above names a family; inherit like a plain link
     font-weight: 400;
     font-size: 0.925rem;
     text-transform: none;
