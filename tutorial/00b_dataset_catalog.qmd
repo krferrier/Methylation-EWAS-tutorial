@@ -15,7 +15,7 @@ In this tutorial we use one of the datasets available from the NCBI GEO database
 You are encouraged to follow along with the tutorial using the Grady Trauma Project, 
 and once you've gotten some experience following along, then practice with another 
 dataset. The NCBI GEO database can be a bit tricky to navigate, so for ease, I've curated 
-a catalog of 70 Illumina MethylationEPIC studies on GEO (including the dataset used in the tutorial) that carry enough phenotype
+a catalog of 70 Illumina MethylationEPIC GEO Series (including the dataset used in the tutorial) that carry enough phenotype
 and covariate metadata to support a real association analysis. Browse it to 
 understand the landscape of public EPIC data and to pick your own
 dataset for a project.
@@ -25,7 +25,10 @@ filter and load it in R or Python yourself.
 
 ## The catalog
 
-Each row is one GEO Series. The table is searchable and sortable — click a
+Each row is one study. A few were deposited under several GEO accessions — a
+SuperSeries alongside its SubSeries — and those appear as a single row with every
+accession listed, so the 70 Series below collapse to 60 studies. The table is
+searchable and sortable — click a
 column header to sort, or type in the box to filter (e.g. type `Strong` to see
 only the top-tier studies, or a gene/phenotype term to find studies on a
 topic). The Grady Trauma Project (GSE132203) the dataset used throughout this 
@@ -36,66 +39,162 @@ tutorial, is highlighted.
 #| echo: false
 cat70 <- read.csv("methylation_geo_catalog.csv", stringsAsFactors = FALSE, check.names = FALSE)
 
-# Columns most useful for choosing a dataset, in a sensible order
-show_cols <- c("GSE", "Title", "Suitability_tier", "Suitability_score",
-               "Meth_array", "N_samples", "Has_sex", "Has_age",
-               "Has_ancestry", "Has_cell_composition",
-               "N_phenotype_fields", "Phenotype_examples", "PubMed")
+# --- Phenotypes: field NAMES only, association-testable ones only ------------
+# The raw column stores "field: v1; v2; v3 || field2: v1; v2". Keep the field
+# names, drop the values, and drop anything that is not a candidate EWAS
+# outcome or exposure: sample/array identifiers, estimated cell proportions,
+# principal components, derived clock metrics, technical flags and dates.
+drop_pat <- paste0(
+  "^(", paste(c(
+    "methylationid", "dyad", "sample.*", "title", "id", "geo.*", "barcode",
+    "sentrix.*", "position", "well", "plate", "slide", "array.*", "chip",
+    "batch", "scan.*date", "description", "supplementary.*",
+    "cd4t?", "cd8t?", "nk", "bcell", "mono", "neu", "gran", "eos", "baso",
+    "plasmablast", "cd4\\+.*", "cd8\\+.*",
+    "pc[0-9]+", "age.?acceleration", "predicted.*age", "dnam.*age"
+  ), collapse = "|"), ")$")
+drop_pat2 <- paste0(
+  "\\bid\\b|identifier|_id$|^pmid|untagged|replicate|\\bdate\\b|",
+  "^(subject|donor|participant|patient|individual|pair|session|generation)$|",
+  "family$")
+
+# Two fields this tutorial gives a plain-language name to: 00_setup.qmd derives
+# `ptsd` from the first and `childhood_abuse` from the second.
+rename_map <- c(
+  "mergedcapsandpsswinthin30days"      = "PTSD",
+  "childabphyssexemot_ctq_01modandsev" = "Childhood abuse"
+)
+
+clean_pheno <- function(x) {
+  if (is.na(x) || !nzchar(x)) return("")
+  f <- trimws(sub(":.*$", "", trimws(strsplit(x, "||", fixed = TRUE)[[1]])))
+  # submitters sometimes encode the coding in the name itself, e.g.
+  # "art treatment status (0 = spontaneous; 1 = assisted reproduction)";
+  # strip parentheticals containing "=", keep units such as (kg/m^2)
+  f <- trimws(gsub("\\([^)]*=[^)]*\\)", "", f))
+  f <- f[nzchar(f)]
+  f <- f[!grepl(drop_pat, tolower(f))]
+  f <- f[!grepl(drop_pat2, tolower(f))]
+  hit <- f %in% names(rename_map)
+  f[hit] <- rename_map[f[hit]]
+  paste(unique(f), collapse = ", ")
+}
+cat70$Phenotypes <- vapply(cat70$Phenotype_examples, clean_pheno, character(1))
+cat70$N_phenotypes <- vapply(strsplit(cat70$Phenotypes, ", "),
+                             function(v) sum(nzchar(v)), integer(1))
+
+# --- Collapse GEO Series that belong to one publication ----------------------
+# A SuperSeries and its SubSeries are separate accessions for the same study.
+# Group on PubMed id, keep the highest-scoring Series as the displayed row
+# (ties broken by sample count, which selects the SuperSeries), and list the
+# sibling accessions alongside it.
+grp <- ifelse(is.na(cat70$PubMed), paste0("row:", seq_len(nrow(cat70))),
+              paste0("pmid:", cat70$PubMed))
+# compute the ordering ONCE and apply it to the frame and the key together --
+# deriving it twice reorders the key by an index taken from the already-sorted
+# frame, which silently mixes unrelated studies into the same group
+ord   <- order(-cat70$Suitability_score, -cat70$N_samples)
+cat70 <- cat70[ord, ]
+grp   <- grp[ord]
+acc   <- tapply(cat70$GSE, grp, paste, collapse = ", ")
+nser  <- table(grp)
+cat70 <- cat70[!duplicated(grp), ]
+cat70$Accessions <- acc[grp[!duplicated(grp)]]
+cat70$N_series   <- as.integer(nser[grp[!duplicated(grp)]])
+
+# Title first, then the phenotypes you could test, then everything else
+show_cols <- c("Accessions", "Title", "Phenotypes", "Suitability_tier",
+               "Suitability_score", "Meth_array", "N_samples", "Has_sex",
+               "Has_age", "Has_ancestry", "Has_cell_composition",
+               "N_phenotypes", "PubMed")
 show_cols <- show_cols[show_cols %in% colnames(cat70)]
 tab <- cat70[, show_cols]
 
-# Sort by suitability tier then score, descending
 tier_rank <- c(Strong = 1, Moderate = 2, Limited = 3)
-ord <- order(tier_rank[tab$Suitability_tier],
-             -as.numeric(tab$Suitability_score))
-tab <- tab[ord, ]
+tab <- tab[order(tier_rank[tab$Suitability_tier], -tab$Suitability_score), ]
 
-datatable(
-  tab,
-  rownames = FALSE,
-  filter = "top",
-  extensions = "Buttons",
-  options = list(
-    pageLength = 15,
-    lengthMenu = c(10, 15, 25, 70),
-    scrollX = TRUE,
-    dom = "Blfrtip",
-    buttons = c("copy", "csv"),
-    columnDefs = list(list(
-      targets = which(colnames(tab) %in% c("Title", "Phenotype_examples")) - 1,
-      render = DT::JS(
-        "function(data, type, row, meta){",
-        "return type === 'display' && data != null && data.length > 90 ?",
-        "'<span title=\"' + data + '\">' + data.substr(0, 90) + '…</span>' : data;",
-        "}")
-    ))
-  ),
-  caption = htmltools::tags$caption(
-    style = "caption-side: bottom; text-align: left; font-size: 90%;",
-    "70 EPIC methylation studies on GEO, ranked by teaching suitability. ",
-    "Hover a truncated Title or Phenotype cell to see its full text."
-  )
-) |>
-  formatStyle(
-    "GSE",
-    target = "row",
-    backgroundColor = styleEqual("GSE132203", "#FFF3CD")
-  )
+pretty <- c(Accessions = "GEO accession", Title = "Title",
+            Phenotypes = "Phenotypes", Suitability_tier = "Suitability tier",
+            Suitability_score = "Suitability score", Meth_array = "Methylation array",
+            N_samples = "N samples", Has_sex = "Has sex", Has_age = "Has age",
+            Has_ancestry = "Has ancestry",
+            Has_cell_composition = "Has cell composition",
+            N_phenotypes = "N phenotypes", PubMed = "PubMed")
+
+idx <- function(nm) which(colnames(tab) %in% nm) - 1L   # DT is 0-indexed
+truncate_js <- function(n) DT::JS(
+  "function(data, type, row, meta){",
+  sprintf("return type === 'display' && data != null && data.length > %d ?", n),
+  sprintf("'<span title=\"' + data + '\">' + data.substr(0, %d) + '…</span>' : data;", n),
+  "}")
+
+htmltools::tagList(
+  htmltools::tags$style(htmltools::HTML("
+    /* wrap the header labels instead of forcing every column as wide as its
+       title, which is what left the short numeric columns full of empty space */
+    #catalog-tbl thead th { white-space: normal; vertical-align: bottom;
+                            text-align: center; line-height: 1.2; }
+    #catalog-tbl thead th:nth-child(2) { text-align: left; }
+    #catalog-tbl td, #catalog-tbl th { padding-left: 6px; padding-right: 6px; }
+  ")),
+  datatable(
+    tab,
+    elementId = "catalog-tbl",
+    rownames = FALSE,
+    colnames = unname(pretty[colnames(tab)]),
+    filter = "top",
+    extensions = "Buttons",
+    options = list(
+      pageLength = 5,
+      lengthMenu = c(5, 10, 25, nrow(tab)),
+      scrollX = TRUE,
+      autoWidth = TRUE,
+      dom = "Blfrtip",
+      buttons = c("copy", "csv"),
+      columnDefs = list(
+        # Title is the one column that earns width; everything else is centred
+        list(targets = idx("Title"), className = "dt-left", width = "300px",
+             render = truncate_js(140)),
+        list(targets = idx("Phenotypes"), className = "dt-left", width = "200px",
+             render = truncate_js(100)),
+        list(targets = idx("Accessions"), className = "dt-center", width = "110px"),
+        list(targets = idx(c("Suitability_tier", "Suitability_score", "N_samples",
+                             "N_phenotypes", "Has_sex", "Has_age", "Has_ancestry",
+                             "Has_cell_composition", "PubMed")),
+             className = "dt-center", width = "70px"),
+        list(targets = idx("Meth_array"), className = "dt-center", width = "100px")
+      )
+    ),
+    caption = htmltools::tags$caption(
+      style = "caption-side: bottom; text-align: left; font-size: 90%;",
+      sprintf(paste("%d studies (%d GEO Series) on the EPIC array, ranked by teaching",
+                    "suitability."), nrow(tab), sum(cat70$N_series)),
+      "Series sharing a publication — a SuperSeries and its SubSeries — are shown",
+      "as one row, with every accession listed and the numbers describing the",
+      "first one. Hover a truncated Title or Phenotypes cell for its full text."
+    )
+  ) |>
+    formatStyle(
+      "Accessions",
+      target = "row",
+      backgroundColor = styleEqual("GSE132203", "#FFF3CD")
+    )
+)
 ```
 
 ## What the columns mean
 
 | Column | Meaning |
 |---|---|
-| `GSE` | GEO Series accession — the identifier you give to `getGEO()` or use in the FTP path to download IDATs. |
+| `GEO accession` | GEO Series accession — the identifier you give to `getGEO()` or use in the FTP path to download IDATs. Where a study was deposited as a SuperSeries plus SubSeries, every accession is listed here and the row's other columns describe the first one. |
 | `Title` | The study's deposited title. |
-| `Suitability_tier` / `Suitability_score` | Our teaching-suitability grade (**Strong / Moderate / Limited**) and the underlying score, based on metadata completeness (sex, age, phenotype, raw data). Higher is better for a first EWAS. |
-| `Meth_array` | Array generation(s) present. Most are EPIC v1 (850K); a few mix in 450K or EPIC v2, which matters because probe IDs differ across generations. |
-| `N_samples` | Total samples across all matrix files (super-series are summed). |
-| `Has_sex`, `Has_age` | Whether sex and age are in the sample characteristics — both are strong methylation covariates you will almost always model. |
-| `Has_ancestry` | Whether genetic ancestry / race is reported (relevant for ancestry-aware probe masking, as in [Probe filtering](03_probe_filtering.qmd)). |
-| `Has_cell_composition` | Whether cell-type proportions are deposited — not necessary, but saves a step in data pre-processing if it is available. |
-| `N_phenotype_fields`, `Phenotype_examples` | Count and examples of genuine phenotype/exposure variables (bare IDs excluded) — these are your candidate EWAS outcomes or exposures. |
+| `Suitability tier` / `Suitability score` | Our teaching-suitability grade (**Strong / Moderate / Limited**) and the underlying score, based on metadata completeness (sex, age, phenotype, raw data). Higher is better for a first EWAS. |
+| `Methylation array` | Array generation(s) present. Most are EPIC v1 (850K); a few mix in 450K or EPIC v2, which matters because probe IDs differ across generations. |
+| `N samples` | Total samples across all matrix files for the first accession listed (super-series are summed). |
+| `Has sex`, `Has age` | Whether sex and age are in the sample characteristics — both are strong methylation covariates you will almost always model. |
+| `Has ancestry` | Whether genetic ancestry / race is reported (relevant for ancestry-aware probe masking, as in [Probe filtering](03_probe_filtering.qmd)). |
+| `Has cell composition` | Whether cell-type proportions are deposited — not necessary, but saves a step in data pre-processing if it is available. |
+| `Phenotypes`, `N phenotypes` | The variables you could actually test — the phenotype and exposure fields the submitter deposited, named but without their values. Sample and array identifiers, estimated cell proportions, principal components, derived age-acceleration metrics and technical flags are excluded, so this is a shortlist of candidate EWAS outcomes rather than a dump of the characteristics. Names are the submitter's own except where this tutorial defines a plainer one: Grady's `mergedcapsandpsswinthin30days` and `childabphyssexemot_ctq_01modandsev` appear as **PTSD** and **Childhood abuse**, matching the derived columns in [Setup](00_setup.qmd). |
 | `PubMed` | Linked publication, where one exists. |
 
 ::: {.callout-tip}
@@ -109,7 +208,7 @@ are a bonus — they give you an answer key to check your own pipeline against, 
 
 ## How the catalog was assembled
 
-The 70 studies are the result of a deliberate screen:
+The 70 Series are the result of a deliberate screen:
 
 1. Exported **all GEO Series for the EPIC platform** (GPL21145) from the GEO browser.
 2. Restricted to *Homo sapiens*.
@@ -125,7 +224,7 @@ to profile GEO studies without committing to downloading all the data.
 ```{r}
 #| label: fig-catalog-overview
 #| echo: false
-#| fig-cap: "The 70-study catalog at a glance. (a) Teaching-suitability tiers. (b) How many studies carry each metadata field. (c) Study sizes span 152 to ~3,100 samples. (d) Almost all are EPIC v1 (850K)."
+#| fig-cap: "The 70-Series catalog at a glance. (a) Teaching-suitability tiers. (b) How many studies carry each metadata field. (c) Study sizes span 152 to ~3,100 samples. (d) Almost all are EPIC v1 (850K)."
 knitr::include_graphics("data/00b_catalog_overview.png")
 ```
 
@@ -147,7 +246,8 @@ which steps you can and cannot still do.
 
 ## Download the catalog
 
-The complete 70-study catalog — all 28 columns, not just the ones shown above —
+The complete 70-Series catalog — all 28 columns, not just the ones shown above,
+and one row per accession rather than per study —
 is available as a CSV:
 
 - [**methylation_geo_catalog.csv**](methylation_geo_catalog.csv) — the full catalog, ready to load with `read_csv()` (R) or `pd.read_csv()` (Python).

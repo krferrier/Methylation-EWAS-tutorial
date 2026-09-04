@@ -1854,3 +1854,88 @@ longer depends on the group-header rule above it for its family.
 ### Numbers moved
 
 None. Presentation only.
+
+## 34. Catalog table: layout, phenotype column, and collapsing SuperSeries
+
+### Layout
+
+- **Default page length 5**, not 15. At 15 the header scrolled out of view before
+  the reader reached the horizontal scrollbar, so the columns became unlabelled
+  exactly when they needed labelling. `lengthMenu` is now 5 / 10 / 25 / all.
+- **Column headers lost their underscores** and wrap onto two lines
+  (`white-space: normal` on `thead th`). Previously every column was at least as
+  wide as its one-line header, which is what left `Suitability_tier`,
+  `Suitability_score` and `N_samples` mostly empty space.
+- **Explicit widths**: Title 300px, Phenotypes 200px, the short columns 70px. The
+  title column is now wide enough to read, and truncation moved from 90 to 140
+  characters (hover still shows the full string).
+- **Title and Phenotypes are left-aligned; every other column is centred.**
+
+### Phenotypes replaces Phenotype_examples, and moves next to Title
+
+The old column dumped field names *and* their values:
+
+```
+mergedcapsandpsswinthin30days: 0; NA; 1 || tei_total_types_experienced_somewitness: 10; 4; 1; 9 || ...
+```
+
+It now lists just the variables a reader could actually test, comma-separated,
+and sits directly after Title. Median cell length drops from **77 to 16**
+characters. The cleaning:
+
+- split on `||`, drop everything after the first `:` on each part
+- strip parentheticals containing `=`, which are value codings the submitter put
+  in the field name (`art treatment status (0 = spontaneous; 1 = assisted
+  reproduction)`), while keeping units such as `(kg/m^2)`
+- drop non-phenotypes: sample and array identifiers, estimated cell proportions,
+  principal components, derived age-acceleration metrics, technical flags, dates
+  and `(untagged)` placeholders
+
+`N_phenotype_fields` is recomputed from the cleaned list as `N phenotypes`, so
+the count and the names agree. 14 rows now show nothing, up from 13 — those are
+studies whose only characteristics were identifiers, which is the honest answer.
+
+Two fields get a plain-language name, and only because this tutorial defines one:
+`00_setup.qmd:730` derives `ptsd` from `mergedcapsandpsswinthin30days`, and
+`sample_sheet.csv` pairs `childabphyssexemot_ctq_01modandsev` with
+`childhood_abuse`. So the Grady row reads **PTSD, tei_total_types_experienced_somewitness,
+Childhood abuse**. The middle one is left as deposited: nothing in this repository
+says what it measures, so renaming it would be invention.
+
+### SuperSeries collapsed into one row per study
+
+A study deposited as a SuperSeries plus SubSeries appeared as several rows with
+near-identical titles — the Congo mother-newborn study had three. Rows are now
+grouped on **PubMed id**, which is exact here: 9 groups covering 19 Series, and
+both of the two Series without a PubMed id are singletons, so nothing is missed.
+70 Series become **60 studies**.
+
+The displayed row is the highest-scoring Series, ties broken by sample count —
+which picks the SuperSeries, e.g. GSE224365 at n=712 = 356 + 356. Every accession
+is listed in the cell, representative first.
+
+**A bug caught in verification.** The first implementation computed the sort order
+twice:
+
+```r
+cat70 <- cat70[order(-cat70$Suitability_score, -cat70$N_samples), ]
+grp   <- grp[order(-cat70$Suitability_score, -cat70$N_samples)]   # WRONG
+```
+
+The second `order()` reads the *already sorted* frame, so the grouping key was
+permuted by the wrong index and unrelated studies were merged — the rendered
+table showed `GSE132181, GSE224363`, which are different studies. Fixed by
+computing `ord` once and applying it to both. The corrected output reproduces the
+grouping derived independently in a prototype script.
+
+### Prose reconciled
+
+"Each row is one GEO Series" was no longer true; the intro now states that 70
+Series collapse to 60 studies. "70 studies" became "70 Series" at the screen
+description, the figure caption and the CSV download note — the CSV is unchanged
+and still has one row per accession.
+
+### Numbers moved
+
+Table rows 70 -> 60 (presentation only; no Series was dropped). The catalog CSV
+is untouched.
