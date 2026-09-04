@@ -27,7 +27,7 @@ ew <- readRDS(data_path("06_ewas.rds"))
 tt <- ew$tt
 ```
 
-## 1. Two ways to write the model — and why the outcome matters
+## 1. Two ways to write the model — and why the outcome matters {#sec-model}
 
 There are two ways to set up the per-CpG regression, and they answer subtly
 different questions.
@@ -72,7 +72,7 @@ model's variance assumptions [@du2010comparison]. Effect sizes are then reported
 methylation change."
 :::
 
-## 2. The covariate set
+## 2. The covariate set {#sec-covariates}
 
 Our design includes covariates for everything we established as a driver of methylation:
 
@@ -135,7 +135,7 @@ cat(sprintf("CpGs tested: %s  (%d smoking-panel probes excluded)\n",
             format(ew$n_tested, big.mark = ","), ew$panel_excluded))
 ```
 
-## 3. Is the model well-calibrated? The QQ plot and genomic inflation
+## 3. Is the model well-calibrated? The QQ plot and genomic inflation {#sec-calibration}
 
 Before looking at *which* CpGs are top-ranked, check whether the p-values behave.
 The **genomic inflation factor** λ compares the median observed test statistic to its
@@ -149,7 +149,7 @@ inflated λ compared to GWAS results. Additional bias and inflation correction i
 post-EWAS to account for this. The lambda post-bias-and-inflation correction is what should 
 be used to judge the model fit. 
 
-## 4. Correcting residual bias and inflation with BACON
+## 4. Correcting residual bias and inflation with BACON {#sec-bacon}
 
 **BACON** [@vanIterson2017bacon] estimates the *empirical null distribution* of the test 
 statistics with a Bayesian three-component mixture (one null component plus two alternative 
@@ -251,7 +251,7 @@ not usually necessary to report the diagnostic plots, but I strongly recommend r
 the adjusted lambda.
 :::
 
-## 5. Results
+## 5. Results {#sec-results}
 
 ```{r}
 #| label: hits
@@ -300,7 +300,7 @@ knitr::include_graphics(data_path("06_manhattan_bacon.png"))
 knitr::include_graphics(data_path("06_volcano.png"))
 ```
 
-## 6. An alternative in common use: the M-value residual workflow
+## 6. An alternative in common use: the M-value residual workflow {#sec-residual}
 
 The design above puts **all** covariates — biological and technical — into one large
 regression. A common alternative, and the convention many groups (including this
@@ -345,7 +345,7 @@ it. Report which approach you used, and ideally confirm the top hits are stable 
 both.
 :::
 
-## 7. When and why to stratify, then meta-analyze
+## 7. When and why to stratify, then meta-analyze {#sec-stratify}
 
 The model so far adjusts for sex as a **covariate**: it lets men and women have
 different mean methylation, but forces the *PTSD effect* to be a single number shared
@@ -459,7 +459,7 @@ both input files, the R above is easier to audit and keeps everything in one lan
 For a multi-cohort consortium meta-analysis, use METAL.
 :::
 
-## 8. When you don't have IDATs
+## 8. When you don't have IDATs {#sec-no-idats}
 
 Everything in this notebook operates on a **methylation matrix** and a phenotype
 table, so the non-IDAT path is identical once you have M-values:

@@ -23,7 +23,7 @@ samples with complete covariate data — across the **full filtered probe set**
 (756,251 CpGs), the same matrix and the same model chapter 06 fit interactively.
 
 
-## 1. The pipeline's structure
+## 1. The pipeline's structure {#sec-structure}
 
 The repository is a standard Snakemake project. The pieces that matter for a
 user:
@@ -50,7 +50,7 @@ The dependency graph, conceptually:
 Because it is Snakemake, running `snakemake --cores N` would build every target
 in that graph in dependency order and skip anything already up to date. 
 
-## 2. Configuration
+## 2. Configuration {#sec-config}
 
 The shipped `config.yml` is annotated for a BMI example; the fields we care about:
 
@@ -83,7 +83,7 @@ Notes:
   jobs on an HPC scheduler; on a single machine you use `multicore` or `multisession`. We use
   `multicore` below so the demo runs locally.
 
-## 3. Preparing the inputs
+## 3. Preparing the inputs {#sec-inputs}
 
 The pipeline wants two files: a phenotype file and a methylation data file. 
 We build them from the preprocessed objects the earlier notebooks produced. 
@@ -121,7 +121,7 @@ This writes the **full filtered probe set** — every CpG that survived chapter 
 the matrix once, splits the CpGs into chunks of `chunk-size`, and distributes chunks
 across workers, so memory stays flat as the probe count grows.
 
-## 4. Building METAL
+## 4. Building METAL {#sec-metal-build}
 
 METAL is distributed as C++ source. The pipeline vendors it under
 `software/metal/` and builds it once:
@@ -136,7 +136,7 @@ cmake --build build
 
 This installation/build is automatically handled by the Snakemake pipeline. 
 
-## 5. Running a non-stratified EWAS
+## 5. Running a non-stratified EWAS {#sec-run}
 
 If you don't want to stratify your EWAS by any terms, the pipeline begins 
 running the EWAS across all 87 complete-data samples with the `ewas.R` script.
@@ -153,13 +153,13 @@ Rscript scripts/ewas.R \
 ```
 
 On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took
-**5 min 29 s** of EWAS time at 8 workers, and 6 min 16 s including the BACON step that
-follows. The two stratified analyses in the next section took 11 min 53 s together at
+**5 min 24 s** of EWAS time at 8 workers, and 6 min 12 s including the BACON step that
+follows. The two stratified analyses in the next section took 11 min 37 s together at
 4 workers each, running concurrently. [Setup](00_setup.qmd) has the memory figures and
 guidance on choosing `workers` for your own machine.
 
 
-## Does the pipeline agree with chapter 06?
+### Does the pipeline agree with chapter 06?
 
 Chapter 06 fit this model with `limma::lmFit` + `eBayes`; the
 pipeline fits one `glm` per CpG. On this run:
@@ -190,7 +190,7 @@ setorder(allres, p.value)
 print(head(allres[, .(cpgid, estimate, std.error, statistic, p.value)], 5))
 ```
 
-## 6. Stratifying by sex, then running each stratum
+## 6. Stratifying by sex, then running each stratum {#sec-strata}
 
 If you want to run a stratified EWAS, you first run `stratify.R` on your variable(s) 
 that you'd like to stratify by. The script splits both the phenotype and methylation 
@@ -217,7 +217,7 @@ done
 The female stratum has 45 samples, the male 42. Each within-stratum model is now
 `methylation ~ PTSD + age + cell composition`.
 
-## 7. BACON: correcting residual inflation and bias
+## 7. BACON: correcting residual inflation and bias {#sec-bacon}
 
 A well-specified EWAS should have a genomic-inflation factor `λ ≈ 1` and a QQ
 plot on the diagonal until the extreme tail. In practice small-sample EWAS often
@@ -293,7 +293,7 @@ the right response is to fix the model (chapters 04 and 05), not to lean on BACO
 the residual bias that remains after adjustment.
 :::
 
-## 8. Meta-analyzing the strata with METAL
+## 8. Meta-analyzing the strata with METAL {#sec-meta}
 
 Now we combine the two sex-specific results with **METAL** [@willer2010metal].
 Because the pipeline wrote its columns with the labels METAL expects, generating the
@@ -400,7 +400,7 @@ cat("CpGs with heterogeneity P < 0.05:",
 
 ![Meta-analysis QQ plot (F+M combined).](data/07_meta_qq.png){#fig-meta-qq width=70%}
 
-## 9. Reading the run as a whole
+## 9. Reading the run as a whole {#sec-reading}
 
 For the purposes of this tutorial, we ran the EWAS with and without stratification, so 
 we show results for: an 'overall' EWAS model where sex is a covariate, female-only, male-only, 
@@ -464,7 +464,7 @@ floating-point precision, and produces calibrated statistics (λ within 1.5% of
 1 in every arm). It is not that PTSD associates with these nine CpGs in 87
 people.
 
-## 10. Scaling up
+## 10. Scaling up {#sec-scaling}
 
 Nothing about the commands changes when you move from this demo to a real study —
 you change `config.yml`, not the code:

@@ -28,16 +28,105 @@ website:
         href: 00a_background.qmd
       - section: "Data preprocessing"
         contents:
-          - 00_setup.qmd
+          # Chapters over ~20 kB of source get section-level sub-navigation.
+          # Quarto collapses a chapter's children unless you are on that page,
+          # so this costs nothing in sidebar length. Shorter chapters (01, 02,
+          # 04) are left flat: they fit on a screen or two and sub-nav would be
+          # noise.
+          - section: "Setup: getting the data onto your machine"
+            href: 00_setup.qmd
+            contents:
+              - text: "Building the software environment"
+                href: 00_setup.qmd#sec-env
+              - text: "Raw methylation data files"
+                href: 00_setup.qmd#sec-idat-files
+              - text: "First, get the sample sheet"
+                href: 00_setup.qmd#sec-sample-sheet-get
+              - text: "Downloading the 96-sample subset"
+                href: 00_setup.qmd#sec-download
+              - text: "Reading the IDATs into R"
+                href: 00_setup.qmd#sec-read-idats
+              - text: "Computational cost"
+                href: 00_setup.qmd#sec-cost
+              - text: "Optional: the full 795-sample dataset"
+                href: 00_setup.qmd#sec-full-series
           - 01_qc.qmd
           - 02_normalization.qmd
-          - 03_probe_filtering.qmd
+          - section: "Probe filtering"
+            href: 03_probe_filtering.qmd
+            contents:
+              - text: "1. Why some probes are unreliable"
+                href: 03_probe_filtering.qmd#sec-why
+              - text: "2. The categories, quantified"
+                href: 03_probe_filtering.qmd#sec-categories
+              - text: "3. Ancestry matters"
+                href: 03_probe_filtering.qmd#sec-ancestry
+              - text: "4. Detection-p and sex chromosomes"
+                href: 03_probe_filtering.qmd#sec-detp-sex
+              - text: "5. Filtering a processed matrix"
+                href: 03_probe_filtering.qmd#sec-no-idats
           - 04_cell_composition.qmd
-          - 05_batch_effects.qmd
+          - section: "Batch effects"
+            href: 05_batch_effects.qmd
+            contents:
+              - text: "1. Sources of technical variation"
+                href: 05_batch_effects.qmd#sec-sources
+              - text: "2. Detecting structure with PCA"
+                href: 05_batch_effects.qmd#sec-pca
+              - text: "3. Is the batch factor confounded?"
+                href: 05_batch_effects.qmd#sec-confounding
+              - text: "4. Choosing a correction strategy"
+                href: 05_batch_effects.qmd#sec-strategy
+              - text: "5. Constructing a smoking proxy"
+                href: 05_batch_effects.qmd#sec-smoking
+              - text: "6. Surrogate Variable Analysis"
+                href: 05_batch_effects.qmd#sec-sva
+              - text: "7. Correcting a processed matrix"
+                href: 05_batch_effects.qmd#sec-no-idats
       - section: "Analysis"
         contents:
-          - 06_ewas.qmd
-          - 07_pipeline.qmd
+          - section: "EWAS"
+            href: 06_ewas.qmd
+            contents:
+              - text: "1. Two ways to write the model"
+                href: 06_ewas.qmd#sec-model
+              - text: "2. The covariate set"
+                href: 06_ewas.qmd#sec-covariates
+              - text: "3. Is the model well-calibrated?"
+                href: 06_ewas.qmd#sec-calibration
+              - text: "4. Correcting bias with BACON"
+                href: 06_ewas.qmd#sec-bacon
+              - text: "5. Results"
+                href: 06_ewas.qmd#sec-results
+              - text: "6. The M-value residual workflow"
+                href: 06_ewas.qmd#sec-residual
+              - text: "7. Stratify, then meta-analyze"
+                href: 06_ewas.qmd#sec-stratify
+              - text: "8. When you don't have IDATs"
+                href: 06_ewas.qmd#sec-no-idats
+          - section: "Running an EWAS with Snakemake"
+            href: 07_pipeline.qmd
+            contents:
+              - text: "1. The pipeline's structure"
+                href: 07_pipeline.qmd#sec-structure
+              - text: "2. Configuration"
+                href: 07_pipeline.qmd#sec-config
+              - text: "3. Preparing the inputs"
+                href: 07_pipeline.qmd#sec-inputs
+              - text: "4. Building METAL"
+                href: 07_pipeline.qmd#sec-metal-build
+              - text: "5. Running a non-stratified EWAS"
+                href: 07_pipeline.qmd#sec-run
+              - text: "6. Stratifying by sex"
+                href: 07_pipeline.qmd#sec-strata
+              - text: "7. BACON"
+                href: 07_pipeline.qmd#sec-bacon
+              - text: "8. Meta-analyzing with METAL"
+                href: 07_pipeline.qmd#sec-meta
+              - text: "9. Reading the run as a whole"
+                href: 07_pipeline.qmd#sec-reading
+              - text: "10. Scaling up"
+                href: 07_pipeline.qmd#sec-scaling
           - section: "Functional annotation & region-level analysis"
             href: 08_annotation.qmd
             contents:

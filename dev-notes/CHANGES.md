@@ -1498,3 +1498,97 @@ linking. Now that stable anchors exist, all six are live links.
 
 None. The change is 8 heading lines plus 6 prose links; a line-level diff
 confirms **zero** non-heading, non-link content changed.
+
+## 28. Section-level sidebar navigation, and a 5× memory error in the chapter 07 benchmark
+
+### Both chapter 07 benchmark figures now come from one run each
+
+The two chapter 07 rows in the cost table were the only rows whose wall time and
+peak memory came from **different runs**: wall time from a clean run, memory from
+a separately instrumented one. Every other row already paired both from a single
+`bench_run.sh` invocation.
+
+The reason for the split was sampler overhead. `memwatch2.sh` fork+exec'd `ps`
+once a second, which cost about 8% wall time on a loaded box, so quoting the
+instrumented run's wall time would have overstated the cost.
+
+**`bench/memwatch3.py`** removes the reason. It is one long-lived process that
+reads `/proc/<pid>/statm` and `/proc/<pid>/comm` directly with no forks at all.
+Measured cost: **0.010 CPU-seconds per 6 s of wall at 5 Hz**, i.e. roughly 0.1 s
+over a 400 s run. A run instrumented with it is a clean run.
+
+Both arms were then re-measured once each, sequentially, to the same stopping
+point (EWAS + BACON) so the two rows are comparable. METAL is excluded: it takes
+about 33 s and exists only for the stratified arm.
+
+| | wall | peak memory | was |
+|---|---:|---:|---|
+| Non-stratified, 87 samples, 8 workers | 6 min 12 s | **12.0 GB** | 6 min 16 s / 2.3 GB |
+| Stratified, 45 + 42, 4 workers each | 11 min 37 s | 6.3 GB | 11 min 53 s / 6.3 GB |
+
+**The memory figure for the non-stratified arm was wrong by 5×.** The old 2.3 GB
+came from `/usr/bin/time -v`, whose "Maximum resident set size" is the max of any
+one child, not the sum across concurrent children. The new measurement finds
+12.00 GB held across 9 processes for 82% of the run — a flat plateau, not a
+spike. The old figure survives in the new trace as `peak_single` = 2.24 GB,
+which confirms exactly what it had been measuring.
+
+Ironically, section 25 of this file already warned about this failure mode for
+the stratified row ("2.1 GB where the true requirement is 6.3 GB") — the
+non-stratified row was measured the wrong way regardless. The stratified figure
+was already sampler-derived and reproduced to within 0.01 GB (6.26 vs 6.27 GB),
+which cross-validates the new sampler against the old one.
+
+Determinism check: the re-run wrote to scratch directories, and all three
+decompressed result files (combined, F, M) are **byte-identical** to the
+published ones. No analysis number moved; only timing and memory.
+
+### Two prose claims the corrected measurement contradicted
+
+Both were consistent with the old, wrong figure and are now wrong:
+
+- *"...runs those two in parallel, which is why the memory roughly triples even
+  though each model is smaller."* Memory does not triple — it **halves**
+  (12.0 → 6.3 GB). Peak memory tracks **samples × workers**, and each stratum
+  runs half the samples with half the workers. Rewritten to say so.
+- The time-versus-memory callout said the chapter 06 approach *"requires more
+  memory than the EWAS run on the same sample size."* At 87 samples chapter 06
+  uses 4.1 GB against the pipeline's 12.0 GB at 8 workers, so the comparison is
+  the other way round. Rewritten to keep the underlying point, which still
+  holds: the pipeline's memory is a dial you control through `workers`, while
+  the single-process approach is set by the data and grows with the cohort.
+
+### Section-level sidebar navigation
+
+Chapter 08's three Parts got sidebar entries in section 27. The same treatment
+now covers every chapter over roughly 20 kB of source: **00_setup, 03, 05, 06,
+07**. Chapters 01, 02 and 04 are left flat — they fit in a screen or two, and
+sub-navigation there would be noise.
+
+This costs nothing in sidebar length: Quarto renders a chapter's children inside
+a `collapse` list that only carries the `show` class on the page you are
+currently reading. Verified in the rendered HTML on both an active and an
+inactive page.
+
+39 explicit `{#sec-*}` anchors were added, for the same reason the Parts got
+them: an auto-generated slug is derived from the full heading text, so rewording
+a heading silently breaks every link pointing at it.
+
+**Two more mis-levelled headings**, the same defect as chapter 08's Part 3 — an
+`h2` sitting among numbered `h2` siblings while actually being a sub-topic of the
+preceding section. Both demoted to `h3`:
+
+- `05_batch_effects.qmd` — "The panel probes must be excluded from the EWAS",
+  which belongs to section 5 (constructing the smoking proxy)
+- `07_pipeline.qmd` — "Does the pipeline agree with chapter 06?", which belongs
+  to section 5 (running a non-stratified EWAS)
+
+All 40 sidebar fragment links were checked against the rendered pages: every one
+resolves to a real `id`, and every chapter still has exactly one `h1`.
+
+### Numbers moved
+
+`6 min 16 s → 6 min 12 s`, `2.3 GB → 12.0 GB`, `11 min 53 s → 11 min 37 s`
+(cost table); `5 min 29 s → 5 min 24 s`, `6 min 16 s → 6 min 12 s`,
+`11 min 53 s → 11 min 37 s` (chapter 07 prose). No analysis result changed — the
+re-run reproduced the published outputs byte-for-byte.

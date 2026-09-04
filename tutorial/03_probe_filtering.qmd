@@ -25,7 +25,7 @@ funl  <- readRDS(data_path("03_filter_funnel.rds"))
 mp    <- readRDS(data_path("03_mask_pieces.rds"))
 ```
 
-## 1. Why some probes are unreliable by design
+## 1. Why some probes are unreliable by design {#sec-why}
 
 There are three main types of problematic probes and each has been characterized 
 in dedicated methods papers:
@@ -194,7 +194,7 @@ cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
             funl$retained, funl$n0, 100 * funl$retained / funl$n0))
 ```
 
-## 2. The categories, quantified on EPIC
+## 2. The categories, quantified on EPIC {#sec-categories}
 
 The SNP mask is **not the same for every study population**, because a "common
 SNP" depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:
@@ -227,7 +227,7 @@ cat("masked in both:           ", length(intersect(afr, eur)), "\n")
 While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each
 population.
 
-## 3. Ancestry matters
+## 3. Ancestry matters {#sec-ancestry}
 
 The Grady Trauma Project subset is **~95% African American**. If we filtered with 
 a general or only European-population mask (a common default), we would leave in 
@@ -316,7 +316,7 @@ at a later step as these probes are needed to create a proxy smoking variable. S
 [the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options.
 :::
 
-## 4. Detection-p and sex-chromosome filtering
+## 4. Detection-p and sex-chromosome filtering {#sec-detp-sex}
 
 Two study-specific filters complete the funnel:
 
@@ -358,7 +358,7 @@ keep <- setdiff(rownames(grs), Reduce(union, list(drop_mask, drop_detp, drop_sex
 grs_filt <- grs[keep, ]
 ```
 
-## 5. When you don't have IDATs: filtering a processed matrix
+## 5. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
 
 Probe filtering is one of the few preprocessing steps that works **identically**
 whether your data came from IDATs or from a processed β-matrix — because the masks

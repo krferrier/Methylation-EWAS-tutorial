@@ -5331,7 +5331,7 @@ window.onload = function() {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./06_ewas.html">Analysis</a></li><li class="breadcrumb-item"><a href="./07_pipeline.html">Running an EWAS with a Snakemake pipeline</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./06_ewas.html">Analysis</a></li><li class="breadcrumb-item"><a href="./07_pipeline.html">Running an EWAS with Snakemake</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -5383,12 +5383,59 @@ window.onload = function() {
           </a> 
       </div>
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./00_setup.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Setup: getting the data onto your machine</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./00_setup.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Setup: getting the data onto your machine</span></a>
+  <a href="./00_setup.html#sec-env" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building the software environment</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-idat-files" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Raw methylation data files</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-sample-sheet-get" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">First, get the sample sheet</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-download" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Downloading the 96-sample subset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-read-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reading the IDATs into R</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-cost" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational cost</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-full-series" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optional: the full 795-sample dataset</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./01_qc.html" class="sidebar-item-text sidebar-link">
@@ -5401,56 +5448,256 @@ window.onload = function() {
  <span class="menu-text">Normalization: making arrays comparable</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./03_probe_filtering.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Probe filtering</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./03_probe_filtering.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Probe filtering</span></a>
+  <a href="./03_probe_filtering.html#sec-why" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Why some probes are unreliable</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-categories" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. The categories, quantified</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-ancestry" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Ancestry matters</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-detp-sex" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Detection-p and sex chromosomes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-no-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Filtering a processed matrix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./04_cell_composition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Cell composition: Whole Blood</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./05_batch_effects.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Batch effects</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./05_batch_effects.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Batch effects</span></a>
+  <a href="./05_batch_effects.html#sec-sources" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Sources of technical variation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-pca" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. Detecting structure with PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-confounding" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Is the batch factor confounded?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-strategy" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Choosing a correction strategy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-smoking" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Constructing a smoking proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-sva" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Surrogate Variable Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-no-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Correcting a processed matrix</span></a>
   </div>
 </li>
       </ul>
   </li>
+      </ul>
+  </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
  <span class="menu-text">Analysis</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./06_ewas.html" class="sidebar-item-text sidebar-link">
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./06_ewas.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">EWAS</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-model" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Two ways to write the model</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./07_pipeline.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Running an EWAS with a Snakemake pipeline</span></a>
+  <a href="./06_ewas.html#sec-covariates" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. The covariate set</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-calibration" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Is the model well-calibrated?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-bacon" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Correcting bias with BACON</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-results" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Results</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-residual" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. The M-value residual workflow</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-stratify" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Stratify, then meta-analyze</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-no-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. When you don’t have IDATs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./07_pipeline.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Running an EWAS with Snakemake</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-structure" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. The pipeline’s structure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-config" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. Configuration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-inputs" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Preparing the inputs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-metal-build" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Building METAL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-run" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Running a non-stratified EWAS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-strata" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Stratifying by sex</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-bacon" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. BACON</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-meta" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. Meta-analyzing with METAL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-reading" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">9. Reading the run as a whole</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-scaling" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Scaling up</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="./08_annotation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functional annotation &amp; region-level analysis</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./08_annotation.html#part-1" class="sidebar-item-text sidebar-link">
@@ -5483,17 +5730,19 @@ window.onload = function() {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-pipelines-structure" id="toc-the-pipelines-structure" class="nav-link active" data-scroll-target="#the-pipelines-structure">1. The pipeline’s structure</a></li>
-  <li><a href="#configuration" id="toc-configuration" class="nav-link" data-scroll-target="#configuration">2. Configuration</a></li>
-  <li><a href="#preparing-the-inputs" id="toc-preparing-the-inputs" class="nav-link" data-scroll-target="#preparing-the-inputs">3. Preparing the inputs</a></li>
-  <li><a href="#building-metal" id="toc-building-metal" class="nav-link" data-scroll-target="#building-metal">4. Building METAL</a></li>
-  <li><a href="#running-a-non-stratified-ewas" id="toc-running-a-non-stratified-ewas" class="nav-link" data-scroll-target="#running-a-non-stratified-ewas">5. Running a non-stratified EWAS</a></li>
+  <li><a href="#sec-structure" id="toc-sec-structure" class="nav-link active" data-scroll-target="#sec-structure">1. The pipeline’s structure</a></li>
+  <li><a href="#sec-config" id="toc-sec-config" class="nav-link" data-scroll-target="#sec-config">2. Configuration</a></li>
+  <li><a href="#sec-inputs" id="toc-sec-inputs" class="nav-link" data-scroll-target="#sec-inputs">3. Preparing the inputs</a></li>
+  <li><a href="#sec-metal-build" id="toc-sec-metal-build" class="nav-link" data-scroll-target="#sec-metal-build">4. Building METAL</a></li>
+  <li><a href="#sec-run" id="toc-sec-run" class="nav-link" data-scroll-target="#sec-run">5. Running a non-stratified EWAS</a>
+  <ul class="collapse">
   <li><a href="#does-the-pipeline-agree-with-chapter-06" id="toc-does-the-pipeline-agree-with-chapter-06" class="nav-link" data-scroll-target="#does-the-pipeline-agree-with-chapter-06">Does the pipeline agree with chapter 06?</a></li>
-  <li><a href="#stratifying-by-sex-then-running-each-stratum" id="toc-stratifying-by-sex-then-running-each-stratum" class="nav-link" data-scroll-target="#stratifying-by-sex-then-running-each-stratum">6. Stratifying by sex, then running each stratum</a></li>
-  <li><a href="#bacon-correcting-residual-inflation-and-bias" id="toc-bacon-correcting-residual-inflation-and-bias" class="nav-link" data-scroll-target="#bacon-correcting-residual-inflation-and-bias">7. BACON: correcting residual inflation and bias</a></li>
-  <li><a href="#meta-analyzing-the-strata-with-metal" id="toc-meta-analyzing-the-strata-with-metal" class="nav-link" data-scroll-target="#meta-analyzing-the-strata-with-metal">8. Meta-analyzing the strata with METAL</a></li>
-  <li><a href="#reading-the-run-as-a-whole" id="toc-reading-the-run-as-a-whole" class="nav-link" data-scroll-target="#reading-the-run-as-a-whole">9. Reading the run as a whole</a></li>
-  <li><a href="#scaling-up" id="toc-scaling-up" class="nav-link" data-scroll-target="#scaling-up">10. Scaling up</a></li>
+  </ul></li>
+  <li><a href="#sec-strata" id="toc-sec-strata" class="nav-link" data-scroll-target="#sec-strata">6. Stratifying by sex, then running each stratum</a></li>
+  <li><a href="#sec-bacon" id="toc-sec-bacon" class="nav-link" data-scroll-target="#sec-bacon">7. BACON: correcting residual inflation and bias</a></li>
+  <li><a href="#sec-meta" id="toc-sec-meta" class="nav-link" data-scroll-target="#sec-meta">8. Meta-analyzing the strata with METAL</a></li>
+  <li><a href="#sec-reading" id="toc-sec-reading" class="nav-link" data-scroll-target="#sec-reading">9. Reading the run as a whole</a></li>
+  <li><a href="#sec-scaling" id="toc-sec-scaling" class="nav-link" data-scroll-target="#sec-scaling">10. Scaling up</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
@@ -5501,7 +5750,7 @@ window.onload = function() {
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./06_ewas.html">Analysis</a></li><li class="breadcrumb-item"><a href="./07_pipeline.html">Running an EWAS with a Snakemake pipeline</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./06_ewas.html">Analysis</a></li><li class="breadcrumb-item"><a href="./07_pipeline.html">Running an EWAS with Snakemake</a></li></ol></nav>
 <div class="quarto-title">
 <div class="quarto-title-block"><div><h1 class="title">Running an EWAS with a Snakemake pipeline</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
 </div>
@@ -5522,8 +5771,8 @@ window.onload = function() {
 
 <p>The previous notebook fit a single association model interactively with <code>limma</code>. Here we introduce using a scalable, reproducible Snakemake pipeline for running an EWAS. The pipeline automatically handles stratification, meta-analysis, annotation of results, and basic plotting of results (manhattan and qq plot). In addition, it can run a differentially methylated region (DMR) analysis. The pipeline utilizes parallelization and can be run on your local computer or on a remote high performance computing cluster. The EWAS Snakemake pipeline with installation and run instructions can be found at: <a href="https://github.com/krferrier/EWAS">github.com/krferrier/EWAS</a>.</p>
 <p>We run the whole thing here on the same Grady subset we have been using — the 87 samples with complete covariate data — across the <strong>full filtered probe set</strong> (756,251 CpGs), the same matrix and the same model chapter 06 fit interactively.</p>
-<section id="the-pipelines-structure" class="level2">
-<h2 class="anchored" data-anchor-id="the-pipelines-structure">1. The pipeline’s structure</h2>
+<section id="sec-structure" class="level2">
+<h2 class="anchored" data-anchor-id="sec-structure">1. The pipeline’s structure</h2>
 <p>The repository is a standard Snakemake project. The pieces that matter for a user:</p>
 <table class="caption-top table">
 <colgroup>
@@ -5574,8 +5823,8 @@ window.onload = function() {
                                                     meta-analysis</code></pre>
 <p>Because it is Snakemake, running <code>snakemake --cores N</code> would build every target in that graph in dependency order and skip anything already up to date.</p>
 </section>
-<section id="configuration" class="level2">
-<h2 class="anchored" data-anchor-id="configuration">2. Configuration</h2>
+<section id="sec-config" class="level2">
+<h2 class="anchored" data-anchor-id="sec-config">2. Configuration</h2>
 <p>The shipped <code>config.yml</code> is annotated for a BMI example; the fields we care about:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mvals</span><span class="kw">:</span><span class="at"> data/mvals.csv.gz</span><span class="co">          # CpG × sample M-value matrix (CpGs in rows)</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pheno</span><span class="kw">:</span><span class="at"> data/pheno.csv</span><span class="co">             # sample × covariate table; col 1 = sample ID</span></span>
@@ -5595,8 +5844,8 @@ window.onload = function() {
 <li><strong><code>processing_type</code></strong> chooses the parallel backend. <code>cluster</code> submits chunks as jobs on an HPC scheduler; on a single machine you use <code>multicore</code> or <code>multisession</code>. We use <code>multicore</code> below so the demo runs locally.</li>
 </ul>
 </section>
-<section id="preparing-the-inputs" class="level2">
-<h2 class="anchored" data-anchor-id="preparing-the-inputs">3. Preparing the inputs</h2>
+<section id="sec-inputs" class="level2">
+<h2 class="anchored" data-anchor-id="sec-inputs">3. Preparing the inputs</h2>
 <p>The pipeline wants two files: a phenotype file and a methylation data file. We build them from the preprocessed objects the earlier notebooks produced. The input file format can be any standard-delimited file type. For the phenotype file I typically use a .csv or .txt format as the file size is usually relatively small even without compression. Methylation datasets are typically several GB in size. I strongly recommend using some form of compression (e.g. <code>.csv.gz</code>). You can pass compressed files to the pipeline without issue. In addition to standardized format types, like .csv, .txt, etc., you can also use ‘.fst’ filetypes (a fast data serialization format) which is by far the format type the pipeline can process the fastest.</p>
 <div class="cell">
 <details open class="code-fold">
@@ -5650,8 +5899,8 @@ sex:</code></pre>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;data/mvals.csv.gz&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This writes the <strong>full filtered probe set</strong> — every CpG that survived chapter 03. The chunking machinery is what makes that affordable: <code>ewas.R</code> reads the matrix once, splits the CpGs into chunks of <code>chunk-size</code>, and distributes chunks across workers, so memory stays flat as the probe count grows.</p>
 </section>
-<section id="building-metal" class="level2">
-<h2 class="anchored" data-anchor-id="building-metal">4. Building METAL</h2>
+<section id="sec-metal-build" class="level2">
+<h2 class="anchored" data-anchor-id="sec-metal-build">4. Building METAL</h2>
 <p>METAL is distributed as C++ source. The pipeline vendors it under <code>software/metal/</code> and builds it once:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> software/metal</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-xzf</span> METAL.tar.gz <span class="at">--strip-components</span><span class="op">=</span>1</span>
@@ -5660,8 +5909,8 @@ sex:</code></pre>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># → software/metal/build/metal/metal</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This installation/build is automatically handled by the Snakemake pipeline.</p>
 </section>
-<section id="running-a-non-stratified-ewas" class="level2">
-<h2 class="anchored" data-anchor-id="running-a-non-stratified-ewas">5. Running a non-stratified EWAS</h2>
+<section id="sec-run" class="level2">
+<h2 class="anchored" data-anchor-id="sec-run">5. Running a non-stratified EWAS</h2>
 <p>If you don’t want to stratify your EWAS by any terms, the pipeline begins running the EWAS across all 87 complete-data samples with the <code>ewas.R</code> script. This script reads the methylation matrix in chunks, fits one <code>glm</code> per CpG, and uses the <code>PTSD</code> term as the main predictor to test for association:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/ewas.R <span class="dt">\</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--pheno</span> data/pheno.csv <span class="at">--methyl</span> data/mvals.csv.gz <span class="dt">\</span></span>
@@ -5669,10 +5918,9 @@ sex:</code></pre>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--chunk-size</span> 5000 <span class="at">--processing-type</span> multicore <span class="at">--workers</span> 8 <span class="dt">\</span></span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--out-dir</span> run_grady_all <span class="at">--out-type</span> .csv.gz</span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took <strong>5 min 29 s</strong> of EWAS time at 8 workers, and 6 min 16 s including the BACON step that follows. The two stratified analyses in the next section took 11 min 53 s together at 4 workers each, running concurrently. <a href="./00_setup.html">Setup</a> has the memory figures and guidance on choosing <code>workers</code> for your own machine.</p>
-</section>
-<section id="does-the-pipeline-agree-with-chapter-06" class="level2">
-<h2 class="anchored" data-anchor-id="does-the-pipeline-agree-with-chapter-06">Does the pipeline agree with chapter 06?</h2>
+<p>On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took <strong>5 min 24 s</strong> of EWAS time at 8 workers, and 6 min 12 s including the BACON step that follows. The two stratified analyses in the next section took 11 min 37 s together at 4 workers each, running concurrently. <a href="./00_setup.html">Setup</a> has the memory figures and guidance on choosing <code>workers</code> for your own machine.</p>
+<section id="does-the-pipeline-agree-with-chapter-06" class="level3">
+<h3 class="anchored" data-anchor-id="does-the-pipeline-agree-with-chapter-06">Does the pipeline agree with chapter 06?</h3>
 <p>Chapter 06 fit this model with <code>limma::lmFit</code> + <code>eBayes</code>; the pipeline fits one <code>glm</code> per CpG. On this run:</p>
 <ul>
 <li><strong>Effect estimates are identical</strong> — the largest disagreement between the pipeline’s <code>estimate</code> and limma’s <code>logFC</code> across all 756,251 CpGs is 8.9 × 10⁻¹⁵, i.e. floating-point noise. Same design matrix, same least-squares solution.</li>
@@ -5712,8 +5960,9 @@ sex:</code></pre>
 </div>
 </div>
 </section>
-<section id="stratifying-by-sex-then-running-each-stratum" class="level2">
-<h2 class="anchored" data-anchor-id="stratifying-by-sex-then-running-each-stratum">6. Stratifying by sex, then running each stratum</h2>
+</section>
+<section id="sec-strata" class="level2">
+<h2 class="anchored" data-anchor-id="sec-strata">6. Stratifying by sex, then running each stratum</h2>
 <p>If you want to run a stratified EWAS, you first run <code>stratify.R</code> on your variable(s) that you’d like to stratify by. The script splits both the phenotype and methylation tables by the stratify variable(s) and drops that variable from the phenotype file before being passed on to the EWAS step.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/stratify.R <span class="at">--stratify</span> sex <span class="at">--out-dir</span> run_grady <span class="at">--threads</span> 4</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/F/{F_mvals.fst, F_pheno.fst}</span></span>
@@ -5731,8 +5980,8 @@ sex:</code></pre>
 <span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/M/M_PTSD_ewas_results.csv.gz  (n = 42)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The female stratum has 45 samples, the male 42. Each within-stratum model is now <code>methylation ~ PTSD + age + cell composition</code>.</p>
 </section>
-<section id="bacon-correcting-residual-inflation-and-bias" class="level2">
-<h2 class="anchored" data-anchor-id="bacon-correcting-residual-inflation-and-bias">7. BACON: correcting residual inflation and bias</h2>
+<section id="sec-bacon" class="level2">
+<h2 class="anchored" data-anchor-id="sec-bacon">7. BACON: correcting residual inflation and bias</h2>
 <p>A well-specified EWAS should have a genomic-inflation factor <code>λ ≈ 1</code> and a QQ plot on the diagonal until the extreme tail. In practice small-sample EWAS often show <em>deflation</em> (<code>λ &lt; 1</code>) or a slight bias in the test-statistic distribution that covariate adjustment does not fix. <strong>BACON</strong> <span class="citation" data-cites="vanIterson2017bacon">(<a href="#ref-vanIterson2017bacon" role="doc-biblioref">Iterson et al. 2017</a>)</span> fits a three-component Gaussian mixture to the test statistics by Gibbs sampling, estimates the bias (mean) and inflation (SD) of the <em>null</em> component, and rescales every statistic accordingly. The pipeline runs it on each analysis (or just the output EWAS results if no stratification is done):</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> S <span class="kw">in</span> F M<span class="kw">;</span> <span class="cf">do</span></span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Rscript</span> scripts/run_bacon.R <span class="dt">\</span></span>
@@ -5837,8 +6086,8 @@ Figure 4: Male stratum, BACON-corrected vs uncorrected.
 </div>
 </div>
 </section>
-<section id="meta-analyzing-the-strata-with-metal" class="level2">
-<h2 class="anchored" data-anchor-id="meta-analyzing-the-strata-with-metal">8. Meta-analyzing the strata with METAL</h2>
+<section id="sec-meta" class="level2">
+<h2 class="anchored" data-anchor-id="sec-meta">8. Meta-analyzing the strata with METAL</h2>
 <p>Now we combine the two sex-specific results with <strong>METAL</strong> <span class="citation" data-cites="willer2010metal">(<a href="#ref-willer2010metal" role="doc-biblioref">Willer et al. 2010</a>)</span>. Because the pipeline wrote its columns with the labels METAL expects, generating the command file is simple:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/metal_cmd.sh <span class="dt">\</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  run_grady/meta_analysis/PTSD_metal_commands.txt <span class="dt">\</span></span>
@@ -6026,8 +6275,8 @@ Figure 5: Meta-analysis QQ plot (F+M combined).
 </figure>
 </div>
 </section>
-<section id="reading-the-run-as-a-whole" class="level2">
-<h2 class="anchored" data-anchor-id="reading-the-run-as-a-whole">9. Reading the run as a whole</h2>
+<section id="sec-reading" class="level2">
+<h2 class="anchored" data-anchor-id="sec-reading">9. Reading the run as a whole</h2>
 <p>For the purposes of this tutorial, we ran the EWAS with and without stratification, so we show results for: an ‘overall’ EWAS model where sex is a covariate, female-only, male-only, and sex-combined by meta-analysis:</p>
 <div id="fig-qq-overlay" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -6082,8 +6331,8 @@ Figure 9: Female versus male effect size for the nine CpGs that clear Bonferron
 </ul>
 <p>The point of the chapter is that the pipeline executes correctly, reproduces chapter 06’s estimates to floating-point precision, and produces calibrated statistics (λ within 1.5% of 1 in every arm). It is not that PTSD associates with these nine CpGs in 87 people.</p>
 </section>
-<section id="scaling-up" class="level2">
-<h2 class="anchored" data-anchor-id="scaling-up">10. Scaling up</h2>
+<section id="sec-scaling" class="level2">
+<h2 class="anchored" data-anchor-id="sec-scaling">10. Scaling up</h2>
 <p>Nothing about the commands changes when you move from this demo to a real study — you change <code>config.yml</code>, not the code:</p>
 <ul>
 <li>Point <code>mvals</code>/<code>pheno</code> at the full filtered matrix and sample table.</li>
@@ -6586,7 +6835,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>(756,251 CpGs), the same matrix and the same model chapter 06 fit interactively.</span>
 <span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. The pipeline&#39;s structure</span></span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. The pipeline&#39;s structure {#sec-structure}</span></span>
 <span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a>The repository is a standard Snakemake project. The pieces that matter for a</span>
 <span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a>user:</span>
@@ -6613,7 +6862,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-52"><a href="#cb36-52" aria-hidden="true" tabindex="-1"></a>Because it is Snakemake, running <span class="in">`snakemake --cores N`</span> would build every target</span>
 <span id="cb36-53"><a href="#cb36-53" aria-hidden="true" tabindex="-1"></a>in that graph in dependency order and skip anything already up to date. </span>
 <span id="cb36-54"><a href="#cb36-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Configuration</span></span>
+<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Configuration {#sec-config}</span></span>
 <span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a>The shipped <span class="in">`config.yml`</span> is annotated for a BMI example; the fields we care about:</span>
 <span id="cb36-58"><a href="#cb36-58" aria-hidden="true" tabindex="-1"></a></span>
@@ -6646,7 +6895,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-85"><a href="#cb36-85" aria-hidden="true" tabindex="-1"></a>  jobs on an HPC scheduler; on a single machine you use <span class="in">`multicore`</span> or <span class="in">`multisession`</span>. We use</span>
 <span id="cb36-86"><a href="#cb36-86" aria-hidden="true" tabindex="-1"></a>  <span class="in">`multicore`</span> below so the demo runs locally.</span>
 <span id="cb36-87"><a href="#cb36-87" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-88"><a href="#cb36-88" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Preparing the inputs</span></span>
+<span id="cb36-88"><a href="#cb36-88" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Preparing the inputs {#sec-inputs}</span></span>
 <span id="cb36-89"><a href="#cb36-89" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-90"><a href="#cb36-90" aria-hidden="true" tabindex="-1"></a>The pipeline wants two files: a phenotype file and a methylation data file. </span>
 <span id="cb36-91"><a href="#cb36-91" aria-hidden="true" tabindex="-1"></a>We build them from the preprocessed objects the earlier notebooks produced. </span>
@@ -6684,7 +6933,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-125"><a href="#cb36-125" aria-hidden="true" tabindex="-1"></a>the matrix once, splits the CpGs into chunks of <span class="in">`chunk-size`</span>, and distributes chunks</span>
 <span id="cb36-126"><a href="#cb36-126" aria-hidden="true" tabindex="-1"></a>across workers, so memory stays flat as the probe count grows.</span>
 <span id="cb36-127"><a href="#cb36-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-128"><a href="#cb36-128" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Building METAL</span></span>
+<span id="cb36-128"><a href="#cb36-128" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Building METAL {#sec-metal-build}</span></span>
 <span id="cb36-129"><a href="#cb36-129" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-130"><a href="#cb36-130" aria-hidden="true" tabindex="-1"></a>METAL is distributed as C++ source. The pipeline vendors it under</span>
 <span id="cb36-131"><a href="#cb36-131" aria-hidden="true" tabindex="-1"></a><span class="in">`software/metal/`</span> and builds it once:</span>
@@ -6699,7 +6948,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-140"><a href="#cb36-140" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-141"><a href="#cb36-141" aria-hidden="true" tabindex="-1"></a>This installation/build is automatically handled by the Snakemake pipeline. </span>
 <span id="cb36-142"><a href="#cb36-142" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-143"><a href="#cb36-143" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Running a non-stratified EWAS</span></span>
+<span id="cb36-143"><a href="#cb36-143" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Running a non-stratified EWAS {#sec-run}</span></span>
 <span id="cb36-144"><a href="#cb36-144" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-145"><a href="#cb36-145" aria-hidden="true" tabindex="-1"></a>If you don&#39;t want to stratify your EWAS by any terms, the pipeline begins </span>
 <span id="cb36-146"><a href="#cb36-146" aria-hidden="true" tabindex="-1"></a>running the EWAS across all 87 complete-data samples with the <span class="in">`ewas.R`</span> script.</span>
@@ -6716,13 +6965,13 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-157"><a href="#cb36-157" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-158"><a href="#cb36-158" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a>On the machine that produced this tutorial — 32 cores, 126 GB RAM — that took</span>
-<span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a>**5 min 29 s** of EWAS time at 8 workers, and 6 min 16 s including the BACON step that</span>
-<span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a>follows. The two stratified analyses in the next section took 11 min 53 s together at</span>
+<span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a>**5 min 24 s** of EWAS time at 8 workers, and 6 min 12 s including the BACON step that</span>
+<span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a>follows. The two stratified analyses in the next section took 11 min 37 s together at</span>
 <span id="cb36-162"><a href="#cb36-162" aria-hidden="true" tabindex="-1"></a>4 workers each, running concurrently. <span class="co">[</span><span class="ot">Setup</span><span class="co">](00_setup.qmd)</span> has the memory figures and</span>
 <span id="cb36-163"><a href="#cb36-163" aria-hidden="true" tabindex="-1"></a>guidance on choosing <span class="in">`workers`</span> for your own machine.</span>
 <span id="cb36-164"><a href="#cb36-164" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-165"><a href="#cb36-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-166"><a href="#cb36-166" aria-hidden="true" tabindex="-1"></a><span class="fu">## Does the pipeline agree with chapter 06?</span></span>
+<span id="cb36-166"><a href="#cb36-166" aria-hidden="true" tabindex="-1"></a><span class="fu">### Does the pipeline agree with chapter 06?</span></span>
 <span id="cb36-167"><a href="#cb36-167" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-168"><a href="#cb36-168" aria-hidden="true" tabindex="-1"></a>Chapter 06 fit this model with <span class="in">`limma::lmFit`</span> + <span class="in">`eBayes`</span>; the</span>
 <span id="cb36-169"><a href="#cb36-169" aria-hidden="true" tabindex="-1"></a>pipeline fits one <span class="in">`glm`</span> per CpG. On this run:</span>
@@ -6753,7 +7002,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-196"><a href="#cb36-196" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(allres[, .(cpgid, estimate, std.error, statistic, p.value)], <span class="dv">5</span>))</span>
 <span id="cb36-197"><a href="#cb36-197" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Stratifying by sex, then running each stratum</span></span>
+<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Stratifying by sex, then running each stratum {#sec-strata}</span></span>
 <span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a>If you want to run a stratified EWAS, you first run <span class="in">`stratify.R`</span> on your variable(s) </span>
 <span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a>that you&#39;d like to stratify by. The script splits both the phenotype and methylation </span>
@@ -6780,7 +7029,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-223"><a href="#cb36-223" aria-hidden="true" tabindex="-1"></a>The female stratum has 45 samples, the male 42. Each within-stratum model is now</span>
 <span id="cb36-224"><a href="#cb36-224" aria-hidden="true" tabindex="-1"></a><span class="in">`methylation ~ PTSD + age + cell composition`</span>.</span>
 <span id="cb36-225"><a href="#cb36-225" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. BACON: correcting residual inflation and bias</span></span>
+<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. BACON: correcting residual inflation and bias {#sec-bacon}</span></span>
 <span id="cb36-227"><a href="#cb36-227" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-228"><a href="#cb36-228" aria-hidden="true" tabindex="-1"></a>A well-specified EWAS should have a genomic-inflation factor <span class="in">`λ ≈ 1`</span> and a QQ</span>
 <span id="cb36-229"><a href="#cb36-229" aria-hidden="true" tabindex="-1"></a>plot on the diagonal until the extreme tail. In practice small-sample EWAS often</span>
@@ -6856,7 +7105,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-301"><a href="#cb36-301" aria-hidden="true" tabindex="-1"></a>the residual bias that remains after adjustment.</span>
 <span id="cb36-302"><a href="#cb36-302" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb36-303"><a href="#cb36-303" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-304"><a href="#cb36-304" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Meta-analyzing the strata with METAL</span></span>
+<span id="cb36-304"><a href="#cb36-304" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Meta-analyzing the strata with METAL {#sec-meta}</span></span>
 <span id="cb36-305"><a href="#cb36-305" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-306"><a href="#cb36-306" aria-hidden="true" tabindex="-1"></a>Now we combine the two sex-specific results with **METAL** <span class="co">[</span><span class="ot">@willer2010metal</span><span class="co">]</span>.</span>
 <span id="cb36-307"><a href="#cb36-307" aria-hidden="true" tabindex="-1"></a>Because the pipeline wrote its columns with the labels METAL expects, generating the</span>
@@ -6963,7 +7212,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-412"><a href="#cb36-412" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-413"><a href="#cb36-413" aria-hidden="true" tabindex="-1"></a><span class="al">![Meta-analysis QQ plot (F+M combined).](data/07_meta_qq.png)</span>{#fig-meta-qq width=70%}</span>
 <span id="cb36-414"><a href="#cb36-414" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-415"><a href="#cb36-415" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Reading the run as a whole</span></span>
+<span id="cb36-415"><a href="#cb36-415" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Reading the run as a whole {#sec-reading}</span></span>
 <span id="cb36-416"><a href="#cb36-416" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-417"><a href="#cb36-417" aria-hidden="true" tabindex="-1"></a>For the purposes of this tutorial, we ran the EWAS with and without stratification, so </span>
 <span id="cb36-418"><a href="#cb36-418" aria-hidden="true" tabindex="-1"></a>we show results for: an &#39;overall&#39; EWAS model where sex is a covariate, female-only, male-only, </span>
@@ -7027,7 +7276,7 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb36-476"><a href="#cb36-476" aria-hidden="true" tabindex="-1"></a>1 in every arm). It is not that PTSD associates with these nine CpGs in 87</span>
 <span id="cb36-477"><a href="#cb36-477" aria-hidden="true" tabindex="-1"></a>people.</span>
 <span id="cb36-478"><a href="#cb36-478" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-479"><a href="#cb36-479" aria-hidden="true" tabindex="-1"></a><span class="fu">## 10. Scaling up</span></span>
+<span id="cb36-479"><a href="#cb36-479" aria-hidden="true" tabindex="-1"></a><span class="fu">## 10. Scaling up {#sec-scaling}</span></span>
 <span id="cb36-480"><a href="#cb36-480" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-481"><a href="#cb36-481" aria-hidden="true" tabindex="-1"></a>Nothing about the commands changes when you move from this demo to a real study —</span>
 <span id="cb36-482"><a href="#cb36-482" aria-hidden="true" tabindex="-1"></a>you change <span class="in">`config.yml`</span>, not the code:</span>

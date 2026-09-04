@@ -5421,12 +5421,59 @@ window.Quarto = {
           </a> 
       </div>
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./00_setup.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Setup: getting the data onto your machine</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./00_setup.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Setup: getting the data onto your machine</span></a>
+  <a href="./00_setup.html#sec-env" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Building the software environment</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-idat-files" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Raw methylation data files</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-sample-sheet-get" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">First, get the sample sheet</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-download" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Downloading the 96-sample subset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-read-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Reading the IDATs into R</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-cost" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Computational cost</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./00_setup.html#sec-full-series" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optional: the full 795-sample dataset</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./01_qc.html" class="sidebar-item-text sidebar-link">
@@ -5439,56 +5486,256 @@ window.Quarto = {
  <span class="menu-text">Normalization: making arrays comparable</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./03_probe_filtering.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Probe filtering</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./03_probe_filtering.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Probe filtering</span></a>
+  <a href="./03_probe_filtering.html#sec-why" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Why some probes are unreliable</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-categories" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. The categories, quantified</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-ancestry" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Ancestry matters</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-detp-sex" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Detection-p and sex chromosomes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-no-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Filtering a processed matrix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./04_cell_composition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Cell composition: Whole Blood</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./05_batch_effects.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Batch effects</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./05_batch_effects.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Batch effects</span></a>
+  <a href="./05_batch_effects.html#sec-sources" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Sources of technical variation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-pca" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. Detecting structure with PCA</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-confounding" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Is the batch factor confounded?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-strategy" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Choosing a correction strategy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-smoking" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Constructing a smoking proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-sva" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Surrogate Variable Analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_batch_effects.html#sec-no-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Correcting a processed matrix</span></a>
   </div>
 </li>
       </ul>
   </li>
+      </ul>
+  </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
  <span class="menu-text">Analysis</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./06_ewas.html" class="sidebar-item-text sidebar-link">
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./06_ewas.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">EWAS</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-model" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. Two ways to write the model</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./07_pipeline.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Running an EWAS with a Snakemake pipeline</span></a>
+  <a href="./06_ewas.html#sec-covariates" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. The covariate set</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-calibration" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Is the model well-calibrated?</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-bacon" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Correcting bias with BACON</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-results" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Results</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-residual" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. The M-value residual workflow</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-stratify" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. Stratify, then meta-analyze</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_ewas.html#sec-no-idats" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. When you don’t have IDATs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./07_pipeline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Running an EWAS with Snakemake</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-structure" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">1. The pipeline’s structure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-config" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">2. Configuration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-inputs" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">3. Preparing the inputs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-metal-build" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Building METAL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-run" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">5. Running a non-stratified EWAS</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-strata" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">6. Stratifying by sex</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-bacon" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">7. BACON</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-meta" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">8. Meta-analyzing with METAL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-reading" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">9. Reading the run as a whole</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_pipeline.html#sec-scaling" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">10. Scaling up</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a href="./08_annotation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functional annotation &amp; region-level analysis</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./08_annotation.html#part-1" class="sidebar-item-text sidebar-link">
@@ -5521,22 +5768,24 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-sources-of-technical-variation-on-an-array" id="toc-the-sources-of-technical-variation-on-an-array" class="nav-link active" data-scroll-target="#the-sources-of-technical-variation-on-an-array">1. The sources of technical variation on an array</a></li>
-  <li><a href="#detecting-structure-with-pca" id="toc-detecting-structure-with-pca" class="nav-link" data-scroll-target="#detecting-structure-with-pca">2. Detecting structure with PCA</a></li>
-  <li><a href="#the-crucial-step-is-the-batch-factor-confounded" id="toc-the-crucial-step-is-the-batch-factor-confounded" class="nav-link" data-scroll-target="#the-crucial-step-is-the-batch-factor-confounded">3. The crucial step: is the batch factor confounded?</a></li>
-  <li><a href="#choosing-a-correction-strategy" id="toc-choosing-a-correction-strategy" class="nav-link" data-scroll-target="#choosing-a-correction-strategy">4. Choosing a correction strategy</a>
+  <li><a href="#sec-sources" id="toc-sec-sources" class="nav-link active" data-scroll-target="#sec-sources">1. The sources of technical variation on an array</a></li>
+  <li><a href="#sec-pca" id="toc-sec-pca" class="nav-link" data-scroll-target="#sec-pca">2. Detecting structure with PCA</a></li>
+  <li><a href="#sec-confounding" id="toc-sec-confounding" class="nav-link" data-scroll-target="#sec-confounding">3. The crucial step: is the batch factor confounded?</a></li>
+  <li><a href="#sec-strategy" id="toc-sec-strategy" class="nav-link" data-scroll-target="#sec-strategy">4. Choosing a correction strategy</a>
   <ul class="collapse">
   <li><a href="#the-correction-methods-compared" id="toc-the-correction-methods-compared" class="nav-link" data-scroll-target="#the-correction-methods-compared">The correction methods, compared</a></li>
   <li><a href="#the-design-we-actually-use-combat-within-sex-strata" id="toc-the-design-we-actually-use-combat-within-sex-strata" class="nav-link" data-scroll-target="#the-design-we-actually-use-combat-within-sex-strata">The design we actually use: ComBat <em>within</em> sex strata</a></li>
   <li><a href="#array-position" id="toc-array-position" class="nav-link" data-scroll-target="#array-position">Array position</a></li>
   </ul></li>
-  <li><a href="#constructing-a-smoking-proxy-when-smoking-is-not-recorded" id="toc-constructing-a-smoking-proxy-when-smoking-is-not-recorded" class="nav-link" data-scroll-target="#constructing-a-smoking-proxy-when-smoking-is-not-recorded">5. Constructing a smoking proxy when smoking is not recorded</a></li>
+  <li><a href="#sec-smoking" id="toc-sec-smoking" class="nav-link" data-scroll-target="#sec-smoking">5. Constructing a smoking proxy when smoking is not recorded</a>
+  <ul class="collapse">
   <li><a href="#the-panel-probes-must-be-excluded-from-the-ewas" id="toc-the-panel-probes-must-be-excluded-from-the-ewas" class="nav-link" data-scroll-target="#the-panel-probes-must-be-excluded-from-the-ewas">The panel probes must be excluded from the EWAS</a></li>
-  <li><a href="#surrogate-variable-analysis-done-correctly" id="toc-surrogate-variable-analysis-done-correctly" class="nav-link" data-scroll-target="#surrogate-variable-analysis-done-correctly">6. Surrogate Variable Analysis, done correctly</a>
+  </ul></li>
+  <li><a href="#sec-sva" id="toc-sec-sva" class="nav-link" data-scroll-target="#sec-sva">6. Surrogate Variable Analysis, done correctly</a>
   <ul class="collapse">
   <li><a href="#how-many-surrogate-variables-choosing-k" id="toc-how-many-surrogate-variables-choosing-k" class="nav-link" data-scroll-target="#how-many-surrogate-variables-choosing-k">How many surrogate variables? (choosing <em>k</em>)</a></li>
   </ul></li>
-  <li><a href="#when-you-dont-have-idats-batch-correction-from-a-processed-matrix" id="toc-when-you-dont-have-idats-batch-correction-from-a-processed-matrix" class="nav-link" data-scroll-target="#when-you-dont-have-idats-batch-correction-from-a-processed-matrix">7. When you don’t have IDATs: batch correction from a processed matrix</a></li>
+  <li><a href="#sec-no-idats" id="toc-sec-no-idats" class="nav-link" data-scroll-target="#sec-no-idats">7. When you don’t have IDATs: batch correction from a processed matrix</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
@@ -5589,8 +5838,8 @@ window.Quarto = {
 <p>The <strong>Smoking proxy</strong> is also run on 87 samples, but for the reason of capturing the variance of the sample set that the EWAS will actually be performed on.</p>
 </div>
 </div>
-<section id="the-sources-of-technical-variation-on-an-array" class="level2">
-<h2 class="anchored" data-anchor-id="the-sources-of-technical-variation-on-an-array">1. The sources of technical variation on an array</h2>
+<section id="sec-sources" class="level2">
+<h2 class="anchored" data-anchor-id="sec-sources">1. The sources of technical variation on an array</h2>
 <p>The usual suspects, in rough order of how often they matter:</p>
 <ul>
 <li><strong>Chip / BeadChip (Sentrix ID).</strong> Eight samples share one EPIC chip. Samples on the same chip are processed together and tend to be more similar to each other than to samples on other chips — the strongest and most common array batch factor.</li>
@@ -5601,8 +5850,8 @@ window.Quarto = {
 </ul>
 <p>These are recorded in the IDAT filenames and sample sheet (see <a href="./00_setup.html">Setup</a>). Here we have chip (<code>slide</code>) and position (<code>array_pos</code>); the Grady deposit doesn’t give explicit plate, well, or scan date.</p>
 </section>
-<section id="detecting-structure-with-pca" class="level2">
-<h2 class="anchored" data-anchor-id="detecting-structure-with-pca">2. Detecting structure with PCA</h2>
+<section id="sec-pca" class="level2">
+<h2 class="anchored" data-anchor-id="sec-pca">2. Detecting structure with PCA</h2>
 <p>Principal component analysis is a commonly used method to assess for technical variation. Each principal component is an axis of coordinated methylation variation across samples; we then ask <strong>what each PC is associated with</strong> by regressing it on every candidate variable — technical and biological alike — and reading off the <span class="math inline">\(R^2\)</span>. A PC that has a high <span class="math inline">\(R^2\)</span> with a technical factor is a batch effect.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -5631,8 +5880,8 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="the-crucial-step-is-the-batch-factor-confounded" class="level2">
-<h2 class="anchored" data-anchor-id="the-crucial-step-is-the-batch-factor-confounded">3. The crucial step: is the batch factor confounded?</h2>
+<section id="sec-confounding" class="level2">
+<h2 class="anchored" data-anchor-id="sec-confounding">3. The crucial step: is the batch factor confounded?</h2>
 <p>Detecting a batch effect is not enough. Before choosing a correction you must ask whether the technical factor is <strong>confounded</strong> with something you care about, because that determines which corrections are even <em>possible</em>. The diagnostic is a simple cross-tabulation (Cramér’s V for two categorical variables):</p>
 <div class="cell">
 <details open class="code-fold">
@@ -5700,8 +5949,8 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="choosing-a-correction-strategy" class="level2">
-<h2 class="anchored" data-anchor-id="choosing-a-correction-strategy">4. Choosing a correction strategy</h2>
+<section id="sec-strategy" class="level2">
+<h2 class="anchored" data-anchor-id="sec-strategy">4. Choosing a correction strategy</h2>
 <section id="the-correction-methods-compared" class="level3">
 <h3 class="anchored" data-anchor-id="the-correction-methods-compared">The correction methods, compared</h3>
 <p><strong>ComBat</strong> <span class="citation" data-cites="johnson2007combat">(<a href="#ref-johnson2007combat" role="doc-biblioref">Johnson et al. 2007</a>)</span> is the most widely used named-batch corrector. For a batch factor you <em>recorded</em> (plate, chip, scan date), it fits a location-and-scale model per batch and uses empirical Bayes to shrink each batch’s mean and variance toward the global estimate — borrowing strength across probes so small batches are corrected stably. You protect the biology by passing a model matrix of covariates to keep (<code>mod</code>), and ComBat removes only the batch-associated shift:</p>
@@ -5772,8 +6021,8 @@ chips contributing a single sample to a stratum:</code></pre>
 <p>Chip position (<code>array_pos</code>) is the second measured technical factor, and it is <em>not</em> confounded with anything biological here. While in theory we could use ComBat to adjust for this as well in the chip-adjusted-recombined dataset, in practice this is not the best choice. The array_pos only has 8 levels, so it’s cost in degrees of freedom (7) in modeling array_pos as a covariate is acceptable for the sample size we are testing in.</p>
 </section>
 </section>
-<section id="constructing-a-smoking-proxy-when-smoking-is-not-recorded" class="level2">
-<h2 class="anchored" data-anchor-id="constructing-a-smoking-proxy-when-smoking-is-not-recorded">5. Constructing a smoking proxy when smoking is not recorded</h2>
+<section id="sec-smoking" class="level2">
+<h2 class="anchored" data-anchor-id="sec-smoking">5. Constructing a smoking proxy when smoking is not recorded</h2>
 <p>Smoking is the single largest environmental driver of the blood methylome <span class="citation" data-cites="joehanes2016smoking zeilinger2013smoking">(<a href="#ref-joehanes2016smoking" role="doc-biblioref"><span class="nocase">Joehanes et al.</span> 2016</a>; <a href="#ref-zeilinger2013smoking" role="doc-biblioref">Zeilinger et al. 2013</a>)</span>, and it is comorbid with PTSD. But, GSE132203’s public phenotype table has no smoking variable — a very common situation with GEO datasets. Fortunately, this is something we can address with the methylation data itself.</p>
 <p>We can take CpGs that the literature has established as smoking-associated, and summarize their methylation into a single continuous score. We use a 20-CpG panel of loci replicated across the large smoking EWAS <span class="citation" data-cites="joehanes2016smoking zeilinger2013smoking shenker2013epic elliott2014smoking">(<a href="#ref-joehanes2016smoking" role="doc-biblioref"><span class="nocase">Joehanes et al.</span> 2016</a>; <a href="#ref-zeilinger2013smoking" role="doc-biblioref">Zeilinger et al. 2013</a>; <a href="#ref-shenker2013epic" role="doc-biblioref">Shenker et al. 2013</a>; <a href="#ref-elliott2014smoking" role="doc-biblioref">Elliott et al. 2014</a>)</span>, anchored on <code>cg05575921</code> in <em>AHRR</em> — the most reproducible smoking-associated CpG in blood:</p>
 <div class="cell">
@@ -5795,9 +6044,8 @@ cg14391737, cg17739917</code></pre>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="do">## to make the score increase with exposure rather than decrease.</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">cor</span>(smoke, pan[<span class="st">&quot;cg05575921&quot;</span>, ]) <span class="sc">&gt;</span> <span class="dv">0</span>) smoke <span class="ot">&lt;-</span> <span class="sc">-</span>smoke</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>PC1 captures 53% of the variance across the panel, consistent with the panel behaving as one coherent axis rather than 20 independent probes.</p>
-</section>
-<section id="the-panel-probes-must-be-excluded-from-the-ewas" class="level2">
-<h2 class="anchored" data-anchor-id="the-panel-probes-must-be-excluded-from-the-ewas">The panel probes must be excluded from the EWAS</h2>
+<section id="the-panel-probes-must-be-excluded-from-the-ewas" class="level3">
+<h3 class="anchored" data-anchor-id="the-panel-probes-must-be-excluded-from-the-ewas">The panel probes must be excluded from the EWAS</h3>
 <p>A proxy built from methylation is a linear combination of methylation. If those same 20 CpGs stay in the tested probe set, you are regressing each of them partly on itself — guaranteed significance that means nothing. We therefore drop all 20 panel probes before testing. Together with two probes whose M-values are non-finite in this 87-sample subset (<code>cg17759086</code>, <code>cg01801182</code> — β pinned at 0 or 1, so log₂(β/(1−β)) is ±∞), that is why the EWAS reports <strong>756,251</strong> CpGs rather than the 756,273 that survived filtering in <a href="./03_probe_filtering.html">chapter 03</a>.</p>
 <p>The same logic applies to any methylation-derived covariate — epigenetic age, cell proportions estimated from the same array, an EpiSmokEr score <span class="citation" data-cites="bollepalli2019epismoker">(<a href="#ref-bollepalli2019epismoker" role="doc-biblioref">Bollepalli et al. 2019</a>)</span>. Know which probes went into it, and take them out.</p>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -5814,8 +6062,9 @@ cg14391737, cg17739917</code></pre>
 </div>
 </div>
 </section>
-<section id="surrogate-variable-analysis-done-correctly" class="level2">
-<h2 class="anchored" data-anchor-id="surrogate-variable-analysis-done-correctly">6. Surrogate Variable Analysis, done correctly</h2>
+</section>
+<section id="sec-sva" class="level2">
+<h2 class="anchored" data-anchor-id="sec-sva">6. Surrogate Variable Analysis, done correctly</h2>
 <p>After doing ComBat for chip, adding array_pos as a covariate, and creating the smoking proxy, we then use SVA to create surrogate variables for any additional unknown/unmeasured variation. For example, we know that plate and well can cause technical variation, but these were not reported in the Grady Trauma Project phenotypes, so we can use SVA to hopefully capture any remaining technical variation from these types of batch effects if they are present. SVA is run on M-values with a <strong>full model</strong> (everything you want to keep) and a <strong>null model</strong> (everything except the exposure). We ‘protect’ PTSD, sex, age, the smoking proxy, array position, and the six estimated cell-type proportions:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sva)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>mod  <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> ptsd <span class="sc">+</span> sex <span class="sc">+</span> age <span class="sc">+</span> smoke <span class="sc">+</span> pos <span class="sc">+</span> Neu <span class="sc">+</span> NK <span class="sc">+</span> CD4T <span class="sc">+</span> CD8T <span class="sc">+</span> Bcell <span class="sc">+</span> Mono, <span class="at">data =</span> md)</span>
@@ -6045,8 +6294,8 @@ cg14391737, cg17739917</code></pre>
 </div>
 </section>
 </section>
-<section id="when-you-dont-have-idats-batch-correction-from-a-processed-matrix" class="level2">
-<h2 class="anchored" data-anchor-id="when-you-dont-have-idats-batch-correction-from-a-processed-matrix">7. When you don’t have IDATs: batch correction from a processed matrix</h2>
+<section id="sec-no-idats" class="level2">
+<h2 class="anchored" data-anchor-id="sec-no-idats">7. When you don’t have IDATs: batch correction from a processed matrix</h2>
 <p>Batch diagnosis and latent-variable correction work on a <strong>β/M-matrix</strong>, so the non-IDAT path is largely the same — with two caveats:</p>
 <ol type="1">
 <li><p><strong>You may not have the batch annotation.</strong> Chip and position come from the IDAT filenames / Sentrix barcodes. If the submitter deposited only a processed matrix, check the sample metadata (<code>pData</code>) for <code>Sentrix_ID</code>, <code>Sentrix_Position</code>, <code>plate</code>, <code>Slide</code>, or a scan-date column — many deposit these even without IDATs. If they are absent, you <strong>cannot reconstruct</strong> the named batches, so a surrogate variable method is more appropriate.</p></li>
@@ -6598,7 +6847,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a>The **Smoking proxy** is also run on 87 samples, but for the reason of capturing the variance of the sample set that the EWAS will actually be performed on.</span>
 <span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. The sources of technical variation on an array</span></span>
+<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. The sources of technical variation on an array {#sec-sources}</span></span>
 <span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>The usual suspects, in rough order of how often they matter:</span>
 <span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a></span>
@@ -6627,7 +6876,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-77"><a href="#cb17-77" aria-hidden="true" tabindex="-1"></a>the Grady deposit doesn&#39;t give explicit plate, well, or scan date.</span>
 <span id="cb17-78"><a href="#cb17-78" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-79"><a href="#cb17-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-80"><a href="#cb17-80" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Detecting structure with PCA</span></span>
+<span id="cb17-80"><a href="#cb17-80" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Detecting structure with PCA {#sec-pca}</span></span>
 <span id="cb17-81"><a href="#cb17-81" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-82"><a href="#cb17-82" aria-hidden="true" tabindex="-1"></a>Principal component analysis is a commonly used method to assess for technical variation.</span>
 <span id="cb17-83"><a href="#cb17-83" aria-hidden="true" tabindex="-1"></a>Each principal component is an axis of coordinated methylation variation</span>
@@ -6668,7 +6917,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-122"><a href="#cb17-122" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">data_path</span>(<span class="st">&quot;05_pc_scatter_neu.png&quot;</span>))</span>
 <span id="cb17-123"><a href="#cb17-123" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb17-124"><a href="#cb17-124" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-125"><a href="#cb17-125" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. The crucial step: is the batch factor confounded?</span></span>
+<span id="cb17-125"><a href="#cb17-125" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. The crucial step: is the batch factor confounded? {#sec-confounding}</span></span>
 <span id="cb17-126"><a href="#cb17-126" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-127"><a href="#cb17-127" aria-hidden="true" tabindex="-1"></a>Detecting a batch effect is not enough. Before choosing a correction you must ask</span>
 <span id="cb17-128"><a href="#cb17-128" aria-hidden="true" tabindex="-1"></a>whether the technical factor is **confounded** with something you care about,</span>
@@ -6712,7 +6961,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-168"><a href="#cb17-168" aria-hidden="true" tabindex="-1"></a>sex coefficient and the chip coefficients become unidentifiable.<span class="co">[</span><span class="ot">@leek2010sva_confound</span><span class="co">]</span>.</span>
 <span id="cb17-169"><a href="#cb17-169" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb17-170"><a href="#cb17-170" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-171"><a href="#cb17-171" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Choosing a correction strategy</span></span>
+<span id="cb17-171"><a href="#cb17-171" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Choosing a correction strategy {#sec-strategy}</span></span>
 <span id="cb17-172"><a href="#cb17-172" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-173"><a href="#cb17-173" aria-hidden="true" tabindex="-1"></a><span class="fu">### The correction methods, compared</span></span>
 <span id="cb17-174"><a href="#cb17-174" aria-hidden="true" tabindex="-1"></a></span>
@@ -6861,7 +7110,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-317"><a href="#cb17-317" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-318"><a href="#cb17-318" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-319"><a href="#cb17-319" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-320"><a href="#cb17-320" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Constructing a smoking proxy when smoking is not recorded</span></span>
+<span id="cb17-320"><a href="#cb17-320" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Constructing a smoking proxy when smoking is not recorded {#sec-smoking}</span></span>
 <span id="cb17-321"><a href="#cb17-321" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-322"><a href="#cb17-322" aria-hidden="true" tabindex="-1"></a>Smoking is the single largest environmental driver of the blood methylome</span>
 <span id="cb17-323"><a href="#cb17-323" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@joehanes2016smoking; @zeilinger2013smoking</span><span class="co">]</span>, and it is comorbid with PTSD. But, GSE132203&#39;s public phenotype table has no</span>
@@ -6897,7 +7146,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-355"><a href="#cb17-355" aria-hidden="true" tabindex="-1"></a>independent probes.</span>
 <span id="cb17-356"><a href="#cb17-356" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-357"><a href="#cb17-357" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-358"><a href="#cb17-358" aria-hidden="true" tabindex="-1"></a><span class="fu">## The panel probes must be excluded from the EWAS</span></span>
+<span id="cb17-358"><a href="#cb17-358" aria-hidden="true" tabindex="-1"></a><span class="fu">### The panel probes must be excluded from the EWAS</span></span>
 <span id="cb17-359"><a href="#cb17-359" aria-hidden="true" tabindex="-1"></a>A proxy built from methylation is a linear combination of methylation. If those same</span>
 <span id="cb17-360"><a href="#cb17-360" aria-hidden="true" tabindex="-1"></a>20 CpGs stay in the tested probe set, you are regressing each of them partly on</span>
 <span id="cb17-361"><a href="#cb17-361" aria-hidden="true" tabindex="-1"></a>itself — guaranteed significance that means nothing. We therefore drop all</span>
@@ -6925,7 +7174,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-383"><a href="#cb17-383" aria-hidden="true" tabindex="-1"></a>doesn&#39;t.</span>
 <span id="cb17-384"><a href="#cb17-384" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb17-385"><a href="#cb17-385" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-386"><a href="#cb17-386" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Surrogate Variable Analysis, done correctly</span></span>
+<span id="cb17-386"><a href="#cb17-386" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Surrogate Variable Analysis, done correctly {#sec-sva}</span></span>
 <span id="cb17-387"><a href="#cb17-387" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-388"><a href="#cb17-388" aria-hidden="true" tabindex="-1"></a>After doing ComBat for chip, adding array_pos as a covariate, and creating the smoking proxy,</span>
 <span id="cb17-389"><a href="#cb17-389" aria-hidden="true" tabindex="-1"></a>we then use SVA to create surrogate variables for any additional unknown/unmeasured variation.</span>
@@ -7039,7 +7288,7 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb17-505"><a href="#cb17-505" aria-hidden="true" tabindex="-1"></a>that as a warning that the exposure and a batch are partially confounded.</span>
 <span id="cb17-506"><a href="#cb17-506" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb17-507"><a href="#cb17-507" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-508"><a href="#cb17-508" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. When you don&#39;t have IDATs: batch correction from a processed matrix</span></span>
+<span id="cb17-508"><a href="#cb17-508" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. When you don&#39;t have IDATs: batch correction from a processed matrix {#sec-no-idats}</span></span>
 <span id="cb17-509"><a href="#cb17-509" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-510"><a href="#cb17-510" aria-hidden="true" tabindex="-1"></a>Batch diagnosis and latent-variable correction work on a **β/M-matrix**, so the</span>
 <span id="cb17-511"><a href="#cb17-511" aria-hidden="true" tabindex="-1"></a>non-IDAT path is largely the same — with two caveats:</span>

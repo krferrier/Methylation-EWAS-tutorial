@@ -13,7 +13,7 @@ files onto your own machine, and sets out what running everything costs in time,
 memory, and disk. It assumes the array background from
 [Background](00a_background.qmd).
 
-## Building the software environment
+## Building the software environment {#sec-env}
 
 Everything except the pipeline chapter needs **only R**. If you are new to computing,
 start there and ignore conda entirely — you will still be able to work through
@@ -160,7 +160,7 @@ The exact software state that produced every number in this tutorial — full
 version-compatibility problems you may hit — is recorded in
 [`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
 
-## Raw Methylation data files
+## Raw Methylation data files {#sec-idat-files}
 
 Each sample on an Illumina array is stored as **two IDAT files** — one per color
 channel:
@@ -189,7 +189,7 @@ lives under `GSM3853nnn`. The download scripts below construct this for you.
 The 96-sample subset is **192 files, 1.42 GB** — two IDATs per sample. Do not download
 these by hand from the GEO website; use one of the three options below.
 
-## First, get the sample sheet
+## First, get the sample sheet {#sec-sample-sheet-get}
 
 All three download options below read `data/sample_sheet.csv`, so you need that file
 before you can fetch anything. It is a 96-row table, one row per array, that pairs each
@@ -230,7 +230,7 @@ not an absolute one. That is why the download options below all write into
 adjust that path rather than editing the sample sheet.
 :::
 
-## Downloading the 96-sample subset
+## Downloading the 96-sample subset {#sec-download}
 
 ::: {.callout-tip}
 ## Which option should I pick?
@@ -358,7 +358,7 @@ foreach ($row in $ss) {
 `minfi` reads gzipped IDATs (`.idat.gz`) directly. Leave them compressed.
 :::
 
-## Reading the IDATs into R
+## Reading the IDATs into R {#sec-read-idats}
 
 The sample sheet's `Basename` column holds the path stem of each array — everything
 except the `_Grn.idat.gz` / `_Red.idat.gz` suffix. `read.metharray()` takes those stems
@@ -417,7 +417,7 @@ table(sizes)
 ```
 :::
 
-## Computational cost: time, memory, and disk
+## Computational cost: time, memory, and disk {#sec-cost}
 
 Everything below was measured on the machine that produced this tutorial — 32 cores,
 126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.
@@ -441,8 +441,8 @@ process**, which is what has to fit in RAM.
 | [05 Batch effects](05_batch_effects.qmd) | Stratified `ComBat` on slide                 | 57 s | 4.1 GB |
 | [05 Batch effects](05_batch_effects.qmd) | `num.sv` + `sva` at *k* = 6                  | 5 min 1 s | 8.9 GB |
 | [06 EWAS](06_ewas.qmd) | EWAS using `lmFit` + `eBayes` + BACON        | 18 s | 4.1 GB |
-| [Chapter 07](07_pipeline.qmd) | Non-stratified EWAS on 87 samples            | 6 min 16 s | 2.3 GB |
-| [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (45 and 42) run simultaneously | 11 min 53 s | 6.3 GB |
+| [Chapter 07](07_pipeline.qmd) | Non-stratified EWAS on 87 samples, 8 workers | 6 min 12 s | **12.0 GB** |
+| [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (45 and 42) run simultaneously, 4 workers each | 11 min 37 s | 6.3 GB |
 | [08 Annotation](08_annotation.qmd) | GENCODE v41 join over 756,251 CpGs           | 11 s | 1.3 GB |
 
 On average, the whole tutorial should take you about 30 minutes of compute. The 
@@ -453,17 +453,19 @@ steps in these chapters.
 
 For the Chapter 07 EWAS run using a snakemake pipeline, the first row is the whole cohort in one
 EWAS. The second splits it into two — here by sex, giving 45 and 42 samples — and runs
-those two in parallel, which is why the memory roughly triples even though each model
-is smaller. If you're limited by RAM, you can run each part sequentially instead of in 
-parallel so the max memory needed will be less than that of the single EWAS estimate. The amount of 
-memory required for the EWAS using snakemake can be further reduced by reducing the number of workers. 
-The trade-off for reducing the number of workers is that the wall time will increase. 
+those two in parallel. Note that the split run needs *less* memory, not more: peak memory
+is driven by **samples × workers**, and each stratum is running half the samples with half
+the workers. The amount of memory required for the EWAS using snakemake can be reduced by
+reducing the number of workers. The trade-off for reducing the number of workers is that
+the wall time will increase. 
 
 ::: {.callout-warning}
 ## Time versus Memory tradeoffs
 You may have noticed that the EWAS method shown in Chapter 6 runs significantly faster than the EWAS performed using 
-snakemake in Chapter 07, but requires more memory than the EWAS run on the same sample size (the above paragraph explains 
-the higher memory requirements for a stratified analysis). 87 samples is quite small, and a full-scale EWAS will have 
+snakemake in Chapter 07, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 87 
+samples at 8 workers. Those two numbers are not fixed in the same way, though. The pipeline's memory is a function of how 
+many workers you give it, so it is a dial you control; the Chapter 06 approach holds the whole matrix in one process, so 
+its memory is set by the data and grows with the cohort. 87 samples is quite small, and a full-scale EWAS will have 
 several hundreds to thousands of samples. The faster method shown in Chapter 06 will very quickly require more memory resources 
 than you have available as the number of samples you try to run at once increase. The Snakemake pipleine in Chapter 07 takes a bit longer,
 especially for smaller datasets, because part of what it's doing under the hood is breaking the big dataset into smaller, more 
@@ -526,7 +528,7 @@ You can check free disk space using a graphical user interface (GUI) by opening 
   - Open your default file manager (such as Nautilus in GNOME or Dolphin in KDE).
   - Click on Other Locations or look at the left sidebar under Devices or Hard Disk to see available storage.
 
-## Optional: the full 795-sample dataset
+## Optional: the full 795-sample dataset {#sec-full-series}
 
 If you want to try a full-scale model after finishing the tutorial, GEO also serves the
 entire series as one tar archive. It is **11.9 GB** compressed and expands to 1,590 IDAT
@@ -658,7 +660,7 @@ Note that `Basename` above points at `idats_full/`, matching the download comman
 this section. If you put the full series somewhere else, change that one line rather
 than editing the sheet afterwards.
 
-## The sample sheet
+## The sample sheet {#sec-sample-sheet}
 
 `minfi` reads IDATs given a **Basename** (the path up to `_Grn/_Red`). We pair
 each Basename with the phenotype row for that GSM. Here is the first 8 rows of the sample sheet:
@@ -674,7 +676,7 @@ knitr::kable(head(ss[, c("sample_id","slide","array_pos","gender","age",
              caption = "First 8 rows of the sample sheet")
 ```
 
-## What the next notebook does
+## What the next notebook does {#sec-next}
 
 With the sample sheet provided, the [QC notebook](01_qc.qmd) reads all 96 IDAT
 pairs into a single `RGChannelSet` and runs the quality checks that decide which

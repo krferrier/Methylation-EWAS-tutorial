@@ -44,7 +44,7 @@ therefore these are excluded.
 The **Smoking proxy** is also run on 87 samples, but for the reason of capturing the variance of the sample set that the EWAS will actually be performed on.
 :::
 
-## 1. The sources of technical variation on an array
+## 1. The sources of technical variation on an array {#sec-sources}
 
 The usual suspects, in rough order of how often they matter:
 
@@ -73,7 +73,7 @@ These are recorded in the IDAT filenames and sample sheet
 the Grady deposit doesn't give explicit plate, well, or scan date.
 
 
-## 2. Detecting structure with PCA
+## 2. Detecting structure with PCA {#sec-pca}
 
 Principal component analysis is a commonly used method to assess for technical variation.
 Each principal component is an axis of coordinated methylation variation
@@ -114,7 +114,7 @@ Key take-aways from the heatmap:
 knitr::include_graphics(data_path("05_pc_scatter_neu.png"))
 ```
 
-## 3. The crucial step: is the batch factor confounded?
+## 3. The crucial step: is the batch factor confounded? {#sec-confounding}
 
 Detecting a batch effect is not enough. Before choosing a correction you must ask
 whether the technical factor is **confounded** with something you care about,
@@ -158,7 +158,7 @@ and `sex` in the design as fixed effects, the model cannot separate them and the
 sex coefficient and the chip coefficients become unidentifiable.[@leek2010sva_confound].
 :::
 
-## 4. Choosing a correction strategy
+## 4. Choosing a correction strategy {#sec-strategy}
 
 ### The correction methods, compared
 
@@ -307,7 +307,7 @@ so it's cost in degrees of freedom (7) in modeling array_pos as a covariate is a
 
 
 
-## 5. Constructing a smoking proxy when smoking is not recorded
+## 5. Constructing a smoking proxy when smoking is not recorded {#sec-smoking}
 
 Smoking is the single largest environmental driver of the blood methylome
 [@joehanes2016smoking; @zeilinger2013smoking], and it is comorbid with PTSD. But, GSE132203's public phenotype table has no
@@ -343,7 +343,7 @@ panel, consistent with the panel behaving as one coherent axis rather than 20
 independent probes.
 
 
-## The panel probes must be excluded from the EWAS
+### The panel probes must be excluded from the EWAS
 A proxy built from methylation is a linear combination of methylation. If those same
 20 CpGs stay in the tested probe set, you are regressing each of them partly on
 itself — guaranteed significance that means nothing. We therefore drop all
@@ -371,7 +371,7 @@ independent. If real smoking data exists (and is reliable), use it; a proxy is w
 doesn't.
 :::
 
-## 6. Surrogate Variable Analysis, done correctly
+## 6. Surrogate Variable Analysis, done correctly {#sec-sva}
 
 After doing ComBat for chip, adding array_pos as a covariate, and creating the smoking proxy,
 we then use SVA to create surrogate variables for any additional unknown/unmeasured variation.
@@ -485,7 +485,7 @@ associations (as above) and, if any SV correlates strongly with the phenotype, t
 that as a warning that the exposure and a batch are partially confounded.
 :::
 
-## 7. When you don't have IDATs: batch correction from a processed matrix
+## 7. When you don't have IDATs: batch correction from a processed matrix {#sec-no-idats}
 
 Batch diagnosis and latent-variable correction work on a **β/M-matrix**, so the
 non-IDAT path is largely the same — with two caveats:
