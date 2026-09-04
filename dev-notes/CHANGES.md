@@ -1961,8 +1961,13 @@ worst were hidden in plain sight:
 | GSE172368 | 4 fields | 38 |
 | GSE128821 | 4 fields | 25 |
 
-The column is now built from `Phenotype_fields`. Kept names rise from 145 to
-**188** (of 264 deposited), across 56 of 60 studies.
+The column is now built from `Phenotype_fields`. Across the 60 displayed
+studies the number of phenotype names shown rises from **89 to 135** (of 181
+deposited in those rows), and the studies showing at least one phenotype rise
+from **44 to 46** of 60.
+
+(The 264-vs-145 comparison above counts fields across all 70 GEO Series in the
+source file, before the collapse to 60 studies — not the same denominator.)
 
 ### Filter corrections found while checking the full list
 
@@ -2013,6 +2018,11 @@ value-laden column that caused this defect.
 
 ### Numbers moved
 
-Phenotype names shown: 145 -> 188. Studies with at least one phenotype: 43 -> 56.
-No study was added or removed; the catalog still covers 70 GEO Series as 60
-studies.
+Across the 60 displayed studies: phenotype names shown 89 -> 135; studies with at
+least one phenotype 44 -> 46; studies showing none 16 -> 14. No study was added or
+removed; the catalog still covers 70 GEO Series as 60 studies.
+
+An earlier draft of this section quoted "145 -> 188" and "43 -> 56". Those were
+counts over the **70-row source file**, carried across from a prototype and
+misattributed to the 60-row table — which the same section's own statement that
+14 studies deposit no phenotype already contradicted. Corrected above.
