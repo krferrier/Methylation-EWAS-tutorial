@@ -1448,3 +1448,53 @@ preprocessing chapters in a current Bioconductor environment:
 - **`preprocessCore` rebuilt with `--disable-threading`.** Its threaded quantile
   normalization fails under the build sandbox with `pthread_create() is 22`. A sandbox
   limitation, not a tutorial defect.
+
+## 27. Chapter 08's three Parts made navigable from the sidebar
+
+The chapter is long enough that reaching a specific Part meant scrolling, and
+`## Part 3` was at the wrong heading level to be reachable at all.
+
+### The heading levels were asymmetric
+
+Parts 1 and 2 were `h2`; **Part 3 was `h1`**, colliding with the document
+title's level. The consequence was structural rather than cosmetic: Part 3's
+five tool subsections were `h2`, i.e. the *same* level as Parts 1 and 2, so the
+TOC listed them as peers of the Parts instead of children of Part 3, and Part 3
+itself never appeared in the heading-anchor set at all.
+
+All three Parts are now `h2` with explicit, stable anchors — `{#part-1}`,
+`{#part-2}`, `{#part-3}` — and Part 3's five subsections were demoted to `h3`,
+matching how Parts 1 and 2 already nested:
+
+- `missMethyl gometh`
+- `methylGSA`
+- KnowYourCG (KYCG)
+- EWAS Atlas / EWAS Open Platform Toolkit
+- `eFORGE`
+
+The four chapter-wide closers after Part 3 (the tool map, the interpretation
+checklist, Summary, References) were deliberately **left at `h2`**: they are
+peers of the Parts, not children of Part 3.
+
+Explicit anchors were used rather than Quarto's auto-generated slugs because
+the auto-slugs derive from the full heading text — `#part-3-pathway-trait-and-functional-enrichment` —
+which would break if the heading were ever reworded.
+
+### Sidebar
+
+`_quarto.yml` turns the chapter's single sidebar entry into a collapsible
+section whose parent still links to the chapter and whose three children jump
+to the Parts. Verified after rendering: all three links appear on **all 12
+pages** (the sidebar is site-wide), every `href` fragment resolves to a real
+`id` in the rendered HTML, and `toc-depth: 3` now surfaces Part 3's five
+subsections in the page TOC.
+
+### Cross-references
+
+The chapter referred to "Part 1" and "Part 3" in prose six times without
+linking. Now that stable anchors exist, all six are live links.
+
+### Numbers moved
+
+None. The change is 8 heading lines plus 6 prose links; a line-level diff
+confirms **zero** non-heading, non-link content changed.

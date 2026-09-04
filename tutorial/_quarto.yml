@@ -38,7 +38,15 @@ website:
         contents:
           - 06_ewas.qmd
           - 07_pipeline.qmd
-          - 08_annotation.qmd
+          - section: "Functional annotation & region-level analysis"
+            href: 08_annotation.qmd
+            contents:
+              - text: "Part 1 — CpG-level annotation"
+                href: 08_annotation.qmd#part-1
+              - text: "Part 2 — Region-level analysis (DMRs)"
+                href: 08_annotation.qmd#part-2
+              - text: "Part 3 — Pathway, trait & enrichment"
+                href: 08_annotation.qmd#part-3
 
 format:
   html:

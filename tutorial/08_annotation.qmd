@@ -62,7 +62,7 @@ annotation join and the same `comb-p` region detection we walk through
 manually. We reproduce the steps by hand so the logic is clearly layed out.
 :::
 
-## Part 1 — CpG-level functional annotation
+## Part 1 — CpG-level functional annotation {#part-1}
 
 ### What annotation resources exist, and which to trust
 
@@ -154,7 +154,7 @@ a threshold of ≈ 6.6 × 10⁻⁸); two pass FDR < 0.05. Read the rest of this 
 'nominally significant' rather than 'statistically significant'.
 
 In a real study this table is the hand-off point to the enrichment
-tools in Part 3 and to comparison against published EWAS catalogs.
+tools in [Part 3](#part-3) and to comparison against published EWAS catalogs.
 
 ### Where the top hits sit relative to genes and islands
 
@@ -170,7 +170,7 @@ promoters and island shores.
 The distributions move only modestly between the top 1,000 and the background
 (@fig-feature, @fig-island). The top-set leans toward promoters and islands, but 
 it's not clear if that pattern is more than chance. The bar chart above 
-is a useful visual indicator, but not a formal enrichment test, which is covered in Part 3 of 
+is a useful visual indicator, but not a formal enrichment test, which is covered in [Part 3](#part-3) of 
 this chapter.
 
 ### The BIOS eQTM layer: methylation that tracks expression
@@ -238,7 +238,7 @@ Four of these twelve hits show an effector that differs from the nearest gene.
 When reporting results, the effector gene is usually the one people want to know about if the 
 information is available. 
 
-## Part 2 — Region-level analysis (DMRs)
+## Part 2 — Region-level analysis (DMRs) {#part-2}
 
 ### Why look at regions at all
 
@@ -521,7 +521,7 @@ knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv"),
 
 ### From regions to pathways: `goregion`
 
-The gene-set tools in Part 3 take a list of *CpGs*. When your unit of discovery
+The gene-set tools in [Part 3](#part-3) take a list of *CpGs*. When your unit of discovery
 is a **region**, `missMethyl::goregion` [@phipson2016missmethyl] is the
 region-level analog of `gometh`: give it a `GRanges` of your DMRs and it maps
 each region to the CpGs it contains, collapses those to genes, and runs the same
@@ -557,7 +557,7 @@ fall out of this:
    comb-p or DMRcate returns genome-wide. We show the mechanism here even though
    it doesn't produce a meaningful result so the call is in your toolkit.
 
-# Part 3 — Pathway, trait, and functional enrichment
+## Part 3 — Pathway, trait, and functional enrichment {#part-3}
 
 Annotation names the genes near your hits; **enrichment** asks whether that gene
 list is *collectively* over-represented in any biological process, pathway, or
@@ -574,7 +574,7 @@ from the gene-expression version you may know:
 2. **Multiple CpGs map to one gene**, and CpGs in intergenic space map to none.
    The tool has to collapse probes to genes sensibly before testing.
 
-## missMethyl `gometh`: the reproducible, bias-corrected default
+### missMethyl `gometh`: the reproducible, bias-corrected default
 
 `missMethyl::gometh()` (and its generic `gsameth()` for custom gene sets) is the
 field-standard R implementation. It maps your significant CpGs to genes, models
@@ -628,7 +628,7 @@ handful of small gene sets always reach nominal *p* < 0.01 by chance — note th
 the leading GO term has only 15 genes in it, 7 of which the top set touched.
 **The FDR column, not the nominal *p*, is the result.**
 
-## `methylGSA`: the same question, a different bias model
+### `methylGSA`: the same question, a different bias model
 
 `gometh` is not the only way to correct for the probe-number bias, and the
 choice of correction can change the outcome. **`methylGSA`** [@ren2019methylgsa]
@@ -697,7 +697,7 @@ report a second for sensitivity, say so and show both. Never run all three and
 present the one with the prettiest pathway.
 :::
 
-## KnowYourCG (KYCG): CpG-centric enrichment on regulatory elements
+### KnowYourCG (KYCG): CpG-centric enrichment on regulatory elements
 
 `gometh` asks a **gene-set** question — it collapses your CpGs to genes and tests
 GO/KEGG. But methylation acts through *regulatory elements* — CpG islands,
@@ -706,7 +706,7 @@ collapsing to genes throws that resolution away. **KnowYourCG** (KYCG), part of
 Zhou's `sesame`/`knowYourCG` ecosystem [@goldberg2025knowyourcg], keeps the CpG
 as the unit of analysis and tests your hit set directly against curated
 databases of these elements. It is the CpG-centric complement to `gometh`, not a
-replacement, and it comes from the same lab as the annotation we used in Part 1,
+replacement, and it comes from the same lab as the annotation we used in [Part 1](#part-1),
 so the coordinates and databases are build-consistent by construction.
 
 ```{r}
@@ -816,7 +816,7 @@ Run both. Report `gometh`'s null as a null, and report KYCG's 41 features as wha
 they are — a single, modest, broadly-distributed enrichment in regulatory
 chromatin, at a sample size where no individual CpG is convincing.
 
-## EWAS Atlas / EWAS Open Platform Toolkit: the copy-paste web route
+### EWAS Atlas / EWAS Open Platform Toolkit: the copy-paste web route
 
 When you want a fast look without writing R — or want to cross-reference against
 what other studies have already reported — the **EWAS Toolkit**, part of the
@@ -841,7 +841,7 @@ of these draw on curated resources you can't easily reproduce locally:
   Toolkit's location annotation is **hg19-based** (450K:
   `IlluminaHumanMethylation450kanno.ilmn12.hg19`; EPIC:
   `IlluminaHumanMethylationEPICanno.ilm10b4.hg19`), so it is *not*
-  build-consistent with the hg38 annotation we built in Part 1.
+  build-consistent with the hg38 annotation we built in [Part 1](#part-1).
 - **GO & KEGG enrichment** — implemented on top of `missMethyl::gometh`, so it is
   literally the same probe-bias-corrected test you ran locally; expect
   concordance with your `gometh` result, and read a disagreement as a gene-universe
@@ -859,7 +859,7 @@ of these draw on curated resources you can't easily reproduce locally:
   tissue-of-origin driven.
 - **Expression regulation** — reports Pearson correlations between methylation and
   expression across six tissues (brain, colon, kidney, liver, stomach, testis).
-  This is the *same idea* as the BIOS eQTM layer we joined in Part 1, but computed
+  This is the *same idea* as the BIOS eQTM layer we joined in [Part 1](#part-1), but computed
   in solid tissues rather than whole blood — so for a blood EWAS, prefer the BIOS
   blood eQTMs and read this panel as supporting, cross-tissue context.
 - **Motif enrichment** — runs **HOMER** on a 500 bp window centered on each CpG to
@@ -882,7 +882,7 @@ notes:
   its GO/KEGG and location panels duplicate `gometh`/`knowYourCG`, so use those in
   the pipeline for the record and the Toolkit interactively to mine the catalogs.
 
-## `eFORGE`: is a hit list driven by cell composition?
+### `eFORGE`: is a hit list driven by cell composition?
 
 For a **whole-blood** EWAS the single most important adversarial check is
 whether your top CpGs are simply marking a shift in cell-type proportions rather
