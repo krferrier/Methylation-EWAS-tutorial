@@ -1626,6 +1626,8 @@ Earlier, "at least 6BG of free disk space" → "6 GB".
 
 ### What was and was not verified
 
+Superseded in part by sections 30 and 31 — see those for the current status.
+
 `nproc`, `free -h`, `df -h .` and the `awk` formatting were run in this
 environment. `lscpu` could not be exercised here — the sandbox has no
 `/sys/devices/system/cpu`, so it exits with "failed to determine number of CPUs";
@@ -1686,3 +1688,38 @@ since the chapter now asks readers to distinguish the two.
 ### Numbers moved
 
 None of the analysis. The machine description gains its physical core count.
+
+## 31. Verification status of the machine-resource commands
+
+Consolidated record, superseding the split in section 29. No content changed in
+this entry — it exists so the next person editing that section knows which lines
+rest on a test and which rest on convention.
+
+| Tab | Command | Status |
+|---|---|---|
+| Linux | `nproc` | run here |
+| Linux | `free -h` | run here |
+| Linux | `df -h .` | run here |
+| Linux | `lscpu \| awk …` | verified against real `lscpu` output from the benchmarking machine (returns 24); `lscpu` itself cannot run in the authoring sandbox |
+| Windows | Task Manager → Performance → CPU | **confirmed by the author** |
+| Windows | `Get-CimInstance Win32_ComputerSystem` | **confirmed by the author** |
+| Windows | Task Manager → Performance → Memory | **confirmed by the author** |
+| Windows | File Explorer → This PC | **confirmed by the author** |
+| Windows | `Get-PSDrive -PSProvider FileSystem` | **confirmed by the author** |
+| macOS | `sysctl -n hw.logicalcpu` / `hw.physicalcpu` | **not tested** — no Mac available |
+| macOS | `sysctl -n hw.memsize \| awk …` | **not tested** |
+| macOS | `vm_stat` | **not tested** |
+| macOS | `df -h .` | syntax shared with the Linux tab, which was run here |
+| macOS | Activity Monitor / System Settings → Storage | **not tested** |
+
+The macOS entries are long-standing, conventional interfaces — `sysctl` keys like
+`hw.memsize` and `hw.physicalcpu` have been stable across many releases — so the
+risk is low rather than zero. They are the remaining gap if a Mac becomes
+available.
+
+Nothing in the chapter itself claims any of these were tested, so no reader-facing
+text depends on this table.
+
+### Numbers moved
+
+None.
