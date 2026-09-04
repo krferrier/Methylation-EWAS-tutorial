@@ -37,26 +37,37 @@ tutorial, is highlighted.
 ```{r}
 #| label: catalog-table
 #| echo: false
-cat70 <- read.csv("methylation_geo_catalog.csv", stringsAsFactors = FALSE, check.names = FALSE)
+# 00b_geo_catalog_source.csv is the raw scrape: one row per GEO Series, values
+# and all. The single published CSV (methylation_geo_catalog.csv, linked at the
+# foot of this page) is written from it below, so the download can never drift
+# from the table above it.
+cat70 <- read.csv("00b_geo_catalog_source.csv", stringsAsFactors = FALSE, check.names = FALSE)
 
-# --- Phenotypes: field NAMES only, association-testable ones only ------------
-# The raw column stores "field: v1; v2; v3 || field2: v1; v2". Keep the field
-# names, drop the values, and drop anything that is not a candidate EWAS
-# outcome or exposure: sample/array identifiers, estimated cell proportions,
-# principal components, derived clock metrics, technical flags and dates.
-drop_pat <- paste0(
-  "^(", paste(c(
-    "methylationid", "dyad", "sample.*", "title", "id", "geo.*", "barcode",
-    "sentrix.*", "position", "well", "plate", "slide", "array.*", "chip",
-    "batch", "scan.*date", "description", "supplementary.*",
-    "cd4t?", "cd8t?", "nk", "bcell", "mono", "neu", "gran", "eos", "baso",
-    "plasmablast", "cd4\\+.*", "cd8\\+.*",
-    "pc[0-9]+", "age.?acceleration", "predicted.*age", "dnam.*age"
-  ), collapse = "|"), ")$")
-drop_pat2 <- paste0(
-  "\\bid\\b|identifier|_id$|^pmid|untagged|replicate|\\bdate\\b|",
-  "^(subject|donor|participant|patient|individual|pair|session|generation)$|",
-  "family$")
+# --- Phenotypes: the variables you could actually test -----------------------
+# Source is Phenotype_fields, which lists EVERY deposited phenotype field.
+# (Phenotype_examples caps at four fields and also carries their values, so
+# building this column from it under-reported 15 studies.)  Field names are kept
+# as deposited; anything that is not a candidate EWAS outcome or exposure is
+# dropped: sample/array identifiers and plate positions, pedigree keys, batch and
+# provenance fields, estimated cell proportions, principal components (including
+# ancestry PCs), derived clock metrics, assay/library QC read-outs, inclusion
+# flags and dates.
+drop_pat <- paste0("^(", paste(c(
+  "sample", "sample[ _-]?(id|name|title|number|group|plate)", "methylationid",
+  "dyad", "title", "id", "geo.*", "barcode", "sentrix.*", "position", "well",
+  "plate", "meth-plate", "slide", "chip", "array.*", "serial number",
+  "batch", "enrollment batch", "scan.*date", "description", "supplementary.*",
+  "center", "recruite?_?site",
+  "(subject|donor|participant|patient|individual|pair|session|generation)([ _-]?id)?",
+  ".*family", "replicate.*", "is_technical_replicate",
+  "cd4t?", "cd8t?", "nk", "bcell", "mono", "neu", "gran", "eos", "baso",
+  "plasmablast", "cd4\\+.*", "cd8\\+.*", "cell proportion.*", ".*cell proportion",
+  "pc[0-9]+", "anc\\.?pca?[0-9]+", ".*[._]pca?[0-9]+", "age.?acceleration",
+  "predicted.*age", "dnam.*age", ".*methylation age",
+  "bioanalyzer.*", ".*concentration.*", ".*_pcr", "nm_pcr",
+  "included in.*", "passed.*quality.*", "qc.*", "\\(untagged\\)"
+), collapse = "|"), ")$")
+drop_pat2 <- "\\bid\\b|identifier|_id$|^pmid|untagged|(^|[^a-z])date($|[^a-z])|date$"
 
 # Two fields this tutorial gives a plain-language name to: 00_setup.qmd derives
 # `ptsd` from the first and `childhood_abuse` from the second.
@@ -66,8 +77,8 @@ rename_map <- c(
 )
 
 clean_pheno <- function(x) {
-  if (is.na(x) || !nzchar(x)) return("")
-  f <- trimws(sub(":.*$", "", trimws(strsplit(x, "||", fixed = TRUE)[[1]])))
+  if (is.na(x) || !nzchar(trimws(x))) return("")
+  f <- trimws(strsplit(x, "|", fixed = TRUE)[[1]])
   # submitters sometimes encode the coding in the name itself, e.g.
   # "art treatment status (0 = spontaneous; 1 = assisted reproduction)";
   # strip parentheticals containing "=", keep units such as (kg/m^2)
@@ -79,7 +90,7 @@ clean_pheno <- function(x) {
   f[hit] <- rename_map[f[hit]]
   paste(unique(f), collapse = ", ")
 }
-cat70$Phenotypes <- vapply(cat70$Phenotype_examples, clean_pheno, character(1))
+cat70$Phenotypes <- vapply(cat70$Phenotype_fields, clean_pheno, character(1))
 cat70$N_phenotypes <- vapply(strsplit(cat70$Phenotypes, ", "),
                              function(v) sum(nzchar(v)), integer(1))
 
@@ -97,10 +108,14 @@ ord   <- order(-cat70$Suitability_score, -cat70$N_samples)
 cat70 <- cat70[ord, ]
 grp   <- grp[ord]
 acc   <- tapply(cat70$GSE, grp, paste, collapse = ", ")
+nsamp <- tapply(cat70$N_samples, grp, paste, collapse = ", ")
 nser  <- table(grp)
 cat70 <- cat70[!duplicated(grp), ]
 cat70$Accessions <- acc[grp[!duplicated(grp)]]
 cat70$N_series   <- as.integer(nser[grp[!duplicated(grp)]])
+# per-accession sizes, aligned with Accessions; the table keeps the numeric
+# N_samples of the first accession so the column stays sortable
+cat70$N_samples_all <- nsamp[grp[!duplicated(grp)]]
 
 # Title first, then the phenotypes you could test, then everything else
 show_cols <- c("Accessions", "Title", "Phenotypes", "Suitability_tier",
@@ -108,10 +123,30 @@ show_cols <- c("Accessions", "Title", "Phenotypes", "Suitability_tier",
                "Has_age", "Has_ancestry", "Has_cell_composition",
                "N_phenotypes", "PubMed")
 show_cols <- show_cols[show_cols %in% colnames(cat70)]
-tab <- cat70[, show_cols]
 
+# order the frame once so the table and the exported CSV share a row order
 tier_rank <- c(Strong = 1, Moderate = 2, Limited = 3)
-tab <- tab[order(tier_rank[tab$Suitability_tier], -tab$Suitability_score), ]
+cat70 <- cat70[order(tier_rank[cat70$Suitability_tier], -cat70$Suitability_score), ]
+tab   <- cat70[, show_cols]
+
+# --- the single published CSV -----------------------------------------------
+# Same 60 rows in the same order as the table, with more columns. GSE and
+# N_samples are comma-separated and aligned with each other; every other column
+# describes the first accession listed.
+out <- cat70
+out$GSE       <- out$Accessions
+out$N_samples <- out$N_samples_all
+csv_cols <- c("GSE", "N_series", "Title", "Phenotypes", "N_phenotypes",
+              "Suitability_tier", "Suitability_score", "Meth_array", "N_samples",
+              "Has_sex", "Has_age", "Has_ancestry", "Has_cell_composition", "PubMed",
+              "Suitability_notes", "Other_platforms", "Has_tissue",
+              "N_phenotype_fields", "Phenotype_fields", "N_char_fields",
+              "All_char_tags", "Sex_field", "Age_field", "Tissue_field",
+              "Tissue_examples", "First_sample_source_name", "Submission_date",
+              "Last_update", "Platform_GPLs", "N_matrix_files")
+csv_cols <- csv_cols[csv_cols %in% colnames(out)]
+write.csv(out[, csv_cols], "methylation_geo_catalog.csv",
+          row.names = FALSE, na = "")
 
 pretty <- c(Accessions = "GEO accession", Title = "Title",
             Phenotypes = "Phenotypes", Suitability_tier = "Suitability tier",
@@ -156,7 +191,16 @@ htmltools::tagList(
         list(targets = idx("Title"), className = "dt-left", width = "300px",
              render = truncate_js(140)),
         list(targets = idx("Phenotypes"), className = "dt-left", width = "200px",
-             render = truncate_js(100)),
+             # an empty cell here is a fact about the deposit, not a gap in the
+             # table, so say so rather than leaving it blank
+             render = DT::JS(
+               "function(data, type, row, meta){",
+               "if (type !== 'display') return data;",
+               "if (data == null || data === '')",
+               "return '<span style=\"color:#8a8279;font-style:italic\">none deposited</span>';",
+               "return data.length > 100 ?",
+               "'<span title=\"' + data + '\">' + data.substr(0, 100) + '…</span>' : data;",
+               "}")),
         list(targets = idx("Accessions"), className = "dt-center", width = "110px"),
         list(targets = idx(c("Suitability_tier", "Suitability_score", "N_samples",
                              "N_phenotypes", "Has_sex", "Has_age", "Has_ancestry",
@@ -194,7 +238,7 @@ htmltools::tagList(
 | `Has sex`, `Has age` | Whether sex and age are in the sample characteristics — both are strong methylation covariates you will almost always model. |
 | `Has ancestry` | Whether genetic ancestry / race is reported (relevant for ancestry-aware probe masking, as in [Probe filtering](03_probe_filtering.qmd)). |
 | `Has cell composition` | Whether cell-type proportions are deposited — not necessary, but saves a step in data pre-processing if it is available. |
-| `Phenotypes`, `N phenotypes` | The variables you could actually test — the phenotype and exposure fields the submitter deposited, named but without their values. Sample and array identifiers, estimated cell proportions, principal components, derived age-acceleration metrics and technical flags are excluded, so this is a shortlist of candidate EWAS outcomes rather than a dump of the characteristics. Names are the submitter's own except where this tutorial defines a plainer one: Grady's `mergedcapsandpsswinthin30days` and `childabphyssexemot_ctq_01modandsev` appear as **PTSD** and **Childhood abuse**, matching the derived columns in [Setup](00_setup.qmd). |
+| `Phenotypes`, `N phenotypes` | The variables you could actually test — every phenotype and exposure field the submitter deposited, named but without their values. A cell reading *none deposited* means exactly that: the study's characteristics carry nothing beyond sex, age, tissue and identifiers, so there is no exposure or outcome here to model. Sample and array identifiers, estimated cell proportions, principal components, derived age-acceleration metrics and technical flags are excluded, so this is a shortlist of candidate EWAS outcomes rather than a dump of the characteristics. Names are the submitter's own except where this tutorial defines a plainer one: Grady's `mergedcapsandpsswinthin30days` and `childabphyssexemot_ctq_01modandsev` appear as **PTSD** and **Childhood abuse**, matching the derived columns in [Setup](00_setup.qmd). |
 | `PubMed` | Linked publication, where one exists. |
 
 ::: {.callout-tip}
@@ -246,11 +290,16 @@ which steps you can and cannot still do.
 
 ## Download the catalog
 
-The complete 70-Series catalog — all 28 columns, not just the ones shown above,
-and one row per accession rather than per study —
-is available as a CSV:
+The catalog is available as a CSV. It holds exactly the 60 studies in the table
+above, in the same order, with 30 columns rather than the 13 shown:
 
-- [**methylation_geo_catalog.csv**](methylation_geo_catalog.csv) — the full catalog, ready to load with `read_csv()` (R) or `pd.read_csv()` (Python).
+- [**methylation_geo_catalog.csv**](methylation_geo_catalog.csv) — ready to load with `read_csv()` (R) or `pd.read_csv()` (Python).
+
+`GSE` and `N_samples` are comma-separated and aligned with each other, so the
+Congo study reads `GSE224365, GSE224363, GSE224364` against `712, 356, 356`.
+Every other column describes the **first** accession listed. The file is written
+by the same chunk that draws the table, so the download cannot drift from what
+you see above.
 
 You can also grab the current view directly from the table using the **CSV** and
 **Copy** buttons above it.

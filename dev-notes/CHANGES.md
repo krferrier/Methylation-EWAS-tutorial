@@ -1939,3 +1939,80 @@ and still has one row per accession.
 
 Table rows 70 -> 60 (presentation only; no Series was dropped). The catalog CSV
 is untouched.
+
+## 35. The Phenotypes column was built from the wrong source column
+
+Reported as: a Strong / score-7 study, GSE219037, showing no phenotype at all —
+which should not be possible for a study that passed the screen.
+
+It was not possible. Section 34 built the column from **`Phenotype_examples`,
+which caps at four fields** and carries their values. The complete list was in
+**`Phenotype_fields`** all along: 264 deposited fields against the 145 that
+`Phenotype_examples` exposes, and `N_phenotype_fields` agrees with
+`Phenotype_fields`, confirming which one is authoritative.
+
+**15 studies were under-reported**, not just the ones that came out blank. The
+worst were hidden in plain sight:
+
+| study | showed | actually deposited |
+|---|---|---|
+| GSE226085 (Strong) | *nothing* | violence trauma, conflict exposed to, generation of conflict exposure, material deprivation, socioeconomic status, arabic family food security scale, birth order |
+| GSE219037 (Strong) | *nothing* | sample collection time point (days since t0), group |
+| GSE172368 | 4 fields | 38 |
+| GSE128821 | 4 fields | 25 |
+
+The column is now built from `Phenotype_fields`. Kept names rise from 145 to
+**188** (of 264 deposited), across 56 of 60 studies.
+
+### Filter corrections found while checking the full list
+
+Reading all 264 names, rather than the 145 the truncated column had shown,
+exposed rules that were both too greedy and too lax:
+
+- `sample.*` was killing `sample collection time point (days since t0)`, a real
+  longitudinal variable. Narrowed to bare `sample` plus identifier-ish suffixes.
+- Ancestry principal components `anc.pca1` … `anc.pca10` were being kept —
+  `pc[0-9]+` does not match them.
+- `dna methylation age` survived `dnam.*age`; `cryo_date` survived `\bdate\b`,
+  because `_` is a word character so there is no boundary before `date`.
+- Assay read-outs were being kept: `bioanalyzer.average.fragment.length.bp`,
+  `dna_concentration`, `rna.concentration.ng.ul`, `nm_pcr`.
+- Added inclusion/QC bookkeeping (`included in final analytical sample`,
+  `passed methylation quality control`) and `serial number`.
+
+A residual scan for identifier, PC, date, concentration and assay patterns across
+every retained name now returns **0**.
+
+### The 14 studies that genuinely have no phenotype
+
+13 deposited **zero** phenotype fields — their characteristics are tissue, sex,
+age and identifiers only. GSE184269 deposited exactly one, `donor id`, which is
+an identifier. So the blanks are real, and the table now says **"none deposited"**
+in muted italics rather than leaving a cell empty that reads as a rendering fault.
+
+**One of these looks like an upstream scoring bug, and is left as-is for the
+author to judge.** GSE184269 is graded **Strong / 6** with the note *"clean
+single-array study with phenotype + covariates"*, but its complete characteristic
+list is `donor id | age | Sex`. There is no phenotype. Nothing in this chapter
+computes that score, so it has not been altered here.
+
+### One published CSV, generated from the table
+
+`methylation_geo_catalog.csv` previously held the raw scrape and no longer
+matched the table. The raw scrape moved to **`00b_geo_catalog_source.csv`** (the
+chunk's input, not linked for download), and the chunk now *writes*
+`methylation_geo_catalog.csv` — so the single downloadable file cannot drift from
+the table above it. Verified that Quarto copies a resource written during render.
+
+The CSV has the same **60 rows in the same order** as the table, with 30 columns
+rather than 13. `GSE` and `N_samples` are comma-separated and aligned
+(`GSE224365, GSE224363, GSE224364` against `712, 356, 356`); every other column
+describes the first accession. Headers keep underscores and stay on one line.
+`Phenotype_examples` is dropped from the export, since it was the truncated,
+value-laden column that caused this defect.
+
+### Numbers moved
+
+Phenotype names shown: 145 -> 188. Studies with at least one phenotype: 43 -> 56.
+No study was added or removed; the catalog still covers 70 GEO Series as 60
+studies.
