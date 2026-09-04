@@ -481,6 +481,7 @@ can also be large. For the 87 sample subset, I would make sure you have at least
 Before you plan a run, find out what you are working with. 
 
 #### Cores
+
 We can use R to determine the number of cores available on your machine. This uses base R and should work for Windows, Mac, or Linux OS. 
 ```{r}
 #| label: check-resources
@@ -493,40 +494,134 @@ parallel::detectCores(logical = FALSE)       # physical cores
 `detectCores()` reports *logical* cores, which on most laptops is twice the physical
 count. Set `workers` from the physical number.
 
+If you would rather not open R, or want to confirm what R is reporting:
+
+::: {.panel-tabset}
+
+##### macOS
+
+```bash
+sysctl -n hw.logicalcpu      # logical cores, incl. hyperthreading
+sysctl -n hw.physicalcpu     # physical cores -- use this for `workers`
+```
+
+##### Linux
+
+```bash
+nproc                                    # logical cores
+lscpu | grep '^Core(s) per socket'       # physical cores per socket
+lscpu | grep '^Socket(s)'                # multiply the two for the physical total
+```
+
+##### Windows
+
+- Press Ctrl + Shift + Esc to open Task Manager.
+- Click on the Performance tab (the speedometer icon on the left or top).
+- Select CPU in the left sidebar.
+- Read **Cores** and **Logical processors** in the lower-right block of stats. Set
+  `workers` from **Cores**.
+
+:::
+
 #### RAM
-You can check how much RAM is availabe to use with Task Manager on Windows, Activity Monitor on Mac, and System Monitor on Linux.
 
-- **Windows**:
-  - Press Ctrl + Shift + Esc to open Task Manager.
-  - Click on the Performance tab (the speedometer icon on the left or top).
-  - Select Memory in the left sidebar.
-  - View your In use, Available, and Free RAM amounts at the bottom of the screen.
-- **Mac**:
-  - Press Cmd + Space to open Spotlight, type Activity Monitor, and press Enter.
-  - Click on the Memory tab near the top of the window.
-  - Look at the bottom of the window at Memory Pressure and Physical Memory usage graphs to see how much RAM is free or used.
-- **Linux**: 
-  - Open your applications menu and search for System Monitor (or KSysGuard / Plasma System Monitor on KDE desktops).
-  - Click on the Resources tab (or Performance tab depending on your distribution).
-  - Look at the Memory section to see a live graph and numbers showing used and free RAM. 
+You can check how much RAM is available to use with Task Manager on Windows, Activity Monitor on Mac, and System Monitor on Linux.
 
+::: {.panel-tabset}
+
+##### macOS
+
+- Press Cmd + Space to open Spotlight, type Activity Monitor, and press Enter.
+- Click on the Memory tab near the top of the window.
+- Look at the bottom of the window at Memory Pressure and Physical Memory usage graphs to see how much RAM is free or used.
+
+From a terminal:
+
+```bash
+sysctl -n hw.memsize | awk '{ printf "%.1f GB installed\n", $1/1024/1024/1024 }'
+vm_stat                      # live breakdown of free / active / wired pages
+```
+
+##### Linux
+
+- Open your applications menu and search for System Monitor (or KSysGuard / Plasma System Monitor on KDE desktops).
+- Click on the Resources tab (or Performance tab depending on your distribution).
+- Look at the Memory section to see a live graph and numbers showing used and free RAM.
+
+From a terminal:
+
+```bash
+free -h                      # 'total' is installed, 'available' is what you can use
+```
+
+##### Windows
+
+- Press Ctrl + Shift + Esc to open Task Manager.
+- Click on the Performance tab (the speedometer icon on the left or top).
+- Select Memory in the left sidebar.
+- View your In use, Available, and Free RAM amounts at the bottom of the screen.
+
+From PowerShell:
+
+```powershell
+Get-CimInstance Win32_ComputerSystem |
+  Select-Object @{n='InstalledGB';e={[math]::Round($_.TotalPhysicalMemory/1GB,1)}}
+```
+
+:::
+
+::: {.callout-note}
+## "Available" is the number that matters
+Installed RAM is the headline figure, but the operating system and everything else
+you have open are already using some of it. Compare the peak-memory column in the
+table above against **available** memory, not installed.
+:::
 
 #### Disk Space
+
 You can check free disk space using a graphical user interface (GUI) by opening your system's built-in file manager or storage settings panel on Windows, Mac, and Linux. 
 
-- **Windows**:
-  - Open File Explorer (press Windows Key + E).
-  - Click on This PC in the left sidebar.
-  - Look at the Devices and drives section to see a visual bar and remaining free gigabytes for your drives (like the C: drive).
-  - Alternatively, open the Settings app, go to System, and select Storage for a detailed breakdown.
-- **Mac**:
-  - Click the Apple logo in the top-left corner of your screen.
-  - Select System Settings (or System Preferences on older versions).
-  - Click General in the sidebar, then select Storage.
-  - View a colorful breakdown of your used and available disk space.
-- **Linux**:
-  - Open your default file manager (such as Nautilus in GNOME or Dolphin in KDE).
-  - Click on Other Locations or look at the left sidebar under Devices or Hard Disk to see available storage.
+::: {.panel-tabset}
+
+##### macOS
+
+- Click the Apple logo in the top-left corner of your screen.
+- Select System Settings (or System Preferences on older versions).
+- Click General in the sidebar, then select Storage.
+- View a colorful breakdown of your used and available disk space.
+
+From a terminal, checking the disk holding the current folder:
+
+```bash
+df -h .                      # look at the 'Avail' column
+```
+
+##### Linux
+
+- Open your default file manager (such as Nautilus in GNOME or Dolphin in KDE).
+- Click on Other Locations or look at the left sidebar under Devices or Hard Disk to see available storage.
+
+From a terminal, checking the disk holding the current folder:
+
+```bash
+df -h .                      # look at the 'Avail' column
+```
+
+##### Windows
+
+- Open File Explorer (press Windows Key + E).
+- Click on This PC in the left sidebar.
+- Look at the Devices and drives section to see a visual bar and remaining free gigabytes for your drives (like the C: drive).
+- Alternatively, open the Settings app, go to System, and select Storage for a detailed breakdown.
+
+From PowerShell:
+
+```powershell
+Get-PSDrive -PSProvider FileSystem |
+  Select-Object Name, @{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}}
+```
+
+:::
 
 ## Optional: the full 795-sample dataset {#sec-full-series}
 

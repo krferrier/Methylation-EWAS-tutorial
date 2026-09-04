@@ -1592,3 +1592,46 @@ resolves to a real `id`, and every chapter still has exactly one `h1`.
 (cost table); `5 min 29 s → 5 min 24 s`, `6 min 16 s → 6 min 12 s`,
 `11 min 53 s → 11 min 37 s` (chapter 07 prose). No analysis result changed — the
 re-run reproduced the published outputs byte-for-byte.
+
+## 29. Machine-resource subsections rebuilt as tabsets
+
+The three subsections under "Checking what resources your own machine has" —
+Cores, RAM, Disk Space — presented per-OS instructions as nested bullet lists, so
+a reader on one platform had to scroll past two others. They now use the same
+`::: {.panel-tabset}` pattern as "Option 3 — from GEO, using the command line",
+with **macOS / Linux / Windows** tabs. The tabs are `h5`, one level below the `h4`
+subsections that contain them.
+
+Three tabs rather than the "macOS / Linux" pairing used in Option 3, because
+unlike `curl` these commands genuinely differ between the two: `sysctl` against
+`nproc`/`lscpu`, `vm_stat` against `free`.
+
+**Cores** gained a terminal route, since it previously offered only
+`parallel::detectCores()`. macOS gets `sysctl -n hw.logicalcpu` /
+`hw.physicalcpu`; Linux gets `nproc` plus `lscpu` for the physical count; Windows
+gets the Task Manager path to **Performance → CPU**, where *Cores* and *Logical
+processors* are reported. The advice to set `workers` from the physical count is
+repeated where the numbers appear.
+
+**RAM** and **Disk Space** keep their existing GUI walkthroughs verbatim inside
+each tab, and each gains the terminal equivalent: `sysctl -n hw.memsize` + `vm_stat`
+and `free -h`; `df -h .` on both Unixes; `Get-CimInstance Win32_ComputerSystem`
+and `Get-PSDrive -PSProvider FileSystem` on PowerShell.
+
+A callout under RAM notes that the benchmark table should be compared against
+*available* memory rather than installed.
+
+Fixed a typo in the same section: "how much RAM is availabe" → "available".
+Earlier, "at least 6BG of free disk space" → "6 GB".
+
+### What was and was not verified
+
+`nproc`, `free -h`, `df -h .` and the `awk` formatting were run in this
+environment. `lscpu` could not be exercised here — the sandbox has no
+`/sys/devices/system/cpu`, so it exits with "failed to determine number of CPUs";
+it is standard on Linux desktops. The macOS `sysctl`/`vm_stat` and the two
+PowerShell commands could not be run on this machine at all.
+
+### Numbers moved
+
+None.
