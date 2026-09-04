@@ -1723,3 +1723,55 @@ text depends on this table.
 ### Numbers moved
 
 None.
+
+## 32. Sidebar: chapters with sub-navigation were styled as group headers
+
+Adding section-level children in section 28 introduced a visual regression the
+CSS did not anticipate. `theme.scss` carried:
+
+```scss
+// Section headers ("Data preprocessing", "Analysis")
+.sidebar-item-section > .sidebar-item-container > .sidebar-item-text {
+  font-weight: 600;
+  font-size: 0.79rem;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  color: $gray-600;
+}
+```
+
+Its own comment names the intent: the two **group** headers. But Quarto gives
+`.sidebar-item-section` to *any* entry with children, so the six chapters that
+gained sub-navigation (00_setup, 03, 05, 06, 07, 08) started rendering in small
+uppercase grey while the three that did not (01, 02, 04) stayed in normal-case
+0.925rem. Two typefaces' worth of difference in one list, and the split tracked
+an implementation detail rather than anything meaningful to a reader.
+
+The distinguishing feature is nesting, not the class: a group header sits in the
+root list, a chapter sits inside a `.sidebar-section`. Rather than restructure
+the selector around the DOM root — the root `<ul>` is wrapped in a
+`div.sidebar-menu-container`, so a child combinator would have been brittle — the
+fix adds a more specific override keyed on that nesting:
+
+```scss
+.sidebar-section .sidebar-item-section > .sidebar-item-container > .sidebar-item-text {
+  font-weight: 400;
+  font-size: 0.925rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: inherit;
+}
+```
+
+The values are not invented: they are what a plain chapter link already resolves
+to, from the two rules above it in the same block plus Quarto's own
+`.sidebar-navigation a { color: inherit }`.
+
+Verified by walking the rendered sidebar DOM rather than by reading specificity:
+of the eight `.sidebar-item-section` elements, the **2** outside any
+`.sidebar-section` (Data preprocessing, Analysis) keep the group-header
+treatment, and the **6** inside one now match the flat chapter links.
+
+### Numbers moved
+
+None. CSS only.

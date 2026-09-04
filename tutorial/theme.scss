@@ -274,7 +274,7 @@ caption, .figure-caption, figcaption {
     font-weight: 400;
   }
 
-  // Section headers ("Data preprocessing", "Analysis")
+  // Group headers ("Data preprocessing", "Analysis")
   .sidebar-item-section > .sidebar-item-container > .sidebar-item-text {
     font-family: $font-family-sans-serif;
     font-weight: 600;
@@ -282,6 +282,21 @@ caption, .figure-caption, figcaption {
     text-transform: uppercase;
     letter-spacing: 0.055em;
     color: $gray-600;
+  }
+
+  // ...but a CHAPTER that carries its own sub-navigation is also
+  // .sidebar-item-section, and must not pick up the group-header treatment
+  // above: chapters have to look alike whether or not they expand. The
+  // distinguishing feature is nesting -- a group header sits in the root list,
+  // a chapter sits inside a .sidebar-section. Values here match what a plain
+  // chapter link resolves to (0.925rem / 400 from the two rules above, and
+  // `.sidebar-navigation a { color: inherit }` from the Quarto default).
+  .sidebar-section .sidebar-item-section > .sidebar-item-container > .sidebar-item-text {
+    font-weight: 400;
+    font-size: 0.925rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: inherit;
   }
 
   a.active,
