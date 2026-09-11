@@ -1,21 +1,37 @@
 # Chapters 01-06 and 08. Only directly-used packages are listed --
 # conda resolves the dependency tree from these.
 #
-# Two constraints are deliberate and load-bearing:
-#   r-base=4.2          pins the Bioconductor generation to 3.16, which is what
-#                       produced every checkpoint in the Zenodo record.
-#   r-matrixstats=1.0   matrixStats made `useNames = NA` defunct in 1.2.0;
-#                       Bioconductor 3.16's MatrixGenerics still passes it, so a
-#                       newer matrixStats breaks detectionP() and preprocessFunnorm().
+# One constraint is deliberate:
+#   r-base=4.5   the newest R that bioconda builds this whole Bioconductor
+#                stack for. Every bioconductor-* package below has an r45
+#                build, which is Bioconductor 3.22.
+#
+# No matrixStats pin is needed at this generation. The old `r-matrixstats=1.0`
+# pin worked around MatrixGenerics passing `useNames = NA`, an argument
+# matrixStats made defunct in 1.2.0; MatrixGenerics 1.13.1 changed that default
+# to TRUE and shipped in Bioconductor 3.18, so current matrixStats is correct
+# here.
+#
+# methylGSA is deliberately NOT in this file. bioconda's newest build is
+# 1.16.0 for R 4.2, so keeping it would hold this environment a generation
+# back. It has its own environment in envs/methylgsa.yml, used only by that
+# one section of chapter 08.
 #
 # Everything else floats, so the solver can do its job on your platform.
 name: ewas-methyl
 channels:
   - conda-forge
   - bioconda
+#   r-lattice<0.23   lattice 0.23 stopped exporting `parallel`, which
+#                    methylumi 2.56.0 still imports -- so with current lattice,
+#                    `library(wateRmelon)` fails to load at all (methylumi is
+#                    one of its dependencies). 0.22 still exports it. No chapter
+#                    loads wateRmelon directly, so this breaks nothing in the
+#                    rendered tutorial, but the package should work if a reader
+#                    reaches for BMIQ as chapter 02 suggests.
 dependencies:
-  - r-base=4.2
-  - r-matrixstats=1.0
+  - r-base=4.5
+  - r-lattice<0.23
 
   # array I/O and preprocessing
   - bioconductor-minfi
@@ -41,7 +57,6 @@ dependencies:
   - bioconductor-genomicranges
   - bioconductor-rtracklayer
   - bioconductor-missmethyl
-  - bioconductor-methylgsa
 
   # data handling, figures, rendering
   - r-data.table

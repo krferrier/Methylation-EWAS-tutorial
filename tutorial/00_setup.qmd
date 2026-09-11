@@ -13,6 +13,24 @@ files onto your own machine, and sets out what running everything costs in time,
 memory, and disk. It assumes the array background from
 [Background](00a_background.qmd).
 
+::: {.callout-important}
+## Where to type each block
+Every code block in this chapter carries a grey label telling you where it runs. There are
+only two places, and mixing them up is the most common way to get stuck:
+
+- **RStudio Console** — the pane with the `>` prompt, where R lives. Every block of R code
+  goes here.
+- **Terminal** / **PowerShell** — a system shell, for the handful of non-R commands such as
+  `git clone`. On macOS that is Terminal.app, on Windows it is PowerShell, on Linux it is
+  whatever shell you use.
+
+One trap worth naming: RStudio has a **Terminal** tab sitting right next to the Console,
+and it is a system shell, not R. R code pasted there will fail with a string of syntax
+errors — so when a block says *RStudio Console*, make sure you have clicked the Console
+tab. If you are not using RStudio, `R` at a terminal gives you the same `>` prompt and
+works fine.
+:::
+
 ## Building the software environment {#sec-env}
 
 Everything except the pipeline chapter needs **only R**. If you are new to computing,
@@ -23,48 +41,24 @@ preprocessing, QC, cell composition, batch effects, the EWAS itself, and annotat
 
 ### R only (recommended if you are getting started)
 
-You need **R 4.2.x** ([download from CRAN](https://cran.r-project.org/)) and, if you want, [RStudio](https://posit.co/download/rstudio-desktop/). Everything below is typed
-into the **Console** pane — the one with the `>` prompt. 
+You need **R 4.3 or newer** ([download from CRAN](https://cran.r-project.org/)) — install
+the current release — and, if you want,
+[RStudio](https://posit.co/download/rstudio-desktop/). Everything below is typed
+into the **Console** pane — the one with the `>` prompt.
 
-The tutorial ships an installer as
-[`install_packages.R`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/install_packages.R),
-which installs the four CRAN and eighteen Bioconductor packages the chapters use. The
-simplest way to run it is to fetch and run it in one line, without downloading anything
-yourself:
+One note on versions: the published numbers and the Zenodo checkpoints were produced on
+R 4.2.3 (Bioconductor 3.16), so a value may differ in its last digits on a newer stack.
+The code itself is unchanged. See
+[`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
 
-```r
-source("https://raw.githubusercontent.com/krferrier/Methylation-EWAS-tutorial/main/tutorial/install_packages.R")
-```
+You need four CRAN and eighteen Bioconductor packages. The whole installation is short
+enough to read, so **option 1 is to select the block below, copy it, and paste it into the
+Console.** Nothing to download first, nothing to configure, and you can see exactly what
+it does before you run it. Press Enter and wait.
 
-If you cloned the repository (see "First, get the sample sheet" below), you can run the
-local copy instead. In RStudio, set the working directory to `tutorial/` first — either
-**Session → Set Working Directory → Choose Directory…**, or open `tutorial/` as an
-RStudio Project so it is set for you every time:
-
-```r
-source("install_packages.R")
-```
-
-And if you do prefer a command line, the same script runs there:
-
-```bash
-Rscript install_packages.R
-```
-
-If you would rather not run a script you have not read — a reasonable instinct — the
-whole installation is short enough to paste directly into the Console:
-
-```r
+```{.r filename="RStudio Console"}
 repos <- "https://cloud.r-project.org"
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager", repos = repos)
-if (!requireNamespace("remotes",     quietly = TRUE)) install.packages("remotes",     repos = repos)
-
-# matrixStats must be pinned below 1.2.0, and installed BEFORE the rest
-if (!requireNamespace("matrixStats", quietly = TRUE) ||
-    packageVersion("matrixStats") >= "1.2.0") {
-  remotes::install_version("matrixStats", version = "1.0.0",
-                           repos = repos, upgrade = "never")
-}
 
 BiocManager::install(c(
   "data.table", "ggplot2", "knitr", "DT",
@@ -78,45 +72,38 @@ BiocManager::install(c(
 ), ask = FALSE, update = FALSE, upgrade = "never")
 ```
 
-`BiocManager` maps R 4.2 to Bioconductor 3.16 automatically — the release that produced
-every number in this tutorial. Budget 20-40 minutes the first time — on Windows and
-macOS most packages arrive as pre-built binaries, but there are a lot of them; on Linux
-they build from source, which is slower.
+Expect 20-40 minutes the first time. On Windows and macOS most of these arrive as
+pre-built binaries — there are simply a lot of them — while on Linux they build from
+source, which is slower. You will see a great deal of output scroll past; that is normal.
 
-::: {.callout-note}
-## The pin order is not incidental
-`matrixStats` goes in first, on its own, and `upgrade = "never"` is on every call.
-`wateRmelon` and `sva` both depend on `matrixStats`, so installing them first would pull
-the current release and break chapters 01-02 with `useNames = NA is defunct`. The
-installer script does the same thing in the same order, and re-checks the pin when it
-finishes.
-:::
+::: {.callout-note collapse="true"}
+## Other ways to run the same installation
+The block above is all you need. These alternatives do exactly the same thing, and exist
+only if you prefer them.
 
-::: {.callout-tip}
-## If `matrixStats` fails to build, you have an alternative
-On Windows and macOS, CRAN and Bioconductor ship **pre-built binaries** for R 4.2, so
-almost nothing here compiles. The one exception is the pinned `matrixStats`: CRAN's
-R-4.2 binary is version 1.3.0, and 1.0.0 is only available as source, so that single
-package needs a compiler — [Rtools](https://cran.r-project.org/bin/windows/Rtools/) on
-Windows, or `xcode-select --install` on macOS.
+**Option 2 — run the shipped script without downloading it.** The same commands live in
+[`install_packages.R`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/install_packages.R),
+which also checks your R version first. One line in the Console fetches and runs it:
 
-If you would rather not install a compiler, you can use the 1.3.0 binary and disable
-the check that breaks, by putting this at the top of your session — before loading
-`minfi`:
-
-```r
-install.packages("matrixStats")                      # gets the 1.3.0 binary
-options(matrixStats.useNames.NA = "deprecated")      # downgrades the error to a warning
+```{.r filename="RStudio Console"}
+source("https://raw.githubusercontent.com/krferrier/Methylation-EWAS-tutorial/main/tutorial/install_packages.R")
 ```
 
-That hidden option exists in `matrixStats` 1.3.0 and turns the fatal
-`useNames = NA is defunct` back into a warning. It was **removed in 1.5.0**, so this
-works only if you stay on 1.3.0. Setting it in `.Rprofile` saves retyping it each
-session.
-:::
+**Option 3 — run your local copy of that script.** If you cloned the repository (see
+@sec-sample-sheet-get), set the working directory to `tutorial/` first — **Session → Set
+Working Directory → Choose Directory…**, or open `tutorial/` as an RStudio Project so it
+is set for you every time — then:
 
-The R version matters more than it looks. R 4.2 is what selects Bioconductor 3.16; on a
-newer R you would get a newer Bioconductor, and some results could shift.
+```{.r filename="RStudio Console"}
+source("install_packages.R")
+```
+
+**Option 4 — from a terminal.** The same script runs outside RStudio, from `tutorial/`:
+
+```{.bash filename="Terminal"}
+Rscript install_packages.R
+```
+:::
 
 The non-R sections: **chapter 07** runs the EWAS through a Snakemake pipeline, and that
 genuinely needs conda. Chapter 06 already runs the same association test directly in R,
@@ -125,29 +112,37 @@ region-level section of chapter 08 also needs conda; the rest of that chapter do
 
 ### conda
 
-If you already use conda, or you want to run chapter 07, three environments are defined in the
-repository's `envs/` directory. Chapter 07 needs Snakemake, and the region-level analysis
-in chapter 08 needs `comb-p`, which runs on Python 2.7 and cannot share an environment
-with Snakemake's Python 3:
+If you already use conda, or you want to run chapter 07, four environments are defined in
+the repository's `envs/` directory. Three of them exist because their toolchains cannot
+coexist: Snakemake needs Python 3, `comb-p` runs on Python 2.7, and `methylGSA` is only
+packaged for an older R than the rest of the stack.
 
-```bash
-conda env create -f envs/methyl.yml     # chapters 01-06, 08 -- R 4.2.3
-conda env create -f envs/smk.yml        # chapter 07         -- Snakemake
-conda env create -f envs/combp.yml      # chapter 08 DMRs    -- comb-p
+```{.bash filename="Terminal"}
+conda env create -f envs/methyl.yml       # chapters 01-06, 08   -- R 4.5
+conda env create -f envs/smk.yml          # chapter 07           -- Snakemake
+conda env create -f envs/combp.yml        # chapter 08 DMRs      -- comb-p
+conda env create -f envs/methylgsa.yml    # chapter 08 methylGSA -- R 4.2
 ```
 
 | Environment | Chapters | Core tool |
 |---|---|---|
-| `ewas-methyl` | 01-06, 08 | R 4.2.3, Bioconductor 3.16 |
+| `ewas-methyl` | 01-06, 08 | R 4.5, Bioconductor 3.22 |
 | `ewas-smk` | 07 | Snakemake 9.26.1 |
 | `ewas-combp` | 08 (DMR section) | comb-p on Python 2.7 |
+| `ewas-methylgsa` | 08 (methylGSA section) | methylGSA on R 4.2 |
 
-If you only want the R chapters, `envs/methyl.yml` is the only one you need.
+If you only want the R chapters, `envs/methyl.yml` is the only one you need. `methylGSA`
+is one of three probe-bias corrections chapter 08 compares, and the other two —
+`gometh` and the sesame-based enrichment — run in the main environment.
 
 Each file lists only the packages the tutorial uses directly and lets conda resolve the
 rest. `envs/smk.yml` deliberately holds nothing but the workflow engine: the pipeline
 declares its own per-rule R environment and Snakemake builds it on first run, which is
-also where METAL is compiled from source.
+also where METAL is compiled from source. `envs/methylgsa.yml` is split out for a
+packaging reason rather than a scientific one: bioconda's newest `methylGSA` build is for
+R 4.2, so keeping it in `envs/methyl.yml` would hold that whole environment a
+Bioconductor generation back. Readers on the R-only route never see this — Bioconductor
+3.23 ships a current `methylGSA`, so `BiocManager` installs it alongside everything else.
 
 If you do not have conda, [Miniforge](https://github.com/conda-forge/miniforge) is a
 minimal installer that defaults to the conda-forge channel; its README covers macOS,
@@ -204,22 +199,127 @@ The sample sheet ships with this tutorial's repository, so there are two ways to
 #### Clone the whole repository
 
 This gets you the sample sheet, the notebooks, and the helper scripts in one step, which
-is what you want if you plan to work through the tutorial yourself:
+is what you want if you plan to work through the tutorial yourself. Run it in a
+**terminal** — not in the R Console:
 
-```bash
+```{.bash filename="Terminal"}
 git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
 ```
 
-The sample sheet is then at `Methylation-EWAS-tutorial/tutorial/data/sample_sheet.csv`, and the download commands below
-will work as written from that `tutorial/` directory.
+That creates a folder called `Methylation-EWAS-tutorial`, and the sample sheet lands at
+`Methylation-EWAS-tutorial/tutorial/data/sample_sheet.csv`.
+
+**Now point R at the `tutorial` folder inside it.** Every path in the chapters is written
+relative to that folder, so this one step decides whether the rest of the tutorial works.
+In RStudio: **Session → Set Working Directory → Choose Directory…**, then pick
+`Methylation-EWAS-tutorial/tutorial`. Better still, open that folder as an RStudio Project
+(**File → Open Project…**) and it is set for you every time you come back.
+
+Check it before moving on:
+
+```{.r filename="RStudio Console"}
+getwd()                               # should end in .../Methylation-EWAS-tutorial/tutorial
+file.exists("data/sample_sheet.csv")  # must print TRUE
+```
 
 #### Download just the one file
 
-If you only want the sample sheet, you can download it directly from the GitHub repository [here](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/e43eea48807773eb6e48a3ebd8ffe5d7e1d084ab/tutorial/data/sample_sheet.csv).
+If you only want the sample sheet, download it straight from the repository:
+[sample_sheet.csv](https://raw.githubusercontent.com/krferrier/Methylation-EWAS-tutorial/main/tutorial/data/sample_sheet.csv)
+(in your browser: right-click → Save As).
 
+Taking this route means **you have to build the folder structure yourself**, because the
+chapters look for `data/sample_sheet.csv` — the file inside a folder called `data`, not
+loose in your Downloads folder. Make a folder for the tutorial wherever you keep your
+work, put a `data` folder inside it, and save the file in there. You can do that from the
+Console:
+
+```{.r filename="RStudio Console"}
+dir.create("~/ewas-tutorial/data", recursive = TRUE)   # make the folders
+setwd("~/ewas-tutorial")                               # work from the top one
+download.file(
+  "https://raw.githubusercontent.com/krferrier/Methylation-EWAS-tutorial/main/tutorial/data/sample_sheet.csv",
+  "data/sample_sheet.csv")
+file.exists("data/sample_sheet.csv")                   # must print TRUE
+```
+
+Note that this gets you the sample sheet only — not the notebooks or the helper scripts.
 :::
 
 Either way, check that you have 96 samples plus a header row before continuing.
+
+### The layout every chapter assumes {#sec-layout}
+
+No chapter uses a path like `C:/Users/you/Downloads/...`. They all use short relative
+paths — `data/sample_sheet.csv`, `data/idats/` — which R resolves against your **working
+directory**. So the working directory has to be the folder that contains `data`:
+
+```
+<your working directory>          <- getwd() prints this; "tutorial/" if you cloned
+├── data/
+│   ├── sample_sheet.csv          <- you have this now
+│   └── idats/                    <- created for you by the download step below
+├── 00_setup.qmd                  <- these only exist if you cloned
+├── 01_qc.qmd
+└── ...
+```
+
+Two lines confirm you are in the right place, and they are worth running before every
+download step:
+
+```{.r filename="RStudio Console"}
+getwd()                               # where R currently is
+file.exists("data/sample_sheet.csv")  # TRUE means the paths below will resolve
+```
+
+::: {.callout-warning}
+## If you see `cannot open the connection`
+This is the most common error in the whole tutorial, and it is worth recognising on sight:
+
+```
+Error in file(file, "rt") : cannot open the connection
+In addition: Warning message:
+In file(file, "rt") :
+  cannot open file 'data/sample_sheet.csv': No such file or directory
+```
+
+You may see that short path or a longer one naming a folder that does not exist — either
+way the fix is the same. Nothing is wrong with the file and nothing is wrong with the
+code: R is looking in the wrong folder, because your working directory is not the one that
+contains `data`.
+
+**Step 1 — find the folder the file is actually in.** Search for `sample_sheet.csv` (or for
+the repository folder, `Methylation-EWAS-tutorial`) in Finder on macOS or File Explorer on
+Windows. What you need is the folder *containing* `data`, not the file itself — if you
+cloned the repository, that is the `tutorial` folder. Then copy that folder's path:
+
+- **macOS** — click the folder, then press Cmd + Option + C. (Or right-click the folder,
+  hold Option, and choose "Copy … as Pathname".)
+- **Windows** — right-click the folder and choose "Copy as path".
+
+**Step 2 — point R at it.** Paste the path into `setwd()`:
+
+```{.r filename="RStudio Console"}
+setwd("<paste the folder path here>")
+```
+
+On Windows the path you copied will use backslashes, which R reads as escape characters.
+Swap them for forward slashes — `C:/Users/you/Methylation-EWAS-tutorial/tutorial` — or
+double them. Or skip the typing altogether: **Session → Set Working Directory → Choose
+Directory…** in RStudio does the same thing and cannot get the slashes wrong.
+
+**Step 3 — check that it worked.**
+
+```{.r filename="RStudio Console"}
+getwd()                               # confirm where R thinks it is
+file.exists("data/sample_sheet.csv")  # should print TRUE now
+```
+
+Once that last line prints `TRUE`, re-run whatever failed and it will work. For a fuller
+walkthrough of working directories, see section 6 of
+[Jacinta Kong's Setup R page](https://jacintak.github.io/teaching/introR/#working-directories-in-r).
+:::
+
 
 ::: {.callout-note}
 ## The `Basename` column is a relative path
@@ -234,37 +334,21 @@ adjust that path rather than editing the sample sheet.
 
 ::: {.callout-tip}
 ## Which option should I pick?
-The 96 sample subset is provided as an archive you'll need to download and unpack in Option 1. Option 2 is how to fetch the 
-files from the NCBI GEO ftp site programmatically using R. Option 3 is how to download the files programmatically using the 
-command line.
+Start with **option 1**: it is R code you paste into the Console, it needs nothing
+installed beyond the packages above, and it behaves the same on macOS, Windows, and Linux.
+Option 2 pulls one archive from Zenodo instead of 192 separate files, so it is faster — but
+it needs either a terminal or a manual download in your browser. Option 3 fetches the same
+GEO files as option 1, from a terminal instead of the Console.
 
 :::
 
-### Option 1 — one archive from Zenodo (simplest)
-
-The subset is deposited as a single archive alongside the other tutorial data, so this is
-one download and one extraction, with no per-sample loop and no GEO path construction. You can either 
-access and download the archive from Zenodo manually from the
-[tutorial data record](https://doi.org/10.5281/zenodo.22135215) — that link always
-resolves to the newest version — or 
-you can use the provided bash script `get_data.sh` as follows:
-
-```bash
-./get_data.sh A_idats
-```
-
-If using the bash script, the 192 IDATs will be located in `data/idats/` relative to wherever the script was run. So, make 
-sure to run the script from the location you want the dataset to live. If you are downloading the archive manually, I recommend 
-following the same filepath structure such that the samples are all located in `data/idats/`, which is where the sample sheet's
-`Basename` column expects them.
-
-### Option 2 — from GEO, using R (works on macOS, Windows, and Linux)
+### Option 1 — from GEO, using R (paste this into the Console)
 
 This reads the sample sheet, builds each GEO URL, and downloads all 192 files.
 It is safe to re-run: files already present are skipped, so an interrupted download
 resumes where it stopped.
 
-```r
+```{.r filename="RStudio Console"}
 ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 dir.create("data/idats", recursive = TRUE, showWarnings = FALSE)
 
@@ -292,6 +376,24 @@ for (k in seq_len(nrow(ss))) {
 cat("files downloaded:", length(list.files("data/idats")), "of 192\n")
 ```
 
+### Option 2 — one archive from Zenodo (one file instead of 192)
+
+The subset is deposited as a single archive alongside the other tutorial data, so this is
+one download and one extraction, with no per-sample loop and no GEO path construction. You can either 
+access and download the archive from Zenodo manually from the
+[tutorial data record](https://doi.org/10.5281/zenodo.22135215) — that link always
+resolves to the newest version — or 
+you can use the provided bash script `get_data.sh` as follows:
+
+```{.bash filename="Terminal"}
+./get_data.sh A_idats
+```
+
+If using the bash script, the 192 IDATs will be located in `data/idats/` relative to wherever the script was run. So, make 
+sure to run the script from the location you want the dataset to live. If you are downloading the archive manually, I recommend 
+following the same filepath structure such that the samples are all located in `data/idats/`, which is where the sample sheet's
+`Basename` column expects them.
+
 ### Option 3 — from GEO, using the command line
 
 ::: {.panel-tabset}
@@ -300,7 +402,7 @@ cat("files downloaded:", length(list.files("data/idats")), "of 192\n")
 
 `curl` is preinstalled on macOS. `-C -` resumes a partial file, so re-running is safe.
 
-```bash
+```{.bash filename="Terminal"}
 mkdir -p data/idats
 
 # Pull the accession (column 1) and Basename (column 11) out of the sample
@@ -329,7 +431,7 @@ ls data/idats/*.idat.gz | wc -l      # expect 192
 
 Open **PowerShell** (not Command Prompt) and run:
 
-```powershell
+```{.powershell filename="PowerShell"}
 New-Item -ItemType Directory -Force -Path data\idats | Out-Null
 $ss = Import-Csv data\sample_sheet.csv
 
@@ -367,6 +469,7 @@ and pairs the two channels for you:
 ```{r}
 #| label: read-idats
 #| eval: false
+#| filename: "RStudio Console"
 library(minfi)
 
 ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
@@ -410,6 +513,7 @@ are before you force it:
 ```{r}
 #| label: idat-sizes
 #| eval: false
+#| filename: "RStudio Console"
 library(illuminaio)
 sizes <- sapply(file.path("data/idats", paste0(basename(ss$Basename), "_Grn.idat.gz")),
                 function(f) nrow(readIDAT(f)$Quants))
@@ -486,6 +590,7 @@ We can use R to determine the number of cores available on your machine. This us
 ```{r}
 #| label: check-resources
 #| eval: false
+#| filename: "RStudio Console"
 # --- cores -----------------------------------------------------------------
 parallel::detectCores()                      # logical cores, incl. hyperthreading
 parallel::detectCores(logical = FALSE)       # physical cores
@@ -503,14 +608,14 @@ If you would rather not open R, or want to confirm what R is reporting:
 
 ##### macOS
 
-```bash
+```{.bash filename="Terminal (macOS)"}
 sysctl -n hw.logicalcpu      # logical cores, incl. hyperthreading
 sysctl -n hw.physicalcpu     # physical cores -- use this for `workers`
 ```
 
 ##### Linux
 
-```bash
+```{.bash filename="Terminal (Linux)"}
 nproc     # logical cores, incl. hyperthreading
 
 # physical cores = "Core(s) per socket" x "Socket(s)"
@@ -545,7 +650,7 @@ You can check how much RAM is available to use with Task Manager on Windows, Act
 
 From a terminal:
 
-```bash
+```{.bash filename="Terminal (macOS)"}
 sysctl -n hw.memsize | awk '{ printf "%.1f GB installed\n", $1/1024/1024/1024 }'
 vm_stat                      # live breakdown of free / active / wired pages
 ```
@@ -558,7 +663,7 @@ vm_stat                      # live breakdown of free / active / wired pages
 
 From a terminal:
 
-```bash
+```{.bash filename="Terminal (Linux)"}
 free -h                      # 'total' is installed, 'available' is what you can use
 ```
 
@@ -571,7 +676,7 @@ free -h                      # 'total' is installed, 'available' is what you can
 
 From PowerShell:
 
-```powershell
+```{.powershell filename="PowerShell"}
 Get-CimInstance Win32_ComputerSystem |
   Select-Object @{n='InstalledGB';e={[math]::Round($_.TotalPhysicalMemory/1GB,1)}}
 ```
@@ -600,7 +705,7 @@ You can check free disk space using a graphical user interface (GUI) by opening 
 
 From a terminal, checking the disk holding the current folder:
 
-```bash
+```{.bash filename="Terminal (macOS)"}
 df -h .                      # look at the 'Avail' column
 ```
 
@@ -611,7 +716,7 @@ df -h .                      # look at the 'Avail' column
 
 From a terminal, checking the disk holding the current folder:
 
-```bash
+```{.bash filename="Terminal (Linux)"}
 df -h .                      # look at the 'Avail' column
 ```
 
@@ -624,7 +729,7 @@ df -h .                      # look at the 'Avail' column
 
 From PowerShell:
 
-```powershell
+```{.powershell filename="PowerShell"}
 Get-PSDrive -PSProvider FileSystem |
   Select-Object Name, @{n='FreeGB';e={[math]::Round($_.Free/1GB,1)}}
 ```
@@ -641,7 +746,7 @@ files, so budget disk space and time accordingly — and expect the EWAS itself 
 
 #### macOS / Linux command line
 
-```bash
+```{.bash filename="Terminal"}
 mkdir -p data/idats_full && cd data/idats_full
 curl -C - -O "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar"
 tar -xvf GSE132203_RAW.tar
@@ -650,7 +755,7 @@ ls *.idat.gz | wc -l      # expect 1590
 
 #### Windows (PowerShell)
 
-```powershell
+```{.powershell filename="PowerShell"}
 New-Item -ItemType Directory -Force -Path data\idats_full | Out-Null
 Set-Location data\idats_full
 $u = "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE132nnn/GSE132203/suppl/GSE132203_RAW.tar"
@@ -682,6 +787,7 @@ column at all — it has to be recovered from the supplementary-file URL.
 ```{r}
 #| label: full-sample-sheet
 #| eval: false
+#| filename: "RStudio Console"
 library(GEOquery)
 
 # The series matrix is ~30 MB; the default 60-second timeout is not enough.
@@ -753,6 +859,7 @@ using that variable, exactly as 9 of the 96 do in this tutorial.
 ```{r}
 #| label: verify-full-sheet
 #| eval: false
+#| filename: "RStudio Console"
 ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 i  <- match(ss$sample_id, full$sample_id)
 sum(!is.na(i))                                   # 96

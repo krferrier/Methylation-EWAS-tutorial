@@ -1,0 +1,30 @@
+# Chapter 08, the methylGSA section only (methylglm and methylRRA).
+#
+# Why this is its own environment: bioconda's newest methylGSA build is 1.16.0
+# for R 4.2 -- there is no r43/r44/r45 build. Keeping it in ewas-methyl would
+# pin that whole environment to R 4.2, so it lives here instead, exactly as
+# comb-p does in envs/combp.yml.
+#
+# Nothing is shared at runtime. The section's only input is a CSV of
+# BACON-calibrated EWAS results written by chapter 06, so this environment
+# reads a file and writes a table -- it never touches a minfi object.
+#
+# methylGSA is one of three probe-bias corrections chapter 08 compares, and the
+# only one that needs this environment. `gometh` (missMethyl) is the chapter's
+# default and runs in ewas-methyl.
+name: ewas-methylgsa
+channels:
+  - conda-forge
+  - bioconda
+# The matrixStats pin lives here now, and only here. Because this environment
+# is on R 4.2 it gets Bioconductor 3.16, whose MatrixGenerics passes
+# `useNames = NA` -- and the solver otherwise resolves matrixStats 1.3.0 into
+# it, which is the pairing that raises `useNames = NA is defunct`. methylGSA
+# pulls in minfi and missMethyl as dependencies, so the trap is reachable from
+# this environment even though the section itself never touches a minfi object.
+dependencies:
+  - r-base=4.2
+  - r-matrixstats=1.0
+  - bioconductor-methylgsa=1.16.0
+  - bioconductor-illuminahumanmethylationepicanno.ilm10b4.hg19
+  - r-data.table

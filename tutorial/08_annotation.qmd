@@ -642,10 +642,23 @@ offers two alternatives to `gometh`'s Wallenius hypergeometric test:
   rank aggregation**, then runs either an over-representation test or a
   **GSEA**-style rank test — no significance cutoff at all.
 
+::: {.callout-note}
+## This section runs in its own environment
+On the R-only route, `BiocManager` installs `methylGSA` alongside everything else and
+there is nothing to do. Conda users need `envs/methylgsa.yml`
+(`conda env create -f envs/methylgsa.yml`) because bioconda's newest `methylGSA` build is
+for an older R than the rest of the stack. Nothing is shared at run time: the only input
+below is the BACON top-table CSV written by chapter 06.
+:::
+
 ```{r}
 #| label: methylgsa
 #| eval: false
 library(methylGSA)
+# methylGSA needs the array annotation LOADED, not merely installed --
+# methylglm/methylRRA stop with an error if it is missing from the search path.
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+
 tt <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
 pv <- setNames(tt$bacon.p, tt$probe)          # NAMED vector: names = CpG IDs
 

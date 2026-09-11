@@ -6752,20 +6752,37 @@ Figure 4: GO and KEGG enrichment of the top 1,000 CpGs by BACON <em>p</em>, com
 <li><strong><code>methylglm</code></strong> models each gene set with a <strong>logistic regression</strong> in which the per-gene number of probes enters as a covariate — a continuous adjustment rather than a weighted urn, and it takes the <em>whole</em> ranked p-value vector, not a hard top-<em>N</em> cutoff.</li>
 <li><strong><code>methylRRA</code></strong> aggregates the CpG p-values to a per-gene score by <strong>robust rank aggregation</strong>, then runs either an over-representation test or a <strong>GSEA</strong>-style rank test — no significance cutoff at all.</li>
 </ul>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>This section runs in its own environment
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>On the R-only route, <code>BiocManager</code> installs <code>methylGSA</code> alongside everything else and there is nothing to do. Conda users need <code>envs/methylgsa.yml</code> (<code>conda env create -f envs/methylgsa.yml</code>) because bioconda’s newest <code>methylGSA</code> build is for an older R than the rest of the stack. Nothing is shared at run time: the only input below is the BACON top-table CSV written by chapter 06.</p>
+</div>
+</div>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(methylGSA)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>pv <span class="ot">&lt;-</span> <span class="fu">setNames</span>(tt<span class="sc">$</span>bacon.p, tt<span class="sc">$</span>probe)          <span class="co"># NAMED vector: names = CpG IDs</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># logistic-regression enrichment (bias covariate = probes per gene)</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>mglm <span class="ot">&lt;-</span> <span class="fu">methylglm</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># methylGSA needs the array annotation LOADED, not merely installed --</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># methylglm/methylRRA stop with an error if it is missing from the search path.</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>pv <span class="ot">&lt;-</span> <span class="fu">setNames</span>(tt<span class="sc">$</span>bacon.p, tt<span class="sc">$</span>probe)          <span class="co"># NAMED vector: names = CpG IDs</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># GSEA on rank-aggregated per-gene scores</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>mrra <span class="ot">&lt;-</span> <span class="fu">methylRRA</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>, <span class="at">method =</span> <span class="st">&quot;GSEA&quot;</span>,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># logistic-regression enrichment (bias covariate = probes per gene)</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>mglm <span class="ot">&lt;-</span> <span class="fu">methylglm</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co"># GSEA on rank-aggregated per-gene scores</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>mrra <span class="ot">&lt;-</span> <span class="fu">methylRRA</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>, <span class="at">method =</span> <span class="st">&quot;GSEA&quot;</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>We ran all three tools on the <strong>same</strong> BACON top-table, against the <strong>same</strong> KEGG collection, and recorded both how many pathways each calls significant at FDR &lt; 0.05 and what each one puts at the top:</p>
@@ -8495,379 +8512,392 @@ Zhou, Wanding, Peter W Laird, and Hui Shen. 2017. <span>“Comprehensive Charact
 <span id="cb12-644"><a href="#cb12-644" aria-hidden="true" tabindex="-1"></a>  rank aggregation**, then runs either an over-representation test or a</span>
 <span id="cb12-645"><a href="#cb12-645" aria-hidden="true" tabindex="-1"></a>  **GSEA**-style rank test — no significance cutoff at all.</span>
 <span id="cb12-646"><a href="#cb12-646" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-649"><a href="#cb12-649" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb12-650"><a href="#cb12-650" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: methylgsa</span></span>
-<span id="cb12-651"><a href="#cb12-651" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb12-652"><a href="#cb12-652" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(methylGSA)</span>
-<span id="cb12-653"><a href="#cb12-653" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
-<span id="cb12-654"><a href="#cb12-654" aria-hidden="true" tabindex="-1"></a>pv <span class="ot">&lt;-</span> <span class="fu">setNames</span>(tt<span class="sc">$</span>bacon.p, tt<span class="sc">$</span>probe)          <span class="co"># NAMED vector: names = CpG IDs</span></span>
+<span id="cb12-647"><a href="#cb12-647" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb12-648"><a href="#cb12-648" aria-hidden="true" tabindex="-1"></a><span class="fu">## This section runs in its own environment</span></span>
+<span id="cb12-649"><a href="#cb12-649" aria-hidden="true" tabindex="-1"></a>On the R-only route, <span class="in">`BiocManager`</span> installs <span class="in">`methylGSA`</span> alongside everything else and</span>
+<span id="cb12-650"><a href="#cb12-650" aria-hidden="true" tabindex="-1"></a>there is nothing to do. Conda users need <span class="in">`envs/methylgsa.yml`</span></span>
+<span id="cb12-651"><a href="#cb12-651" aria-hidden="true" tabindex="-1"></a>(<span class="in">`conda env create -f envs/methylgsa.yml`</span>) because bioconda&#39;s newest <span class="in">`methylGSA`</span> build is</span>
+<span id="cb12-652"><a href="#cb12-652" aria-hidden="true" tabindex="-1"></a>for an older R than the rest of the stack. Nothing is shared at run time: the only input</span>
+<span id="cb12-653"><a href="#cb12-653" aria-hidden="true" tabindex="-1"></a>below is the BACON top-table CSV written by chapter 06.</span>
+<span id="cb12-654"><a href="#cb12-654" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb12-655"><a href="#cb12-655" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-656"><a href="#cb12-656" aria-hidden="true" tabindex="-1"></a><span class="co"># logistic-regression enrichment (bias covariate = probes per gene)</span></span>
-<span id="cb12-657"><a href="#cb12-657" aria-hidden="true" tabindex="-1"></a>mglm <span class="ot">&lt;-</span> <span class="fu">methylglm</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>,</span>
-<span id="cb12-658"><a href="#cb12-658" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span>
-<span id="cb12-659"><a href="#cb12-659" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-660"><a href="#cb12-660" aria-hidden="true" tabindex="-1"></a><span class="co"># GSEA on rank-aggregated per-gene scores</span></span>
-<span id="cb12-661"><a href="#cb12-661" aria-hidden="true" tabindex="-1"></a>mrra <span class="ot">&lt;-</span> <span class="fu">methylRRA</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>, <span class="at">method =</span> <span class="st">&quot;GSEA&quot;</span>,</span>
-<span id="cb12-662"><a href="#cb12-662" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span>
-<span id="cb12-663"><a href="#cb12-663" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb12-664"><a href="#cb12-664" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-665"><a href="#cb12-665" aria-hidden="true" tabindex="-1"></a>We ran all three tools on the **same** BACON top-table, against the **same** KEGG</span>
-<span id="cb12-666"><a href="#cb12-666" aria-hidden="true" tabindex="-1"></a>collection, and recorded both how many pathways each calls significant at</span>
-<span id="cb12-667"><a href="#cb12-667" aria-hidden="true" tabindex="-1"></a>FDR &lt; 0.05 and what each one puts at the top:</span>
+<span id="cb12-658"><a href="#cb12-658" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb12-659"><a href="#cb12-659" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: methylgsa</span></span>
+<span id="cb12-660"><a href="#cb12-660" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb12-661"><a href="#cb12-661" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(methylGSA)</span>
+<span id="cb12-662"><a href="#cb12-662" aria-hidden="true" tabindex="-1"></a><span class="co"># methylGSA needs the array annotation LOADED, not merely installed --</span></span>
+<span id="cb12-663"><a href="#cb12-663" aria-hidden="true" tabindex="-1"></a><span class="co"># methylglm/methylRRA stop with an error if it is missing from the search path.</span></span>
+<span id="cb12-664"><a href="#cb12-664" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)</span>
+<span id="cb12-665"><a href="#cb12-665" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-666"><a href="#cb12-666" aria-hidden="true" tabindex="-1"></a>tt <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
+<span id="cb12-667"><a href="#cb12-667" aria-hidden="true" tabindex="-1"></a>pv <span class="ot">&lt;-</span> <span class="fu">setNames</span>(tt<span class="sc">$</span>bacon.p, tt<span class="sc">$</span>probe)          <span class="co"># NAMED vector: names = CpG IDs</span></span>
 <span id="cb12-668"><a href="#cb12-668" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-669"><a href="#cb12-669" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gsa-compare, echo=FALSE, message=FALSE}</span></span>
-<span id="cb12-670"><a href="#cb12-670" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb12-671"><a href="#cb12-671" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_gsa_method_comparison.csv&quot;</span>),</span>
-<span id="cb12-672"><a href="#cb12-672" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Three probe-bias corrections, one dataset (top: gometh from the section above; methylGSA&#39;s two models below). All three return zero KEGG pathways at FDR &lt; 0.05, but each nominates a different pathway as its leader — the ranking, not just the count, depends on the bias model and the input convention.&quot;</span>)</span>
-<span id="cb12-673"><a href="#cb12-673" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb12-674"><a href="#cb12-674" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-675"><a href="#cb12-675" aria-hidden="true" tabindex="-1"></a>On this dataset the three agree on the *count* — **zero** KEGG pathways at</span>
-<span id="cb12-676"><a href="#cb12-676" aria-hidden="true" tabindex="-1"></a>FDR &lt; 0.05 from all three — and disagree on everything else. Each nominates a</span>
-<span id="cb12-677"><a href="#cb12-677" aria-hidden="true" tabindex="-1"></a>different leader (Basal cell carcinoma, Phosphatidylinositol signaling,</span>
-<span id="cb12-678"><a href="#cb12-678" aria-hidden="true" tabindex="-1"></a>Hedgehog signaling), and the smallest FDR any of them reaches spans an order of</span>
-<span id="cb12-679"><a href="#cb12-679" aria-hidden="true" tabindex="-1"></a>magnitude: 0.38 for <span class="in">`gometh`</span>, 0.45 for <span class="in">`methylglm`</span>, **0.098** for</span>
-<span id="cb12-680"><a href="#cb12-680" aria-hidden="true" tabindex="-1"></a><span class="in">`methylRRA`</span>-GSEA. That last number is the informative one. <span class="in">`methylRRA`</span>&#39;s GSEA</span>
-<span id="cb12-681"><a href="#cb12-681" aria-hidden="true" tabindex="-1"></a>mode uses the full ranking and no cutoff, so it is the most sensitive *and* the</span>
-<span id="cb12-682"><a href="#cb12-682" aria-hidden="true" tabindex="-1"></a>most prone to calling pathways in a null dataset — it comes within a factor of</span>
-<span id="cb12-683"><a href="#cb12-683" aria-hidden="true" tabindex="-1"></a>two of significance here, on data where nothing is there to find. Had our</span>
-<span id="cb12-684"><a href="#cb12-684" aria-hidden="true" tabindex="-1"></a>nominal *p* been a little smaller, or the gene set a little larger, it alone</span>
-<span id="cb12-685"><a href="#cb12-685" aria-hidden="true" tabindex="-1"></a>would have produced a &quot;significant pathway&quot; to write up.</span>
-<span id="cb12-686"><a href="#cb12-686" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-687"><a href="#cb12-687" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gsa-rra, echo=FALSE, message=FALSE}</span></span>
-<span id="cb12-688"><a href="#cb12-688" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_methylgsa_rra_top.csv&quot;</span>)[, .(KEGG, Pathway, Size, NES, pvalue, padj)],</span>
-<span id="cb12-689"><a href="#cb12-689" aria-hidden="true" tabindex="-1"></a>  <span class="at">digits =</span> <span class="dv">4</span>,</span>
-<span id="cb12-690"><a href="#cb12-690" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;The five top-ranked methylRRA-GSEA KEGG pathways. None survives FDR &lt; 0.05, but Hedgehog signaling reaches FDR = 0.098 on a dataset with no epigenome-wide signal — the sensitivity/specificity trade-off of a cutoff-free rank test, made concrete.&quot;</span>)</span>
-<span id="cb12-691"><a href="#cb12-691" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb12-692"><a href="#cb12-692" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-693"><a href="#cb12-693" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
-<span id="cb12-694"><a href="#cb12-694" aria-hidden="true" tabindex="-1"></a><span class="fu">## The tool is a modeling choice, not a lookup</span></span>
-<span id="cb12-695"><a href="#cb12-695" aria-hidden="true" tabindex="-1"></a>Report the method **and** its settings, not just &quot;KEGG enrichment.&quot; A reviewer</span>
-<span id="cb12-696"><a href="#cb12-696" aria-hidden="true" tabindex="-1"></a>who reruns your CpGs through a different tool will get a different list, and that</span>
-<span id="cb12-697"><a href="#cb12-697" aria-hidden="true" tabindex="-1"></a>is expected — <span class="in">`gometh`</span>, <span class="in">`methylglm`</span>, and <span class="in">`methylRRA`</span> encode different</span>
-<span id="cb12-698"><a href="#cb12-698" aria-hidden="true" tabindex="-1"></a>assumptions about how probe density biases the test. Pick one *a priori* (we</span>
-<span id="cb12-699"><a href="#cb12-699" aria-hidden="true" tabindex="-1"></a>default to <span class="in">`gometh`</span> for its conservative, well-validated behavior), and if you</span>
-<span id="cb12-700"><a href="#cb12-700" aria-hidden="true" tabindex="-1"></a>report a second for sensitivity, say so and show both. Never run all three and</span>
-<span id="cb12-701"><a href="#cb12-701" aria-hidden="true" tabindex="-1"></a>present the one with the prettiest pathway.</span>
-<span id="cb12-702"><a href="#cb12-702" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb12-703"><a href="#cb12-703" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-704"><a href="#cb12-704" aria-hidden="true" tabindex="-1"></a><span class="fu">### KnowYourCG (KYCG): CpG-centric enrichment on regulatory elements</span></span>
+<span id="cb12-669"><a href="#cb12-669" aria-hidden="true" tabindex="-1"></a><span class="co"># logistic-regression enrichment (bias covariate = probes per gene)</span></span>
+<span id="cb12-670"><a href="#cb12-670" aria-hidden="true" tabindex="-1"></a>mglm <span class="ot">&lt;-</span> <span class="fu">methylglm</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>,</span>
+<span id="cb12-671"><a href="#cb12-671" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span>
+<span id="cb12-672"><a href="#cb12-672" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-673"><a href="#cb12-673" aria-hidden="true" tabindex="-1"></a><span class="co"># GSEA on rank-aggregated per-gene scores</span></span>
+<span id="cb12-674"><a href="#cb12-674" aria-hidden="true" tabindex="-1"></a>mrra <span class="ot">&lt;-</span> <span class="fu">methylRRA</span>(<span class="at">cpg.pval =</span> pv, <span class="at">array.type =</span> <span class="st">&quot;EPIC&quot;</span>, <span class="at">method =</span> <span class="st">&quot;GSEA&quot;</span>,</span>
+<span id="cb12-675"><a href="#cb12-675" aria-hidden="true" tabindex="-1"></a>                  <span class="at">GS.type =</span> <span class="st">&quot;KEGG&quot;</span>, <span class="at">minsize =</span> <span class="dv">10</span>, <span class="at">maxsize =</span> <span class="dv">500</span>)</span>
+<span id="cb12-676"><a href="#cb12-676" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb12-677"><a href="#cb12-677" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-678"><a href="#cb12-678" aria-hidden="true" tabindex="-1"></a>We ran all three tools on the **same** BACON top-table, against the **same** KEGG</span>
+<span id="cb12-679"><a href="#cb12-679" aria-hidden="true" tabindex="-1"></a>collection, and recorded both how many pathways each calls significant at</span>
+<span id="cb12-680"><a href="#cb12-680" aria-hidden="true" tabindex="-1"></a>FDR &lt; 0.05 and what each one puts at the top:</span>
+<span id="cb12-681"><a href="#cb12-681" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-682"><a href="#cb12-682" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gsa-compare, echo=FALSE, message=FALSE}</span></span>
+<span id="cb12-683"><a href="#cb12-683" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb12-684"><a href="#cb12-684" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_gsa_method_comparison.csv&quot;</span>),</span>
+<span id="cb12-685"><a href="#cb12-685" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Three probe-bias corrections, one dataset (top: gometh from the section above; methylGSA&#39;s two models below). All three return zero KEGG pathways at FDR &lt; 0.05, but each nominates a different pathway as its leader — the ranking, not just the count, depends on the bias model and the input convention.&quot;</span>)</span>
+<span id="cb12-686"><a href="#cb12-686" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb12-687"><a href="#cb12-687" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-688"><a href="#cb12-688" aria-hidden="true" tabindex="-1"></a>On this dataset the three agree on the *count* — **zero** KEGG pathways at</span>
+<span id="cb12-689"><a href="#cb12-689" aria-hidden="true" tabindex="-1"></a>FDR &lt; 0.05 from all three — and disagree on everything else. Each nominates a</span>
+<span id="cb12-690"><a href="#cb12-690" aria-hidden="true" tabindex="-1"></a>different leader (Basal cell carcinoma, Phosphatidylinositol signaling,</span>
+<span id="cb12-691"><a href="#cb12-691" aria-hidden="true" tabindex="-1"></a>Hedgehog signaling), and the smallest FDR any of them reaches spans an order of</span>
+<span id="cb12-692"><a href="#cb12-692" aria-hidden="true" tabindex="-1"></a>magnitude: 0.38 for <span class="in">`gometh`</span>, 0.45 for <span class="in">`methylglm`</span>, **0.098** for</span>
+<span id="cb12-693"><a href="#cb12-693" aria-hidden="true" tabindex="-1"></a><span class="in">`methylRRA`</span>-GSEA. That last number is the informative one. <span class="in">`methylRRA`</span>&#39;s GSEA</span>
+<span id="cb12-694"><a href="#cb12-694" aria-hidden="true" tabindex="-1"></a>mode uses the full ranking and no cutoff, so it is the most sensitive *and* the</span>
+<span id="cb12-695"><a href="#cb12-695" aria-hidden="true" tabindex="-1"></a>most prone to calling pathways in a null dataset — it comes within a factor of</span>
+<span id="cb12-696"><a href="#cb12-696" aria-hidden="true" tabindex="-1"></a>two of significance here, on data where nothing is there to find. Had our</span>
+<span id="cb12-697"><a href="#cb12-697" aria-hidden="true" tabindex="-1"></a>nominal *p* been a little smaller, or the gene set a little larger, it alone</span>
+<span id="cb12-698"><a href="#cb12-698" aria-hidden="true" tabindex="-1"></a>would have produced a &quot;significant pathway&quot; to write up.</span>
+<span id="cb12-699"><a href="#cb12-699" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-700"><a href="#cb12-700" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gsa-rra, echo=FALSE, message=FALSE}</span></span>
+<span id="cb12-701"><a href="#cb12-701" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_methylgsa_rra_top.csv&quot;</span>)[, .(KEGG, Pathway, Size, NES, pvalue, padj)],</span>
+<span id="cb12-702"><a href="#cb12-702" aria-hidden="true" tabindex="-1"></a>  <span class="at">digits =</span> <span class="dv">4</span>,</span>
+<span id="cb12-703"><a href="#cb12-703" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;The five top-ranked methylRRA-GSEA KEGG pathways. None survives FDR &lt; 0.05, but Hedgehog signaling reaches FDR = 0.098 on a dataset with no epigenome-wide signal — the sensitivity/specificity trade-off of a cutoff-free rank test, made concrete.&quot;</span>)</span>
+<span id="cb12-704"><a href="#cb12-704" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb12-705"><a href="#cb12-705" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-706"><a href="#cb12-706" aria-hidden="true" tabindex="-1"></a><span class="in">`gometh`</span> asks a **gene-set** question — it collapses your CpGs to genes and tests</span>
-<span id="cb12-707"><a href="#cb12-707" aria-hidden="true" tabindex="-1"></a>GO/KEGG. But methylation acts through *regulatory elements* — CpG islands,</span>
-<span id="cb12-708"><a href="#cb12-708" aria-hidden="true" tabindex="-1"></a>transcription-factor binding sites, chromatin states, histone marks — and</span>
-<span id="cb12-709"><a href="#cb12-709" aria-hidden="true" tabindex="-1"></a>collapsing to genes throws that resolution away. **KnowYourCG** (KYCG), part of</span>
-<span id="cb12-710"><a href="#cb12-710" aria-hidden="true" tabindex="-1"></a>Zhou&#39;s <span class="in">`sesame`</span>/<span class="in">`knowYourCG`</span> ecosystem <span class="co">[</span><span class="ot">@goldberg2025knowyourcg</span><span class="co">]</span>, keeps the CpG</span>
-<span id="cb12-711"><a href="#cb12-711" aria-hidden="true" tabindex="-1"></a>as the unit of analysis and tests your hit set directly against curated</span>
-<span id="cb12-712"><a href="#cb12-712" aria-hidden="true" tabindex="-1"></a>databases of these elements. It is the CpG-centric complement to <span class="in">`gometh`</span>, not a</span>
-<span id="cb12-713"><a href="#cb12-713" aria-hidden="true" tabindex="-1"></a>replacement, and it comes from the same lab as the annotation we used in <span class="co">[</span><span class="ot">Part 1</span><span class="co">](#part-1)</span>,</span>
-<span id="cb12-714"><a href="#cb12-714" aria-hidden="true" tabindex="-1"></a>so the coordinates and databases are build-consistent by construction.</span>
-<span id="cb12-715"><a href="#cb12-715" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-718"><a href="#cb12-718" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb12-719"><a href="#cb12-719" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: kycg</span></span>
-<span id="cb12-720"><a href="#cb12-720" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb12-721"><a href="#cb12-721" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knowYourCG)</span>
-<span id="cb12-722"><a href="#cb12-722" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sesameData)</span>
-<span id="cb12-723"><a href="#cb12-723" aria-hidden="true" tabindex="-1"></a>tt      <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
-<span id="cb12-724"><a href="#cb12-724" aria-hidden="true" tabindex="-1"></a>all.cpg <span class="ot">&lt;-</span> tt<span class="sc">$</span>probe                              <span class="co"># universe = every CpG you tested</span></span>
-<span id="cb12-725"><a href="#cb12-725" aria-hidden="true" tabindex="-1"></a>sig.cpg <span class="ot">&lt;-</span> tt[<span class="fu">order</span>(bacon.p)][<span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>]<span class="sc">$</span>probe   <span class="co"># your query set</span></span>
-<span id="cb12-726"><a href="#cb12-726" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-727"><a href="#cb12-727" aria-hidden="true" tabindex="-1"></a><span class="co"># What CpG-feature databases are available for this platform?</span></span>
-<span id="cb12-728"><a href="#cb12-728" aria-hidden="true" tabindex="-1"></a><span class="co"># ALWAYS list first: the catalog names carry datestamps and they change</span></span>
-<span id="cb12-729"><a href="#cb12-729" aria-hidden="true" tabindex="-1"></a><span class="co"># between releases. A wrong name fails at load time, not at test time.</span></span>
-<span id="cb12-730"><a href="#cb12-730" aria-hidden="true" tabindex="-1"></a><span class="fu">listDBGroups</span>(<span class="st">&quot;EPIC&quot;</span>)           <span class="co"># EPIC knowledgebases: CGI, TFBS, chromHMM, HM, ...</span></span>
-<span id="cb12-731"><a href="#cb12-731" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-732"><a href="#cb12-732" aria-hidden="true" tabindex="-1"></a><span class="co"># Cache the databases you want from ExperimentHub, then test.</span></span>
-<span id="cb12-733"><a href="#cb12-733" aria-hidden="true" tabindex="-1"></a>dbs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;KYCG.EPIC.CGI.20210713&quot;</span>,               <span class="co"># CpG-island relation</span></span>
-<span id="cb12-734"><a href="#cb12-734" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;KYCG.EPIC.chromHMM.20211020&quot;</span>,          <span class="co"># chromatin states</span></span>
-<span id="cb12-735"><a href="#cb12-735" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;KYCG.EPIC.TFBSconsensus.20211013&quot;</span>,     <span class="co"># TF binding sites</span></span>
-<span id="cb12-736"><a href="#cb12-736" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;KYCG.EPIC.HMconsensus.20211013&quot;</span>)       <span class="co"># histone marks</span></span>
-<span id="cb12-737"><a href="#cb12-737" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">testEnrichment</span>(<span class="at">query =</span> sig.cpg, <span class="at">databases =</span> dbs,</span>
-<span id="cb12-738"><a href="#cb12-738" aria-hidden="true" tabindex="-1"></a>                      <span class="at">universe =</span> all.cpg, <span class="at">platform =</span> <span class="st">&quot;EPIC&quot;</span>)</span>
-<span id="cb12-739"><a href="#cb12-739" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> res[<span class="fu">order</span>(res<span class="sc">$</span>FDR), ]</span>
-<span id="cb12-740"><a href="#cb12-740" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb12-741"><a href="#cb12-741" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-742"><a href="#cb12-742" aria-hidden="true" tabindex="-1"></a><span class="in">`testEnrichment`</span> runs a Fisher test of your query CpGs against each database,</span>
-<span id="cb12-743"><a href="#cb12-743" aria-hidden="true" tabindex="-1"></a>using **your** tested set as the universe (the same universe discipline that</span>
-<span id="cb12-744"><a href="#cb12-744" aria-hidden="true" tabindex="-1"></a>matters for <span class="in">`gometh`</span>). The databases are versioned knowledgebases pulled from</span>
-<span id="cb12-745"><a href="#cb12-745" aria-hidden="true" tabindex="-1"></a>ExperimentHub, so the run is reproducible.</span>
-<span id="cb12-746"><a href="#cb12-746" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-747"><a href="#cb12-747" aria-hidden="true" tabindex="-1"></a>The run confirms the universe it is testing against and how many features it</span>
-<span id="cb12-748"><a href="#cb12-748" aria-hidden="true" tabindex="-1"></a>tested: <span class="in">`universe: 756251 | query: 1000`</span>, **863 features** across the four</span>
-<span id="cb12-749"><a href="#cb12-749" aria-hidden="true" tabindex="-1"></a>knowledgebases. That number matters for the interpretation below — the four</span>
-<span id="cb12-750"><a href="#cb12-750" aria-hidden="true" tabindex="-1"></a>databases are wildly different sizes.</span>
-<span id="cb12-751"><a href="#cb12-751" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-752"><a href="#cb12-752" aria-hidden="true" tabindex="-1"></a>On our teaching subset KYCG returns **41 features at FDR &lt; 0.05** where <span class="in">`gometh`</span></span>
-<span id="cb12-753"><a href="#cb12-753" aria-hidden="true" tabindex="-1"></a>returned nothing. That looks like a decisive win for the CpG-centric lens. It is</span>
-<span id="cb12-754"><a href="#cb12-754" aria-hidden="true" tabindex="-1"></a>partly real and partly an artifact of the test&#39;s shape, and separating the two is</span>
-<span id="cb12-755"><a href="#cb12-755" aria-hidden="true" tabindex="-1"></a>the lesson of this section.</span>
-<span id="cb12-756"><a href="#cb12-756" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-757"><a href="#cb12-757" aria-hidden="true" tabindex="-1"></a><span class="al">![The twelve most significant KYCG features for the top 1,000 CpGs. Four EPIC knowledgebases were tested; only three are represented here, and the CGI knowledgebase contributes no significant feature at all. Bars are $\log_2$ odds ratio; every bar shown clears FDR &lt; 0.05. Note what is *absent*: no CpG-island-relation feature appears, and every significant enrichment is positive and modest (log₂OR 0.36–1.28).](data/08_annotation/08_kycg_enrichment.png)</span>{#fig-kycg width=90%}</span>
-<span id="cb12-758"><a href="#cb12-758" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-759"><a href="#cb12-759" aria-hidden="true" tabindex="-1"></a><span class="in">```{r kycg-db, echo=FALSE, message=FALSE}</span></span>
-<span id="cb12-760"><a href="#cb12-760" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_kycg_db_summary.csv&quot;</span>),</span>
-<span id="cb12-761"><a href="#cb12-761" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;KYCG results per knowledgebase. The four databases differ in size by two orders of magnitude, and almost all of the significant hits come from the largest one.&quot;</span>)</span>
-<span id="cb12-762"><a href="#cb12-762" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb12-763"><a href="#cb12-763" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-764"><a href="#cb12-764" aria-hidden="true" tabindex="-1"></a>Read that table before reading the hits. Three things fall out of it:</span>
-<span id="cb12-765"><a href="#cb12-765" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-766"><a href="#cb12-766" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The 41 hits are not spread evenly** — **35 of 41** come from</span>
-<span id="cb12-767"><a href="#cb12-767" aria-hidden="true" tabindex="-1"></a>  <span class="in">`TFBSconsensus`</span> alone, which contributes 783 of the 863 features tested. Five</span>
-<span id="cb12-768"><a href="#cb12-768" aria-hidden="true" tabindex="-1"></a>  come from histone marks, one from chromatin state.</span>
-<span id="cb12-769"><a href="#cb12-769" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**`1_TssA` (active TSS) is the single chromatin-state hit**</span>
-<span id="cb12-770"><a href="#cb12-770" aria-hidden="true" tabindex="-1"></a>  (log₂OR = 0.49, FDR = 0.0033) — consistent with the mild promoter lean</span>
-<span id="cb12-771"><a href="#cb12-771" aria-hidden="true" tabindex="-1"></a>  @fig-feature showed descriptively, and the one result here that lines up with</span>
-<span id="cb12-772"><a href="#cb12-772" aria-hidden="true" tabindex="-1"></a>  an independent observation elsewhere in the chapter.</span>
-<span id="cb12-773"><a href="#cb12-773" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**CpG-island relation returns nothing at FDR &lt; 0.05.** Islands are enriched in</span>
-<span id="cb12-774"><a href="#cb12-774" aria-hidden="true" tabindex="-1"></a>  the expected direction (log₂OR = 0.27, nominal *p* = 0.0078) but land at</span>
-<span id="cb12-775"><a href="#cb12-775" aria-hidden="true" tabindex="-1"></a>  **FDR = 0.084**. The visual island lean in @fig-island (22.3% vs 19.2%) is</span>
-<span id="cb12-776"><a href="#cb12-776" aria-hidden="true" tabindex="-1"></a>  therefore *not* corroborated by the formal test — the descriptive impression</span>
-<span id="cb12-777"><a href="#cb12-777" aria-hidden="true" tabindex="-1"></a>  survives, the inference does not.</span>
+<span id="cb12-706"><a href="#cb12-706" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
+<span id="cb12-707"><a href="#cb12-707" aria-hidden="true" tabindex="-1"></a><span class="fu">## The tool is a modeling choice, not a lookup</span></span>
+<span id="cb12-708"><a href="#cb12-708" aria-hidden="true" tabindex="-1"></a>Report the method **and** its settings, not just &quot;KEGG enrichment.&quot; A reviewer</span>
+<span id="cb12-709"><a href="#cb12-709" aria-hidden="true" tabindex="-1"></a>who reruns your CpGs through a different tool will get a different list, and that</span>
+<span id="cb12-710"><a href="#cb12-710" aria-hidden="true" tabindex="-1"></a>is expected — <span class="in">`gometh`</span>, <span class="in">`methylglm`</span>, and <span class="in">`methylRRA`</span> encode different</span>
+<span id="cb12-711"><a href="#cb12-711" aria-hidden="true" tabindex="-1"></a>assumptions about how probe density biases the test. Pick one *a priori* (we</span>
+<span id="cb12-712"><a href="#cb12-712" aria-hidden="true" tabindex="-1"></a>default to <span class="in">`gometh`</span> for its conservative, well-validated behavior), and if you</span>
+<span id="cb12-713"><a href="#cb12-713" aria-hidden="true" tabindex="-1"></a>report a second for sensitivity, say so and show both. Never run all three and</span>
+<span id="cb12-714"><a href="#cb12-714" aria-hidden="true" tabindex="-1"></a>present the one with the prettiest pathway.</span>
+<span id="cb12-715"><a href="#cb12-715" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb12-716"><a href="#cb12-716" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-717"><a href="#cb12-717" aria-hidden="true" tabindex="-1"></a><span class="fu">### KnowYourCG (KYCG): CpG-centric enrichment on regulatory elements</span></span>
+<span id="cb12-718"><a href="#cb12-718" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-719"><a href="#cb12-719" aria-hidden="true" tabindex="-1"></a><span class="in">`gometh`</span> asks a **gene-set** question — it collapses your CpGs to genes and tests</span>
+<span id="cb12-720"><a href="#cb12-720" aria-hidden="true" tabindex="-1"></a>GO/KEGG. But methylation acts through *regulatory elements* — CpG islands,</span>
+<span id="cb12-721"><a href="#cb12-721" aria-hidden="true" tabindex="-1"></a>transcription-factor binding sites, chromatin states, histone marks — and</span>
+<span id="cb12-722"><a href="#cb12-722" aria-hidden="true" tabindex="-1"></a>collapsing to genes throws that resolution away. **KnowYourCG** (KYCG), part of</span>
+<span id="cb12-723"><a href="#cb12-723" aria-hidden="true" tabindex="-1"></a>Zhou&#39;s <span class="in">`sesame`</span>/<span class="in">`knowYourCG`</span> ecosystem <span class="co">[</span><span class="ot">@goldberg2025knowyourcg</span><span class="co">]</span>, keeps the CpG</span>
+<span id="cb12-724"><a href="#cb12-724" aria-hidden="true" tabindex="-1"></a>as the unit of analysis and tests your hit set directly against curated</span>
+<span id="cb12-725"><a href="#cb12-725" aria-hidden="true" tabindex="-1"></a>databases of these elements. It is the CpG-centric complement to <span class="in">`gometh`</span>, not a</span>
+<span id="cb12-726"><a href="#cb12-726" aria-hidden="true" tabindex="-1"></a>replacement, and it comes from the same lab as the annotation we used in <span class="co">[</span><span class="ot">Part 1</span><span class="co">](#part-1)</span>,</span>
+<span id="cb12-727"><a href="#cb12-727" aria-hidden="true" tabindex="-1"></a>so the coordinates and databases are build-consistent by construction.</span>
+<span id="cb12-728"><a href="#cb12-728" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-731"><a href="#cb12-731" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb12-732"><a href="#cb12-732" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: kycg</span></span>
+<span id="cb12-733"><a href="#cb12-733" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
+<span id="cb12-734"><a href="#cb12-734" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knowYourCG)</span>
+<span id="cb12-735"><a href="#cb12-735" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sesameData)</span>
+<span id="cb12-736"><a href="#cb12-736" aria-hidden="true" tabindex="-1"></a>tt      <span class="ot">&lt;-</span> data.table<span class="sc">::</span><span class="fu">fread</span>(<span class="st">&quot;data/06_ewas_bacon_toptable.csv.gz&quot;</span>)</span>
+<span id="cb12-737"><a href="#cb12-737" aria-hidden="true" tabindex="-1"></a>all.cpg <span class="ot">&lt;-</span> tt<span class="sc">$</span>probe                              <span class="co"># universe = every CpG you tested</span></span>
+<span id="cb12-738"><a href="#cb12-738" aria-hidden="true" tabindex="-1"></a>sig.cpg <span class="ot">&lt;-</span> tt[<span class="fu">order</span>(bacon.p)][<span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>]<span class="sc">$</span>probe   <span class="co"># your query set</span></span>
+<span id="cb12-739"><a href="#cb12-739" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-740"><a href="#cb12-740" aria-hidden="true" tabindex="-1"></a><span class="co"># What CpG-feature databases are available for this platform?</span></span>
+<span id="cb12-741"><a href="#cb12-741" aria-hidden="true" tabindex="-1"></a><span class="co"># ALWAYS list first: the catalog names carry datestamps and they change</span></span>
+<span id="cb12-742"><a href="#cb12-742" aria-hidden="true" tabindex="-1"></a><span class="co"># between releases. A wrong name fails at load time, not at test time.</span></span>
+<span id="cb12-743"><a href="#cb12-743" aria-hidden="true" tabindex="-1"></a><span class="fu">listDBGroups</span>(<span class="st">&quot;EPIC&quot;</span>)           <span class="co"># EPIC knowledgebases: CGI, TFBS, chromHMM, HM, ...</span></span>
+<span id="cb12-744"><a href="#cb12-744" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-745"><a href="#cb12-745" aria-hidden="true" tabindex="-1"></a><span class="co"># Cache the databases you want from ExperimentHub, then test.</span></span>
+<span id="cb12-746"><a href="#cb12-746" aria-hidden="true" tabindex="-1"></a>dbs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;KYCG.EPIC.CGI.20210713&quot;</span>,               <span class="co"># CpG-island relation</span></span>
+<span id="cb12-747"><a href="#cb12-747" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;KYCG.EPIC.chromHMM.20211020&quot;</span>,          <span class="co"># chromatin states</span></span>
+<span id="cb12-748"><a href="#cb12-748" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;KYCG.EPIC.TFBSconsensus.20211013&quot;</span>,     <span class="co"># TF binding sites</span></span>
+<span id="cb12-749"><a href="#cb12-749" aria-hidden="true" tabindex="-1"></a>         <span class="st">&quot;KYCG.EPIC.HMconsensus.20211013&quot;</span>)       <span class="co"># histone marks</span></span>
+<span id="cb12-750"><a href="#cb12-750" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">testEnrichment</span>(<span class="at">query =</span> sig.cpg, <span class="at">databases =</span> dbs,</span>
+<span id="cb12-751"><a href="#cb12-751" aria-hidden="true" tabindex="-1"></a>                      <span class="at">universe =</span> all.cpg, <span class="at">platform =</span> <span class="st">&quot;EPIC&quot;</span>)</span>
+<span id="cb12-752"><a href="#cb12-752" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> res[<span class="fu">order</span>(res<span class="sc">$</span>FDR), ]</span>
+<span id="cb12-753"><a href="#cb12-753" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb12-754"><a href="#cb12-754" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-755"><a href="#cb12-755" aria-hidden="true" tabindex="-1"></a><span class="in">`testEnrichment`</span> runs a Fisher test of your query CpGs against each database,</span>
+<span id="cb12-756"><a href="#cb12-756" aria-hidden="true" tabindex="-1"></a>using **your** tested set as the universe (the same universe discipline that</span>
+<span id="cb12-757"><a href="#cb12-757" aria-hidden="true" tabindex="-1"></a>matters for <span class="in">`gometh`</span>). The databases are versioned knowledgebases pulled from</span>
+<span id="cb12-758"><a href="#cb12-758" aria-hidden="true" tabindex="-1"></a>ExperimentHub, so the run is reproducible.</span>
+<span id="cb12-759"><a href="#cb12-759" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-760"><a href="#cb12-760" aria-hidden="true" tabindex="-1"></a>The run confirms the universe it is testing against and how many features it</span>
+<span id="cb12-761"><a href="#cb12-761" aria-hidden="true" tabindex="-1"></a>tested: <span class="in">`universe: 756251 | query: 1000`</span>, **863 features** across the four</span>
+<span id="cb12-762"><a href="#cb12-762" aria-hidden="true" tabindex="-1"></a>knowledgebases. That number matters for the interpretation below — the four</span>
+<span id="cb12-763"><a href="#cb12-763" aria-hidden="true" tabindex="-1"></a>databases are wildly different sizes.</span>
+<span id="cb12-764"><a href="#cb12-764" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-765"><a href="#cb12-765" aria-hidden="true" tabindex="-1"></a>On our teaching subset KYCG returns **41 features at FDR &lt; 0.05** where <span class="in">`gometh`</span></span>
+<span id="cb12-766"><a href="#cb12-766" aria-hidden="true" tabindex="-1"></a>returned nothing. That looks like a decisive win for the CpG-centric lens. It is</span>
+<span id="cb12-767"><a href="#cb12-767" aria-hidden="true" tabindex="-1"></a>partly real and partly an artifact of the test&#39;s shape, and separating the two is</span>
+<span id="cb12-768"><a href="#cb12-768" aria-hidden="true" tabindex="-1"></a>the lesson of this section.</span>
+<span id="cb12-769"><a href="#cb12-769" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-770"><a href="#cb12-770" aria-hidden="true" tabindex="-1"></a><span class="al">![The twelve most significant KYCG features for the top 1,000 CpGs. Four EPIC knowledgebases were tested; only three are represented here, and the CGI knowledgebase contributes no significant feature at all. Bars are $\log_2$ odds ratio; every bar shown clears FDR &lt; 0.05. Note what is *absent*: no CpG-island-relation feature appears, and every significant enrichment is positive and modest (log₂OR 0.36–1.28).](data/08_annotation/08_kycg_enrichment.png)</span>{#fig-kycg width=90%}</span>
+<span id="cb12-771"><a href="#cb12-771" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-772"><a href="#cb12-772" aria-hidden="true" tabindex="-1"></a><span class="in">```{r kycg-db, echo=FALSE, message=FALSE}</span></span>
+<span id="cb12-773"><a href="#cb12-773" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_kycg_db_summary.csv&quot;</span>),</span>
+<span id="cb12-774"><a href="#cb12-774" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;KYCG results per knowledgebase. The four databases differ in size by two orders of magnitude, and almost all of the significant hits come from the largest one.&quot;</span>)</span>
+<span id="cb12-775"><a href="#cb12-775" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb12-776"><a href="#cb12-776" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-777"><a href="#cb12-777" aria-hidden="true" tabindex="-1"></a>Read that table before reading the hits. Three things fall out of it:</span>
 <span id="cb12-778"><a href="#cb12-778" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-779"><a href="#cb12-779" aria-hidden="true" tabindex="-1"></a><span class="in">```{r kycg-top, echo=FALSE, message=FALSE}</span></span>
-<span id="cb12-780"><a href="#cb12-780" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_kycg_top.csv&quot;</span>), <span class="dv">15</span>),</span>
-<span id="cb12-781"><a href="#cb12-781" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;The 15 most significant of KYCG&#39;s 41 features at FDR &lt; 0.05. `Query CpGs` is how many of the 1,000 fell in that feature; `DB size` is how many of the 756,251 tested CpGs the feature covers.&quot;</span>)</span>
-<span id="cb12-782"><a href="#cb12-782" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb12-783"><a href="#cb12-783" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-784"><a href="#cb12-784" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
-<span id="cb12-785"><a href="#cb12-785" aria-hidden="true" tabindex="-1"></a><span class="fu">## 41 significant features is not 41 findings</span></span>
-<span id="cb12-786"><a href="#cb12-786" aria-hidden="true" tabindex="-1"></a>Before you write these up, check three things that the FDR column alone will not</span>
-<span id="cb12-787"><a href="#cb12-787" aria-hidden="true" tabindex="-1"></a>tell you.</span>
-<span id="cb12-788"><a href="#cb12-788" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-789"><a href="#cb12-789" aria-hidden="true" tabindex="-1"></a>**1. Count the nominal hits.** 226 of 863 features reach nominal *p* &lt; 0.05,</span>
-<span id="cb12-790"><a href="#cb12-790" aria-hidden="true" tabindex="-1"></a>against ~43 expected under the null. That excess is real — the top-1,000 set is</span>
-<span id="cb12-791"><a href="#cb12-791" aria-hidden="true" tabindex="-1"></a>genuinely non-random with respect to regulatory annotation — but it is</span>
-<span id="cb12-792"><a href="#cb12-792" aria-hidden="true" tabindex="-1"></a>distributed across hundreds of overlapping features, not concentrated in a few.</span>
-<span id="cb12-793"><a href="#cb12-793" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-794"><a href="#cb12-794" aria-hidden="true" tabindex="-1"></a>**2. The features are not independent.** The <span class="in">`TFBSconsensus`</span> databases are</span>
-<span id="cb12-795"><a href="#cb12-795" aria-hidden="true" tabindex="-1"></a>consensus binding sites derived from ChIP-seq, and they overlap each other</span>
-<span id="cb12-796"><a href="#cb12-796" aria-hidden="true" tabindex="-1"></a>heavily: the median significant feature covers **7.4%** of the tested universe</span>
-<span id="cb12-797"><a href="#cb12-797" aria-hidden="true" tabindex="-1"></a>(56,061 of 756,251 CpGs), and the largest covers 17%. <span class="in">`ING2`</span>, <span class="in">`RBL1`</span>, <span class="in">`ING5`</span>,</span>
-<span id="cb12-798"><a href="#cb12-798" aria-hidden="true" tabindex="-1"></a><span class="in">`RAG2`</span>, and <span class="in">`ZNF335`</span> each overlap 90,000–120,000 CpGs. Benjamini–Hochberg</span>
-<span id="cb12-799"><a href="#cb12-799" aria-hidden="true" tabindex="-1"></a>assumes independence (or positive dependence); with sets this large and this</span>
-<span id="cb12-800"><a href="#cb12-800" aria-hidden="true" tabindex="-1"></a>correlated, &quot;41 significant&quot; is closer to a handful of distinct signals counted</span>
-<span id="cb12-801"><a href="#cb12-801" aria-hidden="true" tabindex="-1"></a>repeatedly. The more honest description is *one broad enrichment in open,</span>
-<span id="cb12-802"><a href="#cb12-802" aria-hidden="true" tabindex="-1"></a>promoter-proximal, TF-bound chromatin*, not 41 transcription factors.</span>
-<span id="cb12-803"><a href="#cb12-803" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-804"><a href="#cb12-804" aria-hidden="true" tabindex="-1"></a>**3. Big databases win by construction.** Every significant feature here has a</span>
-<span id="cb12-805"><a href="#cb12-805" aria-hidden="true" tabindex="-1"></a>positive log₂OR between 0.36 and 1.28 — small effects that only clear FDR because</span>
-<span id="cb12-806"><a href="#cb12-806" aria-hidden="true" tabindex="-1"></a>the overlap counts are large enough to make the Fisher test precise. A feature</span>
-<span id="cb12-807"><a href="#cb12-807" aria-hidden="true" tabindex="-1"></a>covering 5,000 CpGs needs a much bigger odds ratio to reach the same *p*. That is</span>
-<span id="cb12-808"><a href="#cb12-808" aria-hidden="true" tabindex="-1"></a>why <span class="in">`TFBSconsensus`</span>, with the most and largest sets, supplies 85% of the hits,</span>
-<span id="cb12-809"><a href="#cb12-809" aria-hidden="true" tabindex="-1"></a>and why a database of five island categories supplies none.</span>
-<span id="cb12-810"><a href="#cb12-810" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb12-811"><a href="#cb12-811" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-812"><a href="#cb12-812" aria-hidden="true" tabindex="-1"></a>Both tests see the same underlying fact — the top CpGs lean toward</span>
-<span id="cb12-813"><a href="#cb12-813" aria-hidden="true" tabindex="-1"></a>open, promoter-proximal chromatin — but they differ in what they can resolve.</span>
-<span id="cb12-814"><a href="#cb12-814" aria-hidden="true" tabindex="-1"></a><span class="in">`gometh`</span> has to collapse CpGs to genes and then test gene sets of a few dozen to</span>
-<span id="cb12-815"><a href="#cb12-815" aria-hidden="true" tabindex="-1"></a>a few hundred members, which at this sample size leaves it no power at all. KYCG</span>
-<span id="cb12-816"><a href="#cb12-816" aria-hidden="true" tabindex="-1"></a>keeps the CpG as the unit and tests sets of tens of thousands, so the same weak</span>
-<span id="cb12-817"><a href="#cb12-817" aria-hidden="true" tabindex="-1"></a>lean becomes formally detectable. The price is resolution: KYCG tells you *which</span>
-<span id="cb12-818"><a href="#cb12-818" aria-hidden="true" tabindex="-1"></a>kind of chromatin*, not *which pathway*, and its overlapping sets make the hit</span>
-<span id="cb12-819"><a href="#cb12-819" aria-hidden="true" tabindex="-1"></a>count a poor guide to how many independent things you have found.</span>
-<span id="cb12-820"><a href="#cb12-820" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-821"><a href="#cb12-821" aria-hidden="true" tabindex="-1"></a>Run both. Report <span class="in">`gometh`</span>&#39;s null as a null, and report KYCG&#39;s 41 features as what</span>
-<span id="cb12-822"><a href="#cb12-822" aria-hidden="true" tabindex="-1"></a>they are — a single, modest, broadly-distributed enrichment in regulatory</span>
-<span id="cb12-823"><a href="#cb12-823" aria-hidden="true" tabindex="-1"></a>chromatin, at a sample size where no individual CpG is convincing.</span>
+<span id="cb12-779"><a href="#cb12-779" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The 41 hits are not spread evenly** — **35 of 41** come from</span>
+<span id="cb12-780"><a href="#cb12-780" aria-hidden="true" tabindex="-1"></a>  <span class="in">`TFBSconsensus`</span> alone, which contributes 783 of the 863 features tested. Five</span>
+<span id="cb12-781"><a href="#cb12-781" aria-hidden="true" tabindex="-1"></a>  come from histone marks, one from chromatin state.</span>
+<span id="cb12-782"><a href="#cb12-782" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**`1_TssA` (active TSS) is the single chromatin-state hit**</span>
+<span id="cb12-783"><a href="#cb12-783" aria-hidden="true" tabindex="-1"></a>  (log₂OR = 0.49, FDR = 0.0033) — consistent with the mild promoter lean</span>
+<span id="cb12-784"><a href="#cb12-784" aria-hidden="true" tabindex="-1"></a>  @fig-feature showed descriptively, and the one result here that lines up with</span>
+<span id="cb12-785"><a href="#cb12-785" aria-hidden="true" tabindex="-1"></a>  an independent observation elsewhere in the chapter.</span>
+<span id="cb12-786"><a href="#cb12-786" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**CpG-island relation returns nothing at FDR &lt; 0.05.** Islands are enriched in</span>
+<span id="cb12-787"><a href="#cb12-787" aria-hidden="true" tabindex="-1"></a>  the expected direction (log₂OR = 0.27, nominal *p* = 0.0078) but land at</span>
+<span id="cb12-788"><a href="#cb12-788" aria-hidden="true" tabindex="-1"></a>  **FDR = 0.084**. The visual island lean in @fig-island (22.3% vs 19.2%) is</span>
+<span id="cb12-789"><a href="#cb12-789" aria-hidden="true" tabindex="-1"></a>  therefore *not* corroborated by the formal test — the descriptive impression</span>
+<span id="cb12-790"><a href="#cb12-790" aria-hidden="true" tabindex="-1"></a>  survives, the inference does not.</span>
+<span id="cb12-791"><a href="#cb12-791" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-792"><a href="#cb12-792" aria-hidden="true" tabindex="-1"></a><span class="in">```{r kycg-top, echo=FALSE, message=FALSE}</span></span>
+<span id="cb12-793"><a href="#cb12-793" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(<span class="fu">fread</span>(<span class="st">&quot;data/08_annotation/08_kycg_top.csv&quot;</span>), <span class="dv">15</span>),</span>
+<span id="cb12-794"><a href="#cb12-794" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;The 15 most significant of KYCG&#39;s 41 features at FDR &lt; 0.05. `Query CpGs` is how many of the 1,000 fell in that feature; `DB size` is how many of the 756,251 tested CpGs the feature covers.&quot;</span>)</span>
+<span id="cb12-795"><a href="#cb12-795" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb12-796"><a href="#cb12-796" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-797"><a href="#cb12-797" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
+<span id="cb12-798"><a href="#cb12-798" aria-hidden="true" tabindex="-1"></a><span class="fu">## 41 significant features is not 41 findings</span></span>
+<span id="cb12-799"><a href="#cb12-799" aria-hidden="true" tabindex="-1"></a>Before you write these up, check three things that the FDR column alone will not</span>
+<span id="cb12-800"><a href="#cb12-800" aria-hidden="true" tabindex="-1"></a>tell you.</span>
+<span id="cb12-801"><a href="#cb12-801" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-802"><a href="#cb12-802" aria-hidden="true" tabindex="-1"></a>**1. Count the nominal hits.** 226 of 863 features reach nominal *p* &lt; 0.05,</span>
+<span id="cb12-803"><a href="#cb12-803" aria-hidden="true" tabindex="-1"></a>against ~43 expected under the null. That excess is real — the top-1,000 set is</span>
+<span id="cb12-804"><a href="#cb12-804" aria-hidden="true" tabindex="-1"></a>genuinely non-random with respect to regulatory annotation — but it is</span>
+<span id="cb12-805"><a href="#cb12-805" aria-hidden="true" tabindex="-1"></a>distributed across hundreds of overlapping features, not concentrated in a few.</span>
+<span id="cb12-806"><a href="#cb12-806" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-807"><a href="#cb12-807" aria-hidden="true" tabindex="-1"></a>**2. The features are not independent.** The <span class="in">`TFBSconsensus`</span> databases are</span>
+<span id="cb12-808"><a href="#cb12-808" aria-hidden="true" tabindex="-1"></a>consensus binding sites derived from ChIP-seq, and they overlap each other</span>
+<span id="cb12-809"><a href="#cb12-809" aria-hidden="true" tabindex="-1"></a>heavily: the median significant feature covers **7.4%** of the tested universe</span>
+<span id="cb12-810"><a href="#cb12-810" aria-hidden="true" tabindex="-1"></a>(56,061 of 756,251 CpGs), and the largest covers 17%. <span class="in">`ING2`</span>, <span class="in">`RBL1`</span>, <span class="in">`ING5`</span>,</span>
+<span id="cb12-811"><a href="#cb12-811" aria-hidden="true" tabindex="-1"></a><span class="in">`RAG2`</span>, and <span class="in">`ZNF335`</span> each overlap 90,000–120,000 CpGs. Benjamini–Hochberg</span>
+<span id="cb12-812"><a href="#cb12-812" aria-hidden="true" tabindex="-1"></a>assumes independence (or positive dependence); with sets this large and this</span>
+<span id="cb12-813"><a href="#cb12-813" aria-hidden="true" tabindex="-1"></a>correlated, &quot;41 significant&quot; is closer to a handful of distinct signals counted</span>
+<span id="cb12-814"><a href="#cb12-814" aria-hidden="true" tabindex="-1"></a>repeatedly. The more honest description is *one broad enrichment in open,</span>
+<span id="cb12-815"><a href="#cb12-815" aria-hidden="true" tabindex="-1"></a>promoter-proximal, TF-bound chromatin*, not 41 transcription factors.</span>
+<span id="cb12-816"><a href="#cb12-816" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-817"><a href="#cb12-817" aria-hidden="true" tabindex="-1"></a>**3. Big databases win by construction.** Every significant feature here has a</span>
+<span id="cb12-818"><a href="#cb12-818" aria-hidden="true" tabindex="-1"></a>positive log₂OR between 0.36 and 1.28 — small effects that only clear FDR because</span>
+<span id="cb12-819"><a href="#cb12-819" aria-hidden="true" tabindex="-1"></a>the overlap counts are large enough to make the Fisher test precise. A feature</span>
+<span id="cb12-820"><a href="#cb12-820" aria-hidden="true" tabindex="-1"></a>covering 5,000 CpGs needs a much bigger odds ratio to reach the same *p*. That is</span>
+<span id="cb12-821"><a href="#cb12-821" aria-hidden="true" tabindex="-1"></a>why <span class="in">`TFBSconsensus`</span>, with the most and largest sets, supplies 85% of the hits,</span>
+<span id="cb12-822"><a href="#cb12-822" aria-hidden="true" tabindex="-1"></a>and why a database of five island categories supplies none.</span>
+<span id="cb12-823"><a href="#cb12-823" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb12-824"><a href="#cb12-824" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-825"><a href="#cb12-825" aria-hidden="true" tabindex="-1"></a><span class="fu">### EWAS Atlas / EWAS Open Platform Toolkit: the copy-paste web route</span></span>
-<span id="cb12-826"><a href="#cb12-826" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-827"><a href="#cb12-827" aria-hidden="true" tabindex="-1"></a>When you want a fast look without writing R — or want to cross-reference against</span>
-<span id="cb12-828"><a href="#cb12-828" aria-hidden="true" tabindex="-1"></a>what other studies have already reported — the **EWAS Toolkit**, part of the</span>
-<span id="cb12-829"><a href="#cb12-829" aria-hidden="true" tabindex="-1"></a>EWAS Open Platform (formerly EWAS Atlas) at</span>
-<span id="cb12-830"><a href="#cb12-830" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">ngdc.cncb.ac.cn/ewas/toolkit</span><span class="co">](https://ngdc.cncb.ac.cn/ewas/toolkit)</span>, takes a</span>
-<span id="cb12-831"><a href="#cb12-831" aria-hidden="true" tabindex="-1"></a>pasted list of CpG probe IDs and runs **seven** enrichment modalities in one</span>
-<span id="cb12-832"><a href="#cb12-832" aria-hidden="true" tabindex="-1"></a>pass <span class="co">[</span><span class="ot">@xiong2022ewasopenplatform; @li2019ewasatlas</span><span class="co">]</span>. The value is that several</span>
-<span id="cb12-833"><a href="#cb12-833" aria-hidden="true" tabindex="-1"></a>of these draw on curated resources you can&#39;t easily reproduce locally:</span>
-<span id="cb12-834"><a href="#cb12-834" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-835"><a href="#cb12-835" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Trait enrichment** — tests your CpG list against the platform&#39;s manually</span>
-<span id="cb12-836"><a href="#cb12-836" aria-hidden="true" tabindex="-1"></a>  curated catalog of associations from thousands of published EWAS, using a</span>
-<span id="cb12-837"><a href="#cb12-837" aria-hidden="true" tabindex="-1"></a>  **weighted Fisher&#39;s exact test** where each probe is weighted by the number of</span>
-<span id="cb12-838"><a href="#cb12-838" aria-hidden="true" tabindex="-1"></a>  studies reporting that probe–trait association. This is the analysis you</span>
-<span id="cb12-839"><a href="#cb12-839" aria-hidden="true" tabindex="-1"></a>  *can&#39;t* reproduce locally without their database, and it is the most useful:</span>
-<span id="cb12-840"><a href="#cb12-840" aria-hidden="true" tabindex="-1"></a>  it tells you whether your hits overlap CpGs already linked to smoking, aging,</span>
-<span id="cb12-841"><a href="#cb12-841" aria-hidden="true" tabindex="-1"></a>  BMI, or a specific disease. </span>
-<span id="cb12-842"><a href="#cb12-842" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Genomic location enrichment** — assigns each probe to **13 location</span>
-<span id="cb12-843"><a href="#cb12-843" aria-hidden="true" tabindex="-1"></a>  categories** defined relative to gene and CpG island (each probe gets one</span>
-<span id="cb12-844"><a href="#cb12-844" aria-hidden="true" tabindex="-1"></a>  gene-relative and one island-relative category) and tests over-representation</span>
-<span id="cb12-845"><a href="#cb12-845" aria-hidden="true" tabindex="-1"></a>  with a **hypergeometric test** (p-value + odds ratio). This overlaps what</span>
-<span id="cb12-846"><a href="#cb12-846" aria-hidden="true" tabindex="-1"></a>  <span class="in">`knowYourCG`</span> and our own feature/island tables already give you — but note the</span>
-<span id="cb12-847"><a href="#cb12-847" aria-hidden="true" tabindex="-1"></a>  Toolkit&#39;s location annotation is **hg19-based** (450K:</span>
-<span id="cb12-848"><a href="#cb12-848" aria-hidden="true" tabindex="-1"></a>  <span class="in">`IlluminaHumanMethylation450kanno.ilmn12.hg19`</span>; EPIC:</span>
-<span id="cb12-849"><a href="#cb12-849" aria-hidden="true" tabindex="-1"></a>  <span class="in">`IlluminaHumanMethylationEPICanno.ilm10b4.hg19`</span>), so it is *not*</span>
-<span id="cb12-850"><a href="#cb12-850" aria-hidden="true" tabindex="-1"></a>  build-consistent with the hg38 annotation we built in <span class="co">[</span><span class="ot">Part 1</span><span class="co">](#part-1)</span>.</span>
-<span id="cb12-851"><a href="#cb12-851" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**GO &amp; KEGG enrichment** — implemented on top of <span class="in">`missMethyl::gometh`</span>, so it is</span>
-<span id="cb12-852"><a href="#cb12-852" aria-hidden="true" tabindex="-1"></a>  literally the same probe-bias-corrected test you ran locally; expect</span>
-<span id="cb12-853"><a href="#cb12-853" aria-hidden="true" tabindex="-1"></a>  concordance with your <span class="in">`gometh`</span> result, and read a disagreement as a gene-universe</span>
-<span id="cb12-854"><a href="#cb12-854" aria-hidden="true" tabindex="-1"></a>  difference (the web tool uses the full array as background).</span>
-<span id="cb12-855"><a href="#cb12-855" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Chromatin state &amp; histone modification enrichment** — overlaps your CpGs</span>
-<span id="cb12-856"><a href="#cb12-856" aria-hidden="true" tabindex="-1"></a>  against **Roadmap Epigenomics** data (chromatin state via the core 15-state</span>
-<span id="cb12-857"><a href="#cb12-857" aria-hidden="true" tabindex="-1"></a>  model; 11 histone/accessibility marks: DNase, H2A, H3K27ac, H3K27me3, H3K4me1,</span>
-<span id="cb12-858"><a href="#cb12-858" aria-hidden="true" tabindex="-1"></a>  H3K4me2, H3K4me3, H3K79me2, H3K9ac, H3K9me3, H4K20me1), again by hypergeometric</span>
-<span id="cb12-859"><a href="#cb12-859" aria-hidden="true" tabindex="-1"></a>  test. This is the same *question* <span class="in">`knowYourCG`</span>&#39;s chromHMM/histone databases and</span>
-<span id="cb12-860"><a href="#cb12-860" aria-hidden="true" tabindex="-1"></a>  <span class="in">`eFORGE`</span> answer — a regulatory-context check — but built on hg19 Roadmap tracks.</span>
-<span id="cb12-861"><a href="#cb12-861" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Tissue methylation** — reports whether your CpGs are tissue-specific across</span>
-<span id="cb12-862"><a href="#cb12-862" aria-hidden="true" tabindex="-1"></a>  **31 core tissues** from the EWAS Data Hub (a probe counts as tissue-specific</span>
-<span id="cb12-863"><a href="#cb12-863" aria-hidden="true" tabindex="-1"></a>  when <span class="in">`abs(tau_hyper − tau_hypo) &gt; 0.7`</span>, a cutoff set by permutation). Useful as</span>
-<span id="cb12-864"><a href="#cb12-864" aria-hidden="true" tabindex="-1"></a>  a sanity check that whole-blood hits aren&#39;t dominated by a signal that is really</span>
-<span id="cb12-865"><a href="#cb12-865" aria-hidden="true" tabindex="-1"></a>  tissue-of-origin driven.</span>
-<span id="cb12-866"><a href="#cb12-866" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Expression regulation** — reports Pearson correlations between methylation and</span>
-<span id="cb12-867"><a href="#cb12-867" aria-hidden="true" tabindex="-1"></a>  expression across six tissues (brain, colon, kidney, liver, stomach, testis).</span>
-<span id="cb12-868"><a href="#cb12-868" aria-hidden="true" tabindex="-1"></a>  This is the *same idea* as the BIOS eQTM layer we joined in <span class="co">[</span><span class="ot">Part 1</span><span class="co">](#part-1)</span>, but computed</span>
-<span id="cb12-869"><a href="#cb12-869" aria-hidden="true" tabindex="-1"></a>  in solid tissues rather than whole blood — so for a blood EWAS, prefer the BIOS</span>
-<span id="cb12-870"><a href="#cb12-870" aria-hidden="true" tabindex="-1"></a>  blood eQTMs and read this panel as supporting, cross-tissue context.</span>
-<span id="cb12-871"><a href="#cb12-871" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Motif enrichment** — runs **HOMER** on a 500 bp window centered on each CpG to</span>
-<span id="cb12-872"><a href="#cb12-872" aria-hidden="true" tabindex="-1"></a>  find over-represented transcription-factor binding motifs, a lead on which TFs</span>
-<span id="cb12-873"><a href="#cb12-873" aria-hidden="true" tabindex="-1"></a>  might read or be blocked by the methylation change.</span>
-<span id="cb12-874"><a href="#cb12-874" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-875"><a href="#cb12-875" aria-hidden="true" tabindex="-1"></a>The workflow is literally copy-paste: take the <span class="in">`probe`</span> column of your top hits</span>
-<span id="cb12-876"><a href="#cb12-876" aria-hidden="true" tabindex="-1"></a>(or the DMR constituent CpGs), paste into the query box, submit. Practical</span>
-<span id="cb12-877"><a href="#cb12-877" aria-hidden="true" tabindex="-1"></a>notes:</span>
-<span id="cb12-878"><a href="#cb12-878" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-879"><a href="#cb12-879" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**It is EPIC/450K-aware but check the array setting**, and paste <span class="in">`cg#########`</span></span>
-<span id="cb12-880"><a href="#cb12-880" aria-hidden="true" tabindex="-1"></a>  IDs, not coordinates.</span>
-<span id="cb12-881"><a href="#cb12-881" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Mind the genome build.** The location, chromatin-state, and histone panels</span>
-<span id="cb12-882"><a href="#cb12-882" aria-hidden="true" tabindex="-1"></a>  are annotated on **hg19**; the rest of this tutorial is deliberately hg38. That</span>
-<span id="cb12-883"><a href="#cb12-883" aria-hidden="true" tabindex="-1"></a>  is fine for the *categorical* questions these panels answer (is my set enriched</span>
-<span id="cb12-884"><a href="#cb12-884" aria-hidden="true" tabindex="-1"></a>  for enhancers? for island shores?), but don&#39;t copy an hg19 coordinate from the</span>
-<span id="cb12-885"><a href="#cb12-885" aria-hidden="true" tabindex="-1"></a>  Toolkit into an hg38 result table.</span>
-<span id="cb12-886"><a href="#cb12-886" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Treat it as a curated cross-check, not a replacement** for the reproducible R</span>
-<span id="cb12-887"><a href="#cb12-887" aria-hidden="true" tabindex="-1"></a>  path. Its trait and tissue panels are the parts you genuinely can&#39;t run locally;</span>
-<span id="cb12-888"><a href="#cb12-888" aria-hidden="true" tabindex="-1"></a>  its GO/KEGG and location panels duplicate <span class="in">`gometh`</span>/<span class="in">`knowYourCG`</span>, so use those in</span>
-<span id="cb12-889"><a href="#cb12-889" aria-hidden="true" tabindex="-1"></a>  the pipeline for the record and the Toolkit interactively to mine the catalogs.</span>
-<span id="cb12-890"><a href="#cb12-890" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-891"><a href="#cb12-891" aria-hidden="true" tabindex="-1"></a><span class="fu">### `eFORGE`: is a hit list driven by cell composition?</span></span>
-<span id="cb12-892"><a href="#cb12-892" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-893"><a href="#cb12-893" aria-hidden="true" tabindex="-1"></a>For a **whole-blood** EWAS the single most important adversarial check is</span>
-<span id="cb12-894"><a href="#cb12-894" aria-hidden="true" tabindex="-1"></a>whether your top CpGs are simply marking a shift in cell-type proportions rather</span>
-<span id="cb12-895"><a href="#cb12-895" aria-hidden="true" tabindex="-1"></a>than a phenotype-specific signal. **`eFORGE`** <span class="co">[</span><span class="ot">@breeze2016eforge</span><span class="co">]</span> answers this</span>
-<span id="cb12-896"><a href="#cb12-896" aria-hidden="true" tabindex="-1"></a>directly: it takes a set of CpGs (your top hits, or a DMR&#39;s constituent probes)</span>
-<span id="cb12-897"><a href="#cb12-897" aria-hidden="true" tabindex="-1"></a>and tests — by matched-background resampling — whether they are</span>
-<span id="cb12-898"><a href="#cb12-898" aria-hidden="true" tabindex="-1"></a>over-represented in cell-type-specific regulatory elements: DNase I</span>
-<span id="cb12-899"><a href="#cb12-899" aria-hidden="true" tabindex="-1"></a>hypersensitive sites and the Roadmap/ENCODE core-15 chromatin states across</span>
-<span id="cb12-900"><a href="#cb12-900" aria-hidden="true" tabindex="-1"></a>~40 blood and other primary cell types.</span>
-<span id="cb12-901"><a href="#cb12-901" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-902"><a href="#cb12-902" aria-hidden="true" tabindex="-1"></a>The result you *want* to see for a well-adjusted blood EWAS is **no strong,</span>
-<span id="cb12-903"><a href="#cb12-903" aria-hidden="true" tabindex="-1"></a>single-cell-type enrichment** — that is evidence your cell-composition</span>
-<span id="cb12-904"><a href="#cb12-904" aria-hidden="true" tabindex="-1"></a>adjustment (chapter 04) did its job. The result that should stop you is a list of </span>
-<span id="cb12-905"><a href="#cb12-905" aria-hidden="true" tabindex="-1"></a>neutrophil- or T-cell-specific enhancers: a signature that the</span>
-<span id="cb12-906"><a href="#cb12-906" aria-hidden="true" tabindex="-1"></a>&quot;phenotype&quot; effect is really a composition effect that leaked past the model.</span>
-<span id="cb12-907"><a href="#cb12-907" aria-hidden="true" tabindex="-1"></a>Because it works on <span class="in">`cg#########`</span> IDs against pre-built reference panels, <span class="in">`eFORGE`</span></span>
-<span id="cb12-908"><a href="#cb12-908" aria-hidden="true" tabindex="-1"></a>runs from a web form or the <span class="in">`eForge`</span> R package with no local reference data to</span>
-<span id="cb12-909"><a href="#cb12-909" aria-hidden="true" tabindex="-1"></a>assemble.</span>
-<span id="cb12-910"><a href="#cb12-910" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-911"><a href="#cb12-911" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb12-912"><a href="#cb12-912" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why this check matters here specifically</span></span>
-<span id="cb12-913"><a href="#cb12-913" aria-hidden="true" tabindex="-1"></a>Our subset carries the confounds chapter 05 mapped — cell composition loads</span>
-<span id="cb12-914"><a href="#cb12-914" aria-hidden="true" tabindex="-1"></a>heavily on the leading PCs. An <span class="in">`eFORGE`</span> cell-type enrichment on the top hits is</span>
-<span id="cb12-915"><a href="#cb12-915" aria-hidden="true" tabindex="-1"></a>the natural closing sanity check: it asks the composition question of the</span>
-<span id="cb12-916"><a href="#cb12-916" aria-hidden="true" tabindex="-1"></a>*final* CpG list, after all modeling, in the vocabulary (chromatin states,</span>
-<span id="cb12-917"><a href="#cb12-917" aria-hidden="true" tabindex="-1"></a>DHS) that a reviewer of a blood EWAS will expect to see addressed.</span>
-<span id="cb12-918"><a href="#cb12-918" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb12-919"><a href="#cb12-919" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-920"><a href="#cb12-920" aria-hidden="true" tabindex="-1"></a><span class="fu">## Other tools worth knowing, and how to choose</span></span>
-<span id="cb12-921"><a href="#cb12-921" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-922"><a href="#cb12-922" aria-hidden="true" tabindex="-1"></a>No single tool answers every interpretation question. A short map of the</span>
-<span id="cb12-923"><a href="#cb12-923" aria-hidden="true" tabindex="-1"></a>landscape, roughly in the order you&#39;d reach for them:</span>
-<span id="cb12-924"><a href="#cb12-924" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-925"><a href="#cb12-925" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Question <span class="pp">|</span> Tool <span class="pp">|</span> Notes <span class="pp">|</span></span>
-<span id="cb12-926"><a href="#cb12-926" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
-<span id="cb12-927"><a href="#cb12-927" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> GO / KEGG, bias-corrected, reproducible <span class="pp">|</span> <span class="in">`missMethyl::gometh`</span> / <span class="in">`gsameth`</span> <span class="pp">|</span> Default gene-set test. <span class="in">`gsameth`</span> takes any custom gene-set list (e.g. MSigDB Hallmark). <span class="pp">|</span></span>
-<span id="cb12-928"><a href="#cb12-928" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> CpG-centric enrichment on regulatory elements <span class="pp">|</span> <span class="in">`knowYourCG::testEnrichment`</span> <span class="pp">|</span> CGI, TFBS, chromatin state, histone marks — tests CpGs directly, no gene collapse. Build-consistent with the Zhou annotation. <span class="pp">|</span></span>
-<span id="cb12-929"><a href="#cb12-929" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Region-level GO enrichment from DMRs <span class="pp">|</span> <span class="in">`missMethyl::goregion`</span> <span class="pp">|</span> Feeds comb-p/DMRcate regions in directly, correcting for probes-per-region. <span class="pp">|</span></span>
-<span id="cb12-930"><a href="#cb12-930" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> &quot;Has this CpG been linked to a trait before?&quot; <span class="pp">|</span> EWAS Toolkit / EWAS Catalog / MRC-IEU EWAS Catalog <span class="pp">|</span> Curated look-ups; the fastest external validation. <span class="pp">|</span></span>
-<span id="cb12-931"><a href="#cb12-931" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Broad gene-set / pathway diagrams, no bias model <span class="pp">|</span> ShinyGO, g:Profiler, Enrichr, GREAT <span class="pp">|</span> Built for gene lists generally; **do not** correct for methylation probe bias, so feed them a gene list you already trust, not raw CpG hits. <span class="pp">|</span></span>
-<span id="cb12-932"><a href="#cb12-932" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Cell-type / tissue enrichment (is a hit driven by composition?) <span class="pp">|</span> <span class="in">`eFORGE`</span>, LOLA <span class="pp">|</span> Tests whether your CpGs cluster in cell-type-specific regulatory elements — a direct check on residual confounding. <span class="pp">|</span></span>
-<span id="cb12-933"><a href="#cb12-933" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Chromatin-state / enhancer context <span class="pp">|</span> Roadmap/ENCODE overlaps via LOLA or <span class="in">`annotatr`</span> <span class="pp">|</span> Places hits in enhancers, promoters, and TF-binding regions. <span class="pp">|</span></span>
-<span id="cb12-934"><a href="#cb12-934" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Causal direction (does methylation *cause* the phenotype?) <span class="pp">|</span> Mendelian randomization with mQTLs (e.g. GoDMC) <span class="pp">|</span> The rigorous follow-up when a hit is real; well beyond a single EWAS. <span class="pp">|</span></span>
-<span id="cb12-935"><a href="#cb12-935" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> &quot;Is my phenotype associated with epigenetic *age*?&quot; | Epigenetic clocks: `methylclock`, Horvath [@horvath2013clock] / Hannum [@hannum2013clock] predictors | A composite outcome computed from a fixed CpG set, not an enrichment of *your* hits. Fit it as a separate phenotype-level analysis; don&#39;t read it off your EWAS table. <span class="pp">|</span></span>
-<span id="cb12-936"><a href="#cb12-936" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-825"><a href="#cb12-825" aria-hidden="true" tabindex="-1"></a>Both tests see the same underlying fact — the top CpGs lean toward</span>
+<span id="cb12-826"><a href="#cb12-826" aria-hidden="true" tabindex="-1"></a>open, promoter-proximal chromatin — but they differ in what they can resolve.</span>
+<span id="cb12-827"><a href="#cb12-827" aria-hidden="true" tabindex="-1"></a><span class="in">`gometh`</span> has to collapse CpGs to genes and then test gene sets of a few dozen to</span>
+<span id="cb12-828"><a href="#cb12-828" aria-hidden="true" tabindex="-1"></a>a few hundred members, which at this sample size leaves it no power at all. KYCG</span>
+<span id="cb12-829"><a href="#cb12-829" aria-hidden="true" tabindex="-1"></a>keeps the CpG as the unit and tests sets of tens of thousands, so the same weak</span>
+<span id="cb12-830"><a href="#cb12-830" aria-hidden="true" tabindex="-1"></a>lean becomes formally detectable. The price is resolution: KYCG tells you *which</span>
+<span id="cb12-831"><a href="#cb12-831" aria-hidden="true" tabindex="-1"></a>kind of chromatin*, not *which pathway*, and its overlapping sets make the hit</span>
+<span id="cb12-832"><a href="#cb12-832" aria-hidden="true" tabindex="-1"></a>count a poor guide to how many independent things you have found.</span>
+<span id="cb12-833"><a href="#cb12-833" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-834"><a href="#cb12-834" aria-hidden="true" tabindex="-1"></a>Run both. Report <span class="in">`gometh`</span>&#39;s null as a null, and report KYCG&#39;s 41 features as what</span>
+<span id="cb12-835"><a href="#cb12-835" aria-hidden="true" tabindex="-1"></a>they are — a single, modest, broadly-distributed enrichment in regulatory</span>
+<span id="cb12-836"><a href="#cb12-836" aria-hidden="true" tabindex="-1"></a>chromatin, at a sample size where no individual CpG is convincing.</span>
+<span id="cb12-837"><a href="#cb12-837" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-838"><a href="#cb12-838" aria-hidden="true" tabindex="-1"></a><span class="fu">### EWAS Atlas / EWAS Open Platform Toolkit: the copy-paste web route</span></span>
+<span id="cb12-839"><a href="#cb12-839" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-840"><a href="#cb12-840" aria-hidden="true" tabindex="-1"></a>When you want a fast look without writing R — or want to cross-reference against</span>
+<span id="cb12-841"><a href="#cb12-841" aria-hidden="true" tabindex="-1"></a>what other studies have already reported — the **EWAS Toolkit**, part of the</span>
+<span id="cb12-842"><a href="#cb12-842" aria-hidden="true" tabindex="-1"></a>EWAS Open Platform (formerly EWAS Atlas) at</span>
+<span id="cb12-843"><a href="#cb12-843" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">ngdc.cncb.ac.cn/ewas/toolkit</span><span class="co">](https://ngdc.cncb.ac.cn/ewas/toolkit)</span>, takes a</span>
+<span id="cb12-844"><a href="#cb12-844" aria-hidden="true" tabindex="-1"></a>pasted list of CpG probe IDs and runs **seven** enrichment modalities in one</span>
+<span id="cb12-845"><a href="#cb12-845" aria-hidden="true" tabindex="-1"></a>pass <span class="co">[</span><span class="ot">@xiong2022ewasopenplatform; @li2019ewasatlas</span><span class="co">]</span>. The value is that several</span>
+<span id="cb12-846"><a href="#cb12-846" aria-hidden="true" tabindex="-1"></a>of these draw on curated resources you can&#39;t easily reproduce locally:</span>
+<span id="cb12-847"><a href="#cb12-847" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-848"><a href="#cb12-848" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Trait enrichment** — tests your CpG list against the platform&#39;s manually</span>
+<span id="cb12-849"><a href="#cb12-849" aria-hidden="true" tabindex="-1"></a>  curated catalog of associations from thousands of published EWAS, using a</span>
+<span id="cb12-850"><a href="#cb12-850" aria-hidden="true" tabindex="-1"></a>  **weighted Fisher&#39;s exact test** where each probe is weighted by the number of</span>
+<span id="cb12-851"><a href="#cb12-851" aria-hidden="true" tabindex="-1"></a>  studies reporting that probe–trait association. This is the analysis you</span>
+<span id="cb12-852"><a href="#cb12-852" aria-hidden="true" tabindex="-1"></a>  *can&#39;t* reproduce locally without their database, and it is the most useful:</span>
+<span id="cb12-853"><a href="#cb12-853" aria-hidden="true" tabindex="-1"></a>  it tells you whether your hits overlap CpGs already linked to smoking, aging,</span>
+<span id="cb12-854"><a href="#cb12-854" aria-hidden="true" tabindex="-1"></a>  BMI, or a specific disease. </span>
+<span id="cb12-855"><a href="#cb12-855" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Genomic location enrichment** — assigns each probe to **13 location</span>
+<span id="cb12-856"><a href="#cb12-856" aria-hidden="true" tabindex="-1"></a>  categories** defined relative to gene and CpG island (each probe gets one</span>
+<span id="cb12-857"><a href="#cb12-857" aria-hidden="true" tabindex="-1"></a>  gene-relative and one island-relative category) and tests over-representation</span>
+<span id="cb12-858"><a href="#cb12-858" aria-hidden="true" tabindex="-1"></a>  with a **hypergeometric test** (p-value + odds ratio). This overlaps what</span>
+<span id="cb12-859"><a href="#cb12-859" aria-hidden="true" tabindex="-1"></a>  <span class="in">`knowYourCG`</span> and our own feature/island tables already give you — but note the</span>
+<span id="cb12-860"><a href="#cb12-860" aria-hidden="true" tabindex="-1"></a>  Toolkit&#39;s location annotation is **hg19-based** (450K:</span>
+<span id="cb12-861"><a href="#cb12-861" aria-hidden="true" tabindex="-1"></a>  <span class="in">`IlluminaHumanMethylation450kanno.ilmn12.hg19`</span>; EPIC:</span>
+<span id="cb12-862"><a href="#cb12-862" aria-hidden="true" tabindex="-1"></a>  <span class="in">`IlluminaHumanMethylationEPICanno.ilm10b4.hg19`</span>), so it is *not*</span>
+<span id="cb12-863"><a href="#cb12-863" aria-hidden="true" tabindex="-1"></a>  build-consistent with the hg38 annotation we built in <span class="co">[</span><span class="ot">Part 1</span><span class="co">](#part-1)</span>.</span>
+<span id="cb12-864"><a href="#cb12-864" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**GO &amp; KEGG enrichment** — implemented on top of <span class="in">`missMethyl::gometh`</span>, so it is</span>
+<span id="cb12-865"><a href="#cb12-865" aria-hidden="true" tabindex="-1"></a>  literally the same probe-bias-corrected test you ran locally; expect</span>
+<span id="cb12-866"><a href="#cb12-866" aria-hidden="true" tabindex="-1"></a>  concordance with your <span class="in">`gometh`</span> result, and read a disagreement as a gene-universe</span>
+<span id="cb12-867"><a href="#cb12-867" aria-hidden="true" tabindex="-1"></a>  difference (the web tool uses the full array as background).</span>
+<span id="cb12-868"><a href="#cb12-868" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Chromatin state &amp; histone modification enrichment** — overlaps your CpGs</span>
+<span id="cb12-869"><a href="#cb12-869" aria-hidden="true" tabindex="-1"></a>  against **Roadmap Epigenomics** data (chromatin state via the core 15-state</span>
+<span id="cb12-870"><a href="#cb12-870" aria-hidden="true" tabindex="-1"></a>  model; 11 histone/accessibility marks: DNase, H2A, H3K27ac, H3K27me3, H3K4me1,</span>
+<span id="cb12-871"><a href="#cb12-871" aria-hidden="true" tabindex="-1"></a>  H3K4me2, H3K4me3, H3K79me2, H3K9ac, H3K9me3, H4K20me1), again by hypergeometric</span>
+<span id="cb12-872"><a href="#cb12-872" aria-hidden="true" tabindex="-1"></a>  test. This is the same *question* <span class="in">`knowYourCG`</span>&#39;s chromHMM/histone databases and</span>
+<span id="cb12-873"><a href="#cb12-873" aria-hidden="true" tabindex="-1"></a>  <span class="in">`eFORGE`</span> answer — a regulatory-context check — but built on hg19 Roadmap tracks.</span>
+<span id="cb12-874"><a href="#cb12-874" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Tissue methylation** — reports whether your CpGs are tissue-specific across</span>
+<span id="cb12-875"><a href="#cb12-875" aria-hidden="true" tabindex="-1"></a>  **31 core tissues** from the EWAS Data Hub (a probe counts as tissue-specific</span>
+<span id="cb12-876"><a href="#cb12-876" aria-hidden="true" tabindex="-1"></a>  when <span class="in">`abs(tau_hyper − tau_hypo) &gt; 0.7`</span>, a cutoff set by permutation). Useful as</span>
+<span id="cb12-877"><a href="#cb12-877" aria-hidden="true" tabindex="-1"></a>  a sanity check that whole-blood hits aren&#39;t dominated by a signal that is really</span>
+<span id="cb12-878"><a href="#cb12-878" aria-hidden="true" tabindex="-1"></a>  tissue-of-origin driven.</span>
+<span id="cb12-879"><a href="#cb12-879" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Expression regulation** — reports Pearson correlations between methylation and</span>
+<span id="cb12-880"><a href="#cb12-880" aria-hidden="true" tabindex="-1"></a>  expression across six tissues (brain, colon, kidney, liver, stomach, testis).</span>
+<span id="cb12-881"><a href="#cb12-881" aria-hidden="true" tabindex="-1"></a>  This is the *same idea* as the BIOS eQTM layer we joined in <span class="co">[</span><span class="ot">Part 1</span><span class="co">](#part-1)</span>, but computed</span>
+<span id="cb12-882"><a href="#cb12-882" aria-hidden="true" tabindex="-1"></a>  in solid tissues rather than whole blood — so for a blood EWAS, prefer the BIOS</span>
+<span id="cb12-883"><a href="#cb12-883" aria-hidden="true" tabindex="-1"></a>  blood eQTMs and read this panel as supporting, cross-tissue context.</span>
+<span id="cb12-884"><a href="#cb12-884" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Motif enrichment** — runs **HOMER** on a 500 bp window centered on each CpG to</span>
+<span id="cb12-885"><a href="#cb12-885" aria-hidden="true" tabindex="-1"></a>  find over-represented transcription-factor binding motifs, a lead on which TFs</span>
+<span id="cb12-886"><a href="#cb12-886" aria-hidden="true" tabindex="-1"></a>  might read or be blocked by the methylation change.</span>
+<span id="cb12-887"><a href="#cb12-887" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-888"><a href="#cb12-888" aria-hidden="true" tabindex="-1"></a>The workflow is literally copy-paste: take the <span class="in">`probe`</span> column of your top hits</span>
+<span id="cb12-889"><a href="#cb12-889" aria-hidden="true" tabindex="-1"></a>(or the DMR constituent CpGs), paste into the query box, submit. Practical</span>
+<span id="cb12-890"><a href="#cb12-890" aria-hidden="true" tabindex="-1"></a>notes:</span>
+<span id="cb12-891"><a href="#cb12-891" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-892"><a href="#cb12-892" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**It is EPIC/450K-aware but check the array setting**, and paste <span class="in">`cg#########`</span></span>
+<span id="cb12-893"><a href="#cb12-893" aria-hidden="true" tabindex="-1"></a>  IDs, not coordinates.</span>
+<span id="cb12-894"><a href="#cb12-894" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Mind the genome build.** The location, chromatin-state, and histone panels</span>
+<span id="cb12-895"><a href="#cb12-895" aria-hidden="true" tabindex="-1"></a>  are annotated on **hg19**; the rest of this tutorial is deliberately hg38. That</span>
+<span id="cb12-896"><a href="#cb12-896" aria-hidden="true" tabindex="-1"></a>  is fine for the *categorical* questions these panels answer (is my set enriched</span>
+<span id="cb12-897"><a href="#cb12-897" aria-hidden="true" tabindex="-1"></a>  for enhancers? for island shores?), but don&#39;t copy an hg19 coordinate from the</span>
+<span id="cb12-898"><a href="#cb12-898" aria-hidden="true" tabindex="-1"></a>  Toolkit into an hg38 result table.</span>
+<span id="cb12-899"><a href="#cb12-899" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Treat it as a curated cross-check, not a replacement** for the reproducible R</span>
+<span id="cb12-900"><a href="#cb12-900" aria-hidden="true" tabindex="-1"></a>  path. Its trait and tissue panels are the parts you genuinely can&#39;t run locally;</span>
+<span id="cb12-901"><a href="#cb12-901" aria-hidden="true" tabindex="-1"></a>  its GO/KEGG and location panels duplicate <span class="in">`gometh`</span>/<span class="in">`knowYourCG`</span>, so use those in</span>
+<span id="cb12-902"><a href="#cb12-902" aria-hidden="true" tabindex="-1"></a>  the pipeline for the record and the Toolkit interactively to mine the catalogs.</span>
+<span id="cb12-903"><a href="#cb12-903" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-904"><a href="#cb12-904" aria-hidden="true" tabindex="-1"></a><span class="fu">### `eFORGE`: is a hit list driven by cell composition?</span></span>
+<span id="cb12-905"><a href="#cb12-905" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-906"><a href="#cb12-906" aria-hidden="true" tabindex="-1"></a>For a **whole-blood** EWAS the single most important adversarial check is</span>
+<span id="cb12-907"><a href="#cb12-907" aria-hidden="true" tabindex="-1"></a>whether your top CpGs are simply marking a shift in cell-type proportions rather</span>
+<span id="cb12-908"><a href="#cb12-908" aria-hidden="true" tabindex="-1"></a>than a phenotype-specific signal. **`eFORGE`** <span class="co">[</span><span class="ot">@breeze2016eforge</span><span class="co">]</span> answers this</span>
+<span id="cb12-909"><a href="#cb12-909" aria-hidden="true" tabindex="-1"></a>directly: it takes a set of CpGs (your top hits, or a DMR&#39;s constituent probes)</span>
+<span id="cb12-910"><a href="#cb12-910" aria-hidden="true" tabindex="-1"></a>and tests — by matched-background resampling — whether they are</span>
+<span id="cb12-911"><a href="#cb12-911" aria-hidden="true" tabindex="-1"></a>over-represented in cell-type-specific regulatory elements: DNase I</span>
+<span id="cb12-912"><a href="#cb12-912" aria-hidden="true" tabindex="-1"></a>hypersensitive sites and the Roadmap/ENCODE core-15 chromatin states across</span>
+<span id="cb12-913"><a href="#cb12-913" aria-hidden="true" tabindex="-1"></a>~40 blood and other primary cell types.</span>
+<span id="cb12-914"><a href="#cb12-914" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-915"><a href="#cb12-915" aria-hidden="true" tabindex="-1"></a>The result you *want* to see for a well-adjusted blood EWAS is **no strong,</span>
+<span id="cb12-916"><a href="#cb12-916" aria-hidden="true" tabindex="-1"></a>single-cell-type enrichment** — that is evidence your cell-composition</span>
+<span id="cb12-917"><a href="#cb12-917" aria-hidden="true" tabindex="-1"></a>adjustment (chapter 04) did its job. The result that should stop you is a list of </span>
+<span id="cb12-918"><a href="#cb12-918" aria-hidden="true" tabindex="-1"></a>neutrophil- or T-cell-specific enhancers: a signature that the</span>
+<span id="cb12-919"><a href="#cb12-919" aria-hidden="true" tabindex="-1"></a>&quot;phenotype&quot; effect is really a composition effect that leaked past the model.</span>
+<span id="cb12-920"><a href="#cb12-920" aria-hidden="true" tabindex="-1"></a>Because it works on <span class="in">`cg#########`</span> IDs against pre-built reference panels, <span class="in">`eFORGE`</span></span>
+<span id="cb12-921"><a href="#cb12-921" aria-hidden="true" tabindex="-1"></a>runs from a web form or the <span class="in">`eForge`</span> R package with no local reference data to</span>
+<span id="cb12-922"><a href="#cb12-922" aria-hidden="true" tabindex="-1"></a>assemble.</span>
+<span id="cb12-923"><a href="#cb12-923" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-924"><a href="#cb12-924" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb12-925"><a href="#cb12-925" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why this check matters here specifically</span></span>
+<span id="cb12-926"><a href="#cb12-926" aria-hidden="true" tabindex="-1"></a>Our subset carries the confounds chapter 05 mapped — cell composition loads</span>
+<span id="cb12-927"><a href="#cb12-927" aria-hidden="true" tabindex="-1"></a>heavily on the leading PCs. An <span class="in">`eFORGE`</span> cell-type enrichment on the top hits is</span>
+<span id="cb12-928"><a href="#cb12-928" aria-hidden="true" tabindex="-1"></a>the natural closing sanity check: it asks the composition question of the</span>
+<span id="cb12-929"><a href="#cb12-929" aria-hidden="true" tabindex="-1"></a>*final* CpG list, after all modeling, in the vocabulary (chromatin states,</span>
+<span id="cb12-930"><a href="#cb12-930" aria-hidden="true" tabindex="-1"></a>DHS) that a reviewer of a blood EWAS will expect to see addressed.</span>
+<span id="cb12-931"><a href="#cb12-931" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb12-932"><a href="#cb12-932" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-933"><a href="#cb12-933" aria-hidden="true" tabindex="-1"></a><span class="fu">## Other tools worth knowing, and how to choose</span></span>
+<span id="cb12-934"><a href="#cb12-934" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-935"><a href="#cb12-935" aria-hidden="true" tabindex="-1"></a>No single tool answers every interpretation question. A short map of the</span>
+<span id="cb12-936"><a href="#cb12-936" aria-hidden="true" tabindex="-1"></a>landscape, roughly in the order you&#39;d reach for them:</span>
 <span id="cb12-937"><a href="#cb12-937" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-938"><a href="#cb12-938" aria-hidden="true" tabindex="-1"></a><span class="fu">## Interpreting the result: a short checklist</span></span>
-<span id="cb12-939"><a href="#cb12-939" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-940"><a href="#cb12-940" aria-hidden="true" tabindex="-1"></a>Before writing &quot;our EWAS implicates pathway X,&quot; walk through:</span>
-<span id="cb12-941"><a href="#cb12-941" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-942"><a href="#cb12-942" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Did anything survive FDR at the CpG level?** If not (as here), say so plainly</span>
-<span id="cb12-943"><a href="#cb12-943" aria-hidden="true" tabindex="-1"></a>   and treat enrichment as hypothesis-generating, not confirmatory.</span>
-<span id="cb12-944"><a href="#cb12-944" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Is the enrichment robust?** Re-run with the full-array</span>
-<span id="cb12-945"><a href="#cb12-945" aria-hidden="true" tabindex="-1"></a>   background vs your filtered set; a term that only appears with a permissive</span>
-<span id="cb12-946"><a href="#cb12-946" aria-hidden="true" tabindex="-1"></a>   background is fragile.</span>
-<span id="cb12-947"><a href="#cb12-947" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Does trait enrichment corroborate the biology?** Overlap with previously</span>
-<span id="cb12-948"><a href="#cb12-948" aria-hidden="true" tabindex="-1"></a>   reported CpGs is stronger evidence than a lone GO term.</span>
-<span id="cb12-949"><a href="#cb12-949" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Could composition explain it?** Check with <span class="in">`eFORGE`</span> or by confirming your</span>
-<span id="cb12-950"><a href="#cb12-950" aria-hidden="true" tabindex="-1"></a>   cell-count adjustment (chapter 04) held.</span>
-<span id="cb12-951"><a href="#cb12-951" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Is the direction consistent?** Hyper- vs hypo-methylation across a region or</span>
-<span id="cb12-952"><a href="#cb12-952" aria-hidden="true" tabindex="-1"></a>   pathway should tell a coherent story; scattered directions suggest noise.</span>
-<span id="cb12-953"><a href="#cb12-953" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**How big are the feature sets, and do they overlap?** A CpG-centric test on</span>
-<span id="cb12-954"><a href="#cb12-954" aria-hidden="true" tabindex="-1"></a>   very large, correlated annotation sets will produce many significant features</span>
-<span id="cb12-955"><a href="#cb12-955" aria-hidden="true" tabindex="-1"></a>   from one underlying signal. Count distinct signals, not rows.</span>
-<span id="cb12-956"><a href="#cb12-956" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Are the hits you are annotating stratum-specific?** If they came from a</span>
-<span id="cb12-957"><a href="#cb12-957" aria-hidden="true" tabindex="-1"></a>   stratified meta-analysis, look up the per-stratum statistics first (notebook</span>
-<span id="cb12-958"><a href="#cb12-958" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">07</span><span class="co">](07_pipeline.qmd)</span>) — annotating a CpG that only one arm supports is</span>
-<span id="cb12-959"><a href="#cb12-959" aria-hidden="true" tabindex="-1"></a>   annotating one stratum&#39;s noise.</span>
-<span id="cb12-960"><a href="#cb12-960" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-961"><a href="#cb12-961" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
-<span id="cb12-962"><a href="#cb12-962" aria-hidden="true" tabindex="-1"></a><span class="fu">## Two caveats this walkthrough inherits, and you should carry forward</span></span>
-<span id="cb12-963"><a href="#cb12-963" aria-hidden="true" tabindex="-1"></a>Everything in this chapter is downstream of choices made in notebooks 05–07, and</span>
-<span id="cb12-964"><a href="#cb12-964" aria-hidden="true" tabindex="-1"></a>two of them limit how far the annotation can be pushed.</span>
-<span id="cb12-965"><a href="#cb12-965" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-966"><a href="#cb12-966" aria-hidden="true" tabindex="-1"></a>**The surrogate variables were estimated on the whole cohort.** When those same</span>
-<span id="cb12-967"><a href="#cb12-967" aria-hidden="true" tabindex="-1"></a>SVs are used inside a single-sex stratum they still carry sex-defined structure,</span>
-<span id="cb12-968"><a href="#cb12-968" aria-hidden="true" tabindex="-1"></a>because they were built to describe variation across both sexes. A cleanly</span>
-<span id="cb12-969"><a href="#cb12-969" aria-hidden="true" tabindex="-1"></a>stratified analysis would re-estimate SVs within each stratum — which the</span>
-<span id="cb12-970"><a href="#cb12-970" aria-hidden="true" tabindex="-1"></a>Snakemake pipeline is not currently set up to do (notebook</span>
-<span id="cb12-971"><a href="#cb12-971" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">07</span><span class="co">](07_pipeline.qmd)</span>). Treat stratum-specific hits as provisional for this</span>
-<span id="cb12-972"><a href="#cb12-972" aria-hidden="true" tabindex="-1"></a>reason alone.</span>
+<span id="cb12-938"><a href="#cb12-938" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Question <span class="pp">|</span> Tool <span class="pp">|</span> Notes <span class="pp">|</span></span>
+<span id="cb12-939"><a href="#cb12-939" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb12-940"><a href="#cb12-940" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> GO / KEGG, bias-corrected, reproducible <span class="pp">|</span> <span class="in">`missMethyl::gometh`</span> / <span class="in">`gsameth`</span> <span class="pp">|</span> Default gene-set test. <span class="in">`gsameth`</span> takes any custom gene-set list (e.g. MSigDB Hallmark). <span class="pp">|</span></span>
+<span id="cb12-941"><a href="#cb12-941" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> CpG-centric enrichment on regulatory elements <span class="pp">|</span> <span class="in">`knowYourCG::testEnrichment`</span> <span class="pp">|</span> CGI, TFBS, chromatin state, histone marks — tests CpGs directly, no gene collapse. Build-consistent with the Zhou annotation. <span class="pp">|</span></span>
+<span id="cb12-942"><a href="#cb12-942" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Region-level GO enrichment from DMRs <span class="pp">|</span> <span class="in">`missMethyl::goregion`</span> <span class="pp">|</span> Feeds comb-p/DMRcate regions in directly, correcting for probes-per-region. <span class="pp">|</span></span>
+<span id="cb12-943"><a href="#cb12-943" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> &quot;Has this CpG been linked to a trait before?&quot; <span class="pp">|</span> EWAS Toolkit / EWAS Catalog / MRC-IEU EWAS Catalog <span class="pp">|</span> Curated look-ups; the fastest external validation. <span class="pp">|</span></span>
+<span id="cb12-944"><a href="#cb12-944" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Broad gene-set / pathway diagrams, no bias model <span class="pp">|</span> ShinyGO, g:Profiler, Enrichr, GREAT <span class="pp">|</span> Built for gene lists generally; **do not** correct for methylation probe bias, so feed them a gene list you already trust, not raw CpG hits. <span class="pp">|</span></span>
+<span id="cb12-945"><a href="#cb12-945" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Cell-type / tissue enrichment (is a hit driven by composition?) <span class="pp">|</span> <span class="in">`eFORGE`</span>, LOLA <span class="pp">|</span> Tests whether your CpGs cluster in cell-type-specific regulatory elements — a direct check on residual confounding. <span class="pp">|</span></span>
+<span id="cb12-946"><a href="#cb12-946" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Chromatin-state / enhancer context <span class="pp">|</span> Roadmap/ENCODE overlaps via LOLA or <span class="in">`annotatr`</span> <span class="pp">|</span> Places hits in enhancers, promoters, and TF-binding regions. <span class="pp">|</span></span>
+<span id="cb12-947"><a href="#cb12-947" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Causal direction (does methylation *cause* the phenotype?) <span class="pp">|</span> Mendelian randomization with mQTLs (e.g. GoDMC) <span class="pp">|</span> The rigorous follow-up when a hit is real; well beyond a single EWAS. <span class="pp">|</span></span>
+<span id="cb12-948"><a href="#cb12-948" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> &quot;Is my phenotype associated with epigenetic *age*?&quot; | Epigenetic clocks: `methylclock`, Horvath [@horvath2013clock] / Hannum [@hannum2013clock] predictors | A composite outcome computed from a fixed CpG set, not an enrichment of *your* hits. Fit it as a separate phenotype-level analysis; don&#39;t read it off your EWAS table. <span class="pp">|</span></span>
+<span id="cb12-949"><a href="#cb12-949" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-950"><a href="#cb12-950" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-951"><a href="#cb12-951" aria-hidden="true" tabindex="-1"></a><span class="fu">## Interpreting the result: a short checklist</span></span>
+<span id="cb12-952"><a href="#cb12-952" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-953"><a href="#cb12-953" aria-hidden="true" tabindex="-1"></a>Before writing &quot;our EWAS implicates pathway X,&quot; walk through:</span>
+<span id="cb12-954"><a href="#cb12-954" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-955"><a href="#cb12-955" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Did anything survive FDR at the CpG level?** If not (as here), say so plainly</span>
+<span id="cb12-956"><a href="#cb12-956" aria-hidden="true" tabindex="-1"></a>   and treat enrichment as hypothesis-generating, not confirmatory.</span>
+<span id="cb12-957"><a href="#cb12-957" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Is the enrichment robust?** Re-run with the full-array</span>
+<span id="cb12-958"><a href="#cb12-958" aria-hidden="true" tabindex="-1"></a>   background vs your filtered set; a term that only appears with a permissive</span>
+<span id="cb12-959"><a href="#cb12-959" aria-hidden="true" tabindex="-1"></a>   background is fragile.</span>
+<span id="cb12-960"><a href="#cb12-960" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Does trait enrichment corroborate the biology?** Overlap with previously</span>
+<span id="cb12-961"><a href="#cb12-961" aria-hidden="true" tabindex="-1"></a>   reported CpGs is stronger evidence than a lone GO term.</span>
+<span id="cb12-962"><a href="#cb12-962" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Could composition explain it?** Check with <span class="in">`eFORGE`</span> or by confirming your</span>
+<span id="cb12-963"><a href="#cb12-963" aria-hidden="true" tabindex="-1"></a>   cell-count adjustment (chapter 04) held.</span>
+<span id="cb12-964"><a href="#cb12-964" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**Is the direction consistent?** Hyper- vs hypo-methylation across a region or</span>
+<span id="cb12-965"><a href="#cb12-965" aria-hidden="true" tabindex="-1"></a>   pathway should tell a coherent story; scattered directions suggest noise.</span>
+<span id="cb12-966"><a href="#cb12-966" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**How big are the feature sets, and do they overlap?** A CpG-centric test on</span>
+<span id="cb12-967"><a href="#cb12-967" aria-hidden="true" tabindex="-1"></a>   very large, correlated annotation sets will produce many significant features</span>
+<span id="cb12-968"><a href="#cb12-968" aria-hidden="true" tabindex="-1"></a>   from one underlying signal. Count distinct signals, not rows.</span>
+<span id="cb12-969"><a href="#cb12-969" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**Are the hits you are annotating stratum-specific?** If they came from a</span>
+<span id="cb12-970"><a href="#cb12-970" aria-hidden="true" tabindex="-1"></a>   stratified meta-analysis, look up the per-stratum statistics first (notebook</span>
+<span id="cb12-971"><a href="#cb12-971" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">07</span><span class="co">](07_pipeline.qmd)</span>) — annotating a CpG that only one arm supports is</span>
+<span id="cb12-972"><a href="#cb12-972" aria-hidden="true" tabindex="-1"></a>   annotating one stratum&#39;s noise.</span>
 <span id="cb12-973"><a href="#cb12-973" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-974"><a href="#cb12-974" aria-hidden="true" tabindex="-1"></a>**Per-stratum power is very low.** The stratified arms spend the same 24 design</span>
-<span id="cb12-975"><a href="#cb12-975" aria-hidden="true" tabindex="-1"></a>columns on 45 and 42 samples, leaving roughly 22 and 19 residual degrees of</span>
-<span id="cb12-976"><a href="#cb12-976" aria-hidden="true" tabindex="-1"></a>freedom. That is enough to fit the model and not enough to estimate small effects</span>
-<span id="cb12-977"><a href="#cb12-977" aria-hidden="true" tabindex="-1"></a>precisely.</span>
-<span id="cb12-978"><a href="#cb12-978" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb12-979"><a href="#cb12-979" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-980"><a href="#cb12-980" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
-<span id="cb12-981"><a href="#cb12-981" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-982"><a href="#cb12-982" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Annotation makes probe IDs biologically interpretable.** Take coordinates, gene model,</span>
-<span id="cb12-983"><a href="#cb12-983" aria-hidden="true" tabindex="-1"></a>  and CpG-island relation all from **one genome build annotation set**; don&#39;t mix </span>
-<span id="cb12-984"><a href="#cb12-984" aria-hidden="true" tabindex="-1"></a>  annotations built from hg19 with those from hg38. The BIOS eQTM catalog provides some </span>
-<span id="cb12-985"><a href="#cb12-985" aria-hidden="true" tabindex="-1"></a>  annotation for likely effector genes, which can differ from the nearest gene. </span>
-<span id="cb12-986"><a href="#cb12-986" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Region analysis recovers signal that single-CpG testing misses** by</span>
-<span id="cb12-987"><a href="#cb12-987" aria-hidden="true" tabindex="-1"></a>  leveraging the spatial correlation of methylation. On our subset an</span>
-<span id="cb12-988"><a href="#cb12-988" aria-hidden="true" tabindex="-1"></a>  11-CpG MHC cluster reaches Šidák p = 2.6 × 10⁻¹⁶ while none of its CpGs comes</span>
-<span id="cb12-989"><a href="#cb12-989" aria-hidden="true" tabindex="-1"></a>  close to the single-CpG EWAS significance threshold.</span>
-<span id="cb12-990"><a href="#cb12-990" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Match the DMR tool to your upstream model.** <span class="in">`comb-p`</span> runs on summary</span>
-<span id="cb12-991"><a href="#cb12-991" aria-hidden="true" tabindex="-1"></a>  statistics and therefore works after stratified meta-analysis. <span class="in">`DMRcate`</span> needs line-level data and one design formula, so it</span>
-<span id="cb12-992"><a href="#cb12-992" aria-hidden="true" tabindex="-1"></a>  cannot consume meta-analyzed results.</span>
-<span id="cb12-993"><a href="#cb12-993" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Run enrichment multiple ways.** <span class="in">`missMethyl::gometh`</span> for</span>
-<span id="cb12-994"><a href="#cb12-994" aria-hidden="true" tabindex="-1"></a>  reproducible, probe-bias-corrected **gene-set** (GO/KEGG) tests;</span>
-<span id="cb12-995"><a href="#cb12-995" aria-hidden="true" tabindex="-1"></a>  <span class="in">`knowYourCG::testEnrichment`</span> for **CpG-centric** tests against regulatory-element</span>
-<span id="cb12-996"><a href="#cb12-996" aria-hidden="true" tabindex="-1"></a>  databases (CGI, TFBS, chromatin state); and the EWAS Toolkit for the **trait**</span>
-<span id="cb12-997"><a href="#cb12-997" aria-hidden="true" tabindex="-1"></a>  catalog you can&#39;t reproduce locally. Read the **FDR** column, not the nominal</span>
-<span id="cb12-998"><a href="#cb12-998" aria-hidden="true" tabindex="-1"></a>  *p*, and always feed the tool your real tested CpG-set. On this subset all</span>
-<span id="cb12-999"><a href="#cb12-999" aria-hidden="true" tabindex="-1"></a>  three gene-set tools (<span class="in">`gometh`</span>, <span class="in">`methylglm`</span>, <span class="in">`methylRRA`</span>) return **nothing** at</span>
-<span id="cb12-1000"><a href="#cb12-1000" aria-hidden="true" tabindex="-1"></a>  FDR &lt; 0.05, while KYCG returns **41 of 863** regulatory features — a difference</span>
-<span id="cb12-1001"><a href="#cb12-1001" aria-hidden="true" tabindex="-1"></a>  driven as much by set size as by biology, and one whose honest reading is a</span>
-<span id="cb12-1002"><a href="#cb12-1002" aria-hidden="true" tabindex="-1"></a>  single broad enrichment in promoter-proximal, TF-bound chromatin rather than 41</span>
-<span id="cb12-1003"><a href="#cb12-1003" aria-hidden="true" tabindex="-1"></a>  discoveries.</span>
-<span id="cb12-1004"><a href="#cb12-1004" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Real outputs from this notebook —</span>
-<span id="cb12-1005"><a href="#cb12-1005" aria-hidden="true" tabindex="-1"></a>  <span class="in">`PTSD_ewas_annotated_zhou.csv.gz`</span> (full Zhou-annotated table), the KYCG results</span>
-<span id="cb12-1006"><a href="#cb12-1006" aria-hidden="true" tabindex="-1"></a>  table, and the comb-p DMR files — are the biological deliverables of the whole</span>
-<span id="cb12-1007"><a href="#cb12-1007" aria-hidden="true" tabindex="-1"></a>  tutorial. The single-CpG hits don&#39;t survive correction on this teaching subset,</span>
-<span id="cb12-1008"><a href="#cb12-1008" aria-hidden="true" tabindex="-1"></a>  which is the expected result at n = 87.</span>
-<span id="cb12-1009"><a href="#cb12-1009" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-1010"><a href="#cb12-1010" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb12-1011"><a href="#cb12-1011" aria-hidden="true" tabindex="-1"></a><span class="fu">## Other arrays</span></span>
-<span id="cb12-1012"><a href="#cb12-1012" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-1013"><a href="#cb12-1013" aria-hidden="true" tabindex="-1"></a>Zhou publishes the same</span>
-<span id="cb12-1014"><a href="#cb12-1014" aria-hidden="true" tabindex="-1"></a>hg38 annotation set for every array — swap <span class="in">`EPIC`</span> for <span class="in">`HM450`</span> or</span>
-<span id="cb12-1015"><a href="#cb12-1015" aria-hidden="true" tabindex="-1"></a><span class="in">`EPICv2`</span> in the manifest/gene/SNP filenames and in the <span class="in">`platform`</span>/<span class="in">`array.type`</span></span>
-<span id="cb12-1016"><a href="#cb12-1016" aria-hidden="true" tabindex="-1"></a>arguments to <span class="in">`testEnrichment`</span>/<span class="in">`gometh`</span>. The comb-p and DMRcate calls are</span>
-<span id="cb12-1017"><a href="#cb12-1017" aria-hidden="true" tabindex="-1"></a>unchanged apart from the <span class="in">`arraytype`</span> argument.</span>
-<span id="cb12-1018"><a href="#cb12-1018" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb12-1019"><a href="#cb12-1019" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-1020"><a href="#cb12-1020" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
-<span id="cb12-1021"><a href="#cb12-1021" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-1022"><a href="#cb12-1022" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb12-1023"><a href="#cb12-1023" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb12-974"><a href="#cb12-974" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
+<span id="cb12-975"><a href="#cb12-975" aria-hidden="true" tabindex="-1"></a><span class="fu">## Two caveats this walkthrough inherits, and you should carry forward</span></span>
+<span id="cb12-976"><a href="#cb12-976" aria-hidden="true" tabindex="-1"></a>Everything in this chapter is downstream of choices made in notebooks 05–07, and</span>
+<span id="cb12-977"><a href="#cb12-977" aria-hidden="true" tabindex="-1"></a>two of them limit how far the annotation can be pushed.</span>
+<span id="cb12-978"><a href="#cb12-978" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-979"><a href="#cb12-979" aria-hidden="true" tabindex="-1"></a>**The surrogate variables were estimated on the whole cohort.** When those same</span>
+<span id="cb12-980"><a href="#cb12-980" aria-hidden="true" tabindex="-1"></a>SVs are used inside a single-sex stratum they still carry sex-defined structure,</span>
+<span id="cb12-981"><a href="#cb12-981" aria-hidden="true" tabindex="-1"></a>because they were built to describe variation across both sexes. A cleanly</span>
+<span id="cb12-982"><a href="#cb12-982" aria-hidden="true" tabindex="-1"></a>stratified analysis would re-estimate SVs within each stratum — which the</span>
+<span id="cb12-983"><a href="#cb12-983" aria-hidden="true" tabindex="-1"></a>Snakemake pipeline is not currently set up to do (notebook</span>
+<span id="cb12-984"><a href="#cb12-984" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">07</span><span class="co">](07_pipeline.qmd)</span>). Treat stratum-specific hits as provisional for this</span>
+<span id="cb12-985"><a href="#cb12-985" aria-hidden="true" tabindex="-1"></a>reason alone.</span>
+<span id="cb12-986"><a href="#cb12-986" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-987"><a href="#cb12-987" aria-hidden="true" tabindex="-1"></a>**Per-stratum power is very low.** The stratified arms spend the same 24 design</span>
+<span id="cb12-988"><a href="#cb12-988" aria-hidden="true" tabindex="-1"></a>columns on 45 and 42 samples, leaving roughly 22 and 19 residual degrees of</span>
+<span id="cb12-989"><a href="#cb12-989" aria-hidden="true" tabindex="-1"></a>freedom. That is enough to fit the model and not enough to estimate small effects</span>
+<span id="cb12-990"><a href="#cb12-990" aria-hidden="true" tabindex="-1"></a>precisely.</span>
+<span id="cb12-991"><a href="#cb12-991" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb12-992"><a href="#cb12-992" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-993"><a href="#cb12-993" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb12-994"><a href="#cb12-994" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-995"><a href="#cb12-995" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Annotation makes probe IDs biologically interpretable.** Take coordinates, gene model,</span>
+<span id="cb12-996"><a href="#cb12-996" aria-hidden="true" tabindex="-1"></a>  and CpG-island relation all from **one genome build annotation set**; don&#39;t mix </span>
+<span id="cb12-997"><a href="#cb12-997" aria-hidden="true" tabindex="-1"></a>  annotations built from hg19 with those from hg38. The BIOS eQTM catalog provides some </span>
+<span id="cb12-998"><a href="#cb12-998" aria-hidden="true" tabindex="-1"></a>  annotation for likely effector genes, which can differ from the nearest gene. </span>
+<span id="cb12-999"><a href="#cb12-999" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Region analysis recovers signal that single-CpG testing misses** by</span>
+<span id="cb12-1000"><a href="#cb12-1000" aria-hidden="true" tabindex="-1"></a>  leveraging the spatial correlation of methylation. On our subset an</span>
+<span id="cb12-1001"><a href="#cb12-1001" aria-hidden="true" tabindex="-1"></a>  11-CpG MHC cluster reaches Šidák p = 2.6 × 10⁻¹⁶ while none of its CpGs comes</span>
+<span id="cb12-1002"><a href="#cb12-1002" aria-hidden="true" tabindex="-1"></a>  close to the single-CpG EWAS significance threshold.</span>
+<span id="cb12-1003"><a href="#cb12-1003" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Match the DMR tool to your upstream model.** <span class="in">`comb-p`</span> runs on summary</span>
+<span id="cb12-1004"><a href="#cb12-1004" aria-hidden="true" tabindex="-1"></a>  statistics and therefore works after stratified meta-analysis. <span class="in">`DMRcate`</span> needs line-level data and one design formula, so it</span>
+<span id="cb12-1005"><a href="#cb12-1005" aria-hidden="true" tabindex="-1"></a>  cannot consume meta-analyzed results.</span>
+<span id="cb12-1006"><a href="#cb12-1006" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Run enrichment multiple ways.** <span class="in">`missMethyl::gometh`</span> for</span>
+<span id="cb12-1007"><a href="#cb12-1007" aria-hidden="true" tabindex="-1"></a>  reproducible, probe-bias-corrected **gene-set** (GO/KEGG) tests;</span>
+<span id="cb12-1008"><a href="#cb12-1008" aria-hidden="true" tabindex="-1"></a>  <span class="in">`knowYourCG::testEnrichment`</span> for **CpG-centric** tests against regulatory-element</span>
+<span id="cb12-1009"><a href="#cb12-1009" aria-hidden="true" tabindex="-1"></a>  databases (CGI, TFBS, chromatin state); and the EWAS Toolkit for the **trait**</span>
+<span id="cb12-1010"><a href="#cb12-1010" aria-hidden="true" tabindex="-1"></a>  catalog you can&#39;t reproduce locally. Read the **FDR** column, not the nominal</span>
+<span id="cb12-1011"><a href="#cb12-1011" aria-hidden="true" tabindex="-1"></a>  *p*, and always feed the tool your real tested CpG-set. On this subset all</span>
+<span id="cb12-1012"><a href="#cb12-1012" aria-hidden="true" tabindex="-1"></a>  three gene-set tools (<span class="in">`gometh`</span>, <span class="in">`methylglm`</span>, <span class="in">`methylRRA`</span>) return **nothing** at</span>
+<span id="cb12-1013"><a href="#cb12-1013" aria-hidden="true" tabindex="-1"></a>  FDR &lt; 0.05, while KYCG returns **41 of 863** regulatory features — a difference</span>
+<span id="cb12-1014"><a href="#cb12-1014" aria-hidden="true" tabindex="-1"></a>  driven as much by set size as by biology, and one whose honest reading is a</span>
+<span id="cb12-1015"><a href="#cb12-1015" aria-hidden="true" tabindex="-1"></a>  single broad enrichment in promoter-proximal, TF-bound chromatin rather than 41</span>
+<span id="cb12-1016"><a href="#cb12-1016" aria-hidden="true" tabindex="-1"></a>  discoveries.</span>
+<span id="cb12-1017"><a href="#cb12-1017" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Real outputs from this notebook —</span>
+<span id="cb12-1018"><a href="#cb12-1018" aria-hidden="true" tabindex="-1"></a>  <span class="in">`PTSD_ewas_annotated_zhou.csv.gz`</span> (full Zhou-annotated table), the KYCG results</span>
+<span id="cb12-1019"><a href="#cb12-1019" aria-hidden="true" tabindex="-1"></a>  table, and the comb-p DMR files — are the biological deliverables of the whole</span>
+<span id="cb12-1020"><a href="#cb12-1020" aria-hidden="true" tabindex="-1"></a>  tutorial. The single-CpG hits don&#39;t survive correction on this teaching subset,</span>
+<span id="cb12-1021"><a href="#cb12-1021" aria-hidden="true" tabindex="-1"></a>  which is the expected result at n = 87.</span>
+<span id="cb12-1022"><a href="#cb12-1022" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-1023"><a href="#cb12-1023" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb12-1024"><a href="#cb12-1024" aria-hidden="true" tabindex="-1"></a><span class="fu">## Other arrays</span></span>
+<span id="cb12-1025"><a href="#cb12-1025" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-1026"><a href="#cb12-1026" aria-hidden="true" tabindex="-1"></a>Zhou publishes the same</span>
+<span id="cb12-1027"><a href="#cb12-1027" aria-hidden="true" tabindex="-1"></a>hg38 annotation set for every array — swap <span class="in">`EPIC`</span> for <span class="in">`HM450`</span> or</span>
+<span id="cb12-1028"><a href="#cb12-1028" aria-hidden="true" tabindex="-1"></a><span class="in">`EPICv2`</span> in the manifest/gene/SNP filenames and in the <span class="in">`platform`</span>/<span class="in">`array.type`</span></span>
+<span id="cb12-1029"><a href="#cb12-1029" aria-hidden="true" tabindex="-1"></a>arguments to <span class="in">`testEnrichment`</span>/<span class="in">`gometh`</span>. The comb-p and DMRcate calls are</span>
+<span id="cb12-1030"><a href="#cb12-1030" aria-hidden="true" tabindex="-1"></a>unchanged apart from the <span class="in">`arraytype`</span> argument.</span>
+<span id="cb12-1031"><a href="#cb12-1031" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb12-1032"><a href="#cb12-1032" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-1033"><a href="#cb12-1033" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb12-1034"><a href="#cb12-1034" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-1035"><a href="#cb12-1035" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb12-1036"><a href="#cb12-1036" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

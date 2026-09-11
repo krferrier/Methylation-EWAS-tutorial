@@ -5,64 +5,51 @@
 ##     Rscript install_packages.R
 ## or paste it into an R console.
 ##
-## Requires R 4.2.x. BiocManager maps that to Bioconductor 3.16 automatically,
-## which is the release that produced every checkpoint in the Zenodo record.
+## Requires R 4.3 or newer -- install the current release. BiocManager picks the
+## Bioconductor release that matches your R (R 4.6 -> 3.23, R 4.5 -> 3.22), and
+## all 22 package names resolve in every release from 3.18 on. Nothing here
+## needs a version pin: install the current matrixStats like everything else.
 ##
-## Expect 20-40 minutes on a first run: several of these compile from source.
+## The published numbers and the Zenodo checkpoints came from R 4.2.3 /
+## Bioconductor 3.16, so a value may differ in its last digits on a newer
+## stack. The code is unchanged. See SESSIONINFO.md.
+##
+## Budget 20-40 minutes on a first run. On Windows and macOS almost everything
+## arrives as a pre-built binary -- there are just a lot of packages. On Linux
+## they build from source, which is slower.
 ## ---------------------------------------------------------------------------
 
 options(timeout = 1200)          # some Bioconductor tarballs are large
 options(Ncpus = max(1L, parallel::detectCores() - 1L))   # parallel compiles
 
-## --- 0. sanity check the R version -----------------------------------------
+## --- 0. check the R version -------------------------------------------------
 rv <- getRversion()
-if (rv < "4.2" || rv >= "4.3") {
-  warning(
-    "This tutorial was built on R 4.2.x (Bioconductor 3.16). You are on ", rv,
-    ".\nIt may still work, but package versions will differ from the ones that\n",
-    "produced the published numbers.", call. = FALSE, immediate. = TRUE)
+if (rv < "4.3") {
+  stop("This tutorial needs R 4.3 or newer; you are on ", rv, ".\n",
+       "R 4.2 selects Bioconductor 3.16, where MatrixGenerics passes\n",
+       "`useNames = NA` -- an argument matrixStats made defunct in 1.2.0 -- so\n",
+       "chapters 01-02 fail against a current matrixStats. Install the current\n",
+       "R from https://cran.r-project.org/ and re-run this script.",
+       call. = FALSE)
 }
 
-## --- 1. bootstrap the installers -------------------------------------------
+## --- 1. bootstrap BiocManager -----------------------------------------------
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager", repos = "https://cloud.r-project.org")
 }
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes", repos = "https://cloud.r-project.org")
-}
-cat("Bioconductor release:", as.character(BiocManager::version()), "\n\n")
+bioc_ver <- BiocManager::version()
+cat("R", as.character(rv), "-> Bioconductor", as.character(bioc_ver), "\n\n")
 
-## --- 2. the matrixStats pin, FIRST -----------------------------------------
-## matrixStats made `useNames = NA` defunct in 1.2.0, but Bioconductor 3.16's
-## MatrixGenerics still passes it -- so a current matrixStats breaks
-## detectionP() and preprocessFunnorm(). Install the pinned version before
-## anything can pull in a newer one as a dependency.
-need_pin <- !requireNamespace("matrixStats", quietly = TRUE) ||
-  packageVersion("matrixStats") >= "1.2.0"
-if (need_pin) {
-  cat("Installing matrixStats 1.0.0 (pinned -- see SESSIONINFO.md)\n")
-  ok <- tryCatch({
-    remotes::install_version("matrixStats", version = "1.0.0",
-                             repos = "https://cloud.r-project.org", upgrade = "never")
-    TRUE
-  }, error = function(e) { cat("  install failed:", conditionMessage(e), "\n"); FALSE })
-
-  ## 1.0.0 is source-only, so this step is the one that needs a compiler.
-  ## If it failed, the 1.3.0 binary plus a hidden option is a working fallback:
-  ##   install.packages("matrixStats")
-  ##   options(matrixStats.useNames.NA = "deprecated")   # 1.3.0 only; gone in 1.5.0
-  ## Put that option in your .Rprofile so it applies to every session.
-  if (!ok) {
-    cat("\n  Could not build matrixStats 1.0.0 (it is source-only and needs a\n",
-        "  compiler: Rtools on Windows, xcode-select --install on macOS).\n",
-        "  Alternative -- use the binary and relax the check:\n",
-        "      install.packages(\"matrixStats\")\n",
-        "      options(matrixStats.useNames.NA = \"deprecated\")\n",
-        "  See the Setup chapter for details.\n\n", sep = "")
-  }
+## MatrixGenerics 1.13.1 switched every `useNames` default from NA to TRUE,
+## which shipped in Bioconductor 3.18. Below that release, a current
+## matrixStats breaks detectionP() and preprocessFunnorm().
+if (bioc_ver < "3.18") {
+  stop("BiocManager selected Bioconductor ", bioc_ver, ", which predates the\n",
+       "MatrixGenerics fix for `useNames = NA`. Update BiocManager with\n",
+       "install.packages(\"BiocManager\"), or move to a newer R.", call. = FALSE)
 }
 
-## --- 3. everything else -----------------------------------------------------
+## --- 2. the packages --------------------------------------------------------
 cran <- c("data.table", "ggplot2", "knitr", "DT")
 
 bioc <- c(
@@ -79,30 +66,25 @@ bioc <- c(
   "missMethyl", "methylGSA"
 )
 
-## `upgrade = "never"` is what protects the matrixStats pin from being
-## silently bumped while resolving these.
+## `upgrade = "never"` keeps this from rebuilding packages you already have
+## while it resolves dependencies -- it makes a re-run cheap, not just a
+## first run.
 BiocManager::install(c(cran, bioc), ask = FALSE, update = FALSE,
                      upgrade = "never")
 
-## --- 4. report --------------------------------------------------------------
+## --- 3. report --------------------------------------------------------------
 cat("\n--- installed versions ---\n")
-for (p in c("matrixStats", cran, bioc)) {
+for (p in c(cran, bioc, "matrixStats", "MatrixGenerics")) {
   v <- tryCatch(as.character(packageVersion(p)), error = function(e) "MISSING")
   cat(sprintf("  %-48s %s\n", p, v))
 }
 
 missing <- Filter(function(p) !requireNamespace(p, quietly = TRUE),
-                  c("matrixStats", cran, bioc))
+                  c(cran, bioc))
 if (length(missing)) {
   cat("\nFAILED to install:", paste(missing, collapse = ", "), "\n")
   cat("Most first-time failures are missing system libraries; the error text\n",
       "above usually names the one to install.\n")
 } else {
   cat("\nAll packages installed.\n")
-}
-
-ms <- as.character(packageVersion("matrixStats"))
-if (utils::compareVersion(ms, "1.2.0") >= 0) {
-  cat("\nWARNING: matrixStats is", ms, "-- chapters 01-02 will fail with\n",
-      "'useNames = NA is defunct'. Re-run step 2 above.\n")
 }

@@ -14,44 +14,66 @@ root installs the 4 CRAN and 18 Bioconductor packages the chapters use:
 Rscript install_packages.R
 ```
 
-It relies on `BiocManager`, which maps R 4.2 to Bioconductor 3.16 automatically. All 22
-package names resolve in that release, and the script installs the pinned `matrixStats`
-*before* anything else so a dependency resolution cannot bump it — `wateRmelon` and `sva`
-both depend on `matrixStats` but neither declares a version floor, so `upgrade = "never"`
-holds the pin.
+It requires **R 4.3 or newer** and relies on `BiocManager`, which selects the
+Bioconductor release matching your R (R 4.6 → 3.23, R 4.5 → 3.22). All 22 package names
+resolve in every release from 3.18 on, and nothing needs a version pin.
+
+The R 4.3 floor is not cosmetic. `matrixStats` made `useNames = NA` defunct in 1.2.0,
+while `MatrixGenerics` still passed `NA` as its own default — so on Bioconductor 3.16 and
+3.17 a current `matrixStats` breaks `detectionP()` and `preprocessFunnorm()` with
+`useNames = NA is defunct`. `minfi` was never at fault; none of its own functions pass
+the argument. Upstream fixed it in `MatrixGenerics` 1.13.1, which switched every default
+to `TRUE` and shipped in **Bioconductor 3.18**. From that release on, the current
+`matrixStats` is the correct one — and old versions cannot even be built on R 4.5 or
+newer, whose headers no longer define the bare `Calloc`/`Free` macros their C code uses.
+The installer therefore stops with an explanation rather than pinning anything.
 
 Conda is required only for **chapter 07** (Snakemake) and the **comb-p section of chapter
 08**. If you skip those, ignore the environment files entirely — chapter 06 already runs
 the same association test directly in R.
 
-## The three conda environments
+## The four conda environments
 
-If you are using conda, this tutorial uses three unique environments:
+If you are using conda, this tutorial uses four unique environments:
 
 ```bash
-conda env create -f envs/methyl.yml     # chapters 01-06, 08 -- R 4.2.3
-conda env create -f envs/smk.yml        # chapter 07         -- Snakemake 9.26.1
-conda env create -f envs/combp.yml      # chapter 08 DMRs    -- Python 2.7.15
+conda env create -f envs/methyl.yml       # chapters 01-06, 08   -- R 4.5
+conda env create -f envs/smk.yml          # chapter 07           -- Snakemake 9.26.1
+conda env create -f envs/combp.yml        # chapter 08 DMRs      -- Python 2.7.15
+conda env create -f envs/methylgsa.yml    # chapter 08 methylGSA -- R 4.2
 ```
 
 | Environment | Chapters | Core tool |
 |---|---|---|
-| `ewas-methyl` | 01-06, 08 | R 4.2.3, Bioconductor 3.16 |
+| `ewas-methyl` | 01-06, 08 | R 4.5, Bioconductor 3.22 |
 | `ewas-smk` | 07 | Snakemake 9.26.1 |
 | `ewas-combp` | 08 (DMR section) | comb-p on Python 2.7 |
+| `ewas-methylgsa` | 08 (methylGSA section) | methylGSA on R 4.2 |
 
 Each file lists **only the packages the tutorial uses directly** and lets conda resolve
 the dependency tree. Two version constraints are deliberate:
 
-- **`r-base=4.2`** pins the Bioconductor generation to 3.16, which is what produced the
-  checkpoints in the Zenodo record.
-- **`r-matrixstats=1.0`** because `matrixStats` made `useNames = NA` defunct in 1.2.0
-  (December 2023), while Bioconductor 3.16's `MatrixGenerics` still passes it. A newer
-  `matrixStats` breaks `detectionP()` and `preprocessFunnorm()` with
-  `useNames = NA is defunct`. `minfi` itself is not at fault — none of its own functions
-  pass the argument.
+- **`r-base=4.5`** in `envs/methyl.yml` is the newest R bioconda builds this whole
+  Bioconductor stack for; every `bioconductor-*` package in that file has an `r45` build,
+  which is Bioconductor 3.22.
+- **`r-base=4.2`** in `envs/methylgsa.yml` is forced by packaging, not by choice:
+  bioconda's newest `methylGSA` is 1.16.0 for R 4.2, with no `r43`, `r44`, or `r45` build.
+  That single package is why the environment is split — keeping it in `envs/methyl.yml`
+  would hold the main environment a Bioconductor generation back.
+
+The `r-matrixstats=1.0` pin that earlier versions of this file carried is **gone**. It
+worked around `MatrixGenerics` passing `useNames = NA`; that default became `TRUE` in
+`MatrixGenerics` 1.13.1 (Bioconductor 3.18), so at 3.22 the current `matrixStats` is the
+correct one.
 
 Everything else floats, so the solver can pick builds that work on your platform.
+
+::: note
+**The `sessionInfo()` dump below is still from R 4.2.3 / Bioconductor 3.16.** That is the
+state that produced the checkpoints currently in the Zenodo record, so it remains the
+accurate provenance for the published numbers. It is replaced with an R 4.5 dump when
+those checkpoints are regenerated under the new environment.
+:::
 
 ## What is *not* in these files
 
