@@ -216,26 +216,26 @@ stopifnot(identical(rownames(beta_raw), rownames(beta_noob)),
 grs_fun
 ```
 
-::: {.callout-important}
+::::: {.callout-important}
 ## If `preprocessFunnorm` stops with `pthread_create() is 22`
 
-On some installs — most often a conda environment — the chunk above dies partway
-through normalization with:
+If you see this error:
 
 ```
 Error in preprocessCore::normalize.quantiles.use.target(matrix(crtColumn.reduced),  : 
   ERROR; return code from pthread_create() is 22
 ```
 
-Nothing is wrong with your data, and nothing is wrong with the chapter. The
-quantile-normalization step inside `preprocessFunnorm` calls `preprocessCore`,
-whose pre-built binary is compiled with threading enabled, and on these
-installs the threads it asks for cannot be created. Setting
-`OPENBLAS_NUM_THREADS=1` or `OMP_NUM_THREADS=1` does **not** help — the
-threading has to come out of the package itself.
+nothing is wrong with your data or with the chapter. The quantile-normalization
+step inside `preprocessFunnorm` calls `preprocessCore`, whose pre-built binary is
+compiled with threading enabled, and the threads it asks for cannot be created.
+Either fix below clears it; both were tested against this error.
 
-**The fix that works in any R installation** is to rebuild `preprocessCore`
-from source with threading disabled:
+:::: {.panel-tabset}
+
+### In R
+
+Rebuild `preprocessCore` from source with threading disabled:
 
 ```{.r filename="RStudio Console"}
 BiocManager::install(
@@ -253,53 +253,27 @@ BiocManager::install(
 Update all/some/none? [a/s/n]:
 ```
 
-Answer **`n`**. That prompt is about every *other* out-of-date package, not
-about `preprocessCore` — the one you asked for is rebuilt either way. Answering
-`a` recompiles a large part of the Bioconductor stack from source, which takes
-a long time and can move packages this tutorial deliberately holds back (the
-`r-lattice<0.23` pin in `envs/methyl.yml` exists for exactly that reason).
+Answer **`n`**. Answering `a` recompiles a large part of the Bioconductor stack
+from source, which takes a long time. Letting Bioconductor recompile all the
+packages can also potentially break a conda environment if that is how you
+installed the necessary R packages.
 
-Restart R, then confirm you picked up the rebuilt copy before re-running the
-chunk:
+Restart R, then re-run the chunk.
 
-```{.r filename="RStudio Console"}
-find.package("preprocessCore")   # should NOT be your conda env's library
-```
+### With conda
 
-**If you are in a conda environment** there is a second route, and it works for
-a different reason: the threaded OpenBLAS build is what `preprocessCore` picks
-its threads up from, so replacing it clears the error without touching
-`preprocessCore` at all. Both routes were tested against this failure on six
-arrays — the rebuild above and this one each take `preprocessFunnorm` from the
-crash to a clean run in about 20 seconds:
+If you are using conda, you can install a specific version of OpenBLAS that is
+compatible with the `preprocessCore` package:
 
 ```{.bash filename="Terminal"}
 conda activate ewas-methyl
 conda install "openblas=0.3.3"
 ```
 
-Be aware of what that transaction does, though. `openblas=0.3.3` is the old
-standalone package, so conda removes `libopenblas` and satisfies BLAS and LAPACK
-from `blis` and Netlib reference LAPACK instead — and Netlib is a reference
-implementation, not a tuned one. Timing the same operations on a 1500 × 1500
-matrix before and after the swap:
+Restart R, then re-run the chunk.
 
-| operation | OpenBLAS | blis + Netlib |
-|---|---:|---:|
-| matrix product | 0.02 s | 0.04 s |
-| `chol()` | 0.01 s | 0.33 s |
-| `solve()` | 0.05 s | 0.30 s |
-| `svd()` | 0.16 s | 0.34 s |
-| `eigen()` | 0.05 s | 0.30 s |
-
-Normalization itself barely notices, because it is not decomposition-bound. The
-steps that will notice are the ones built on those decompositions: the
-control-probe PCA in this chapter, `sva()` in chapter 05, and `lmFit()` across
-756,251 probes in chapter 06. So if you can rebuild `preprocessCore`, prefer
-that — it fixes the crash and leaves your numeric libraries alone. Use the
-OpenBLAS route when rebuilding from source is not available to you, which on
-Windows or without build tools it often is not.
-:::
+::::
+:::::
 
 ::: {.callout-note collapse="true"}
 ## If normalization does not fit on your machine
