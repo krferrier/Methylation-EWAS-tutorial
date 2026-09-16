@@ -532,11 +532,12 @@ are keyed on **probe IDs**, not intensities. The workflow:
    section) so you have a β-matrix with `cg`/`ch` probe IDs as rownames.
 2. **Apply the same masks by ID.** Read Zhou's mask/manifest for the correct array
    (450K vs EPIC vs EPICv2 — they have different probe sets), pick the mask for
-   your study population, and subset:
+   your study population, and subset. If you came straight to this section, run the
+   `mask-read` chunk in [§1](#sec-why) first — that is where `drop8` is built:
 
    ```{.r filename="RStudio Console"}
-   # `drop8` is the eight-code union read from the TSV above. It works unchanged on
-   # a matrix, because the mask is keyed on probe IDs and nothing else.
+   # `drop8` is the eight-code union built by the `mask-read` chunk in §1. It works
+   # unchanged on a matrix, because the mask is keyed on probe IDs and nothing else.
    beta_filt <- beta[!rownames(beta) %in% drop8, ]
 
    # archived manifest, if you need sub-population resolution instead
