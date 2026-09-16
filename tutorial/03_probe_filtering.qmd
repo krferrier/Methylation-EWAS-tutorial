@@ -119,7 +119,7 @@ The mask comes in two forms, and **this chapter uses both** — they are not
 alternatives you pick between. The ready-made TSV carries the eight codes the
 filtering is built on, and that is all you need to reproduce the probe set. The full
 release carries all 24 codes, three of which the per-population table in
-[§2](#sec-categories) needs and the TSV does not have. Start with the TSV; read the
+[§2](#sec-ancestry) needs and the TSV does not have. Start with the TSV; read the
 second part when you want a term outside the eight.
 
 #### The ready-made TSV — the eight codes the filtering uses {#the-tsv}
@@ -213,11 +213,11 @@ mask_cols <- c("M_mapping", "M_nonuniq",
 drop <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
 ```
 
-This is where the five-population table in [§2](#sec-categories) comes from, and it is
+This is where the five-population table in [§2](#sec-ancestry) comes from, and it is
 the concrete reason the chapter needs both forms of the mask. The TSV carries
-`M_SNP_AFR_1pt` and `M_SNP_EUR_1pt` — which is why [§3](#sec-ancestry) can draw its
-AFR-versus-EUR contrast straight from it — but it does not carry the AMR, SAS or EAS
-equivalents, so three of that table's five rows can only come from the full release. Because the unpacked bits are committed, the count runs here rather
+`M_SNP_AFR_1pt` and `M_SNP_EUR_1pt`, so the AFR-versus-EUR comparisons in that section
+come straight from it — but it does not carry the AMR, SAS or EAS equivalents, so three
+of the five rows can only come from the full release. Because the unpacked bits are committed, the count runs here rather
 than being quoted at you:
 
 ```{r}
@@ -253,7 +253,7 @@ comparison at the end of this section.
 :::
 
 The funnel below needs all three probe lists, so the two study-specific filters are
-computed here and explained in [§4](#sec-detp-sex).
+computed here and explained in [§3](#sec-detp-sex).
 
 ::: {.callout-note}
 ## What this chapter needs
@@ -293,21 +293,34 @@ length(drop_detp)
 drop_mask <- intersect(rownames(grs), drop8)
 
 # Sex-chromosome probes, from the manifest coordinates minfi attached to the
-# object -- removed for an autosomal EWAS, see §4.
+# object -- removed for an autosomal EWAS, see §3.
 drop_sex <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
 
 # A probe is dropped if ANY of the three lists flags it, so the three counts
 # below overlap and do not sum to the total dropped.
 keep <- setdiff(rownames(grs), Reduce(union, list(drop_mask, drop_detp, drop_sex)))
 
-# The same filter with the EUR-only mask instead of the AFR + EUR union, for the
-# ancestry contrast in §3. Detection-p and sex filters are held fixed.
-eur_cols  <- c("M_mapping", "M_nonuniq",
-               "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt")
-drop_eur8 <- mask$Probe_ID[Reduce(`|`, lapply(eur_cols, function(m) mask[[m]] == 1L))]
-keep_eur  <- setdiff(rownames(grs),
-                     Reduce(union, list(intersect(rownames(grs), drop_eur8),
-                                        drop_detp, drop_sex)))
+# The same filter with one ancestry's SNP codes instead of both, for the contrast
+# in §2. M_mapping and M_nonuniq are not ancestry-specific, so they stay in every
+# variant; detection-p and sex filters are held fixed too. Only the SNP codes move.
+one_anc <- function(pop) {
+  cols <- c("M_mapping", "M_nonuniq",
+            paste0(c("M_SNP_", "M_1baseSwitchSNP_", "M_2extBase_SNP_"), pop, "_1pt"))
+  dropped <- mask$Probe_ID[Reduce(`|`, lapply(cols, function(m) mask[[m]] == 1L))]
+  in_study <- intersect(rownames(grs), dropped)
+  list(masked   = length(in_study),
+       retained = length(setdiff(rownames(grs),
+                                 Reduce(union, list(in_study, drop_detp, drop_sex)))))
+}
+afr_only <- one_anc("AFR")
+eur_only <- one_anc("EUR")
+keep_eur <- setdiff(rownames(grs),
+                    Reduce(union, list(intersect(rownames(grs),
+                             mask$Probe_ID[Reduce(`|`, lapply(
+                               c("M_mapping", "M_nonuniq", "M_SNP_EUR_1pt",
+                                 "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt"),
+                               function(m) mask[[m]] == 1L))]),
+                                       drop_detp, drop_sex)))
 
 # Per-code probe sets, kept so §2 can ask how two codes overlap rather than just
 # how many probes each one flags.
@@ -329,7 +342,9 @@ funl <- list(
   drop_detp        = length(drop_detp),
   drop_sex         = length(drop_sex),
   retained         = length(keep),                     # EWAS-ready probes
-  retained_eur     = length(keep_eur),                 # under a EUR-only mask
+  retained_eur     = length(keep_eur),                 # under EUR SNP codes only
+  afr_only         = afr_only,                         # masked / retained, AFR codes only
+  eur_only         = eur_only,                         # masked / retained, EUR codes only
   afr_not_eur_kept = length(setdiff(keep_eur, keep)),  # what EUR-only would leave in
   union8           = sum(mask$mask_v81_8code),         # array-wide, before any study filter
   snp_by_pop       = setNames(sp$n_probes, sp$population)
@@ -354,7 +369,7 @@ cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
             funl$retained, funl$n0, 100 * funl$retained / funl$n0))
 ```
 
-## 2. The categories, quantified on EPIC {#sec-categories}
+## 2. Ancestry matters {#sec-ancestry}
 
 The SNP mask is **not the same for every study population**, because a "common
 SNP" depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:
@@ -389,8 +404,6 @@ cat("masked in both:           ", length(intersect(afr, eur)), "\n")
 While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each
 population.
 
-## 3. Ancestry matters {#sec-ancestry}
-
 The Grady Trauma Project subset is **~95% African American**. If we filtered with 
 a general or only European-population mask (a common default), we would leave in 
 probes that are SNP-affected in African-ancestry individuals. As African American 
@@ -399,29 +412,22 @@ important to include masking recommendations for both.
 
 ```{r}
 #| label: ancestry-contrast
-#| fig-cap: "Probes retained under the AFR+EUR union mask used here versus a EUR-only mask. Filtering this African-American cohort on European SNP flags alone would keep tens of thousands of probes that are SNP-affected in African-ancestry individuals."
-#| fig-width: 6.5
-#| fig-height: 3
-contrast <- data.frame(
-  mask = c("AFR + EUR union\n(used here)", "EUR only\n(wrong here)"),
-  retained = c(funl$retained, funl$retained_eur)
+#| tbl-cap: "Probes masked and retained when only the SNP codes change. `M_mapping` and `M_nonuniq` are in all three variants, and the detection-p and sex-chromosome filters are held fixed, so the rows differ only in which ancestry's SNP flags are applied."
+anc <- data.frame(
+  mask = c("AFR SNP codes only", "EUR SNP codes only",
+           "AFR + EUR union (used here)"),
+  probes_masked   = c(funl$afr_only$masked,   funl$eur_only$masked,   funl$drop_mask),
+  probes_retained = c(funl$afr_only$retained, funl$eur_only$retained, funl$retained)
 )
-ggplot(contrast, aes(mask, retained, fill = mask)) +
-  geom_col(width = 0.6) +
-  geom_text(aes(label = format(retained, big.mark = ",")), vjust = -0.4, size = 3.5) +
-  scale_fill_manual(values = c("#1A6B75",      # teal: the mask this chapter applies
-                               "#8C3A4A"),     # plum: the mask that would be wrong here
-                    guide = "none") +
-  labs(x = NULL, y = "probes retained",
-       title = "Ancestry-aware probe filtering") +
-  expand_limits(y = max(contrast$retained) * 1.06)
+knitr::kable(anc, row.names = FALSE,
+             format.args = list(big.mark = ","),
+             col.names = c("SNP codes applied", "probes masked", "probes retained"))
 ```
 
-```{r}
-#| label: ancestry-diff
-cat("Probes kept by a EUR-only mask but dropped by the AFR + EUR union:",
-    funl$afr_not_eur_kept, "\n")
-```
+A EUR-only mask retains `r format(funl$afr_not_eur_kept, big.mark = ",")` probes that
+the union removes. Those are the probes carrying a common SNP in African-ancestry
+individuals but not in Europeans — exactly the ones that would be left in this cohort
+by the common default.
 
 The union is what the code below applies, and it is the operational meaning of
 "include masking recommendations for both".
@@ -451,7 +457,7 @@ knitr::kable(gen, row.names = FALSE,
              caption = "Same cohort, same detection-p and sex filters; only the mask generation differs.")
 ```
 
-The difference is the repeat and copy-number terms described in §2: the legacy
+The difference is the repeat and copy-number terms described in §1: the legacy
 `MASK_general_<POP>` bundles them in, and v8.1 has no equivalent. So moving to v8.1
 retains **`r format(funl$retained - 724282, big.mark = ",")`** more probes here — more
 sites tested, but also the repeat-overlapping probes no longer excluded. Neither
@@ -481,7 +487,7 @@ at a later step as these probes are needed to create a proxy smoking variable. S
 [the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options.
 :::
 
-## 4. Detection-p and sex-chromosome filtering {#sec-detp-sex}
+## 3. Detection-p and sex-chromosome filtering {#sec-detp-sex}
 
 Two study-specific filters complete the funnel:
 
@@ -511,7 +517,7 @@ grs_filt <- grs[keep, ]
 grs_filt
 ```
 
-## 5. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
+## 4. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
 
 Probe filtering is one of the few preprocessing steps that works **identically**
 whether your data came from IDATs or from a processed β-matrix — because the masks
