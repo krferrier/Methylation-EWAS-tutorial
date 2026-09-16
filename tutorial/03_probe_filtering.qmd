@@ -126,12 +126,14 @@ software to install:
 
 ::: {.callout-note}
 ## Where the mask table comes from
-`data/EPIC.hg38.mask.v81.8code.tsv.gz` ships with the tutorial *data* rather than in
-the repository, so a fresh clone does not have it. Fetch it before rendering:
+`data/EPIC.hg38.mask.v81.8code.tsv.gz` is tracked in the repository, so a fresh clone
+already has it — 2.9 MB, no download needed. It is also inside the `D_filtered` data
+tier, which is where it lived before; if you have already fetched that tier you have
+two copies of the same file and can ignore this note.
 
-```{.bash filename="Terminal"}
-./get_data.sh D_filtered
-```
+It is a derived table, not a Zhou lab release: [Route 2](#route-2) below shows the
+`yame` commands that produce it from the published `.cm` mask, so you can rebuild it
+for another array or another mask version.
 :::
 
 ```{r}
@@ -157,7 +159,7 @@ This file was generated from the official `.cm` release with YAME (below) and ve
 to reproduce all eight per-code counts and the 90,832-probe union exactly. It is a
 convenience layer, not a separate source of truth.
 
-#### Route 2 — from the official release with YAME
+#### Route 2 — from the official release with YAME {#route-2}
 
 Use this if you want a mask term the TSV does not carry (it ships 8 of the 24), a
 different array, or a newer mask version than the one pinned here.

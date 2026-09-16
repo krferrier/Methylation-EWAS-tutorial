@@ -62,6 +62,10 @@ First six files, of 192:
 | `repo/data/03_filter_funnel.rds` | 3,567,699 |
 | `repo/data/EPIC.hg38.mask.v81.8code.tsv.gz` | 3,062,275 |
 
+`EPIC.hg38.mask.v81.8code.tsv.gz` is also tracked in git, so chapter 03 runs on a fresh
+clone without fetching this tier. It stays listed here because the deposited tarball
+contains it; if you fetch the tier you simply overwrite the file with an identical copy.
+
 ### Tier `E_model_inputs`
 
 `ewas-tutorial-data-E_model_inputs.tar.gz` — 487 MB compressed  
