@@ -252,13 +252,97 @@ Note also that the two generations do not mask the same categories — see the
 comparison at the end of this section.
 :::
 
-The funnel below needs all three probe lists, so the two study-specific filters are
-computed here and explained in [§3](#sec-detp-sex).
+## 2. Ancestry matters {#sec-ancestry}
+
+The SNP mask is **not the same for every study population**, because a "common
+SNP" depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:
+
+```{r}
+#| label: pop-snp-table
+# The five-row table written by the `snp-by-pop` chunk above. Read here rather
+# than recounted, so this section and the funnel quote one source.
+sp <- fread("data/03_snp_by_pop.tsv")
+snp_by_pop <- setNames(sp$n_probes, sp$population)
+
+snp <- data.frame(
+  population  = c("AFR (African)", "AMR (Admixed American)", "SAS (South Asian)",
+                  "EUR (European)", "EAS (East Asian)"),
+  snp_masked  = snp_by_pop[c("AFR", "AMR", "SAS", "EUR", "EAS")]
+)
+knitr::kable(snp, row.names = FALSE,
+             caption = "Probes flagged by M_SNP_<POP>_1pt (common SNP at the interrogated CpG, MAF >= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.")
+```
+
+African-ancestry populations carry the most common genetic variation, so more
+probes overlap a common SNP. Concretely, in these masks
+**`r format(snp_by_pop[["AFR"]], big.mark = ",")`** probes are SNP-flagged for
+AFR versus **`r format(snp_by_pop[["EUR"]], big.mark = ",")`** for EUR:
+
+```{r}
+#| label: afr-eur-overlap
+# One probe list per mask code, built straight from the shipped table's columns.
+# The filtering section below reuses these, and chapter-level saves carry them.
+mask_cols <- c("M_mapping", "M_nonuniq",
+               "M_SNP_AFR_1pt", "M_1baseSwitchSNP_AFR_1pt", "M_2extBase_SNP_AFR_1pt",
+               "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt")
+per_code_sets <- lapply(mask_cols, function(m) mask$Probe_ID[mask[[m]] == 1L])
+names(per_code_sets) <- mask_cols
+mp <- list(per_code_sets = per_code_sets)
+
+# The comparison is between two mask terms over the same probe universe.
+afr <- per_code_sets$M_SNP_AFR_1pt
+eur <- per_code_sets$M_SNP_EUR_1pt
+cat("masked in AFR but NOT EUR:", length(setdiff(afr, eur)), "\n")
+cat("masked in EUR but NOT AFR:", length(setdiff(eur, afr)), "\n")
+cat("masked in both:           ", length(intersect(afr, eur)), "\n")
+```
+
+While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each
+population.
+
+The Grady Trauma Project subset is **~95% African American**. If we filtered with 
+a general or only European-population mask (a common default), we would leave in 
+probes that are SNP-affected in African-ancestry individuals. As African American 
+individuals tend to have an admixture of both European and African Ancestry, it is 
+important to include masking recommendations for both.
+
+::: {.callout-important}
+## The teaching point
+Probe filtering is not a fixed recipe — the SNP component depends on your study
+population. For a cohort of known, relatively homogeneous ancestry, use that
+population's mask. For an admixed or mixed-ancestry cohort, the conservative choice
+is to take the **union** of the relevant population masks (drop a probe if it is
+SNP-affected in *any* represented ancestry). For a multi-ancestry cohort or cohort 
+of unknown ancestry, the general population mask is the most appropriate.
+:::
+
+## 3. Detection-p and sex-chromosome filtering {#sec-detp-sex}
+
+Two study-specific filters complete the funnel:
+
+- **Detection-p failures.** From [QC](01_qc.qmd) we have the per-probe detection
+  p-values. A probe that fails (p > 0.01) in more than ~10% of samples is
+  unreliable *in this dataset* and is dropped.
+- **Sex chromosomes.** For an autosomal EWAS, X- and Y-chromosome probes are also
+  removed: X-inactivation and sex differences would
+  otherwise dominate, and they need sex-stratified handling if analyzed. They are
+  *removed from the autosomal analysis*, not deleted from the study — a sex-specific
+  analysis would use them deliberately.
+
+The funnel in [§4](#sec-apply) reports how many probes each of these removed.
+
+## 4. Applying the filters {#sec-apply}
+
+Everything above is a decision about *which* probes to drop and why. This section
+carries it out: the mask from [§1](#sec-why) and [§2](#sec-ancestry), the two
+study-specific filters from [§3](#sec-detp-sex), and the funnel that accounts for
+all of them.
 
 ::: {.callout-note}
-## What this chapter needs
-This chapter starts from `data/01_RGset.rds`, written by [chapter 00](00_setup.qmd). If you
-did not run that chapter, fetch the published checkpoint instead:
+## What the detection-p filter needs
+This one step needs the raw two-channel object, `data/01_RGset.rds`, written by
+[chapter 00](00_setup.qmd) — the QC chapter kept only per-sample summaries, and the
+filter is per probe. If you did not run chapter 00, fetch the published checkpoint:
 
 ```{.bash filename="Terminal"}
 ./get_data.sh B_qc
@@ -293,7 +377,7 @@ length(drop_detp)
 drop_mask <- intersect(rownames(grs), drop8)
 
 # Sex-chromosome probes, from the manifest coordinates minfi attached to the
-# object -- removed for an autosomal EWAS, see §3.
+# object -- removed for an autosomal EWAS, as set out in §3.
 drop_sex <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
 
 # A probe is dropped if ANY of the three lists flags it, so the three counts
@@ -301,7 +385,7 @@ drop_sex <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
 keep <- setdiff(rownames(grs), Reduce(union, list(drop_mask, drop_detp, drop_sex)))
 
 # The same filter with one ancestry's SNP codes instead of both, for the contrast
-# in §2. M_mapping and M_nonuniq are not ancestry-specific, so they stay in every
+# below. M_mapping and M_nonuniq are not ancestry-specific, so they stay in every
 # variant; detection-p and sex filters are held fixed too. Only the SNP codes move.
 one_anc <- function(pop) {
   cols <- c("M_mapping", "M_nonuniq",
@@ -321,19 +405,6 @@ keep_eur <- setdiff(rownames(grs),
                                  "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt"),
                                function(m) mask[[m]] == 1L))]),
                                        drop_detp, drop_sex)))
-
-# Per-code probe sets, kept so §2 can ask how two codes overlap rather than just
-# how many probes each one flags.
-mask_cols <- c("M_mapping", "M_nonuniq",
-               "M_SNP_AFR_1pt", "M_1baseSwitchSNP_AFR_1pt", "M_2extBase_SNP_AFR_1pt",
-               "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt")
-per_code_sets <- lapply(mask_cols, function(m) mask$Probe_ID[mask[[m]] == 1L])
-names(per_code_sets) <- mask_cols
-mp <- list(per_code_sets = per_code_sets)
-
-# Per-population SNP counts, written by the `snp-by-pop` chunk above and read
-# back here so the funnel and the §2 table quote one source.
-sp <- fread("data/03_snp_by_pop.tsv")
 
 # Every count the funnel, the tables and the prose below quote, in one place.
 funl <- list(
@@ -369,46 +440,20 @@ cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
             funl$retained, funl$n0, 100 * funl$retained / funl$n0))
 ```
 
-## 2. Ancestry matters {#sec-ancestry}
-
-The SNP mask is **not the same for every study population**, because a "common
-SNP" depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:
 
 ```{r}
-#| label: pop-snp-table
-snp <- data.frame(
-  population  = c("AFR (African)", "AMR (Admixed American)", "SAS (South Asian)",
-                  "EUR (European)", "EAS (East Asian)"),
-  snp_masked  = funl$snp_by_pop[c("AFR", "AMR", "SAS", "EUR", "EAS")]
-)
-knitr::kable(snp, row.names = FALSE,
-             caption = "Probes flagged by M_SNP_<POP>_1pt (common SNP at the interrogated CpG, MAF >= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.")
+#| label: apply-filter
+# `keep` is the set union of the three drop lists, taken out of the normalized
+# probe set: the eight-code mask (`drop_mask`), the detection-p failures
+# (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does
+# not matter -- a probe flagged by two filters is dropped once.
+grs_filt <- grs[keep, ]
+
+# Subsetting a GenomicRatioSet carries the beta/M matrices, the genome
+# coordinates and the sample metadata along with it, so this object is
+# analysis-ready as it stands.
+grs_filt
 ```
-
-African-ancestry populations carry the most common genetic variation, so more
-probes overlap a common SNP. Concretely, in these masks
-**`r format(funl$snp_by_pop[["AFR"]], big.mark = ",")`** probes are SNP-flagged for
-AFR versus **`r format(funl$snp_by_pop[["EUR"]], big.mark = ",")`** for EUR:
-
-```{r}
-#| label: afr-eur-overlap
-# Both sets come from the per-code columns of the shipped mask table, so the
-# comparison is between two mask terms over the same probe universe.
-afr <- mp$per_code_sets$M_SNP_AFR_1pt
-eur <- mp$per_code_sets$M_SNP_EUR_1pt
-cat("masked in AFR but NOT EUR:", length(setdiff(afr, eur)), "\n")
-cat("masked in EUR but NOT AFR:", length(setdiff(eur, afr)), "\n")
-cat("masked in both:           ", length(intersect(afr, eur)), "\n")
-```
-
-While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each
-population.
-
-The Grady Trauma Project subset is **~95% African American**. If we filtered with 
-a general or only European-population mask (a common default), we would leave in 
-probes that are SNP-affected in African-ancestry individuals. As African American 
-individuals tend to have an admixture of both European and African Ancestry, it is 
-important to include masking recommendations for both.
 
 ```{r}
 #| label: ancestry-contrast
@@ -464,16 +509,6 @@ sites tested, but also the repeat-overlapping probes no longer excluded. Neither
 choice is automatically right; what matters is that you state which mask generation
 and which terms you used, since the two are not interchangeable.
 
-::: {.callout-important}
-## The teaching point
-Probe filtering is not a fixed recipe — the SNP component depends on your study
-population. For a cohort of known, relatively homogeneous ancestry, use that
-population's mask. For an admixed or mixed-ancestry cohort, the conservative choice
-is to take the **union** of the relevant population masks (drop a probe if it is
-SNP-affected in *any* represented ancestry). For a multi-ancestry cohort or cohort 
-of unknown ancestry, the general population mask is the most appropriate.
-:::
-
 ::: {.callout-note}
 ## Smoking-associated probes
 Everything above masks probes that are unreliable *by design*. There is a separate,
@@ -487,37 +522,7 @@ at a later step as these probes are needed to create a proxy smoking variable. S
 [the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options.
 :::
 
-## 3. Detection-p and sex-chromosome filtering {#sec-detp-sex}
-
-Two study-specific filters complete the funnel:
-
-- **Detection-p failures.** From [QC](01_qc.qmd) we have the per-probe detection
-  p-values. A probe that fails (p > 0.01) in more than ~10% of samples is
-  unreliable *in this dataset* and is dropped. Here that removed
-  `r funl$drop_detp` probes.
-- **Sex chromosomes.** For an autosomal EWAS, X- and Y-chromosome probes are also removed 
-  (`r funl$drop_sex` probes): X-inactivation and sex differences would
-  otherwise dominate, and they need sex-stratified handling if analyzed. They are
-  *removed from the autosomal analysis*, not deleted from the study — a sex-specific
-  analysis would use them deliberately.
-
-The exact filtering code (run once, checkpointed):
-
-```{r}
-#| label: apply-filter
-# `keep` is the set union of the three drop lists, taken out of the normalized
-# probe set: the eight-code mask (`drop_mask`), the detection-p failures
-# (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does
-# not matter -- a probe flagged by two filters is dropped once.
-grs_filt <- grs[keep, ]
-
-# Subsetting a GenomicRatioSet carries the beta/M matrices, the genome
-# coordinates and the sample metadata along with it, so this object is
-# analysis-ready as it stands.
-grs_filt
-```
-
-## 4. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
+## 5. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
 
 Probe filtering is one of the few preprocessing steps that works **identically**
 whether your data came from IDATs or from a processed β-matrix — because the masks
@@ -571,7 +576,7 @@ saveRDS(grs_filt, "data/03_grs_filtered.rds")
 #    without re-running the filter.
 saveRDS(funl, "data/03_filter_funnel.rds")
 
-# 3. The per-code probe sets behind §2. A list of eight character vectors of
+# 3. The per-code probe sets built in §2. A list of eight character vectors of
 #    unequal length, which a flat file would not hold.
 saveRDS(mp, "data/03_mask_pieces.rds")
 
