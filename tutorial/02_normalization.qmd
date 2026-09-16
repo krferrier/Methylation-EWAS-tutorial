@@ -266,9 +266,11 @@ chunk:
 find.package("preprocessCore")   # should NOT be your conda env's library
 ```
 
-**If you are in a conda environment** there is a second route: the threaded
-OpenBLAS build is what `preprocessCore` is picking its threads up from, so
-downgrading it also clears the error:
+**If you are in a conda environment** a second route has been reported to work:
+downgrading the threaded OpenBLAS build that `preprocessCore` picks its threads
+up from. We have not reproduced this one ourselves — the source rebuild above is
+the route that was tested against the error — so treat it as a fallback to try
+if the rebuild is not an option for you:
 
 ```{.bash filename="Terminal"}
 conda activate ewas-methyl

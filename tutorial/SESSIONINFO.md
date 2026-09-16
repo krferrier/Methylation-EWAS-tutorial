@@ -120,8 +120,10 @@ source and can lift the deliberate `r-lattice<0.23` pin. Restart R afterwards an
 one. This was verified against the error: with the packaged build `preprocessFunnorm`
 fails on 6 arrays, and with the rebuilt copy it completes in 20 seconds.
 
-In a conda environment you can instead downgrade the threaded OpenBLAS that
-`preprocessCore` picks its threads up from:
+In a conda environment, downgrading the threaded OpenBLAS that `preprocessCore` picks its
+threads up from has been reported to clear the error as well. It has not been reproduced
+here — the source rebuild above is the route tested against the failure — so treat this as
+a fallback:
 
 ```bash
 conda activate ewas-methyl
