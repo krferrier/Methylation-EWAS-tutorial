@@ -6525,9 +6525,9 @@ Iteration (out of 5 ):1  2  3  4  5  </code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This is the sweep behind data/05_k_lambda_sweep.csv, and it runs at render.</span></span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Each candidate k gets its own sva() fit plus a full-probe limma fit, but n.sv is</span></span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="co"># supplied here, so each fit skips the Buja-Eyuboglu estimation that num.sv() does</span></span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="co"># above -- which is what makes the four candidates together cost about two and a</span></span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="co"># half minutes, rather than the several minutes the single estimated fit above</span></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="co"># took on its own. The peak is comparable to that fit&#39;s (~9 GB). The small table</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="co"># above -- which is what makes the four candidates together cost about 140</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="co"># seconds (measured: 136.9 s), rather than the several minutes the single</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="co"># estimated fit above took on its own. The peak is comparable to that fit&#39;s (~9 GB). The small table</span></span>
 <span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="co"># it writes is committed to the repository, and the chunk below reads it back, so</span></span>
 <span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a><span class="co"># the figure and the text quote one set of numbers.</span></span>
 <span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a></span>
@@ -6707,7 +6707,7 @@ Iteration (out of 5 ):1  2  3  4  5  </code></pre>
 <p>Reading down that table:</p>
 <ul>
 <li><strong>k = 0 is clearly wrong.</strong> λ = 0.85 is badly <em>deflated</em>, the signature of unmodeled structure inflating residual variance and washing out real differences.</li>
-<li><strong>k = 6 fixes the calibration</strong> (λ = 1.02) and captures nearly all of the available precision gain — the median SE drops about 5%, which is 76% of the total improvement available anywhere in the sweep.</li>
+<li><strong>k = 6 fixes the calibration</strong> (λ = 1.02) and buys most of the precision on offer. The median SE drops 5.1% against k = 0, and 76% of probes come out with a smaller SE than they had at k = 0 — that second figure is the <code>frac_gain</code> column, a count of probes that improved, not a share of the improvement. The largest median-SE drop anywhere in the sweep is 7.7%, at k = 10, so k = 6 captures about 66% of what is available — while keeping four more residual degrees of freedom and a λ far closer to 1.</li>
 <li><strong>k = 8, 10, and 15 buy almost nothing and cost real power.</strong> By k = 10, λ has drifted up to 1.07, which is still an acceptable lambda, and the SEs have barely moved, but the burden of degrees of freedom becomes problematic.</li>
 <li><strong>The SVs increasingly re-capture the smoking proxy.</strong> R² of <code>smoke</code> on the SVs climbs from 0.39 at k = 6 to 0.64 at k = 15. Since we specifically want smoking as a named, interpretable covariate, letting latent variables absorb it is a loss, not a gain.</li>
 </ul>
@@ -8190,9 +8190,9 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb64-750"><a href="#cb64-750" aria-hidden="true" tabindex="-1"></a><span class="co"># This is the sweep behind data/05_k_lambda_sweep.csv, and it runs at render.</span></span>
 <span id="cb64-751"><a href="#cb64-751" aria-hidden="true" tabindex="-1"></a><span class="co"># Each candidate k gets its own sva() fit plus a full-probe limma fit, but n.sv is</span></span>
 <span id="cb64-752"><a href="#cb64-752" aria-hidden="true" tabindex="-1"></a><span class="co"># supplied here, so each fit skips the Buja-Eyuboglu estimation that num.sv() does</span></span>
-<span id="cb64-753"><a href="#cb64-753" aria-hidden="true" tabindex="-1"></a><span class="co"># above -- which is what makes the four candidates together cost about two and a</span></span>
-<span id="cb64-754"><a href="#cb64-754" aria-hidden="true" tabindex="-1"></a><span class="co"># half minutes, rather than the several minutes the single estimated fit above</span></span>
-<span id="cb64-755"><a href="#cb64-755" aria-hidden="true" tabindex="-1"></a><span class="co"># took on its own. The peak is comparable to that fit&#39;s (~9 GB). The small table</span></span>
+<span id="cb64-753"><a href="#cb64-753" aria-hidden="true" tabindex="-1"></a><span class="co"># above -- which is what makes the four candidates together cost about 140</span></span>
+<span id="cb64-754"><a href="#cb64-754" aria-hidden="true" tabindex="-1"></a><span class="co"># seconds (measured: 136.9 s), rather than the several minutes the single</span></span>
+<span id="cb64-755"><a href="#cb64-755" aria-hidden="true" tabindex="-1"></a><span class="co"># estimated fit above took on its own. The peak is comparable to that fit&#39;s (~9 GB). The small table</span></span>
 <span id="cb64-756"><a href="#cb64-756" aria-hidden="true" tabindex="-1"></a><span class="co"># it writes is committed to the repository, and the chunk below reads it back, so</span></span>
 <span id="cb64-757"><a href="#cb64-757" aria-hidden="true" tabindex="-1"></a><span class="co"># the figure and the text quote one set of numbers.</span></span>
 <span id="cb64-758"><a href="#cb64-758" aria-hidden="true" tabindex="-1"></a></span>
@@ -8277,208 +8277,216 @@ Zeilinger, Sonja, Brigitte Kühnel, Norman Klopp, et al. 2013. <span>“Tobacco 
 <span id="cb64-839"><a href="#cb64-839" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**k = 0 is clearly wrong.** λ = 0.85 is badly *deflated*, the signature of</span>
 <span id="cb64-840"><a href="#cb64-840" aria-hidden="true" tabindex="-1"></a>  unmodeled structure inflating residual variance and washing out real</span>
 <span id="cb64-841"><a href="#cb64-841" aria-hidden="true" tabindex="-1"></a>  differences.</span>
-<span id="cb64-842"><a href="#cb64-842" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**k = 6 fixes the calibration** (λ = 1.02) and captures nearly all of the</span>
-<span id="cb64-843"><a href="#cb64-843" aria-hidden="true" tabindex="-1"></a>  available precision gain — the median SE drops about 5%, which is</span>
-<span id="cb64-844"><a href="#cb64-844" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r sprintf(&quot;%.0f%%&quot;, 100*ks$frac_gain[ks$k==6])`</span> of the total improvement</span>
-<span id="cb64-845"><a href="#cb64-845" aria-hidden="true" tabindex="-1"></a>  available anywhere in the sweep.</span>
-<span id="cb64-846"><a href="#cb64-846" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**k = 8, 10, and 15 buy almost nothing and cost real power.** By k = 10, λ has</span>
-<span id="cb64-847"><a href="#cb64-847" aria-hidden="true" tabindex="-1"></a>  drifted up to 1.07, which is still an acceptable lambda, and the SEs have barely moved,</span>
-<span id="cb64-848"><a href="#cb64-848" aria-hidden="true" tabindex="-1"></a>  but the burden of degrees of freedom becomes problematic.</span>
-<span id="cb64-849"><a href="#cb64-849" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The SVs increasingly re-capture the smoking proxy.** R² of <span class="in">`smoke`</span> on the SVs climbs</span>
-<span id="cb64-850"><a href="#cb64-850" aria-hidden="true" tabindex="-1"></a>  from 0.39 at k = 6 to 0.64 at k = 15. Since we specifically want smoking as a</span>
-<span id="cb64-851"><a href="#cb64-851" aria-hidden="true" tabindex="-1"></a>  named, interpretable covariate, letting latent variables absorb it is a loss,</span>
-<span id="cb64-852"><a href="#cb64-852" aria-hidden="true" tabindex="-1"></a>  not a gain.</span>
-<span id="cb64-853"><a href="#cb64-853" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-854"><a href="#cb64-854" aria-hidden="true" tabindex="-1"></a>k = 6 is the smallest k that gets λ to 1 and that leaves the most residual degrees of freedom.</span>
-<span id="cb64-855"><a href="#cb64-855" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-856"><a href="#cb64-856" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-857"><a href="#cb64-857" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-860"><a href="#cb64-860" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb64-861"><a href="#cb64-861" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sv-table</span></span>
-<span id="cb64-862"><a href="#cb64-862" aria-hidden="true" tabindex="-1"></a><span class="co"># What each retained SV tracks. A surrogate variable is only interpretable</span></span>
-<span id="cb64-863"><a href="#cb64-863" aria-hidden="true" tabindex="-1"></a><span class="co"># through its associations, so every candidate explanation gets a column --</span></span>
-<span id="cb64-864"><a href="#cb64-864" aria-hidden="true" tabindex="-1"></a><span class="co"># including PTSD, because an SV that tracks the exposure is absorbing signal</span></span>
-<span id="cb64-865"><a href="#cb64-865" aria-hidden="true" tabindex="-1"></a><span class="co"># rather than confounding.</span></span>
-<span id="cb64-866"><a href="#cb64-866" aria-hidden="true" tabindex="-1"></a>r2 <span class="ot">&lt;-</span> <span class="cf">function</span>(y, x) <span class="fu">summary</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x))<span class="sc">$</span>r.squared</span>
-<span id="cb64-867"><a href="#cb64-867" aria-hidden="true" tabindex="-1"></a>sv_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb64-868"><a href="#cb64-868" aria-hidden="true" tabindex="-1"></a>  <span class="at">SV       =</span> <span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)),</span>
-<span id="cb64-869"><a href="#cb64-869" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_slide =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], slidek)),</span>
-<span id="cb64-870"><a href="#cb64-870" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_pos   =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], pos)),</span>
-<span id="cb64-871"><a href="#cb64-871" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_smoke =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], smoke)),</span>
-<span id="cb64-872"><a href="#cb64-872" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_ptsd  =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], mdk<span class="sc">$</span>ptsd)),</span>
-<span id="cb64-873"><a href="#cb64-873" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_age   =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], <span class="fu">as.numeric</span>(mdk<span class="sc">$</span>age))),</span>
-<span id="cb64-874"><a href="#cb64-874" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_sex   =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], sexk)))</span>
-<span id="cb64-875"><a href="#cb64-875" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-876"><a href="#cb64-876" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(sv_table, <span class="at">digits =</span> <span class="dv">4</span>,</span>
-<span id="cb64-877"><a href="#cb64-877" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;SV&quot;</span>, <span class="st">&quot;R2 slide&quot;</span>, <span class="st">&quot;R2 position&quot;</span>, <span class="st">&quot;R2 smoke&quot;</span>, <span class="st">&quot;R2 PTSD&quot;</span>, <span class="st">&quot;R2 age&quot;</span>, <span class="st">&quot;R2 sex&quot;</span>),</span>
-<span id="cb64-878"><a href="#cb64-878" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;What each surrogate variable tracks. Chip (slide) and array position dominate; association with PTSD stays below 0.05 throughout.&quot;</span>)</span>
-<span id="cb64-879"><a href="#cb64-879" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb64-880"><a href="#cb64-880" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-881"><a href="#cb64-881" aria-hidden="true" tabindex="-1"></a>SV5 is strongly chip-linked (R² = 0.64) and SV4 next (R² = 0.34). Note that SV4 and SV5 also carry substantial sex</span>
-<span id="cb64-882"><a href="#cb64-882" aria-hidden="true" tabindex="-1"></a>association (R² = 0.37 and 0.46) — a direct consequence of the chip × sex confound</span>
-<span id="cb64-883"><a href="#cb64-883" aria-hidden="true" tabindex="-1"></a>documented above.</span>
-<span id="cb64-884"><a href="#cb64-884" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-887"><a href="#cb64-887" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb64-888"><a href="#cb64-888" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sva-bars</span></span>
-<span id="cb64-889"><a href="#cb64-889" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Association (R²) of each surrogate variable with chip (technical), sex (biological), and PTSD (the exposure). The SVs carry the chip structure — SV5 reaches R² = 0.64 — and the sex signal entangled with it, while every SV stays near-orthogonal to PTSD (largest R² = 0.04). This is SVA working as intended: it absorbs unwanted technical variation without touching the signal we want to test.&quot;</span></span>
-<span id="cb64-890"><a href="#cb64-890" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 8.4</span></span>
-<span id="cb64-891"><a href="#cb64-891" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4.4</span></span>
-<span id="cb64-892"><a href="#cb64-892" aria-hidden="true" tabindex="-1"></a><span class="co"># Three of the sv_table columns, in long form. The factor levels are set</span></span>
-<span id="cb64-893"><a href="#cb64-893" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly so the legend reads technical -&gt; biological -&gt; exposure, which is</span></span>
-<span id="cb64-894"><a href="#cb64-894" aria-hidden="true" tabindex="-1"></a><span class="co"># the order the caption discusses them in.</span></span>
-<span id="cb64-895"><a href="#cb64-895" aria-hidden="true" tabindex="-1"></a>bars <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb64-896"><a href="#cb64-896" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">SV =</span> sv_table<span class="sc">$</span>SV, <span class="at">r2 =</span> sv_table<span class="sc">$</span>r2_slide, <span class="at">what =</span> <span class="st">&quot;Chip (technical)&quot;</span>),</span>
-<span id="cb64-897"><a href="#cb64-897" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">SV =</span> sv_table<span class="sc">$</span>SV, <span class="at">r2 =</span> sv_table<span class="sc">$</span>r2_sex,   <span class="at">what =</span> <span class="st">&quot;Sex (biological)&quot;</span>),</span>
-<span id="cb64-898"><a href="#cb64-898" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">SV =</span> sv_table<span class="sc">$</span>SV, <span class="at">r2 =</span> sv_table<span class="sc">$</span>r2_ptsd,  <span class="at">what =</span> <span class="st">&quot;PTSD (exposure)&quot;</span>))</span>
-<span id="cb64-899"><a href="#cb64-899" aria-hidden="true" tabindex="-1"></a>bars<span class="sc">$</span>SV   <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">paste0</span>(<span class="st">&quot;SV&quot;</span>, bars<span class="sc">$</span>SV), <span class="at">levels =</span> <span class="fu">colnames</span>(SV))</span>
-<span id="cb64-900"><a href="#cb64-900" aria-hidden="true" tabindex="-1"></a>bars<span class="sc">$</span>what <span class="ot">&lt;-</span> <span class="fu">factor</span>(bars<span class="sc">$</span>what, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Chip (technical)&quot;</span>, <span class="st">&quot;Sex (biological)&quot;</span>,</span>
-<span id="cb64-901"><a href="#cb64-901" aria-hidden="true" tabindex="-1"></a>                                          <span class="st">&quot;PTSD (exposure)&quot;</span>))</span>
-<span id="cb64-902"><a href="#cb64-902" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-903"><a href="#cb64-903" aria-hidden="true" tabindex="-1"></a>p_sv <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(bars, <span class="fu">aes</span>(SV, r2, <span class="at">fill =</span> what)) <span class="sc">+</span></span>
-<span id="cb64-904"><a href="#cb64-904" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.78</span>), <span class="at">width =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
-<span id="cb64-905"><a href="#cb64-905" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;Chip (technical)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#0F3D43&quot;</span>,   <span class="co"># teal_dark</span></span>
-<span id="cb64-906"><a href="#cb64-906" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;Sex (biological)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#B8873F&quot;</span>,   <span class="co"># sand</span></span>
-<span id="cb64-907"><a href="#cb64-907" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;PTSD (exposure)&quot;</span>  <span class="ot">=</span> <span class="st">&quot;#8C3A4A&quot;</span>),  <span class="co"># plum</span></span>
-<span id="cb64-908"><a href="#cb64-908" aria-hidden="true" tabindex="-1"></a>                    <span class="at">name =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb64-909"><a href="#cb64-909" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fixed 0-1 axis: the point of the figure is how small the PTSD bars are, which</span></span>
-<span id="cb64-910"><a href="#cb64-910" aria-hidden="true" tabindex="-1"></a>  <span class="co"># a free axis would hide by rescaling them</span></span>
-<span id="cb64-911"><a href="#cb64-911" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.04</span>))) <span class="sc">+</span></span>
-<span id="cb64-912"><a href="#cb64-912" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="fu">expression</span>(R<span class="sc">^</span><span class="dv">2</span>),</span>
-<span id="cb64-913"><a href="#cb64-913" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;The surrogate variables absorb chip, not the exposure&quot;</span>,</span>
-<span id="cb64-914"><a href="#cb64-914" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="fu">sprintf</span>(<span class="fu">paste</span>(<span class="st">&quot;Buja-Eyuboglu suggested %d SVs on the full filtered matrix;&quot;</span>,</span>
-<span id="cb64-915"><a href="#cb64-915" aria-hidden="true" tabindex="-1"></a>                                <span class="st">&quot;the %d carried into the model are shown&quot;</span>),</span>
-<span id="cb64-916"><a href="#cb64-916" aria-hidden="true" tabindex="-1"></a>                          n_sv_be, <span class="fu">ncol</span>(SV))) <span class="sc">+</span></span>
-<span id="cb64-917"><a href="#cb64-917" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>)</span>
-<span id="cb64-918"><a href="#cb64-918" aria-hidden="true" tabindex="-1"></a>p_sv</span>
-<span id="cb64-919"><a href="#cb64-919" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-920"><a href="#cb64-920" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;data/05_sva_bars.png&quot;</span>, <span class="at">plot =</span> p_sv, <span class="at">width =</span> <span class="fl">8.4</span>, <span class="at">height =</span> <span class="fl">4.4</span>, <span class="at">dpi =</span> <span class="dv">200</span>)</span>
-<span id="cb64-921"><a href="#cb64-921" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb64-922"><a href="#cb64-922" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-925"><a href="#cb64-925" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb64-926"><a href="#cb64-926" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sva-summary</span></span>
-<span id="cb64-927"><a href="#cb64-927" aria-hidden="true" tabindex="-1"></a><span class="co"># The two numbers that decide whether the SVA was worth running: the SVs should</span></span>
-<span id="cb64-928"><a href="#cb64-928" aria-hidden="true" tabindex="-1"></a><span class="co"># be strongly chip-linked and near-orthogonal to the exposure.</span></span>
-<span id="cb64-929"><a href="#cb64-929" aria-hidden="true" tabindex="-1"></a>chip_r2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(SV), <span class="cf">function</span>(j) <span class="fu">summary</span>(<span class="fu">lm</span>(SV[,j] <span class="sc">~</span> <span class="fu">factor</span>(mdk<span class="sc">$</span>slide)))<span class="sc">$</span>r.squared)</span>
-<span id="cb64-930"><a href="#cb64-930" aria-hidden="true" tabindex="-1"></a>ptsd_r2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(SV), <span class="cf">function</span>(j) <span class="fu">summary</span>(<span class="fu">lm</span>(SV[,j] <span class="sc">~</span> <span class="fu">factor</span>(mdk<span class="sc">$</span>ptsd)))<span class="sc">$</span>r.squared)</span>
-<span id="cb64-931"><a href="#cb64-931" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Strongest chip-linked SV: SV%d (R2 = %.2f)</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="fu">which.max</span>(chip_r2), <span class="fu">max</span>(chip_r2)))</span>
-<span id="cb64-932"><a href="#cb64-932" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Largest SV-PTSD association: %.3f (all SVs are ~orthogonal to the exposure)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
-<span id="cb64-933"><a href="#cb64-933" aria-hidden="true" tabindex="-1"></a>            <span class="fu">max</span>(ptsd_r2)))</span>
-<span id="cb64-934"><a href="#cb64-934" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb64-935"><a href="#cb64-935" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-936"><a href="#cb64-936" aria-hidden="true" tabindex="-1"></a>We carry these surrogate variables forward as covariates in the</span>
-<span id="cb64-937"><a href="#cb64-937" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">EWAS model</span><span class="co">](06_ewas.qmd)</span>, alongside sex, age, and cell composition.</span>
-<span id="cb64-938"><a href="#cb64-938" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-939"><a href="#cb64-939" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
-<span id="cb64-940"><a href="#cb64-940" aria-hidden="true" tabindex="-1"></a><span class="fu">## Don&#39;t over-correct</span></span>
-<span id="cb64-941"><a href="#cb64-941" aria-hidden="true" tabindex="-1"></a>More correction is not always better. Each surrogate variable spends a degree of</span>
-<span id="cb64-942"><a href="#cb64-942" aria-hidden="true" tabindex="-1"></a>freedom; adding too many, or adding SVs that happen to correlate with your exposure,</span>
-<span id="cb64-943"><a href="#cb64-943" aria-hidden="true" tabindex="-1"></a>removes real signal. <span class="in">`num.sv`</span> gives a principled count; inspect the SV–exposure</span>
-<span id="cb64-944"><a href="#cb64-944" aria-hidden="true" tabindex="-1"></a>associations (as above) and, if any SV correlates strongly with the phenotype, treat</span>
-<span id="cb64-945"><a href="#cb64-945" aria-hidden="true" tabindex="-1"></a>that as a warning that the exposure and a batch are partially confounded.</span>
-<span id="cb64-946"><a href="#cb64-946" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb64-947"><a href="#cb64-947" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-948"><a href="#cb64-948" aria-hidden="true" tabindex="-1"></a><span class="fu">## Saving what we just computed</span></span>
-<span id="cb64-949"><a href="#cb64-949" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-950"><a href="#cb64-950" aria-hidden="true" tabindex="-1"></a>The PCA diagnostic, the stratified ComBat matrix, the smoking proxy and the surrogate</span>
-<span id="cb64-951"><a href="#cb64-951" aria-hidden="true" tabindex="-1"></a>variables are all inputs to later chapters, so each one is written out here, by the</span>
-<span id="cb64-952"><a href="#cb64-952" aria-hidden="true" tabindex="-1"></a>code that produced it.</span>
-<span id="cb64-953"><a href="#cb64-953" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-956"><a href="#cb64-956" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb64-957"><a href="#cb64-957" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-05</span></span>
-<span id="cb64-958"><a href="#cb64-958" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The PCA diagnostic. Small, and it is what the variable-association figures</span></span>
-<span id="cb64-959"><a href="#cb64-959" aria-hidden="true" tabindex="-1"></a><span class="co">#    are drawn from, so a reader can redraw them without re-running the PCA.</span></span>
-<span id="cb64-960"><a href="#cb64-960" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(<span class="fu">list</span>(<span class="at">pcs =</span> pcs, <span class="at">pve =</span> pve, <span class="at">r2 =</span> pc_r2, <span class="at">md =</span> md, <span class="at">props =</span> props,</span>
-<span id="cb64-961"><a href="#cb64-961" aria-hidden="true" tabindex="-1"></a>             <span class="at">slide =</span> slide, <span class="at">posrow =</span> posrow),</span>
-<span id="cb64-962"><a href="#cb64-962" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;data/05_batch_pca.rds&quot;</span>)</span>
-<span id="cb64-963"><a href="#cb64-963" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-964"><a href="#cb64-964" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The smoking proxy: the score itself, the panel it came from, and the PC1</span></span>
-<span id="cb64-965"><a href="#cb64-965" aria-hidden="true" tabindex="-1"></a><span class="co">#    loadings, so that what went into the covariate stays inspectable.</span></span>
-<span id="cb64-966"><a href="#cb64-966" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(<span class="fu">list</span>(<span class="at">smoke =</span> smoke, <span class="at">panel =</span> panel, <span class="at">present =</span> panel_probes,</span>
-<span id="cb64-967"><a href="#cb64-967" aria-hidden="true" tabindex="-1"></a>             <span class="at">pve =</span> panel_pve, <span class="at">loadings =</span> pc<span class="sc">$</span>rotation[, <span class="dv">1</span>]),</span>
-<span id="cb64-968"><a href="#cb64-968" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;data/05_smoking_proxy.rds&quot;</span>)</span>
-<span id="cb64-969"><a href="#cb64-969" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-970"><a href="#cb64-970" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. The model inputs chapters 06 and 07 read: the surrogate variables, the</span></span>
-<span id="cb64-971"><a href="#cb64-971" aria-hidden="true" tabindex="-1"></a><span class="co">#    87-sample metadata and cell proportions they were estimated alongside, and</span></span>
-<span id="cb64-972"><a href="#cb64-972" aria-hidden="true" tabindex="-1"></a><span class="co">#    the design record. `k_selected` is what the EWAS uses to slice `SV`.</span></span>
-<span id="cb64-973"><a href="#cb64-973" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(<span class="fu">list</span>(<span class="at">SV =</span> SV, <span class="at">n.sv =</span> <span class="fu">ncol</span>(SV), <span class="at">keep =</span> keep, <span class="at">mdk =</span> mdk, <span class="at">propk =</span> propk,</span>
-<span id="cb64-974"><a href="#cb64-974" aria-hidden="true" tabindex="-1"></a>             <span class="at">smoke =</span> smoke, <span class="at">panel_probes =</span> panel_probes, <span class="at">panel_pve =</span> panel_pve,</span>
-<span id="cb64-975"><a href="#cb64-975" aria-hidden="true" tabindex="-1"></a>             <span class="at">excluded_n =</span> excluded_n, <span class="at">tested_probes =</span> tested_probes,</span>
-<span id="cb64-976"><a href="#cb64-976" aria-hidden="true" tabindex="-1"></a>             <span class="at">prev_n_sv =</span> n_sv_be, <span class="at">sv_table =</span> sv_table,</span>
-<span id="cb64-977"><a href="#cb64-977" aria-hidden="true" tabindex="-1"></a>             <span class="at">k_selected =</span> k_selected, <span class="at">k_candidates =</span> k_candidates,</span>
-<span id="cb64-978"><a href="#cb64-978" aria-hidden="true" tabindex="-1"></a>             <span class="at">r2_smoke_sv =</span> <span class="fu">summary</span>(<span class="fu">lm</span>(smoke <span class="sc">~</span> SV))<span class="sc">$</span>r.squared,</span>
-<span id="cb64-979"><a href="#cb64-979" aria-hidden="true" tabindex="-1"></a>             <span class="at">chip_r2 =</span> chip_r2, <span class="at">pos_r2 =</span> sv_table<span class="sc">$</span>r2_pos,</span>
-<span id="cb64-980"><a href="#cb64-980" aria-hidden="true" tabindex="-1"></a>             <span class="at">position_in_model =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb64-981"><a href="#cb64-981" aria-hidden="true" tabindex="-1"></a>             <span class="at">design_note =</span> <span class="fu">paste</span>(<span class="st">&quot;ComBat(slide) within sex strata;&quot;</span>,</span>
-<span id="cb64-982"><a href="#cb64-982" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">&quot;array position as fixed covariate; SVA k=6&quot;</span>)),</span>
-<span id="cb64-983"><a href="#cb64-983" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;data/05_sva.rds&quot;</span>)</span>
-<span id="cb64-984"><a href="#cb64-984" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-985"><a href="#cb64-985" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. The corrected M-value matrix the EWAS is actually fit on. This one is</span></span>
-<span id="cb64-986"><a href="#cb64-986" aria-hidden="true" tabindex="-1"></a><span class="co">#    511 MB, which is why it is excluded from git and distributed as a Zenodo</span></span>
-<span id="cb64-987"><a href="#cb64-987" aria-hidden="true" tabindex="-1"></a><span class="co">#    tier rather than committed.</span></span>
-<span id="cb64-988"><a href="#cb64-988" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(Mcb, <span class="st">&quot;data/05_mvals_combat.rds&quot;</span>)</span>
-<span id="cb64-989"><a href="#cb64-989" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb64-990"><a href="#cb64-990" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-991"><a href="#cb64-991" aria-hidden="true" tabindex="-1"></a>::: {.callout-note collapse=&quot;true&quot;}</span>
-<span id="cb64-992"><a href="#cb64-992" aria-hidden="true" tabindex="-1"></a><span class="fu">## Picking the chapter up from the saved checkpoints instead</span></span>
-<span id="cb64-993"><a href="#cb64-993" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-994"><a href="#cb64-994" aria-hidden="true" tabindex="-1"></a>The two expensive steps above — the full M-value matrix and the <span class="in">`num.sv`</span>/<span class="in">`sva`</span> pair —</span>
-<span id="cb64-995"><a href="#cb64-995" aria-hidden="true" tabindex="-1"></a>need about 9 GB of memory between them. If that is more than your machine has, the</span>
-<span id="cb64-996"><a href="#cb64-996" aria-hidden="true" tabindex="-1"></a>published checkpoints are the same files this chapter just wrote:</span>
-<span id="cb64-997"><a href="#cb64-997" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-998"><a href="#cb64-998" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
-<span id="cb64-999"><a href="#cb64-999" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> D_filtered E_model_inputs</span>
-<span id="cb64-1000"><a href="#cb64-1000" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb64-842"><a href="#cb64-842" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**k = 6 fixes the calibration** (λ = 1.02) and buys most of the precision on</span>
+<span id="cb64-843"><a href="#cb64-843" aria-hidden="true" tabindex="-1"></a>  offer. The median SE drops</span>
+<span id="cb64-844"><a href="#cb64-844" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r sprintf(&quot;%.1f%%&quot;, 100*(1 - ks$se_ratio[ks$k==6]))`</span> against k = 0, and</span>
+<span id="cb64-845"><a href="#cb64-845" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r sprintf(&quot;%.0f%%&quot;, 100*ks$frac_gain[ks$k==6])`</span> of probes come out with a</span>
+<span id="cb64-846"><a href="#cb64-846" aria-hidden="true" tabindex="-1"></a>  smaller SE than they had at k = 0 — that second figure is the <span class="in">`frac_gain`</span></span>
+<span id="cb64-847"><a href="#cb64-847" aria-hidden="true" tabindex="-1"></a>  column, a count of probes that improved, not a share of the improvement. The</span>
+<span id="cb64-848"><a href="#cb64-848" aria-hidden="true" tabindex="-1"></a>  largest median-SE drop anywhere in the sweep is</span>
+<span id="cb64-849"><a href="#cb64-849" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r sprintf(&quot;%.1f%%, at k = %d&quot;, 100*max(1 - ks$se_ratio, na.rm = TRUE), ks$k[which.max(1 - ks$se_ratio)])`</span>,</span>
+<span id="cb64-850"><a href="#cb64-850" aria-hidden="true" tabindex="-1"></a>  so k = 6 captures about</span>
+<span id="cb64-851"><a href="#cb64-851" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r sprintf(&quot;%.0f%%&quot;, 100*(1 - ks$se_ratio[ks$k==6])/max(1 - ks$se_ratio, na.rm = TRUE))`</span></span>
+<span id="cb64-852"><a href="#cb64-852" aria-hidden="true" tabindex="-1"></a>  of what is available — while keeping four more residual degrees of freedom and</span>
+<span id="cb64-853"><a href="#cb64-853" aria-hidden="true" tabindex="-1"></a>  a λ far closer to 1.</span>
+<span id="cb64-854"><a href="#cb64-854" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**k = 8, 10, and 15 buy almost nothing and cost real power.** By k = 10, λ has</span>
+<span id="cb64-855"><a href="#cb64-855" aria-hidden="true" tabindex="-1"></a>  drifted up to 1.07, which is still an acceptable lambda, and the SEs have barely moved,</span>
+<span id="cb64-856"><a href="#cb64-856" aria-hidden="true" tabindex="-1"></a>  but the burden of degrees of freedom becomes problematic.</span>
+<span id="cb64-857"><a href="#cb64-857" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The SVs increasingly re-capture the smoking proxy.** R² of <span class="in">`smoke`</span> on the SVs climbs</span>
+<span id="cb64-858"><a href="#cb64-858" aria-hidden="true" tabindex="-1"></a>  from 0.39 at k = 6 to 0.64 at k = 15. Since we specifically want smoking as a</span>
+<span id="cb64-859"><a href="#cb64-859" aria-hidden="true" tabindex="-1"></a>  named, interpretable covariate, letting latent variables absorb it is a loss,</span>
+<span id="cb64-860"><a href="#cb64-860" aria-hidden="true" tabindex="-1"></a>  not a gain.</span>
+<span id="cb64-861"><a href="#cb64-861" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-862"><a href="#cb64-862" aria-hidden="true" tabindex="-1"></a>k = 6 is the smallest k that gets λ to 1 and that leaves the most residual degrees of freedom.</span>
+<span id="cb64-863"><a href="#cb64-863" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-864"><a href="#cb64-864" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-865"><a href="#cb64-865" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-868"><a href="#cb64-868" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb64-869"><a href="#cb64-869" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sv-table</span></span>
+<span id="cb64-870"><a href="#cb64-870" aria-hidden="true" tabindex="-1"></a><span class="co"># What each retained SV tracks. A surrogate variable is only interpretable</span></span>
+<span id="cb64-871"><a href="#cb64-871" aria-hidden="true" tabindex="-1"></a><span class="co"># through its associations, so every candidate explanation gets a column --</span></span>
+<span id="cb64-872"><a href="#cb64-872" aria-hidden="true" tabindex="-1"></a><span class="co"># including PTSD, because an SV that tracks the exposure is absorbing signal</span></span>
+<span id="cb64-873"><a href="#cb64-873" aria-hidden="true" tabindex="-1"></a><span class="co"># rather than confounding.</span></span>
+<span id="cb64-874"><a href="#cb64-874" aria-hidden="true" tabindex="-1"></a>r2 <span class="ot">&lt;-</span> <span class="cf">function</span>(y, x) <span class="fu">summary</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x))<span class="sc">$</span>r.squared</span>
+<span id="cb64-875"><a href="#cb64-875" aria-hidden="true" tabindex="-1"></a>sv_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb64-876"><a href="#cb64-876" aria-hidden="true" tabindex="-1"></a>  <span class="at">SV       =</span> <span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)),</span>
+<span id="cb64-877"><a href="#cb64-877" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_slide =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], slidek)),</span>
+<span id="cb64-878"><a href="#cb64-878" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_pos   =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], pos)),</span>
+<span id="cb64-879"><a href="#cb64-879" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_smoke =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], smoke)),</span>
+<span id="cb64-880"><a href="#cb64-880" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_ptsd  =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], mdk<span class="sc">$</span>ptsd)),</span>
+<span id="cb64-881"><a href="#cb64-881" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_age   =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], <span class="fu">as.numeric</span>(mdk<span class="sc">$</span>age))),</span>
+<span id="cb64-882"><a href="#cb64-882" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2_sex   =</span> <span class="fu">sapply</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(SV)), <span class="cf">function</span>(j) <span class="fu">r2</span>(SV[, j], sexk)))</span>
+<span id="cb64-883"><a href="#cb64-883" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-884"><a href="#cb64-884" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(sv_table, <span class="at">digits =</span> <span class="dv">4</span>,</span>
+<span id="cb64-885"><a href="#cb64-885" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;SV&quot;</span>, <span class="st">&quot;R2 slide&quot;</span>, <span class="st">&quot;R2 position&quot;</span>, <span class="st">&quot;R2 smoke&quot;</span>, <span class="st">&quot;R2 PTSD&quot;</span>, <span class="st">&quot;R2 age&quot;</span>, <span class="st">&quot;R2 sex&quot;</span>),</span>
+<span id="cb64-886"><a href="#cb64-886" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;What each surrogate variable tracks. Chip (slide) and array position dominate; association with PTSD stays below 0.05 throughout.&quot;</span>)</span>
+<span id="cb64-887"><a href="#cb64-887" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb64-888"><a href="#cb64-888" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-889"><a href="#cb64-889" aria-hidden="true" tabindex="-1"></a>SV5 is strongly chip-linked (R² = 0.64) and SV4 next (R² = 0.34). Note that SV4 and SV5 also carry substantial sex</span>
+<span id="cb64-890"><a href="#cb64-890" aria-hidden="true" tabindex="-1"></a>association (R² = 0.37 and 0.46) — a direct consequence of the chip × sex confound</span>
+<span id="cb64-891"><a href="#cb64-891" aria-hidden="true" tabindex="-1"></a>documented above.</span>
+<span id="cb64-892"><a href="#cb64-892" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-895"><a href="#cb64-895" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb64-896"><a href="#cb64-896" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sva-bars</span></span>
+<span id="cb64-897"><a href="#cb64-897" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Association (R²) of each surrogate variable with chip (technical), sex (biological), and PTSD (the exposure). The SVs carry the chip structure — SV5 reaches R² = 0.64 — and the sex signal entangled with it, while every SV stays near-orthogonal to PTSD (largest R² = 0.04). This is SVA working as intended: it absorbs unwanted technical variation without touching the signal we want to test.&quot;</span></span>
+<span id="cb64-898"><a href="#cb64-898" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 8.4</span></span>
+<span id="cb64-899"><a href="#cb64-899" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4.4</span></span>
+<span id="cb64-900"><a href="#cb64-900" aria-hidden="true" tabindex="-1"></a><span class="co"># Three of the sv_table columns, in long form. The factor levels are set</span></span>
+<span id="cb64-901"><a href="#cb64-901" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly so the legend reads technical -&gt; biological -&gt; exposure, which is</span></span>
+<span id="cb64-902"><a href="#cb64-902" aria-hidden="true" tabindex="-1"></a><span class="co"># the order the caption discusses them in.</span></span>
+<span id="cb64-903"><a href="#cb64-903" aria-hidden="true" tabindex="-1"></a>bars <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb64-904"><a href="#cb64-904" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">SV =</span> sv_table<span class="sc">$</span>SV, <span class="at">r2 =</span> sv_table<span class="sc">$</span>r2_slide, <span class="at">what =</span> <span class="st">&quot;Chip (technical)&quot;</span>),</span>
+<span id="cb64-905"><a href="#cb64-905" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">SV =</span> sv_table<span class="sc">$</span>SV, <span class="at">r2 =</span> sv_table<span class="sc">$</span>r2_sex,   <span class="at">what =</span> <span class="st">&quot;Sex (biological)&quot;</span>),</span>
+<span id="cb64-906"><a href="#cb64-906" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">SV =</span> sv_table<span class="sc">$</span>SV, <span class="at">r2 =</span> sv_table<span class="sc">$</span>r2_ptsd,  <span class="at">what =</span> <span class="st">&quot;PTSD (exposure)&quot;</span>))</span>
+<span id="cb64-907"><a href="#cb64-907" aria-hidden="true" tabindex="-1"></a>bars<span class="sc">$</span>SV   <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">paste0</span>(<span class="st">&quot;SV&quot;</span>, bars<span class="sc">$</span>SV), <span class="at">levels =</span> <span class="fu">colnames</span>(SV))</span>
+<span id="cb64-908"><a href="#cb64-908" aria-hidden="true" tabindex="-1"></a>bars<span class="sc">$</span>what <span class="ot">&lt;-</span> <span class="fu">factor</span>(bars<span class="sc">$</span>what, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Chip (technical)&quot;</span>, <span class="st">&quot;Sex (biological)&quot;</span>,</span>
+<span id="cb64-909"><a href="#cb64-909" aria-hidden="true" tabindex="-1"></a>                                          <span class="st">&quot;PTSD (exposure)&quot;</span>))</span>
+<span id="cb64-910"><a href="#cb64-910" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-911"><a href="#cb64-911" aria-hidden="true" tabindex="-1"></a>p_sv <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(bars, <span class="fu">aes</span>(SV, r2, <span class="at">fill =</span> what)) <span class="sc">+</span></span>
+<span id="cb64-912"><a href="#cb64-912" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.78</span>), <span class="at">width =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb64-913"><a href="#cb64-913" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;Chip (technical)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#0F3D43&quot;</span>,   <span class="co"># teal_dark</span></span>
+<span id="cb64-914"><a href="#cb64-914" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;Sex (biological)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#B8873F&quot;</span>,   <span class="co"># sand</span></span>
+<span id="cb64-915"><a href="#cb64-915" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;PTSD (exposure)&quot;</span>  <span class="ot">=</span> <span class="st">&quot;#8C3A4A&quot;</span>),  <span class="co"># plum</span></span>
+<span id="cb64-916"><a href="#cb64-916" aria-hidden="true" tabindex="-1"></a>                    <span class="at">name =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb64-917"><a href="#cb64-917" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fixed 0-1 axis: the point of the figure is how small the PTSD bars are, which</span></span>
+<span id="cb64-918"><a href="#cb64-918" aria-hidden="true" tabindex="-1"></a>  <span class="co"># a free axis would hide by rescaling them</span></span>
+<span id="cb64-919"><a href="#cb64-919" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.04</span>))) <span class="sc">+</span></span>
+<span id="cb64-920"><a href="#cb64-920" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="fu">expression</span>(R<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb64-921"><a href="#cb64-921" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;The surrogate variables absorb chip, not the exposure&quot;</span>,</span>
+<span id="cb64-922"><a href="#cb64-922" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="fu">sprintf</span>(<span class="fu">paste</span>(<span class="st">&quot;Buja-Eyuboglu suggested %d SVs on the full filtered matrix;&quot;</span>,</span>
+<span id="cb64-923"><a href="#cb64-923" aria-hidden="true" tabindex="-1"></a>                                <span class="st">&quot;the %d carried into the model are shown&quot;</span>),</span>
+<span id="cb64-924"><a href="#cb64-924" aria-hidden="true" tabindex="-1"></a>                          n_sv_be, <span class="fu">ncol</span>(SV))) <span class="sc">+</span></span>
+<span id="cb64-925"><a href="#cb64-925" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>)</span>
+<span id="cb64-926"><a href="#cb64-926" aria-hidden="true" tabindex="-1"></a>p_sv</span>
+<span id="cb64-927"><a href="#cb64-927" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-928"><a href="#cb64-928" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;data/05_sva_bars.png&quot;</span>, <span class="at">plot =</span> p_sv, <span class="at">width =</span> <span class="fl">8.4</span>, <span class="at">height =</span> <span class="fl">4.4</span>, <span class="at">dpi =</span> <span class="dv">200</span>)</span>
+<span id="cb64-929"><a href="#cb64-929" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb64-930"><a href="#cb64-930" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-933"><a href="#cb64-933" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb64-934"><a href="#cb64-934" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: sva-summary</span></span>
+<span id="cb64-935"><a href="#cb64-935" aria-hidden="true" tabindex="-1"></a><span class="co"># The two numbers that decide whether the SVA was worth running: the SVs should</span></span>
+<span id="cb64-936"><a href="#cb64-936" aria-hidden="true" tabindex="-1"></a><span class="co"># be strongly chip-linked and near-orthogonal to the exposure.</span></span>
+<span id="cb64-937"><a href="#cb64-937" aria-hidden="true" tabindex="-1"></a>chip_r2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(SV), <span class="cf">function</span>(j) <span class="fu">summary</span>(<span class="fu">lm</span>(SV[,j] <span class="sc">~</span> <span class="fu">factor</span>(mdk<span class="sc">$</span>slide)))<span class="sc">$</span>r.squared)</span>
+<span id="cb64-938"><a href="#cb64-938" aria-hidden="true" tabindex="-1"></a>ptsd_r2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(SV), <span class="cf">function</span>(j) <span class="fu">summary</span>(<span class="fu">lm</span>(SV[,j] <span class="sc">~</span> <span class="fu">factor</span>(mdk<span class="sc">$</span>ptsd)))<span class="sc">$</span>r.squared)</span>
+<span id="cb64-939"><a href="#cb64-939" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Strongest chip-linked SV: SV%d (R2 = %.2f)</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="fu">which.max</span>(chip_r2), <span class="fu">max</span>(chip_r2)))</span>
+<span id="cb64-940"><a href="#cb64-940" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Largest SV-PTSD association: %.3f (all SVs are ~orthogonal to the exposure)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb64-941"><a href="#cb64-941" aria-hidden="true" tabindex="-1"></a>            <span class="fu">max</span>(ptsd_r2)))</span>
+<span id="cb64-942"><a href="#cb64-942" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb64-943"><a href="#cb64-943" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-944"><a href="#cb64-944" aria-hidden="true" tabindex="-1"></a>We carry these surrogate variables forward as covariates in the</span>
+<span id="cb64-945"><a href="#cb64-945" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">EWAS model</span><span class="co">](06_ewas.qmd)</span>, alongside sex, age, and cell composition.</span>
+<span id="cb64-946"><a href="#cb64-946" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-947"><a href="#cb64-947" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb64-948"><a href="#cb64-948" aria-hidden="true" tabindex="-1"></a><span class="fu">## Don&#39;t over-correct</span></span>
+<span id="cb64-949"><a href="#cb64-949" aria-hidden="true" tabindex="-1"></a>More correction is not always better. Each surrogate variable spends a degree of</span>
+<span id="cb64-950"><a href="#cb64-950" aria-hidden="true" tabindex="-1"></a>freedom; adding too many, or adding SVs that happen to correlate with your exposure,</span>
+<span id="cb64-951"><a href="#cb64-951" aria-hidden="true" tabindex="-1"></a>removes real signal. <span class="in">`num.sv`</span> gives a principled count; inspect the SV–exposure</span>
+<span id="cb64-952"><a href="#cb64-952" aria-hidden="true" tabindex="-1"></a>associations (as above) and, if any SV correlates strongly with the phenotype, treat</span>
+<span id="cb64-953"><a href="#cb64-953" aria-hidden="true" tabindex="-1"></a>that as a warning that the exposure and a batch are partially confounded.</span>
+<span id="cb64-954"><a href="#cb64-954" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb64-955"><a href="#cb64-955" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-956"><a href="#cb64-956" aria-hidden="true" tabindex="-1"></a><span class="fu">## Saving what we just computed</span></span>
+<span id="cb64-957"><a href="#cb64-957" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-958"><a href="#cb64-958" aria-hidden="true" tabindex="-1"></a>The PCA diagnostic, the stratified ComBat matrix, the smoking proxy and the surrogate</span>
+<span id="cb64-959"><a href="#cb64-959" aria-hidden="true" tabindex="-1"></a>variables are all inputs to later chapters, so each one is written out here, by the</span>
+<span id="cb64-960"><a href="#cb64-960" aria-hidden="true" tabindex="-1"></a>code that produced it.</span>
+<span id="cb64-961"><a href="#cb64-961" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-964"><a href="#cb64-964" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb64-965"><a href="#cb64-965" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-05</span></span>
+<span id="cb64-966"><a href="#cb64-966" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The PCA diagnostic. Small, and it is what the variable-association figures</span></span>
+<span id="cb64-967"><a href="#cb64-967" aria-hidden="true" tabindex="-1"></a><span class="co">#    are drawn from, so a reader can redraw them without re-running the PCA.</span></span>
+<span id="cb64-968"><a href="#cb64-968" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(<span class="fu">list</span>(<span class="at">pcs =</span> pcs, <span class="at">pve =</span> pve, <span class="at">r2 =</span> pc_r2, <span class="at">md =</span> md, <span class="at">props =</span> props,</span>
+<span id="cb64-969"><a href="#cb64-969" aria-hidden="true" tabindex="-1"></a>             <span class="at">slide =</span> slide, <span class="at">posrow =</span> posrow),</span>
+<span id="cb64-970"><a href="#cb64-970" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;data/05_batch_pca.rds&quot;</span>)</span>
+<span id="cb64-971"><a href="#cb64-971" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-972"><a href="#cb64-972" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The smoking proxy: the score itself, the panel it came from, and the PC1</span></span>
+<span id="cb64-973"><a href="#cb64-973" aria-hidden="true" tabindex="-1"></a><span class="co">#    loadings, so that what went into the covariate stays inspectable.</span></span>
+<span id="cb64-974"><a href="#cb64-974" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(<span class="fu">list</span>(<span class="at">smoke =</span> smoke, <span class="at">panel =</span> panel, <span class="at">present =</span> panel_probes,</span>
+<span id="cb64-975"><a href="#cb64-975" aria-hidden="true" tabindex="-1"></a>             <span class="at">pve =</span> panel_pve, <span class="at">loadings =</span> pc<span class="sc">$</span>rotation[, <span class="dv">1</span>]),</span>
+<span id="cb64-976"><a href="#cb64-976" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;data/05_smoking_proxy.rds&quot;</span>)</span>
+<span id="cb64-977"><a href="#cb64-977" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-978"><a href="#cb64-978" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. The model inputs chapters 06 and 07 read: the surrogate variables, the</span></span>
+<span id="cb64-979"><a href="#cb64-979" aria-hidden="true" tabindex="-1"></a><span class="co">#    87-sample metadata and cell proportions they were estimated alongside, and</span></span>
+<span id="cb64-980"><a href="#cb64-980" aria-hidden="true" tabindex="-1"></a><span class="co">#    the design record. `k_selected` is what the EWAS uses to slice `SV`.</span></span>
+<span id="cb64-981"><a href="#cb64-981" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(<span class="fu">list</span>(<span class="at">SV =</span> SV, <span class="at">n.sv =</span> <span class="fu">ncol</span>(SV), <span class="at">keep =</span> keep, <span class="at">mdk =</span> mdk, <span class="at">propk =</span> propk,</span>
+<span id="cb64-982"><a href="#cb64-982" aria-hidden="true" tabindex="-1"></a>             <span class="at">smoke =</span> smoke, <span class="at">panel_probes =</span> panel_probes, <span class="at">panel_pve =</span> panel_pve,</span>
+<span id="cb64-983"><a href="#cb64-983" aria-hidden="true" tabindex="-1"></a>             <span class="at">excluded_n =</span> excluded_n, <span class="at">tested_probes =</span> tested_probes,</span>
+<span id="cb64-984"><a href="#cb64-984" aria-hidden="true" tabindex="-1"></a>             <span class="at">prev_n_sv =</span> n_sv_be, <span class="at">sv_table =</span> sv_table,</span>
+<span id="cb64-985"><a href="#cb64-985" aria-hidden="true" tabindex="-1"></a>             <span class="at">k_selected =</span> k_selected, <span class="at">k_candidates =</span> k_candidates,</span>
+<span id="cb64-986"><a href="#cb64-986" aria-hidden="true" tabindex="-1"></a>             <span class="at">r2_smoke_sv =</span> <span class="fu">summary</span>(<span class="fu">lm</span>(smoke <span class="sc">~</span> SV))<span class="sc">$</span>r.squared,</span>
+<span id="cb64-987"><a href="#cb64-987" aria-hidden="true" tabindex="-1"></a>             <span class="at">chip_r2 =</span> chip_r2, <span class="at">pos_r2 =</span> sv_table<span class="sc">$</span>r2_pos,</span>
+<span id="cb64-988"><a href="#cb64-988" aria-hidden="true" tabindex="-1"></a>             <span class="at">position_in_model =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb64-989"><a href="#cb64-989" aria-hidden="true" tabindex="-1"></a>             <span class="at">design_note =</span> <span class="fu">paste</span>(<span class="st">&quot;ComBat(slide) within sex strata;&quot;</span>,</span>
+<span id="cb64-990"><a href="#cb64-990" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">&quot;array position as fixed covariate; SVA k=6&quot;</span>)),</span>
+<span id="cb64-991"><a href="#cb64-991" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;data/05_sva.rds&quot;</span>)</span>
+<span id="cb64-992"><a href="#cb64-992" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-993"><a href="#cb64-993" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. The corrected M-value matrix the EWAS is actually fit on. This one is</span></span>
+<span id="cb64-994"><a href="#cb64-994" aria-hidden="true" tabindex="-1"></a><span class="co">#    511 MB, which is why it is excluded from git and distributed as a Zenodo</span></span>
+<span id="cb64-995"><a href="#cb64-995" aria-hidden="true" tabindex="-1"></a><span class="co">#    tier rather than committed.</span></span>
+<span id="cb64-996"><a href="#cb64-996" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(Mcb, <span class="st">&quot;data/05_mvals_combat.rds&quot;</span>)</span>
+<span id="cb64-997"><a href="#cb64-997" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb64-998"><a href="#cb64-998" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-999"><a href="#cb64-999" aria-hidden="true" tabindex="-1"></a>::: {.callout-note collapse=&quot;true&quot;}</span>
+<span id="cb64-1000"><a href="#cb64-1000" aria-hidden="true" tabindex="-1"></a><span class="fu">## Picking the chapter up from the saved checkpoints instead</span></span>
 <span id="cb64-1001"><a href="#cb64-1001" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1002"><a href="#cb64-1002" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb64-1003"><a href="#cb64-1003" aria-hidden="true" tabindex="-1"></a>sva_o <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/05_sva.rds&quot;</span>)</span>
-<span id="cb64-1004"><a href="#cb64-1004" aria-hidden="true" tabindex="-1"></a>SV    <span class="ot">&lt;-</span> sva_o<span class="sc">$</span>SV          <span class="co"># 87 x 6 surrogate variables</span></span>
-<span id="cb64-1005"><a href="#cb64-1005" aria-hidden="true" tabindex="-1"></a>mdk   <span class="ot">&lt;-</span> sva_o<span class="sc">$</span>mdk         <span class="co"># the 87 modeled samples</span></span>
-<span id="cb64-1006"><a href="#cb64-1006" aria-hidden="true" tabindex="-1"></a>smoke <span class="ot">&lt;-</span> sva_o<span class="sc">$</span>smoke       <span class="co"># the methylation-derived smoking score</span></span>
-<span id="cb64-1007"><a href="#cb64-1007" aria-hidden="true" tabindex="-1"></a>Mcb   <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/05_mvals_combat.rds&quot;</span>)   <span class="co"># stratified-ComBat M-values</span></span>
+<span id="cb64-1002"><a href="#cb64-1002" aria-hidden="true" tabindex="-1"></a>The two expensive steps above — the full M-value matrix and the <span class="in">`num.sv`</span>/<span class="in">`sva`</span> pair —</span>
+<span id="cb64-1003"><a href="#cb64-1003" aria-hidden="true" tabindex="-1"></a>need about 9 GB of memory between them. If that is more than your machine has, the</span>
+<span id="cb64-1004"><a href="#cb64-1004" aria-hidden="true" tabindex="-1"></a>published checkpoints are the same files this chapter just wrote:</span>
+<span id="cb64-1005"><a href="#cb64-1005" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1006"><a href="#cb64-1006" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
+<span id="cb64-1007"><a href="#cb64-1007" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> D_filtered E_model_inputs</span>
 <span id="cb64-1008"><a href="#cb64-1008" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb64-1009"><a href="#cb64-1009" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1010"><a href="#cb64-1010" aria-hidden="true" tabindex="-1"></a>What this route does not give you is the diagnostic reasoning — you inherit k = 6 and</span>
-<span id="cb64-1011"><a href="#cb64-1011" aria-hidden="true" tabindex="-1"></a>the stratified design as decisions already made, rather than watching the evidence for</span>
-<span id="cb64-1012"><a href="#cb64-1012" aria-hidden="true" tabindex="-1"></a>them accumulate.</span>
-<span id="cb64-1013"><a href="#cb64-1013" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb64-1014"><a href="#cb64-1014" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1015"><a href="#cb64-1015" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. When you don&#39;t have IDATs: batch correction from a processed matrix {#sec-no-idats}</span></span>
-<span id="cb64-1016"><a href="#cb64-1016" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1017"><a href="#cb64-1017" aria-hidden="true" tabindex="-1"></a>Batch diagnosis and latent-variable correction work on a **β/M-matrix**, so the</span>
-<span id="cb64-1018"><a href="#cb64-1018" aria-hidden="true" tabindex="-1"></a>non-IDAT path is largely the same — with two caveats:</span>
-<span id="cb64-1019"><a href="#cb64-1019" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1020"><a href="#cb64-1020" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**You may not have the batch annotation.** Chip and position come from the IDAT</span>
-<span id="cb64-1021"><a href="#cb64-1021" aria-hidden="true" tabindex="-1"></a>   filenames / Sentrix barcodes. If the submitter deposited only a processed matrix,</span>
-<span id="cb64-1022"><a href="#cb64-1022" aria-hidden="true" tabindex="-1"></a>   check the sample metadata (<span class="in">`pData`</span>) for <span class="in">`Sentrix_ID`</span>, <span class="in">`Sentrix_Position`</span>,</span>
-<span id="cb64-1023"><a href="#cb64-1023" aria-hidden="true" tabindex="-1"></a>   <span class="in">`plate`</span>, <span class="in">`Slide`</span>, or a scan-date column — many deposit these even without IDATs.</span>
-<span id="cb64-1024"><a href="#cb64-1024" aria-hidden="true" tabindex="-1"></a>   If they are absent, you **cannot reconstruct** the named batches, so a surrogate </span>
-<span id="cb64-1025"><a href="#cb64-1025" aria-hidden="true" tabindex="-1"></a>   variable method is more appropriate.</span>
-<span id="cb64-1026"><a href="#cb64-1026" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Diagnose and correct on M-values from the matrix.** PCA + variable-association,</span>
-<span id="cb64-1027"><a href="#cb64-1027" aria-hidden="true" tabindex="-1"></a>   <span class="in">`sva`</span>, and <span class="in">`ComBat`</span> all take a matrix. Convert deposited β to M-values first</span>
-<span id="cb64-1028"><a href="#cb64-1028" aria-hidden="true" tabindex="-1"></a>   (see <span class="co">[</span><span class="ot">normalization</span><span class="co">](02_normalization.qmd)</span>), run the identical SVA recipe, and</span>
-<span id="cb64-1029"><a href="#cb64-1029" aria-hidden="true" tabindex="-1"></a>   add the surrogate variables to your model:</span>
-<span id="cb64-1030"><a href="#cb64-1030" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1031"><a href="#cb64-1031" aria-hidden="true" tabindex="-1"></a>   <span class="in">```r</span></span>
-<span id="cb64-1032"><a href="#cb64-1032" aria-hidden="true" tabindex="-1"></a>   M <span class="ot">&lt;-</span> <span class="fu">log2</span>(beta <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> beta))          <span class="co"># from a processed beta-matrix</span></span>
-<span id="cb64-1033"><a href="#cb64-1033" aria-hidden="true" tabindex="-1"></a>   mod  <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> exposure <span class="sc">+</span> covariates, <span class="at">data =</span> pData)</span>
-<span id="cb64-1034"><a href="#cb64-1034" aria-hidden="true" tabindex="-1"></a>   mod0 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> covariates, <span class="at">data =</span> pData)</span>
-<span id="cb64-1035"><a href="#cb64-1035" aria-hidden="true" tabindex="-1"></a>   SV   <span class="ot">&lt;-</span> <span class="fu">sva</span>(M, mod, mod0)<span class="sc">$</span>sv</span>
-<span id="cb64-1036"><a href="#cb64-1036" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb64-1037"><a href="#cb64-1037" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1038"><a href="#cb64-1038" aria-hidden="true" tabindex="-1"></a><span class="in">`ComBat`</span> is likewise matrix-native (<span class="in">`sva::ComBat(dat = M, batch = plate, mod = mod)`</span>),</span>
-<span id="cb64-1039"><a href="#cb64-1039" aria-hidden="true" tabindex="-1"></a>so if a *clean, recorded, un-confounded* batch variable is present in a</span>
-<span id="cb64-1040"><a href="#cb64-1040" aria-hidden="true" tabindex="-1"></a>matrix-only deposit, you can correct it directly.</span>
-<span id="cb64-1041"><a href="#cb64-1041" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1042"><a href="#cb64-1042" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb64-1043"><a href="#cb64-1043" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1044"><a href="#cb64-1044" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">EWAS analysis</span><span class="co">](06_ewas.qmd)</span> — fit the association model for PTSD with</span>
-<span id="cb64-1045"><a href="#cb64-1045" aria-hidden="true" tabindex="-1"></a>sex, age, cell composition, and surrogate variables as covariates, and interpret the</span>
-<span id="cb64-1046"><a href="#cb64-1046" aria-hidden="true" tabindex="-1"></a>results honestly.</span>
-<span id="cb64-1047"><a href="#cb64-1047" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1048"><a href="#cb64-1048" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb64-1010"><a href="#cb64-1010" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb64-1011"><a href="#cb64-1011" aria-hidden="true" tabindex="-1"></a>sva_o <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/05_sva.rds&quot;</span>)</span>
+<span id="cb64-1012"><a href="#cb64-1012" aria-hidden="true" tabindex="-1"></a>SV    <span class="ot">&lt;-</span> sva_o<span class="sc">$</span>SV          <span class="co"># 87 x 6 surrogate variables</span></span>
+<span id="cb64-1013"><a href="#cb64-1013" aria-hidden="true" tabindex="-1"></a>mdk   <span class="ot">&lt;-</span> sva_o<span class="sc">$</span>mdk         <span class="co"># the 87 modeled samples</span></span>
+<span id="cb64-1014"><a href="#cb64-1014" aria-hidden="true" tabindex="-1"></a>smoke <span class="ot">&lt;-</span> sva_o<span class="sc">$</span>smoke       <span class="co"># the methylation-derived smoking score</span></span>
+<span id="cb64-1015"><a href="#cb64-1015" aria-hidden="true" tabindex="-1"></a>Mcb   <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/05_mvals_combat.rds&quot;</span>)   <span class="co"># stratified-ComBat M-values</span></span>
+<span id="cb64-1016"><a href="#cb64-1016" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb64-1017"><a href="#cb64-1017" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1018"><a href="#cb64-1018" aria-hidden="true" tabindex="-1"></a>What this route does not give you is the diagnostic reasoning — you inherit k = 6 and</span>
+<span id="cb64-1019"><a href="#cb64-1019" aria-hidden="true" tabindex="-1"></a>the stratified design as decisions already made, rather than watching the evidence for</span>
+<span id="cb64-1020"><a href="#cb64-1020" aria-hidden="true" tabindex="-1"></a>them accumulate.</span>
+<span id="cb64-1021"><a href="#cb64-1021" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb64-1022"><a href="#cb64-1022" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1023"><a href="#cb64-1023" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. When you don&#39;t have IDATs: batch correction from a processed matrix {#sec-no-idats}</span></span>
+<span id="cb64-1024"><a href="#cb64-1024" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1025"><a href="#cb64-1025" aria-hidden="true" tabindex="-1"></a>Batch diagnosis and latent-variable correction work on a **β/M-matrix**, so the</span>
+<span id="cb64-1026"><a href="#cb64-1026" aria-hidden="true" tabindex="-1"></a>non-IDAT path is largely the same — with two caveats:</span>
+<span id="cb64-1027"><a href="#cb64-1027" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1028"><a href="#cb64-1028" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**You may not have the batch annotation.** Chip and position come from the IDAT</span>
+<span id="cb64-1029"><a href="#cb64-1029" aria-hidden="true" tabindex="-1"></a>   filenames / Sentrix barcodes. If the submitter deposited only a processed matrix,</span>
+<span id="cb64-1030"><a href="#cb64-1030" aria-hidden="true" tabindex="-1"></a>   check the sample metadata (<span class="in">`pData`</span>) for <span class="in">`Sentrix_ID`</span>, <span class="in">`Sentrix_Position`</span>,</span>
+<span id="cb64-1031"><a href="#cb64-1031" aria-hidden="true" tabindex="-1"></a>   <span class="in">`plate`</span>, <span class="in">`Slide`</span>, or a scan-date column — many deposit these even without IDATs.</span>
+<span id="cb64-1032"><a href="#cb64-1032" aria-hidden="true" tabindex="-1"></a>   If they are absent, you **cannot reconstruct** the named batches, so a surrogate </span>
+<span id="cb64-1033"><a href="#cb64-1033" aria-hidden="true" tabindex="-1"></a>   variable method is more appropriate.</span>
+<span id="cb64-1034"><a href="#cb64-1034" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Diagnose and correct on M-values from the matrix.** PCA + variable-association,</span>
+<span id="cb64-1035"><a href="#cb64-1035" aria-hidden="true" tabindex="-1"></a>   <span class="in">`sva`</span>, and <span class="in">`ComBat`</span> all take a matrix. Convert deposited β to M-values first</span>
+<span id="cb64-1036"><a href="#cb64-1036" aria-hidden="true" tabindex="-1"></a>   (see <span class="co">[</span><span class="ot">normalization</span><span class="co">](02_normalization.qmd)</span>), run the identical SVA recipe, and</span>
+<span id="cb64-1037"><a href="#cb64-1037" aria-hidden="true" tabindex="-1"></a>   add the surrogate variables to your model:</span>
+<span id="cb64-1038"><a href="#cb64-1038" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1039"><a href="#cb64-1039" aria-hidden="true" tabindex="-1"></a>   <span class="in">```r</span></span>
+<span id="cb64-1040"><a href="#cb64-1040" aria-hidden="true" tabindex="-1"></a>   M <span class="ot">&lt;-</span> <span class="fu">log2</span>(beta <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> beta))          <span class="co"># from a processed beta-matrix</span></span>
+<span id="cb64-1041"><a href="#cb64-1041" aria-hidden="true" tabindex="-1"></a>   mod  <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> exposure <span class="sc">+</span> covariates, <span class="at">data =</span> pData)</span>
+<span id="cb64-1042"><a href="#cb64-1042" aria-hidden="true" tabindex="-1"></a>   mod0 <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> covariates, <span class="at">data =</span> pData)</span>
+<span id="cb64-1043"><a href="#cb64-1043" aria-hidden="true" tabindex="-1"></a>   SV   <span class="ot">&lt;-</span> <span class="fu">sva</span>(M, mod, mod0)<span class="sc">$</span>sv</span>
+<span id="cb64-1044"><a href="#cb64-1044" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb64-1045"><a href="#cb64-1045" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1046"><a href="#cb64-1046" aria-hidden="true" tabindex="-1"></a><span class="in">`ComBat`</span> is likewise matrix-native (<span class="in">`sva::ComBat(dat = M, batch = plate, mod = mod)`</span>),</span>
+<span id="cb64-1047"><a href="#cb64-1047" aria-hidden="true" tabindex="-1"></a>so if a *clean, recorded, un-confounded* batch variable is present in a</span>
+<span id="cb64-1048"><a href="#cb64-1048" aria-hidden="true" tabindex="-1"></a>matrix-only deposit, you can correct it directly.</span>
 <span id="cb64-1049"><a href="#cb64-1049" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-1050"><a href="#cb64-1050" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb64-1051"><a href="#cb64-1051" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb64-1050"><a href="#cb64-1050" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb64-1051"><a href="#cb64-1051" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1052"><a href="#cb64-1052" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">EWAS analysis</span><span class="co">](06_ewas.qmd)</span> — fit the association model for PTSD with</span>
+<span id="cb64-1053"><a href="#cb64-1053" aria-hidden="true" tabindex="-1"></a>sex, age, cell composition, and surrogate variables as covariates, and interpret the</span>
+<span id="cb64-1054"><a href="#cb64-1054" aria-hidden="true" tabindex="-1"></a>results honestly.</span>
+<span id="cb64-1055"><a href="#cb64-1055" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1056"><a href="#cb64-1056" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb64-1057"><a href="#cb64-1057" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-1058"><a href="#cb64-1058" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb64-1059"><a href="#cb64-1059" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

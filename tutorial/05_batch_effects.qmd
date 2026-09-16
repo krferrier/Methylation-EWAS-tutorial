@@ -720,9 +720,9 @@ which should fall if the SVs are removing real noise).
 # This is the sweep behind data/05_k_lambda_sweep.csv, and it runs at render.
 # Each candidate k gets its own sva() fit plus a full-probe limma fit, but n.sv is
 # supplied here, so each fit skips the Buja-Eyuboglu estimation that num.sv() does
-# above -- which is what makes the four candidates together cost about two and a
-# half minutes, rather than the several minutes the single estimated fit above
-# took on its own. The peak is comparable to that fit's (~9 GB). The small table
+# above -- which is what makes the four candidates together cost about 140
+# seconds (measured: 136.9 s), rather than the several minutes the single
+# estimated fit above took on its own. The peak is comparable to that fit's (~9 GB). The small table
 # it writes is committed to the repository, and the chunk below reads it back, so
 # the figure and the text quote one set of numbers.
 
@@ -807,10 +807,18 @@ Reading down that table:
 - **k = 0 is clearly wrong.** λ = 0.85 is badly *deflated*, the signature of
   unmodeled structure inflating residual variance and washing out real
   differences.
-- **k = 6 fixes the calibration** (λ = 1.02) and captures nearly all of the
-  available precision gain — the median SE drops about 5%, which is
-  `r sprintf("%.0f%%", 100*ks$frac_gain[ks$k==6])` of the total improvement
-  available anywhere in the sweep.
+- **k = 6 fixes the calibration** (λ = 1.02) and buys most of the precision on
+  offer. The median SE drops
+  `r sprintf("%.1f%%", 100*(1 - ks$se_ratio[ks$k==6]))` against k = 0, and
+  `r sprintf("%.0f%%", 100*ks$frac_gain[ks$k==6])` of probes come out with a
+  smaller SE than they had at k = 0 — that second figure is the `frac_gain`
+  column, a count of probes that improved, not a share of the improvement. The
+  largest median-SE drop anywhere in the sweep is
+  `r sprintf("%.1f%%, at k = %d", 100*max(1 - ks$se_ratio, na.rm = TRUE), ks$k[which.max(1 - ks$se_ratio)])`,
+  so k = 6 captures about
+  `r sprintf("%.0f%%", 100*(1 - ks$se_ratio[ks$k==6])/max(1 - ks$se_ratio, na.rm = TRUE))`
+  of what is available — while keeping four more residual degrees of freedom and
+  a λ far closer to 1.
 - **k = 8, 10, and 15 buy almost nothing and cost real power.** By k = 10, λ has
   drifted up to 1.07, which is still an acceptable lambda, and the SEs have barely moved,
   but the burden of degrees of freedom becomes problematic.

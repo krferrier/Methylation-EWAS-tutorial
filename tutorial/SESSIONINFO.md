@@ -120,10 +120,10 @@ source and can lift the deliberate `r-lattice<0.23` pin. Restart R afterwards an
 one. This was verified against the error: with the packaged build `preprocessFunnorm`
 fails on 6 arrays, and with the rebuilt copy it completes in 20 seconds.
 
-In a conda environment, downgrading the threaded OpenBLAS that `preprocessCore` picks its
-threads up from has been reported to clear the error as well. It has not been reproduced
-here — the source rebuild above is the route tested against the failure — so treat this as
-a fallback:
+In a conda environment, replacing the threaded OpenBLAS that `preprocessCore` picks its
+threads up from clears the error too, without touching `preprocessCore`. Both routes were
+tested against the failure on six arrays and each takes `preprocessFunnorm` from the crash
+to a clean run in about 20 seconds:
 
 ```bash
 conda activate ewas-methyl
@@ -132,8 +132,11 @@ conda install "openblas=0.3.3"
 
 That is a larger change than it looks: `openblas=0.3.3` is the old standalone package,
 so conda removes `libopenblas` and satisfies BLAS and LAPACK from `blis` and Netlib
-reference LAPACK. Reference LAPACK is much slower, and chapters 02, 05 and 06 are all
-linear-algebra heavy, so the source rebuild is the better default.
+reference LAPACK. Measured on a 1500 × 1500 matrix, that costs roughly 2× on matrix
+products and `svd()`, about 6× on `solve()` and `eigen()`, and 33× on `chol()` (0.01 s to
+0.33 s). Normalization is not decomposition-bound so it barely notices, but `sva()` in
+chapter 05 and `lmFit()` in chapter 06 are, which is why the source rebuild is the better
+default where build tools are available.
 
 The numbers here were produced with the rebuilt copy, which changes only the threading
 strategy, not the arithmetic. Because it was installed into a user library rather than
