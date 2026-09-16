@@ -17,6 +17,14 @@
 # back. It has its own environment in envs/methylgsa.yml, used only by that
 # one section of chapter 08.
 #
+# knowYourCG and ENmix ARE in this file, as of the R 4.5 generation. They were
+# left out when the stack was pinned at R 4.2/Bioc 3.16, where knowYourCG did
+# not exist (it enters at Bioc 3.18) and neither had a usable build. At
+# r-base=4.5 both solve into this environment alongside everything else --
+# verified by building it -- so chapter 08's KYCG enrichment and its comb-p
+# DMR call no longer need a second environment. methylGSA remains the one
+# section that does.
+#
 # Everything else floats, so the solver can do its job on your platform.
 name: ewas-methyl
 channels:
@@ -54,9 +62,11 @@ dependencies:
   # annotation and enrichment
   - bioconductor-sesame
   - bioconductor-sesamedata
+  - bioconductor-knowyourcg
   - bioconductor-genomicranges
   - bioconductor-rtracklayer
   - bioconductor-missmethyl
+  - bioconductor-enmix
 
   # data handling, figures, rendering
   - r-data.table

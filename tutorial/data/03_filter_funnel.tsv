@@ -1,0 +1,6 @@
+step	probes_dropped	probes_remaining
+Start (normalized probes)		865859
+− Zhou v8.1 mask (8 codes, AFR + EUR)	90832	
+− Detection-p failures (>10% of samples)	1928	
+− Sex chromosomes (autosomal EWAS)	19627	
+= Retained (EWAS-ready)		756273

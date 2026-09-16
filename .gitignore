@@ -25,6 +25,11 @@
 /tutorial/data/06_ewas_toptable.csv
 /tutorial/data/08_annotation/PTSD_ewas_annotated_results.csv.gz
 
+# Raw IDATs, fetched as Zenodo tier A. 1.4 GB across 192 files, and the
+# Setup chapter tells readers to extract them here, so they must never be
+# committed by an over-broad `git add`.
+/tutorial/data/idats/
+
 # External sibling trees, fetched as Zenodo tiers G and H
 /ewas_pipeline/
 /masks/

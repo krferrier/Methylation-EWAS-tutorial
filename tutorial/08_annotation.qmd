@@ -590,9 +590,14 @@ This section starts from `data/08_annotation/PTSD_ewas_annotated_results.bed`, w
 ```{r}
 #| label: enmix-combp
 #| eval: false
-# ENmix is not in `envs/methyl.yml` and comb-p itself lives in `envs/combp.yml`
-# (Python 2.7), so this cannot run in the render environment. Shown here; the
-# DMR outputs it produces come from the H_annotation tier.
+# ENmix IS in `envs/methyl.yml` as of the R 4.5 generation, so this runs -- but it
+# is shown rather than executed at render for three practical reasons: its input
+# BED is an H-tier file that is not tracked in this repository, combp() writes
+# resu_combp.csv into the working directory rather than under data/, and nothing
+# downstream reads its output (the comparison table below is committed). The
+# region it finds is the one quoted in the text. Note this is ENmix's R
+# implementation of the comb-p algorithm; the Python comb-p it is compared
+# against lives in `envs/combp.yml`.
 library(ENmix)
 
 bed <- data.table::fread("data/08_annotation/PTSD_ewas_annotated_results.bed")
@@ -1068,13 +1073,24 @@ so the coordinates and databases are build-consistent by construction.
 ```{r}
 #| label: kycg
 #| eval: false
-# knowYourCG is not in `envs/methyl.yml`: it needs Bioconductor 3.18+ and the
-# environment is pinned at r-base=4.5/Bioc 3.22 for the rest of the stack, so
-# this call is shown rather than run. Its output is the committed
-# data/08_annotation/08_kycg_results.csv that the next three chunks read, so
-# every number below is derived from a real run of exactly this code.
+# knowYourCG IS in `envs/methyl.yml` as of the R 4.5 generation, so you can run
+# this. It is shown rather than executed at render for a different reason: the
+# knowledgebases are versioned, and knowYourCG 1.6.3 under Bioconductor 3.22
+# returns a slightly different result from the run that produced the committed
+# table -- 42 features at FDR < 0.05 where that run found 41, and a wider column
+# set. Re-running it at every render would keep moving the numbers the text
+# quotes. The committed data/08_annotation/08_kycg_results.csv is the output of
+# exactly this code, and the next three chunks derive everything below from it.
+#
+# The knowledgebases are downloaded on first use, and testEnrichment() will stop
+# with 'either not found or needs to be cached' until they are. Cache them once:
+#   kycgDataCache()   # all of them, or name the four used below
 library(knowYourCG)
 library(sesameData)
+
+# One-time download of the EPIC knowledgebases into the ExperimentHub cache.
+# Skip it on later runs; it is a no-op once they are cached.
+kycgDataCache()
 tt      <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
 all.cpg <- tt$probe                              # universe = every CpG you tested
 sig.cpg <- tt[order(bacon.p)][1:1000]$probe   # your query set
