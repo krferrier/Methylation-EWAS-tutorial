@@ -5911,6 +5911,7 @@ Preprocessing
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> summary EPIC.hg38.mask.cm   <span class="co"># how many probes each term flags</span></span>
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> unpack <span class="at">-a</span> EPIC.hg38.mask.cm <span class="op">&gt;</span> mask_bits.tsv   <span class="co"># all 24 terms, one column each</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>yame summary</code> is the quickest way to see what a term includes you before you commit to it. Turning the bits into a probe list is then a row-wise OR across the columns you chose, indexed against the ordering:</p>
+<p>You do not have to run any of that to follow along: the three files those commands produce or fetch are committed under <code>data/</code>, which is what the code below reads.</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
 <pre><strong>RStudio Console</strong></pre>
@@ -5918,9 +5919,9 @@ Preprocessing
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10" data-filename="RStudio Console"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack` writes the term names to a sidecar .idx, one per line, in the</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># same order as the columns of mask_bits.tsv -- so read the column, not the header.</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>probes <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.ordering.tsv.gz&quot;</span>)<span class="sc">$</span>Probe_ID          <span class="co"># canonical probe ordering</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;mask_bits.tsv&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>probes <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.ordering.tsv.gz&quot;</span>)<span class="sc">$</span>Probe_ID     <span class="co"># canonical probe ordering</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose the terms to mask on. These eight are the ones this chapter uses, and</span></span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># the same eight the ready-made TSV carries.</span></span>
@@ -5930,15 +5931,15 @@ Preprocessing
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>drop <span class="ot">&lt;-</span> probes[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) bits[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not carry, so they come from this route. This is the one derivation in the chapter that cannot run at render time — it needs the <code>yame</code> binary and the <code>.cm</code> release fetched above, and neither ships with the repository — so it runs once and its five-row result is committed:</p>
+<p>The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not carry, so they come from this route — and because the unpacked bits are committed, the count runs here rather than being quoted at you:</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># eval: false because this needs the yame CLI and the files `yame fetch` /</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack -a` produce, which are not in the repository. Run it once after</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the shell block above, then commit data/03_snp_by_pop.tsv.</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;mask_bits.tsv&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Both inputs are the committed output of the `yame unpack -a` call above, so this</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># from 40 MB down to 0.5 MB -- small enough to keep in the repository.</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># M_SNP_&lt;POP&gt;_1pt flags a common SNP (MAF &gt;= 1%) at the interrogated CpG in that</span></span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 1000 Genomes super-population. Counted over the whole array, not over this</span></span>
@@ -5948,8 +5949,8 @@ Preprocessing
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>                     <span class="cf">function</span>(p) <span class="fu">sum</span>(bits[[<span class="fu">paste0</span>(<span class="st">&quot;M_SNP_&quot;</span>, p, <span class="st">&quot;_1pt&quot;</span>)]] <span class="sc">==</span> <span class="dv">1</span>L),</span>
 <span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">integer</span>(<span class="dv">1</span>))</span>
 <span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Five rows of two columns: small and rectangular, so it is committed to the</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co"># repository and every reader gets the §2 table whether or not they have yame.</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Five rows of two columns, committed to the repository so the §2 table is</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co"># readable straight from git without unpacking the mask first.</span></span>
 <span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(<span class="fu">data.frame</span>(<span class="at">population =</span> pops, <span class="at">n_probes =</span> snp_by_pop),</span>
 <span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
@@ -6045,8 +6046,8 @@ Preprocessing
 <span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(per_code_sets) <span class="ot">&lt;-</span> mask_cols</span>
 <span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>mp <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">per_code_sets =</span> per_code_sets)</span>
 <span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-population SNP counts: derived by the `snp-by-pop` chunk above, read back</span></span>
-<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="co"># here because that chunk cannot run at render time.</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-population SNP counts, written by the `snp-by-pop` chunk above and read</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a><span class="co"># back here so the funnel and the §2 table quote one source.</span></span>
 <span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>sp <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>)</span>
 <span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Every count the funnel, the tables and the prose below quote, in one place.</span></span>
@@ -7129,37 +7130,37 @@ Zhou, Wanding, Timothy J Triche Jr, Peter W Laird, and Hui Shen. 2018. <span>“
 <span id="cb36-195"><a href="#cb36-195" aria-hidden="true" tabindex="-1"></a>to it. Turning the bits into a probe list is then a row-wise OR across the columns</span>
 <span id="cb36-196"><a href="#cb36-196" aria-hidden="true" tabindex="-1"></a>you chose, indexed against the ordering:</span>
 <span id="cb36-197"><a href="#cb36-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack` writes the term names to a sidecar .idx, one per line, in the</span></span>
-<span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a><span class="co"># same order as the columns of mask_bits.tsv -- so read the column, not the header.</span></span>
-<span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
-<span id="cb36-203"><a href="#cb36-203" aria-hidden="true" tabindex="-1"></a>probes <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.ordering.tsv.gz&quot;</span>)<span class="sc">$</span>Probe_ID          <span class="co"># canonical probe ordering</span></span>
-<span id="cb36-204"><a href="#cb36-204" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;mask_bits.tsv&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
-<span id="cb36-205"><a href="#cb36-205" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-206"><a href="#cb36-206" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose the terms to mask on. These eight are the ones this chapter uses, and</span></span>
-<span id="cb36-207"><a href="#cb36-207" aria-hidden="true" tabindex="-1"></a><span class="co"># the same eight the ready-made TSV carries.</span></span>
-<span id="cb36-208"><a href="#cb36-208" aria-hidden="true" tabindex="-1"></a>mask_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
-<span id="cb36-209"><a href="#cb36-209" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_AFR_1pt&quot;</span>,</span>
-<span id="cb36-210"><a href="#cb36-210" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
-<span id="cb36-211"><a href="#cb36-211" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-212"><a href="#cb36-212" aria-hidden="true" tabindex="-1"></a>drop <span class="ot">&lt;-</span> probes[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) bits[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span>
-<span id="cb36-213"><a href="#cb36-213" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a>You do not have to run any of that to follow along: the three files those commands</span>
+<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a>produce or fetch are committed under <span class="in">`data/`</span>, which is what the code below reads.</span>
+<span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb36-203"><a href="#cb36-203" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack` writes the term names to a sidecar .idx, one per line, in the</span></span>
+<span id="cb36-204"><a href="#cb36-204" aria-hidden="true" tabindex="-1"></a><span class="co"># same order as the columns of mask_bits.tsv -- so read the column, not the header.</span></span>
+<span id="cb36-205"><a href="#cb36-205" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
+<span id="cb36-206"><a href="#cb36-206" aria-hidden="true" tabindex="-1"></a>probes <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.ordering.tsv.gz&quot;</span>)<span class="sc">$</span>Probe_ID     <span class="co"># canonical probe ordering</span></span>
+<span id="cb36-207"><a href="#cb36-207" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
+<span id="cb36-208"><a href="#cb36-208" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-209"><a href="#cb36-209" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose the terms to mask on. These eight are the ones this chapter uses, and</span></span>
+<span id="cb36-210"><a href="#cb36-210" aria-hidden="true" tabindex="-1"></a><span class="co"># the same eight the ready-made TSV carries.</span></span>
+<span id="cb36-211"><a href="#cb36-211" aria-hidden="true" tabindex="-1"></a>mask_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
+<span id="cb36-212"><a href="#cb36-212" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_AFR_1pt&quot;</span>,</span>
+<span id="cb36-213"><a href="#cb36-213" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
 <span id="cb36-214"><a href="#cb36-214" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-215"><a href="#cb36-215" aria-hidden="true" tabindex="-1"></a>The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not</span>
-<span id="cb36-216"><a href="#cb36-216" aria-hidden="true" tabindex="-1"></a>carry, so they come from this route. This is the one derivation in the chapter that</span>
-<span id="cb36-217"><a href="#cb36-217" aria-hidden="true" tabindex="-1"></a>cannot run at render time — it needs the <span class="in">`yame`</span> binary and the <span class="in">`.cm`</span> release fetched</span>
-<span id="cb36-218"><a href="#cb36-218" aria-hidden="true" tabindex="-1"></a>above, and neither ships with the repository — so it runs once and its five-row result</span>
-<span id="cb36-219"><a href="#cb36-219" aria-hidden="true" tabindex="-1"></a>is committed:</span>
-<span id="cb36-220"><a href="#cb36-220" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-223"><a href="#cb36-223" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-224"><a href="#cb36-224" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: snp-by-pop</span></span>
-<span id="cb36-225"><a href="#cb36-225" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a><span class="co"># eval: false because this needs the yame CLI and the files `yame fetch` /</span></span>
-<span id="cb36-227"><a href="#cb36-227" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack -a` produce, which are not in the repository. Run it once after</span></span>
-<span id="cb36-228"><a href="#cb36-228" aria-hidden="true" tabindex="-1"></a><span class="co"># the shell block above, then commit data/03_snp_by_pop.tsv.</span></span>
-<span id="cb36-229"><a href="#cb36-229" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
-<span id="cb36-230"><a href="#cb36-230" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;mask_bits.tsv&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
+<span id="cb36-215"><a href="#cb36-215" aria-hidden="true" tabindex="-1"></a>drop <span class="ot">&lt;-</span> probes[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) bits[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span>
+<span id="cb36-216"><a href="#cb36-216" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-217"><a href="#cb36-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-218"><a href="#cb36-218" aria-hidden="true" tabindex="-1"></a>The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not</span>
+<span id="cb36-219"><a href="#cb36-219" aria-hidden="true" tabindex="-1"></a>carry, so they come from this route — and because the unpacked bits are committed, the</span>
+<span id="cb36-220"><a href="#cb36-220" aria-hidden="true" tabindex="-1"></a>count runs here rather than being quoted at you:</span>
+<span id="cb36-221"><a href="#cb36-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-224"><a href="#cb36-224" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-225"><a href="#cb36-225" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: snp-by-pop</span></span>
+<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a><span class="co"># Both inputs are the committed output of the `yame unpack -a` call above, so this</span></span>
+<span id="cb36-227"><a href="#cb36-227" aria-hidden="true" tabindex="-1"></a><span class="co"># runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips</span></span>
+<span id="cb36-228"><a href="#cb36-228" aria-hidden="true" tabindex="-1"></a><span class="co"># from 40 MB down to 0.5 MB -- small enough to keep in the repository.</span></span>
+<span id="cb36-229"><a href="#cb36-229" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
+<span id="cb36-230"><a href="#cb36-230" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
 <span id="cb36-231"><a href="#cb36-231" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-232"><a href="#cb36-232" aria-hidden="true" tabindex="-1"></a><span class="co"># M_SNP_&lt;POP&gt;_1pt flags a common SNP (MAF &gt;= 1%) at the interrogated CpG in that</span></span>
 <span id="cb36-233"><a href="#cb36-233" aria-hidden="true" tabindex="-1"></a><span class="co"># 1000 Genomes super-population. Counted over the whole array, not over this</span></span>
@@ -7169,8 +7170,8 @@ Zhou, Wanding, Timothy J Triche Jr, Peter W Laird, and Hui Shen. 2018. <span>“
 <span id="cb36-237"><a href="#cb36-237" aria-hidden="true" tabindex="-1"></a>                     <span class="cf">function</span>(p) <span class="fu">sum</span>(bits[[<span class="fu">paste0</span>(<span class="st">&quot;M_SNP_&quot;</span>, p, <span class="st">&quot;_1pt&quot;</span>)]] <span class="sc">==</span> <span class="dv">1</span>L),</span>
 <span id="cb36-238"><a href="#cb36-238" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">integer</span>(<span class="dv">1</span>))</span>
 <span id="cb36-239"><a href="#cb36-239" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-240"><a href="#cb36-240" aria-hidden="true" tabindex="-1"></a><span class="co"># Five rows of two columns: small and rectangular, so it is committed to the</span></span>
-<span id="cb36-241"><a href="#cb36-241" aria-hidden="true" tabindex="-1"></a><span class="co"># repository and every reader gets the §2 table whether or not they have yame.</span></span>
+<span id="cb36-240"><a href="#cb36-240" aria-hidden="true" tabindex="-1"></a><span class="co"># Five rows of two columns, committed to the repository so the §2 table is</span></span>
+<span id="cb36-241"><a href="#cb36-241" aria-hidden="true" tabindex="-1"></a><span class="co"># readable straight from git without unpacking the mask first.</span></span>
 <span id="cb36-242"><a href="#cb36-242" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(<span class="fu">data.frame</span>(<span class="at">population =</span> pops, <span class="at">n_probes =</span> snp_by_pop),</span>
 <span id="cb36-243"><a href="#cb36-243" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb36-244"><a href="#cb36-244" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
@@ -7251,8 +7252,8 @@ Zhou, Wanding, Timothy J Triche Jr, Peter W Laird, and Hui Shen. 2018. <span>“
 <span id="cb36-323"><a href="#cb36-323" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(per_code_sets) <span class="ot">&lt;-</span> mask_cols</span>
 <span id="cb36-324"><a href="#cb36-324" aria-hidden="true" tabindex="-1"></a>mp <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">per_code_sets =</span> per_code_sets)</span>
 <span id="cb36-325"><a href="#cb36-325" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-326"><a href="#cb36-326" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-population SNP counts: derived by the `snp-by-pop` chunk above, read back</span></span>
-<span id="cb36-327"><a href="#cb36-327" aria-hidden="true" tabindex="-1"></a><span class="co"># here because that chunk cannot run at render time.</span></span>
+<span id="cb36-326"><a href="#cb36-326" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-population SNP counts, written by the `snp-by-pop` chunk above and read</span></span>
+<span id="cb36-327"><a href="#cb36-327" aria-hidden="true" tabindex="-1"></a><span class="co"># back here so the funnel and the §2 table quote one source.</span></span>
 <span id="cb36-328"><a href="#cb36-328" aria-hidden="true" tabindex="-1"></a>sp <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>)</span>
 <span id="cb36-329"><a href="#cb36-329" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-330"><a href="#cb36-330" aria-hidden="true" tabindex="-1"></a><span class="co"># Every count the funnel, the tables and the prose below quote, in one place.</span></span>

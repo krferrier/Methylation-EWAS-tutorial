@@ -189,13 +189,16 @@ yame unpack -a EPIC.hg38.mask.cm > mask_bits.tsv   # all 24 terms, one column ea
 to it. Turning the bits into a probe list is then a row-wise OR across the columns
 you chose, indexed against the ordering:
 
+You do not have to run any of that to follow along: the three files those commands
+produce or fetch are committed under `data/`, which is what the code below reads.
+
 ```{.r filename="RStudio Console"}
 library(data.table)
 # `yame unpack` writes the term names to a sidecar .idx, one per line, in the
 # same order as the columns of mask_bits.tsv -- so read the column, not the header.
-terms  <- fread("EPIC.hg38.mask.cm.idx", header = FALSE)$V1
-probes <- fread("EPIC.ordering.tsv.gz")$Probe_ID          # canonical probe ordering
-bits   <- fread("mask_bits.tsv", header = FALSE); setnames(bits, terms)
+terms  <- fread("data/EPIC.hg38.mask.cm.idx", header = FALSE)$V1
+probes <- fread("data/EPIC.ordering.tsv.gz")$Probe_ID     # canonical probe ordering
+bits   <- fread("data/mask_bits.tsv.gz", header = FALSE); setnames(bits, terms)
 
 # Choose the terms to mask on. These eight are the ones this chapter uses, and
 # the same eight the ready-made TSV carries.
@@ -207,19 +210,16 @@ drop <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
 ```
 
 The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not
-carry, so they come from this route. This is the one derivation in the chapter that
-cannot run at render time — it needs the `yame` binary and the `.cm` release fetched
-above, and neither ships with the repository — so it runs once and its five-row result
-is committed:
+carry, so they come from this route — and because the unpacked bits are committed, the
+count runs here rather than being quoted at you:
 
 ```{r}
 #| label: snp-by-pop
-#| eval: false
-# eval: false because this needs the yame CLI and the files `yame fetch` /
-# `yame unpack -a` produce, which are not in the repository. Run it once after
-# the shell block above, then commit data/03_snp_by_pop.tsv.
-terms  <- fread("EPIC.hg38.mask.cm.idx", header = FALSE)$V1
-bits   <- fread("mask_bits.tsv", header = FALSE); setnames(bits, terms)
+# Both inputs are the committed output of the `yame unpack -a` call above, so this
+# runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips
+# from 40 MB down to 0.5 MB -- small enough to keep in the repository.
+terms  <- fread("data/EPIC.hg38.mask.cm.idx", header = FALSE)$V1
+bits   <- fread("data/mask_bits.tsv.gz", header = FALSE); setnames(bits, terms)
 
 # M_SNP_<POP>_1pt flags a common SNP (MAF >= 1%) at the interrogated CpG in that
 # 1000 Genomes super-population. Counted over the whole array, not over this
@@ -229,8 +229,8 @@ snp_by_pop <- vapply(pops,
                      function(p) sum(bits[[paste0("M_SNP_", p, "_1pt")]] == 1L),
                      integer(1))
 
-# Five rows of two columns: small and rectangular, so it is committed to the
-# repository and every reader gets the §2 table whether or not they have yame.
+# Five rows of two columns, committed to the repository so the §2 table is
+# readable straight from git without unpacking the mask first.
 write.table(data.frame(population = pops, n_probes = snp_by_pop),
             "data/03_snp_by_pop.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 ```
@@ -311,8 +311,8 @@ per_code_sets <- lapply(mask_cols, function(m) mask$Probe_ID[mask[[m]] == 1L])
 names(per_code_sets) <- mask_cols
 mp <- list(per_code_sets = per_code_sets)
 
-# Per-population SNP counts: derived by the `snp-by-pop` chunk above, read back
-# here because that chunk cannot run at render time.
+# Per-population SNP counts, written by the `snp-by-pop` chunk above and read
+# back here so the funnel and the §2 table quote one source.
 sp <- fread("data/03_snp_by_pop.tsv")
 
 # Every count the funnel, the tables and the prose below quote, in one place.
