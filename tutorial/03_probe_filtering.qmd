@@ -115,10 +115,14 @@ integrated SNP information across 1000 Genomes populations
 
 ### Getting the mask
 
-There are two routes to the same mask. Take the first one unless you have a reason
-not to.
+The mask comes in two forms, and **this chapter uses both** — they are not
+alternatives you pick between. The ready-made TSV carries the eight codes the
+filtering is built on, and that is all you need to reproduce the probe set. The full
+release carries all 24 codes, three of which the per-population table in
+[§2](#sec-categories) needs and the TSV does not have. Start with the TSV; read the
+second part when you want a term outside the eight.
 
-#### Route 1 — the ready-made TSV (recommended)
+#### The ready-made TSV — the eight codes the filtering uses {#the-tsv}
 
 The eight mask codes this chapter uses are shipped with the tutorial data as a plain
 tab-delimited table, so you can filter probes with `fread()` and nothing else. No new
@@ -131,7 +135,7 @@ already has it — 2.9 MB, no download needed. It is also inside the `D_filtered
 tier, which is where it lived before; if you have already fetched that tier you have
 two copies of the same file and can ignore this note.
 
-It is a derived table, not a Zhou lab release: [Route 2](#route-2) below shows the
+It is a derived table, not a Zhou lab release: [the full release](#route-2) below shows the
 `yame` commands that produce it from the published `.cm` mask, so you can rebuild it
 for another array or another mask version.
 :::
@@ -159,7 +163,7 @@ This file was generated from the official `.cm` release with YAME (below) and ve
 to reproduce all eight per-code counts and the 90,832-probe union exactly. It is a
 convenience layer, not a separate source of truth.
 
-#### Route 2 — from the official release with YAME {#route-2}
+#### The full release with YAME — all 24 codes {#route-2}
 
 Use this if you want a mask term the TSV does not carry (it ships 8 of the 24), a
 different array, or a newer mask version than the one pinned here.
@@ -209,9 +213,12 @@ mask_cols <- c("M_mapping", "M_nonuniq",
 drop <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
 ```
 
-The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not
-carry, so they come from this route — and because the unpacked bits are committed, the
-count runs here rather than being quoted at you:
+This is where the five-population table in [§2](#sec-categories) comes from, and it is
+the concrete reason the chapter needs both forms of the mask. The TSV carries
+`M_SNP_AFR_1pt` and `M_SNP_EUR_1pt` — which is why [§3](#sec-ancestry) can draw its
+AFR-versus-EUR contrast straight from it — but it does not carry the AMR, SAS or EAS
+equivalents, so three of that table's five rows can only come from the full release. Because the unpacked bits are committed, the count runs here rather
+than being quoted at you:
 
 ```{r}
 #| label: snp-by-pop
@@ -281,7 +288,7 @@ length(drop_detp)
 
 ```{r}
 #| label: probe-filters
-# The eight-code union from Route 1, restricted to the probes actually present
+# The eight-code union from the TSV above, restricted to the probes actually present
 # after normalization.
 drop_mask <- intersect(rownames(grs), drop8)
 
@@ -493,7 +500,7 @@ The exact filtering code (run once, checkpointed):
 ```{r}
 #| label: apply-filter
 # `keep` is the set union of the three drop lists, taken out of the normalized
-# probe set: the mask from Route 1 (`drop_mask`), the detection-p failures
+# probe set: the eight-code mask (`drop_mask`), the detection-p failures
 # (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does
 # not matter -- a probe flagged by two filters is dropped once.
 grs_filt <- grs[keep, ]
@@ -517,7 +524,7 @@ are keyed on **probe IDs**, not intensities. The workflow:
    your study population, and subset:
 
    ```{.r filename="RStudio Console"}
-   # `drop8` is the eight-code union read in Route 1 above. It works unchanged on
+   # `drop8` is the eight-code union read from the TSV above. It works unchanged on
    # a matrix, because the mask is keyed on probe IDs and nothing else.
    beta_filt <- beta[!rownames(beta) %in% drop8, ]
 

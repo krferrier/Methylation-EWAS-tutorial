@@ -5850,9 +5850,9 @@ Preprocessing
 </div>
 <section id="getting-the-mask" class="level3">
 <h3 class="anchored" data-anchor-id="getting-the-mask">Getting the mask</h3>
-<p>There are two routes to the same mask. Take the first one unless you have a reason not to.</p>
-<section id="route-1-the-ready-made-tsv-recommended" class="level4">
-<h4 class="anchored" data-anchor-id="route-1-the-ready-made-tsv-recommended">Route 1 — the ready-made TSV (recommended)</h4>
+<p>The mask comes in two forms, and <strong>this chapter uses both</strong> — they are not alternatives you pick between. The ready-made TSV carries the eight codes the filtering is built on, and that is all you need to reproduce the probe set. The full release carries all 24 codes, three of which the per-population table in <a href="#sec-categories">§2</a> needs and the TSV does not have. Start with the TSV; read the second part when you want a term outside the eight.</p>
+<section id="the-tsv" class="level4">
+<h4 class="anchored" data-anchor-id="the-tsv">The ready-made TSV — the eight codes the filtering uses</h4>
 <p>The eight mask codes this chapter uses are shipped with the tutorial data as a plain tab-delimited table, so you can filter probes with <code>fread()</code> and nothing else. No new software to install:</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -5865,7 +5865,7 @@ Preprocessing
 </div>
 <div class="callout-body-container callout-body">
 <p><code>data/EPIC.hg38.mask.v81.8code.tsv.gz</code> is tracked in the repository, so a fresh clone already has it — 2.9 MB, no download needed. It is also inside the <code>D_filtered</code> data tier, which is where it lived before; if you have already fetched that tier you have two copies of the same file and can ignore this note.</p>
-<p>It is a derived table, not a Zhou lab release: <a href="#route-2">Route 2</a> below shows the <code>yame</code> commands that produce it from the published <code>.cm</code> mask, so you can rebuild it for another array or another mask version.</p>
+<p>It is a derived table, not a Zhou lab release: <a href="#route-2">the full release</a> below shows the <code>yame</code> commands that produce it from the published <code>.cm</code> mask, so you can rebuild it for another array or another mask version.</p>
 </div>
 </div>
 <div class="cell">
@@ -5897,7 +5897,7 @@ Preprocessing
 <p>This file was generated from the official <code>.cm</code> release with YAME (below) and verified to reproduce all eight per-code counts and the 90,832-probe union exactly. It is a convenience layer, not a separate source of truth.</p>
 </section>
 <section id="route-2" class="level4">
-<h4 class="anchored" data-anchor-id="route-2">Route 2 — from the official release with YAME</h4>
+<h4 class="anchored" data-anchor-id="route-2">The full release with YAME — all 24 codes</h4>
 <p>Use this if you want a mask term the TSV does not carry (it ships 8 of the 24), a different array, or a newer mask version than the one pinned here.</p>
 <p>The v8.1 mask ships as <code>EPIC.hg38.mask.cm</code> — a bit-packed <strong>CX-format</strong> file rather than a table. It stores one bit per probe per mask term over the array’s canonical probe ordering, which is why the whole thing is only ~360 kB where the equivalent TSV is 2.8 MB. Because the file carries no probe names (row <em>i</em> means whatever row <em>i</em> of the ordering means), you fetch the ordering alongside it.</p>
 <p>Read it with <a href="https://github.com/zhou-lab/YAME">YAME</a>, the Zhou lab’s encoder for these formats:</p>
@@ -5931,7 +5931,7 @@ Preprocessing
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>drop <span class="ot">&lt;-</span> probes[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) bits[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not carry, so they come from this route — and because the unpacked bits are committed, the count runs here rather than being quoted at you:</p>
+<p>This is where the five-population table in <a href="#sec-categories">§2</a> comes from, and it is the concrete reason the chapter needs both forms of the mask. The TSV carries <code>M_SNP_AFR_1pt</code> and <code>M_SNP_EUR_1pt</code> — which is why <a href="#sec-ancestry">§3</a> can draw its AFR-versus-EUR contrast straight from it — but it does not carry the AMR, SAS or EAS equivalents, so three of that table’s five rows can only come from the full release. Because the unpacked bits are committed, the count runs here rather than being quoted at you:</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
@@ -6016,7 +6016,7 @@ Preprocessing
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The eight-code union from Route 1, restricted to the probes actually present</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The eight-code union from the TSV above, restricted to the probes actually present</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># after normalization.</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>drop_mask <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(grs), drop8)</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -6336,7 +6336,7 @@ Preprocessing
 <details open class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># `keep` is the set union of the three drop lists, taken out of the normalized</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># probe set: the mask from Route 1 (`drop_mask`), the detection-p failures</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># probe set: the eight-code mask (`drop_mask`), the detection-p failures</span></span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co"># not matter -- a probe flagged by two filters is dropped once.</span></span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>grs_filt <span class="ot">&lt;-</span> grs[keep, ]</span>
@@ -6375,7 +6375,7 @@ Preprocessing
 <div class="code-with-filename-file">
 <pre><strong>RStudio Console</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32" data-filename="RStudio Console"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># `drop8` is the eight-code union read in Route 1 above. It works unchanged on</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32" data-filename="RStudio Console"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># `drop8` is the eight-code union read from the TSV above. It works unchanged on</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co"># a matrix, because the mask is keyed on probe IDs and nothing else.</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>beta_filt <span class="ot">&lt;-</span> beta[<span class="sc">!</span><span class="fu">rownames</span>(beta) <span class="sc">%in%</span> drop8, ]</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -7056,505 +7056,512 @@ Zhou, Wanding, Timothy J Triche Jr, Peter W Laird, and Hui Shen. 2018. <span>“
 <span id="cb36-119"><a href="#cb36-119" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-120"><a href="#cb36-120" aria-hidden="true" tabindex="-1"></a><span class="fu">### Getting the mask</span></span>
 <span id="cb36-121"><a href="#cb36-121" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-122"><a href="#cb36-122" aria-hidden="true" tabindex="-1"></a>There are two routes to the same mask. Take the first one unless you have a reason</span>
-<span id="cb36-123"><a href="#cb36-123" aria-hidden="true" tabindex="-1"></a>not to.</span>
-<span id="cb36-124"><a href="#cb36-124" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-125"><a href="#cb36-125" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Route 1 — the ready-made TSV (recommended)</span></span>
-<span id="cb36-126"><a href="#cb36-126" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-127"><a href="#cb36-127" aria-hidden="true" tabindex="-1"></a>The eight mask codes this chapter uses are shipped with the tutorial data as a plain</span>
-<span id="cb36-128"><a href="#cb36-128" aria-hidden="true" tabindex="-1"></a>tab-delimited table, so you can filter probes with <span class="in">`fread()`</span> and nothing else. No new</span>
-<span id="cb36-129"><a href="#cb36-129" aria-hidden="true" tabindex="-1"></a>software to install:</span>
+<span id="cb36-122"><a href="#cb36-122" aria-hidden="true" tabindex="-1"></a>The mask comes in two forms, and **this chapter uses both** — they are not</span>
+<span id="cb36-123"><a href="#cb36-123" aria-hidden="true" tabindex="-1"></a>alternatives you pick between. The ready-made TSV carries the eight codes the</span>
+<span id="cb36-124"><a href="#cb36-124" aria-hidden="true" tabindex="-1"></a>filtering is built on, and that is all you need to reproduce the probe set. The full</span>
+<span id="cb36-125"><a href="#cb36-125" aria-hidden="true" tabindex="-1"></a>release carries all 24 codes, three of which the per-population table in</span>
+<span id="cb36-126"><a href="#cb36-126" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">§2</span><span class="co">](#sec-categories)</span> needs and the TSV does not have. Start with the TSV; read the</span>
+<span id="cb36-127"><a href="#cb36-127" aria-hidden="true" tabindex="-1"></a>second part when you want a term outside the eight.</span>
+<span id="cb36-128"><a href="#cb36-128" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-129"><a href="#cb36-129" aria-hidden="true" tabindex="-1"></a><span class="fu">#### The ready-made TSV — the eight codes the filtering uses {#the-tsv}</span></span>
 <span id="cb36-130"><a href="#cb36-130" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-131"><a href="#cb36-131" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb36-132"><a href="#cb36-132" aria-hidden="true" tabindex="-1"></a><span class="fu">## Where the mask table comes from</span></span>
-<span id="cb36-133"><a href="#cb36-133" aria-hidden="true" tabindex="-1"></a><span class="in">`data/EPIC.hg38.mask.v81.8code.tsv.gz`</span> is tracked in the repository, so a fresh clone</span>
-<span id="cb36-134"><a href="#cb36-134" aria-hidden="true" tabindex="-1"></a>already has it — 2.9 MB, no download needed. It is also inside the <span class="in">`D_filtered`</span> data</span>
-<span id="cb36-135"><a href="#cb36-135" aria-hidden="true" tabindex="-1"></a>tier, which is where it lived before; if you have already fetched that tier you have</span>
-<span id="cb36-136"><a href="#cb36-136" aria-hidden="true" tabindex="-1"></a>two copies of the same file and can ignore this note.</span>
-<span id="cb36-137"><a href="#cb36-137" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-138"><a href="#cb36-138" aria-hidden="true" tabindex="-1"></a>It is a derived table, not a Zhou lab release: <span class="co">[</span><span class="ot">Route 2</span><span class="co">](#route-2)</span> below shows the</span>
-<span id="cb36-139"><a href="#cb36-139" aria-hidden="true" tabindex="-1"></a><span class="in">`yame`</span> commands that produce it from the published <span class="in">`.cm`</span> mask, so you can rebuild it</span>
-<span id="cb36-140"><a href="#cb36-140" aria-hidden="true" tabindex="-1"></a>for another array or another mask version.</span>
-<span id="cb36-141"><a href="#cb36-141" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-142"><a href="#cb36-142" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-145"><a href="#cb36-145" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-146"><a href="#cb36-146" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mask-read</span></span>
-<span id="cb36-147"><a href="#cb36-147" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per probe on the array, one 0/1 column per mask code, plus the</span></span>
-<span id="cb36-148"><a href="#cb36-148" aria-hidden="true" tabindex="-1"></a><span class="co"># row-wise OR of the eight in `mask_v81_8code`.</span></span>
-<span id="cb36-149"><a href="#cb36-149" aria-hidden="true" tabindex="-1"></a>mask <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.v81.8code.tsv.gz&quot;</span>)</span>
-<span id="cb36-150"><a href="#cb36-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-151"><a href="#cb36-151" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(mask)                            <span class="co"># 866,553 probes x 10 columns</span></span>
-<span id="cb36-152"><a href="#cb36-152" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(mask<span class="sc">$</span>mask_v81_8code)             <span class="co"># 90,832 probes flagged by the union</span></span>
-<span id="cb36-153"><a href="#cb36-153" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-154"><a href="#cb36-154" aria-hidden="true" tabindex="-1"></a><span class="co"># the probes to drop</span></span>
-<span id="cb36-155"><a href="#cb36-155" aria-hidden="true" tabindex="-1"></a>drop8 <span class="ot">&lt;-</span> mask[mask_v81_8code <span class="sc">==</span> <span class="dv">1</span>L, Probe_ID]</span>
-<span id="cb36-156"><a href="#cb36-156" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-131"><a href="#cb36-131" aria-hidden="true" tabindex="-1"></a>The eight mask codes this chapter uses are shipped with the tutorial data as a plain</span>
+<span id="cb36-132"><a href="#cb36-132" aria-hidden="true" tabindex="-1"></a>tab-delimited table, so you can filter probes with <span class="in">`fread()`</span> and nothing else. No new</span>
+<span id="cb36-133"><a href="#cb36-133" aria-hidden="true" tabindex="-1"></a>software to install:</span>
+<span id="cb36-134"><a href="#cb36-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-135"><a href="#cb36-135" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb36-136"><a href="#cb36-136" aria-hidden="true" tabindex="-1"></a><span class="fu">## Where the mask table comes from</span></span>
+<span id="cb36-137"><a href="#cb36-137" aria-hidden="true" tabindex="-1"></a><span class="in">`data/EPIC.hg38.mask.v81.8code.tsv.gz`</span> is tracked in the repository, so a fresh clone</span>
+<span id="cb36-138"><a href="#cb36-138" aria-hidden="true" tabindex="-1"></a>already has it — 2.9 MB, no download needed. It is also inside the <span class="in">`D_filtered`</span> data</span>
+<span id="cb36-139"><a href="#cb36-139" aria-hidden="true" tabindex="-1"></a>tier, which is where it lived before; if you have already fetched that tier you have</span>
+<span id="cb36-140"><a href="#cb36-140" aria-hidden="true" tabindex="-1"></a>two copies of the same file and can ignore this note.</span>
+<span id="cb36-141"><a href="#cb36-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-142"><a href="#cb36-142" aria-hidden="true" tabindex="-1"></a>It is a derived table, not a Zhou lab release: <span class="co">[</span><span class="ot">the full release</span><span class="co">](#route-2)</span> below shows the</span>
+<span id="cb36-143"><a href="#cb36-143" aria-hidden="true" tabindex="-1"></a><span class="in">`yame`</span> commands that produce it from the published <span class="in">`.cm`</span> mask, so you can rebuild it</span>
+<span id="cb36-144"><a href="#cb36-144" aria-hidden="true" tabindex="-1"></a>for another array or another mask version.</span>
+<span id="cb36-145"><a href="#cb36-145" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-146"><a href="#cb36-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-149"><a href="#cb36-149" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-150"><a href="#cb36-150" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mask-read</span></span>
+<span id="cb36-151"><a href="#cb36-151" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per probe on the array, one 0/1 column per mask code, plus the</span></span>
+<span id="cb36-152"><a href="#cb36-152" aria-hidden="true" tabindex="-1"></a><span class="co"># row-wise OR of the eight in `mask_v81_8code`.</span></span>
+<span id="cb36-153"><a href="#cb36-153" aria-hidden="true" tabindex="-1"></a>mask <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.v81.8code.tsv.gz&quot;</span>)</span>
+<span id="cb36-154"><a href="#cb36-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-155"><a href="#cb36-155" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(mask)                            <span class="co"># 866,553 probes x 10 columns</span></span>
+<span id="cb36-156"><a href="#cb36-156" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(mask<span class="sc">$</span>mask_v81_8code)             <span class="co"># 90,832 probes flagged by the union</span></span>
 <span id="cb36-157"><a href="#cb36-157" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-158"><a href="#cb36-158" aria-hidden="true" tabindex="-1"></a>The table has one row per probe on the array and one 0/1 column per mask code, plus a</span>
-<span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a><span class="in">`mask_v81_8code`</span> column that is the row-wise OR of the eight — which is exactly the</span>
-<span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a>filter this chapter applies. Because the individual code columns are kept, you can</span>
-<span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a>also build a different combination: to mask on African-ancestry SNP flags only, OR</span>
-<span id="cb36-162"><a href="#cb36-162" aria-hidden="true" tabindex="-1"></a>the three <span class="in">`*_AFR_1pt`</span> columns and ignore the rest.</span>
-<span id="cb36-163"><a href="#cb36-163" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-164"><a href="#cb36-164" aria-hidden="true" tabindex="-1"></a>This file was generated from the official <span class="in">`.cm`</span> release with YAME (below) and verified</span>
-<span id="cb36-165"><a href="#cb36-165" aria-hidden="true" tabindex="-1"></a>to reproduce all eight per-code counts and the 90,832-probe union exactly. It is a</span>
-<span id="cb36-166"><a href="#cb36-166" aria-hidden="true" tabindex="-1"></a>convenience layer, not a separate source of truth.</span>
+<span id="cb36-158"><a href="#cb36-158" aria-hidden="true" tabindex="-1"></a><span class="co"># the probes to drop</span></span>
+<span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a>drop8 <span class="ot">&lt;-</span> mask[mask_v81_8code <span class="sc">==</span> <span class="dv">1</span>L, Probe_ID]</span>
+<span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-162"><a href="#cb36-162" aria-hidden="true" tabindex="-1"></a>The table has one row per probe on the array and one 0/1 column per mask code, plus a</span>
+<span id="cb36-163"><a href="#cb36-163" aria-hidden="true" tabindex="-1"></a><span class="in">`mask_v81_8code`</span> column that is the row-wise OR of the eight — which is exactly the</span>
+<span id="cb36-164"><a href="#cb36-164" aria-hidden="true" tabindex="-1"></a>filter this chapter applies. Because the individual code columns are kept, you can</span>
+<span id="cb36-165"><a href="#cb36-165" aria-hidden="true" tabindex="-1"></a>also build a different combination: to mask on African-ancestry SNP flags only, OR</span>
+<span id="cb36-166"><a href="#cb36-166" aria-hidden="true" tabindex="-1"></a>the three <span class="in">`*_AFR_1pt`</span> columns and ignore the rest.</span>
 <span id="cb36-167"><a href="#cb36-167" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-168"><a href="#cb36-168" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Route 2 — from the official release with YAME {#route-2}</span></span>
-<span id="cb36-169"><a href="#cb36-169" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-170"><a href="#cb36-170" aria-hidden="true" tabindex="-1"></a>Use this if you want a mask term the TSV does not carry (it ships 8 of the 24), a</span>
-<span id="cb36-171"><a href="#cb36-171" aria-hidden="true" tabindex="-1"></a>different array, or a newer mask version than the one pinned here.</span>
-<span id="cb36-172"><a href="#cb36-172" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-173"><a href="#cb36-173" aria-hidden="true" tabindex="-1"></a>The v8.1 mask ships as <span class="in">`EPIC.hg38.mask.cm`</span> — a bit-packed **CX-format** file rather</span>
-<span id="cb36-174"><a href="#cb36-174" aria-hidden="true" tabindex="-1"></a>than a table. It stores one bit per probe per mask term over the array&#39;s canonical</span>
-<span id="cb36-175"><a href="#cb36-175" aria-hidden="true" tabindex="-1"></a>probe ordering, which is why the whole thing is only ~360 kB where the equivalent</span>
-<span id="cb36-176"><a href="#cb36-176" aria-hidden="true" tabindex="-1"></a>TSV is 2.8 MB. Because the file carries no probe names (row *i* means whatever row</span>
-<span id="cb36-177"><a href="#cb36-177" aria-hidden="true" tabindex="-1"></a>*i* of the ordering means), you fetch the ordering alongside it.</span>
-<span id="cb36-178"><a href="#cb36-178" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-179"><a href="#cb36-179" aria-hidden="true" tabindex="-1"></a>Read it with <span class="co">[</span><span class="ot">YAME</span><span class="co">](https://github.com/zhou-lab/YAME)</span>, the Zhou lab&#39;s encoder for</span>
-<span id="cb36-180"><a href="#cb36-180" aria-hidden="true" tabindex="-1"></a>these formats:</span>
-<span id="cb36-181"><a href="#cb36-181" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-182"><a href="#cb36-182" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb36-183"><a href="#cb36-183" aria-hidden="true" tabindex="-1"></a><span class="co"># install: conda install -c zhou-lab -c conda-forge yame</span></span>
-<span id="cb36-184"><a href="#cb36-184" aria-hidden="true" tabindex="-1"></a><span class="co"># (bioconda&#39;s linux build is pinned at 1.8, which predates `yame fetch` --</span></span>
-<span id="cb36-185"><a href="#cb36-185" aria-hidden="true" tabindex="-1"></a><span class="co">#  use the zhou-lab channel or build from source)</span></span>
-<span id="cb36-186"><a href="#cb36-186" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-187"><a href="#cb36-187" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> fetch EPIC/EPIC.hg38.mask.cm EPIC/EPIC.ordering.tsv.gz</span>
-<span id="cb36-188"><a href="#cb36-188" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-189"><a href="#cb36-189" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> info    EPIC.hg38.mask.cm   <span class="co"># 24 mask terms over 866,553 probes</span></span>
-<span id="cb36-190"><a href="#cb36-190" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> summary EPIC.hg38.mask.cm   <span class="co"># how many probes each term flags</span></span>
-<span id="cb36-191"><a href="#cb36-191" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> unpack <span class="at">-a</span> EPIC.hg38.mask.cm <span class="op">&gt;</span> mask_bits.tsv   <span class="co"># all 24 terms, one column each</span></span>
-<span id="cb36-192"><a href="#cb36-192" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-193"><a href="#cb36-193" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-194"><a href="#cb36-194" aria-hidden="true" tabindex="-1"></a><span class="in">`yame summary`</span> is the quickest way to see what a term includes you before you commit</span>
-<span id="cb36-195"><a href="#cb36-195" aria-hidden="true" tabindex="-1"></a>to it. Turning the bits into a probe list is then a row-wise OR across the columns</span>
-<span id="cb36-196"><a href="#cb36-196" aria-hidden="true" tabindex="-1"></a>you chose, indexed against the ordering:</span>
+<span id="cb36-168"><a href="#cb36-168" aria-hidden="true" tabindex="-1"></a>This file was generated from the official <span class="in">`.cm`</span> release with YAME (below) and verified</span>
+<span id="cb36-169"><a href="#cb36-169" aria-hidden="true" tabindex="-1"></a>to reproduce all eight per-code counts and the 90,832-probe union exactly. It is a</span>
+<span id="cb36-170"><a href="#cb36-170" aria-hidden="true" tabindex="-1"></a>convenience layer, not a separate source of truth.</span>
+<span id="cb36-171"><a href="#cb36-171" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-172"><a href="#cb36-172" aria-hidden="true" tabindex="-1"></a><span class="fu">#### The full release with YAME — all 24 codes {#route-2}</span></span>
+<span id="cb36-173"><a href="#cb36-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-174"><a href="#cb36-174" aria-hidden="true" tabindex="-1"></a>Use this if you want a mask term the TSV does not carry (it ships 8 of the 24), a</span>
+<span id="cb36-175"><a href="#cb36-175" aria-hidden="true" tabindex="-1"></a>different array, or a newer mask version than the one pinned here.</span>
+<span id="cb36-176"><a href="#cb36-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-177"><a href="#cb36-177" aria-hidden="true" tabindex="-1"></a>The v8.1 mask ships as <span class="in">`EPIC.hg38.mask.cm`</span> — a bit-packed **CX-format** file rather</span>
+<span id="cb36-178"><a href="#cb36-178" aria-hidden="true" tabindex="-1"></a>than a table. It stores one bit per probe per mask term over the array&#39;s canonical</span>
+<span id="cb36-179"><a href="#cb36-179" aria-hidden="true" tabindex="-1"></a>probe ordering, which is why the whole thing is only ~360 kB where the equivalent</span>
+<span id="cb36-180"><a href="#cb36-180" aria-hidden="true" tabindex="-1"></a>TSV is 2.8 MB. Because the file carries no probe names (row *i* means whatever row</span>
+<span id="cb36-181"><a href="#cb36-181" aria-hidden="true" tabindex="-1"></a>*i* of the ordering means), you fetch the ordering alongside it.</span>
+<span id="cb36-182"><a href="#cb36-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-183"><a href="#cb36-183" aria-hidden="true" tabindex="-1"></a>Read it with <span class="co">[</span><span class="ot">YAME</span><span class="co">](https://github.com/zhou-lab/YAME)</span>, the Zhou lab&#39;s encoder for</span>
+<span id="cb36-184"><a href="#cb36-184" aria-hidden="true" tabindex="-1"></a>these formats:</span>
+<span id="cb36-185"><a href="#cb36-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-186"><a href="#cb36-186" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb36-187"><a href="#cb36-187" aria-hidden="true" tabindex="-1"></a><span class="co"># install: conda install -c zhou-lab -c conda-forge yame</span></span>
+<span id="cb36-188"><a href="#cb36-188" aria-hidden="true" tabindex="-1"></a><span class="co"># (bioconda&#39;s linux build is pinned at 1.8, which predates `yame fetch` --</span></span>
+<span id="cb36-189"><a href="#cb36-189" aria-hidden="true" tabindex="-1"></a><span class="co">#  use the zhou-lab channel or build from source)</span></span>
+<span id="cb36-190"><a href="#cb36-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-191"><a href="#cb36-191" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> fetch EPIC/EPIC.hg38.mask.cm EPIC/EPIC.ordering.tsv.gz</span>
+<span id="cb36-192"><a href="#cb36-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-193"><a href="#cb36-193" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> info    EPIC.hg38.mask.cm   <span class="co"># 24 mask terms over 866,553 probes</span></span>
+<span id="cb36-194"><a href="#cb36-194" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> summary EPIC.hg38.mask.cm   <span class="co"># how many probes each term flags</span></span>
+<span id="cb36-195"><a href="#cb36-195" aria-hidden="true" tabindex="-1"></a><span class="ex">yame</span> unpack <span class="at">-a</span> EPIC.hg38.mask.cm <span class="op">&gt;</span> mask_bits.tsv   <span class="co"># all 24 terms, one column each</span></span>
+<span id="cb36-196"><a href="#cb36-196" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-197"><a href="#cb36-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a>You do not have to run any of that to follow along: the three files those commands</span>
-<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a>produce or fetch are committed under <span class="in">`data/`</span>, which is what the code below reads.</span>
-<span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb36-203"><a href="#cb36-203" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack` writes the term names to a sidecar .idx, one per line, in the</span></span>
-<span id="cb36-204"><a href="#cb36-204" aria-hidden="true" tabindex="-1"></a><span class="co"># same order as the columns of mask_bits.tsv -- so read the column, not the header.</span></span>
-<span id="cb36-205"><a href="#cb36-205" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
-<span id="cb36-206"><a href="#cb36-206" aria-hidden="true" tabindex="-1"></a>probes <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.ordering.tsv.gz&quot;</span>)<span class="sc">$</span>Probe_ID     <span class="co"># canonical probe ordering</span></span>
-<span id="cb36-207"><a href="#cb36-207" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
-<span id="cb36-208"><a href="#cb36-208" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-209"><a href="#cb36-209" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose the terms to mask on. These eight are the ones this chapter uses, and</span></span>
-<span id="cb36-210"><a href="#cb36-210" aria-hidden="true" tabindex="-1"></a><span class="co"># the same eight the ready-made TSV carries.</span></span>
-<span id="cb36-211"><a href="#cb36-211" aria-hidden="true" tabindex="-1"></a>mask_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
-<span id="cb36-212"><a href="#cb36-212" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_AFR_1pt&quot;</span>,</span>
-<span id="cb36-213"><a href="#cb36-213" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
-<span id="cb36-214"><a href="#cb36-214" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-215"><a href="#cb36-215" aria-hidden="true" tabindex="-1"></a>drop <span class="ot">&lt;-</span> probes[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) bits[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span>
-<span id="cb36-216"><a href="#cb36-216" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-217"><a href="#cb36-217" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-218"><a href="#cb36-218" aria-hidden="true" tabindex="-1"></a>The per-population SNP counts tabulated in §2 need terms the ready-made TSV does not</span>
-<span id="cb36-219"><a href="#cb36-219" aria-hidden="true" tabindex="-1"></a>carry, so they come from this route — and because the unpacked bits are committed, the</span>
-<span id="cb36-220"><a href="#cb36-220" aria-hidden="true" tabindex="-1"></a>count runs here rather than being quoted at you:</span>
+<span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a><span class="in">`yame summary`</span> is the quickest way to see what a term includes you before you commit</span>
+<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a>to it. Turning the bits into a probe list is then a row-wise OR across the columns</span>
+<span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a>you chose, indexed against the ordering:</span>
+<span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a>You do not have to run any of that to follow along: the three files those commands</span>
+<span id="cb36-203"><a href="#cb36-203" aria-hidden="true" tabindex="-1"></a>produce or fetch are committed under <span class="in">`data/`</span>, which is what the code below reads.</span>
+<span id="cb36-204"><a href="#cb36-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-205"><a href="#cb36-205" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb36-206"><a href="#cb36-206" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
+<span id="cb36-207"><a href="#cb36-207" aria-hidden="true" tabindex="-1"></a><span class="co"># `yame unpack` writes the term names to a sidecar .idx, one per line, in the</span></span>
+<span id="cb36-208"><a href="#cb36-208" aria-hidden="true" tabindex="-1"></a><span class="co"># same order as the columns of mask_bits.tsv -- so read the column, not the header.</span></span>
+<span id="cb36-209"><a href="#cb36-209" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
+<span id="cb36-210"><a href="#cb36-210" aria-hidden="true" tabindex="-1"></a>probes <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.ordering.tsv.gz&quot;</span>)<span class="sc">$</span>Probe_ID     <span class="co"># canonical probe ordering</span></span>
+<span id="cb36-211"><a href="#cb36-211" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
+<span id="cb36-212"><a href="#cb36-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-213"><a href="#cb36-213" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose the terms to mask on. These eight are the ones this chapter uses, and</span></span>
+<span id="cb36-214"><a href="#cb36-214" aria-hidden="true" tabindex="-1"></a><span class="co"># the same eight the ready-made TSV carries.</span></span>
+<span id="cb36-215"><a href="#cb36-215" aria-hidden="true" tabindex="-1"></a>mask_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
+<span id="cb36-216"><a href="#cb36-216" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_AFR_1pt&quot;</span>,</span>
+<span id="cb36-217"><a href="#cb36-217" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
+<span id="cb36-218"><a href="#cb36-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-219"><a href="#cb36-219" aria-hidden="true" tabindex="-1"></a>drop <span class="ot">&lt;-</span> probes[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) bits[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span>
+<span id="cb36-220"><a href="#cb36-220" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-221"><a href="#cb36-221" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-224"><a href="#cb36-224" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-225"><a href="#cb36-225" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: snp-by-pop</span></span>
-<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a><span class="co"># Both inputs are the committed output of the `yame unpack -a` call above, so this</span></span>
-<span id="cb36-227"><a href="#cb36-227" aria-hidden="true" tabindex="-1"></a><span class="co"># runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips</span></span>
-<span id="cb36-228"><a href="#cb36-228" aria-hidden="true" tabindex="-1"></a><span class="co"># from 40 MB down to 0.5 MB -- small enough to keep in the repository.</span></span>
-<span id="cb36-229"><a href="#cb36-229" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
-<span id="cb36-230"><a href="#cb36-230" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
-<span id="cb36-231"><a href="#cb36-231" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-232"><a href="#cb36-232" aria-hidden="true" tabindex="-1"></a><span class="co"># M_SNP_&lt;POP&gt;_1pt flags a common SNP (MAF &gt;= 1%) at the interrogated CpG in that</span></span>
-<span id="cb36-233"><a href="#cb36-233" aria-hidden="true" tabindex="-1"></a><span class="co"># 1000 Genomes super-population. Counted over the whole array, not over this</span></span>
-<span id="cb36-234"><a href="#cb36-234" aria-hidden="true" tabindex="-1"></a><span class="co"># study&#39;s probes, because it is a property of the platform.</span></span>
-<span id="cb36-235"><a href="#cb36-235" aria-hidden="true" tabindex="-1"></a>pops <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;AFR&quot;</span>, <span class="st">&quot;AMR&quot;</span>, <span class="st">&quot;SAS&quot;</span>, <span class="st">&quot;EUR&quot;</span>, <span class="st">&quot;EAS&quot;</span>)</span>
-<span id="cb36-236"><a href="#cb36-236" aria-hidden="true" tabindex="-1"></a>snp_by_pop <span class="ot">&lt;-</span> <span class="fu">vapply</span>(pops,</span>
-<span id="cb36-237"><a href="#cb36-237" aria-hidden="true" tabindex="-1"></a>                     <span class="cf">function</span>(p) <span class="fu">sum</span>(bits[[<span class="fu">paste0</span>(<span class="st">&quot;M_SNP_&quot;</span>, p, <span class="st">&quot;_1pt&quot;</span>)]] <span class="sc">==</span> <span class="dv">1</span>L),</span>
-<span id="cb36-238"><a href="#cb36-238" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">integer</span>(<span class="dv">1</span>))</span>
-<span id="cb36-239"><a href="#cb36-239" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-240"><a href="#cb36-240" aria-hidden="true" tabindex="-1"></a><span class="co"># Five rows of two columns, committed to the repository so the §2 table is</span></span>
-<span id="cb36-241"><a href="#cb36-241" aria-hidden="true" tabindex="-1"></a><span class="co"># readable straight from git without unpacking the mask first.</span></span>
-<span id="cb36-242"><a href="#cb36-242" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(<span class="fu">data.frame</span>(<span class="at">population =</span> pops, <span class="at">n_probes =</span> snp_by_pop),</span>
-<span id="cb36-243"><a href="#cb36-243" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb36-244"><a href="#cb36-244" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-245"><a href="#cb36-245" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-246"><a href="#cb36-246" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb36-247"><a href="#cb36-247" aria-hidden="true" tabindex="-1"></a><span class="fu">## The archived manifest is still there when you need it</span></span>
-<span id="cb36-248"><a href="#cb36-248" aria-hidden="true" tabindex="-1"></a><span class="in">`EPIC.hg38.manifest.pop.tsv.gz`</span> remains available and is the right choice when you</span>
-<span id="cb36-249"><a href="#cb36-249" aria-hidden="true" tabindex="-1"></a>need **sub-population** resolution: it carries <span class="in">`MASK_general_&lt;POP&gt;`</span> and</span>
-<span id="cb36-250"><a href="#cb36-250" aria-hidden="true" tabindex="-1"></a><span class="in">`MASK_snp5_&lt;POP&gt;`</span> columns for the 5 super-populations *and* 26 sub-populations</span>
-<span id="cb36-251"><a href="#cb36-251" aria-hidden="true" tabindex="-1"></a>(GWD, YRI, ASW, CEU, FIN, …), where v8.1&#39;s <span class="in">`.cm`</span> stops at the 5 super-populations.</span>
-<span id="cb36-252"><a href="#cb36-252" aria-hidden="true" tabindex="-1"></a>Note also that the two generations do not mask the same categories — see the</span>
-<span id="cb36-253"><a href="#cb36-253" aria-hidden="true" tabindex="-1"></a>comparison at the end of this section.</span>
-<span id="cb36-254"><a href="#cb36-254" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-255"><a href="#cb36-255" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-256"><a href="#cb36-256" aria-hidden="true" tabindex="-1"></a>The funnel below needs all three probe lists, so the two study-specific filters are</span>
-<span id="cb36-257"><a href="#cb36-257" aria-hidden="true" tabindex="-1"></a>computed here and explained in <span class="co">[</span><span class="ot">§4</span><span class="co">](#sec-detp-sex)</span>.</span>
-<span id="cb36-258"><a href="#cb36-258" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-259"><a href="#cb36-259" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb36-260"><a href="#cb36-260" aria-hidden="true" tabindex="-1"></a><span class="fu">## What this chapter needs</span></span>
-<span id="cb36-261"><a href="#cb36-261" aria-hidden="true" tabindex="-1"></a>This chapter starts from <span class="in">`data/01_RGset.rds`</span>, written by <span class="co">[</span><span class="ot">chapter 00</span><span class="co">](00_setup.qmd)</span>. If you</span>
-<span id="cb36-262"><a href="#cb36-262" aria-hidden="true" tabindex="-1"></a>did not run that chapter, fetch the published checkpoint instead:</span>
-<span id="cb36-263"><a href="#cb36-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-264"><a href="#cb36-264" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
-<span id="cb36-265"><a href="#cb36-265" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> B_qc</span>
-<span id="cb36-266"><a href="#cb36-266" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-267"><a href="#cb36-267" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-268"><a href="#cb36-268" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-271"><a href="#cb36-271" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-272"><a href="#cb36-272" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: probe-detp</span></span>
-<span id="cb36-273"><a href="#cb36-273" aria-hidden="true" tabindex="-1"></a><span class="co"># The detection-p filter is per PROBE, so it needs the full probe x sample</span></span>
-<span id="cb36-274"><a href="#cb36-274" aria-hidden="true" tabindex="-1"></a><span class="co"># p-value matrix. The QC chapter kept only per-sample summaries, so the matrix is</span></span>
-<span id="cb36-275"><a href="#cb36-275" aria-hidden="true" tabindex="-1"></a><span class="co"># recomputed from the raw two-channel object here: about 40 seconds and ~4 GB for</span></span>
-<span id="cb36-276"><a href="#cb36-276" aria-hidden="true" tabindex="-1"></a><span class="co"># 96 arrays, which is the most expensive step in this chapter.</span></span>
-<span id="cb36-277"><a href="#cb36-277" aria-hidden="true" tabindex="-1"></a>rg   <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/01_RGset.rds&quot;</span>)</span>
-<span id="cb36-278"><a href="#cb36-278" aria-hidden="true" tabindex="-1"></a>detP <span class="ot">&lt;-</span> <span class="fu">detectionP</span>(rg)</span>
-<span id="cb36-279"><a href="#cb36-279" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-280"><a href="#cb36-280" aria-hidden="true" tabindex="-1"></a><span class="co"># Fraction of samples in which each probe failed the p &gt; 0.01 cut, over the</span></span>
-<span id="cb36-281"><a href="#cb36-281" aria-hidden="true" tabindex="-1"></a><span class="co"># probes that survived normalization -- those are the only ones the funnel can</span></span>
-<span id="cb36-282"><a href="#cb36-282" aria-hidden="true" tabindex="-1"></a><span class="co"># drop. A probe unreliable in more than 10% of samples goes.</span></span>
-<span id="cb36-283"><a href="#cb36-283" aria-hidden="true" tabindex="-1"></a>frac_fail <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(detP[<span class="fu">rownames</span>(grs), ] <span class="sc">&gt;</span> <span class="fl">0.01</span>)</span>
-<span id="cb36-284"><a href="#cb36-284" aria-hidden="true" tabindex="-1"></a>drop_detp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(grs)[frac_fail <span class="sc">&gt;</span> <span class="fl">0.10</span>]</span>
-<span id="cb36-285"><a href="#cb36-285" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-286"><a href="#cb36-286" aria-hidden="true" tabindex="-1"></a><span class="co"># Nothing below needs the raw object or the p-value matrix, and together they are</span></span>
-<span id="cb36-287"><a href="#cb36-287" aria-hidden="true" tabindex="-1"></a><span class="co"># the memory high-water mark of the chapter, so release them now.</span></span>
-<span id="cb36-288"><a href="#cb36-288" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(rg, detP); <span class="fu">invisible</span>(<span class="fu">gc</span>())</span>
-<span id="cb36-289"><a href="#cb36-289" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(drop_detp)</span>
-<span id="cb36-290"><a href="#cb36-290" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-291"><a href="#cb36-291" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-294"><a href="#cb36-294" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-295"><a href="#cb36-295" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: probe-filters</span></span>
-<span id="cb36-296"><a href="#cb36-296" aria-hidden="true" tabindex="-1"></a><span class="co"># The eight-code union from Route 1, restricted to the probes actually present</span></span>
-<span id="cb36-297"><a href="#cb36-297" aria-hidden="true" tabindex="-1"></a><span class="co"># after normalization.</span></span>
-<span id="cb36-298"><a href="#cb36-298" aria-hidden="true" tabindex="-1"></a>drop_mask <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(grs), drop8)</span>
-<span id="cb36-299"><a href="#cb36-299" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-300"><a href="#cb36-300" aria-hidden="true" tabindex="-1"></a><span class="co"># Sex-chromosome probes, from the manifest coordinates minfi attached to the</span></span>
-<span id="cb36-301"><a href="#cb36-301" aria-hidden="true" tabindex="-1"></a><span class="co"># object -- removed for an autosomal EWAS, see §4.</span></span>
-<span id="cb36-302"><a href="#cb36-302" aria-hidden="true" tabindex="-1"></a>drop_sex <span class="ot">&lt;-</span> <span class="fu">rownames</span>(grs)[<span class="fu">getAnnotation</span>(grs)<span class="sc">$</span>chr <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;chrX&quot;</span>, <span class="st">&quot;chrY&quot;</span>)]</span>
-<span id="cb36-303"><a href="#cb36-303" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-304"><a href="#cb36-304" aria-hidden="true" tabindex="-1"></a><span class="co"># A probe is dropped if ANY of the three lists flags it, so the three counts</span></span>
-<span id="cb36-305"><a href="#cb36-305" aria-hidden="true" tabindex="-1"></a><span class="co"># below overlap and do not sum to the total dropped.</span></span>
-<span id="cb36-306"><a href="#cb36-306" aria-hidden="true" tabindex="-1"></a>keep <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">rownames</span>(grs), <span class="fu">Reduce</span>(union, <span class="fu">list</span>(drop_mask, drop_detp, drop_sex)))</span>
-<span id="cb36-307"><a href="#cb36-307" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-308"><a href="#cb36-308" aria-hidden="true" tabindex="-1"></a><span class="co"># The same filter with the EUR-only mask instead of the AFR + EUR union, for the</span></span>
-<span id="cb36-309"><a href="#cb36-309" aria-hidden="true" tabindex="-1"></a><span class="co"># ancestry contrast in §3. Detection-p and sex filters are held fixed.</span></span>
-<span id="cb36-310"><a href="#cb36-310" aria-hidden="true" tabindex="-1"></a>eur_cols  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
-<span id="cb36-311"><a href="#cb36-311" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
-<span id="cb36-312"><a href="#cb36-312" aria-hidden="true" tabindex="-1"></a>drop_eur8 <span class="ot">&lt;-</span> mask<span class="sc">$</span>Probe_ID[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(eur_cols, <span class="cf">function</span>(m) mask[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span>
-<span id="cb36-313"><a href="#cb36-313" aria-hidden="true" tabindex="-1"></a>keep_eur  <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">rownames</span>(grs),</span>
-<span id="cb36-314"><a href="#cb36-314" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">Reduce</span>(union, <span class="fu">list</span>(<span class="fu">intersect</span>(<span class="fu">rownames</span>(grs), drop_eur8),</span>
-<span id="cb36-315"><a href="#cb36-315" aria-hidden="true" tabindex="-1"></a>                                        drop_detp, drop_sex)))</span>
-<span id="cb36-316"><a href="#cb36-316" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-317"><a href="#cb36-317" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-code probe sets, kept so §2 can ask how two codes overlap rather than just</span></span>
-<span id="cb36-318"><a href="#cb36-318" aria-hidden="true" tabindex="-1"></a><span class="co"># how many probes each one flags.</span></span>
-<span id="cb36-319"><a href="#cb36-319" aria-hidden="true" tabindex="-1"></a>mask_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
-<span id="cb36-320"><a href="#cb36-320" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_AFR_1pt&quot;</span>,</span>
-<span id="cb36-321"><a href="#cb36-321" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
-<span id="cb36-322"><a href="#cb36-322" aria-hidden="true" tabindex="-1"></a>per_code_sets <span class="ot">&lt;-</span> <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) mask<span class="sc">$</span>Probe_ID[mask[[m]] <span class="sc">==</span> <span class="dv">1</span>L])</span>
-<span id="cb36-323"><a href="#cb36-323" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(per_code_sets) <span class="ot">&lt;-</span> mask_cols</span>
-<span id="cb36-324"><a href="#cb36-324" aria-hidden="true" tabindex="-1"></a>mp <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">per_code_sets =</span> per_code_sets)</span>
-<span id="cb36-325"><a href="#cb36-325" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-326"><a href="#cb36-326" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-population SNP counts, written by the `snp-by-pop` chunk above and read</span></span>
-<span id="cb36-327"><a href="#cb36-327" aria-hidden="true" tabindex="-1"></a><span class="co"># back here so the funnel and the §2 table quote one source.</span></span>
-<span id="cb36-328"><a href="#cb36-328" aria-hidden="true" tabindex="-1"></a>sp <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>)</span>
-<span id="cb36-329"><a href="#cb36-329" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-330"><a href="#cb36-330" aria-hidden="true" tabindex="-1"></a><span class="co"># Every count the funnel, the tables and the prose below quote, in one place.</span></span>
-<span id="cb36-331"><a href="#cb36-331" aria-hidden="true" tabindex="-1"></a>funl <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb36-332"><a href="#cb36-332" aria-hidden="true" tabindex="-1"></a>  <span class="at">n0               =</span> <span class="fu">nrow</span>(grs),                        <span class="co"># probes entering the funnel</span></span>
-<span id="cb36-333"><a href="#cb36-333" aria-hidden="true" tabindex="-1"></a>  <span class="at">drop_mask        =</span> <span class="fu">length</span>(drop_mask),</span>
-<span id="cb36-334"><a href="#cb36-334" aria-hidden="true" tabindex="-1"></a>  <span class="at">drop_detp        =</span> <span class="fu">length</span>(drop_detp),</span>
-<span id="cb36-335"><a href="#cb36-335" aria-hidden="true" tabindex="-1"></a>  <span class="at">drop_sex         =</span> <span class="fu">length</span>(drop_sex),</span>
-<span id="cb36-336"><a href="#cb36-336" aria-hidden="true" tabindex="-1"></a>  <span class="at">retained         =</span> <span class="fu">length</span>(keep),                     <span class="co"># EWAS-ready probes</span></span>
-<span id="cb36-337"><a href="#cb36-337" aria-hidden="true" tabindex="-1"></a>  <span class="at">retained_eur     =</span> <span class="fu">length</span>(keep_eur),                 <span class="co"># under a EUR-only mask</span></span>
-<span id="cb36-338"><a href="#cb36-338" aria-hidden="true" tabindex="-1"></a>  <span class="at">afr_not_eur_kept =</span> <span class="fu">length</span>(<span class="fu">setdiff</span>(keep_eur, keep)),  <span class="co"># what EUR-only would leave in</span></span>
-<span id="cb36-339"><a href="#cb36-339" aria-hidden="true" tabindex="-1"></a>  <span class="at">union8           =</span> <span class="fu">sum</span>(mask<span class="sc">$</span>mask_v81_8code),         <span class="co"># array-wide, before any study filter</span></span>
-<span id="cb36-340"><a href="#cb36-340" aria-hidden="true" tabindex="-1"></a>  <span class="at">snp_by_pop       =</span> <span class="fu">setNames</span>(sp<span class="sc">$</span>n_probes, sp<span class="sc">$</span>population)</span>
-<span id="cb36-341"><a href="#cb36-341" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-342"><a href="#cb36-342" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-343"><a href="#cb36-343" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-344"><a href="#cb36-344" aria-hidden="true" tabindex="-1"></a>Broken down, the probe removal includes: </span>
-<span id="cb36-345"><a href="#cb36-345" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-348"><a href="#cb36-348" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-349"><a href="#cb36-349" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: funnel-table</span></span>
-<span id="cb36-350"><a href="#cb36-350" aria-hidden="true" tabindex="-1"></a>funnel <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb36-351"><a href="#cb36-351" aria-hidden="true" tabindex="-1"></a>  <span class="at">step =</span> <span class="fu">c</span>(<span class="st">&quot;Start (normalized probes)&quot;</span>,</span>
-<span id="cb36-352"><a href="#cb36-352" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;− Zhou v8.1 mask (8 codes, AFR + EUR)&quot;</span>,</span>
-<span id="cb36-353"><a href="#cb36-353" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;− Detection-p failures (&gt;10% of samples)&quot;</span>,</span>
-<span id="cb36-354"><a href="#cb36-354" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;− Sex chromosomes (autosomal EWAS)&quot;</span>,</span>
-<span id="cb36-355"><a href="#cb36-355" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;= Retained (EWAS-ready)&quot;</span>),</span>
-<span id="cb36-356"><a href="#cb36-356" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_dropped =</span> <span class="fu">c</span>(<span class="cn">NA</span>, funl<span class="sc">$</span>drop_mask, funl<span class="sc">$</span>drop_detp, funl<span class="sc">$</span>drop_sex, <span class="cn">NA</span>),</span>
-<span id="cb36-357"><a href="#cb36-357" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_remaining =</span> <span class="fu">c</span>(funl<span class="sc">$</span>n0, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, funl<span class="sc">$</span>retained)</span>
-<span id="cb36-358"><a href="#cb36-358" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-359"><a href="#cb36-359" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(funnel, <span class="at">caption =</span> <span class="st">&quot;Probe-filtering funnel on the 96-sample subset (AFR + EUR aware).&quot;</span>)</span>
-<span id="cb36-360"><a href="#cb36-360" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Retained %d of %d probes (%.1f%%).</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
-<span id="cb36-361"><a href="#cb36-361" aria-hidden="true" tabindex="-1"></a>            funl<span class="sc">$</span>retained, funl<span class="sc">$</span>n0, <span class="dv">100</span> <span class="sc">*</span> funl<span class="sc">$</span>retained <span class="sc">/</span> funl<span class="sc">$</span>n0))</span>
-<span id="cb36-362"><a href="#cb36-362" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-363"><a href="#cb36-363" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-364"><a href="#cb36-364" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. The categories, quantified on EPIC {#sec-categories}</span></span>
-<span id="cb36-365"><a href="#cb36-365" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-366"><a href="#cb36-366" aria-hidden="true" tabindex="-1"></a>The SNP mask is **not the same for every study population**, because a &quot;common</span>
-<span id="cb36-367"><a href="#cb36-367" aria-hidden="true" tabindex="-1"></a>SNP&quot; depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:</span>
-<span id="cb36-368"><a href="#cb36-368" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-371"><a href="#cb36-371" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-372"><a href="#cb36-372" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: pop-snp-table</span></span>
-<span id="cb36-373"><a href="#cb36-373" aria-hidden="true" tabindex="-1"></a>snp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb36-374"><a href="#cb36-374" aria-hidden="true" tabindex="-1"></a>  <span class="at">population  =</span> <span class="fu">c</span>(<span class="st">&quot;AFR (African)&quot;</span>, <span class="st">&quot;AMR (Admixed American)&quot;</span>, <span class="st">&quot;SAS (South Asian)&quot;</span>,</span>
-<span id="cb36-375"><a href="#cb36-375" aria-hidden="true" tabindex="-1"></a>                  <span class="st">&quot;EUR (European)&quot;</span>, <span class="st">&quot;EAS (East Asian)&quot;</span>),</span>
-<span id="cb36-376"><a href="#cb36-376" aria-hidden="true" tabindex="-1"></a>  <span class="at">snp_masked  =</span> funl<span class="sc">$</span>snp_by_pop[<span class="fu">c</span>(<span class="st">&quot;AFR&quot;</span>, <span class="st">&quot;AMR&quot;</span>, <span class="st">&quot;SAS&quot;</span>, <span class="st">&quot;EUR&quot;</span>, <span class="st">&quot;EAS&quot;</span>)]</span>
-<span id="cb36-377"><a href="#cb36-377" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-378"><a href="#cb36-378" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(snp, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb36-379"><a href="#cb36-379" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Probes flagged by M_SNP_&lt;POP&gt;_1pt (common SNP at the interrogated CpG, MAF &gt;= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.&quot;</span>)</span>
-<span id="cb36-380"><a href="#cb36-380" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-381"><a href="#cb36-381" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-382"><a href="#cb36-382" aria-hidden="true" tabindex="-1"></a>African-ancestry populations carry the most common genetic variation, so more</span>
-<span id="cb36-383"><a href="#cb36-383" aria-hidden="true" tabindex="-1"></a>probes overlap a common SNP. Concretely, in these masks</span>
-<span id="cb36-384"><a href="#cb36-384" aria-hidden="true" tabindex="-1"></a>**`r format(funl$snp_by_pop[[&quot;AFR&quot;]], big.mark = &quot;,&quot;)`** probes are SNP-flagged for</span>
-<span id="cb36-385"><a href="#cb36-385" aria-hidden="true" tabindex="-1"></a>AFR versus **`r format(funl$snp_by_pop[[&quot;EUR&quot;]], big.mark = &quot;,&quot;)`** for EUR:</span>
-<span id="cb36-386"><a href="#cb36-386" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-389"><a href="#cb36-389" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-390"><a href="#cb36-390" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: afr-eur-overlap</span></span>
-<span id="cb36-391"><a href="#cb36-391" aria-hidden="true" tabindex="-1"></a><span class="co"># Both sets come from the per-code columns of the shipped mask table, so the</span></span>
-<span id="cb36-392"><a href="#cb36-392" aria-hidden="true" tabindex="-1"></a><span class="co"># comparison is between two mask terms over the same probe universe.</span></span>
-<span id="cb36-393"><a href="#cb36-393" aria-hidden="true" tabindex="-1"></a>afr <span class="ot">&lt;-</span> mp<span class="sc">$</span>per_code_sets<span class="sc">$</span>M_SNP_AFR_1pt</span>
-<span id="cb36-394"><a href="#cb36-394" aria-hidden="true" tabindex="-1"></a>eur <span class="ot">&lt;-</span> mp<span class="sc">$</span>per_code_sets<span class="sc">$</span>M_SNP_EUR_1pt</span>
-<span id="cb36-395"><a href="#cb36-395" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;masked in AFR but NOT EUR:&quot;</span>, <span class="fu">length</span>(<span class="fu">setdiff</span>(afr, eur)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb36-396"><a href="#cb36-396" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;masked in EUR but NOT AFR:&quot;</span>, <span class="fu">length</span>(<span class="fu">setdiff</span>(eur, afr)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb36-397"><a href="#cb36-397" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;masked in both:           &quot;</span>, <span class="fu">length</span>(<span class="fu">intersect</span>(afr, eur)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb36-398"><a href="#cb36-398" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-399"><a href="#cb36-399" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-400"><a href="#cb36-400" aria-hidden="true" tabindex="-1"></a>While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each</span>
-<span id="cb36-401"><a href="#cb36-401" aria-hidden="true" tabindex="-1"></a>population.</span>
-<span id="cb36-402"><a href="#cb36-402" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-403"><a href="#cb36-403" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Ancestry matters {#sec-ancestry}</span></span>
-<span id="cb36-404"><a href="#cb36-404" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-405"><a href="#cb36-405" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project subset is **~95% African American**. If we filtered with </span>
-<span id="cb36-406"><a href="#cb36-406" aria-hidden="true" tabindex="-1"></a>a general or only European-population mask (a common default), we would leave in </span>
-<span id="cb36-407"><a href="#cb36-407" aria-hidden="true" tabindex="-1"></a>probes that are SNP-affected in African-ancestry individuals. As African American </span>
-<span id="cb36-408"><a href="#cb36-408" aria-hidden="true" tabindex="-1"></a>individuals tend to have an admixture of both European and African Ancestry, it is </span>
-<span id="cb36-409"><a href="#cb36-409" aria-hidden="true" tabindex="-1"></a>important to include masking recommendations for both.</span>
-<span id="cb36-410"><a href="#cb36-410" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-413"><a href="#cb36-413" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-414"><a href="#cb36-414" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ancestry-contrast</span></span>
-<span id="cb36-415"><a href="#cb36-415" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Probes retained under the AFR+EUR union mask used here versus a EUR-only mask. Filtering this African-American cohort on European SNP flags alone would keep tens of thousands of probes that are SNP-affected in African-ancestry individuals.&quot;</span></span>
-<span id="cb36-416"><a href="#cb36-416" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6.5</span></span>
-<span id="cb36-417"><a href="#cb36-417" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3</span></span>
-<span id="cb36-418"><a href="#cb36-418" aria-hidden="true" tabindex="-1"></a>contrast <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb36-419"><a href="#cb36-419" aria-hidden="true" tabindex="-1"></a>  <span class="at">mask =</span> <span class="fu">c</span>(<span class="st">&quot;AFR + EUR union</span><span class="sc">\n</span><span class="st">(used here)&quot;</span>, <span class="st">&quot;EUR only</span><span class="sc">\n</span><span class="st">(wrong here)&quot;</span>),</span>
-<span id="cb36-420"><a href="#cb36-420" aria-hidden="true" tabindex="-1"></a>  <span class="at">retained =</span> <span class="fu">c</span>(funl<span class="sc">$</span>retained, funl<span class="sc">$</span>retained_eur)</span>
-<span id="cb36-421"><a href="#cb36-421" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-422"><a href="#cb36-422" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(contrast, <span class="fu">aes</span>(mask, retained, <span class="at">fill =</span> mask)) <span class="sc">+</span></span>
-<span id="cb36-423"><a href="#cb36-423" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb36-424"><a href="#cb36-424" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">format</span>(retained, <span class="at">big.mark =</span> <span class="st">&quot;,&quot;</span>)), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>, <span class="at">size =</span> <span class="fl">3.5</span>) <span class="sc">+</span></span>
-<span id="cb36-425"><a href="#cb36-425" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;#1A6B75&quot;</span>,      <span class="co"># teal: the mask this chapter applies</span></span>
-<span id="cb36-426"><a href="#cb36-426" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;#8C3A4A&quot;</span>),     <span class="co"># plum: the mask that would be wrong here</span></span>
-<span id="cb36-427"><a href="#cb36-427" aria-hidden="true" tabindex="-1"></a>                    <span class="at">guide =</span> <span class="st">&quot;none&quot;</span>) <span class="sc">+</span></span>
-<span id="cb36-428"><a href="#cb36-428" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;probes retained&quot;</span>,</span>
-<span id="cb36-429"><a href="#cb36-429" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Ancestry-aware probe filtering&quot;</span>) <span class="sc">+</span></span>
-<span id="cb36-430"><a href="#cb36-430" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand_limits</span>(<span class="at">y =</span> <span class="fu">max</span>(contrast<span class="sc">$</span>retained) <span class="sc">*</span> <span class="fl">1.06</span>)</span>
-<span id="cb36-431"><a href="#cb36-431" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-432"><a href="#cb36-432" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-435"><a href="#cb36-435" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-436"><a href="#cb36-436" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ancestry-diff</span></span>
-<span id="cb36-437"><a href="#cb36-437" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Probes kept by a EUR-only mask but dropped by the AFR + EUR union:&quot;</span>,</span>
-<span id="cb36-438"><a href="#cb36-438" aria-hidden="true" tabindex="-1"></a>    funl<span class="sc">$</span>afr_not_eur_kept, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb36-439"><a href="#cb36-439" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-440"><a href="#cb36-440" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-441"><a href="#cb36-441" aria-hidden="true" tabindex="-1"></a>The union is what the code below applies, and it is the operational meaning of</span>
-<span id="cb36-442"><a href="#cb36-442" aria-hidden="true" tabindex="-1"></a>&quot;include masking recommendations for both&quot;.</span>
-<span id="cb36-443"><a href="#cb36-443" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-444"><a href="#cb36-444" aria-hidden="true" tabindex="-1"></a>So, if we are using the latest recommended masking file (v8.1), the columns we would want</span>
-<span id="cb36-445"><a href="#cb36-445" aria-hidden="true" tabindex="-1"></a>to include in the masking would be <span class="in">`M_mapping`</span>, <span class="in">`M_nonuniq`</span>, <span class="in">`M_SNP_AFR_1pt`</span>,<span class="in">`M_1baseSwitchSNP_AFR_1pt`</span>,</span>
-<span id="cb36-446"><a href="#cb36-446" aria-hidden="true" tabindex="-1"></a><span class="in">`M_2extBase_SNP_AFR_1pt`</span>, <span class="in">`M_SNP_EUR_1pt`</span>, <span class="in">`M_1baseSwitchSNP_EUR_1pt`</span>, and <span class="in">`M_2extBase_SNP_EUR_1pt`</span>. If </span>
-<span id="cb36-447"><a href="#cb36-447" aria-hidden="true" tabindex="-1"></a>we were using the archived manifest population file, we would use the <span class="in">`MASK_general_AFR`</span> and <span class="in">`MASK_snp5_EUR`</span>.</span>
-<span id="cb36-448"><a href="#cb36-448" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-449"><a href="#cb36-449" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-450"><a href="#cb36-450" aria-hidden="true" tabindex="-1"></a><span class="fu">### What changing mask generation costs you</span></span>
-<span id="cb36-451"><a href="#cb36-451" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-452"><a href="#cb36-452" aria-hidden="true" tabindex="-1"></a>It is worth seeing the size of the version effect directly, because it runs the</span>
-<span id="cb36-453"><a href="#cb36-453" aria-hidden="true" tabindex="-1"></a>opposite way to intuition. The eight v8.1 codes cover **two** ancestries; the legacy</span>
-<span id="cb36-454"><a href="#cb36-454" aria-hidden="true" tabindex="-1"></a><span class="in">`MASK_general_AFR`</span> covers one. Yet the legacy mask is the more aggressive:</span>
+<span id="cb36-222"><a href="#cb36-222" aria-hidden="true" tabindex="-1"></a>This is where the five-population table in <span class="co">[</span><span class="ot">§2</span><span class="co">](#sec-categories)</span> comes from, and it is</span>
+<span id="cb36-223"><a href="#cb36-223" aria-hidden="true" tabindex="-1"></a>the concrete reason the chapter needs both forms of the mask. The TSV carries</span>
+<span id="cb36-224"><a href="#cb36-224" aria-hidden="true" tabindex="-1"></a><span class="in">`M_SNP_AFR_1pt`</span> and <span class="in">`M_SNP_EUR_1pt`</span> — which is why <span class="co">[</span><span class="ot">§3</span><span class="co">](#sec-ancestry)</span> can draw its</span>
+<span id="cb36-225"><a href="#cb36-225" aria-hidden="true" tabindex="-1"></a>AFR-versus-EUR contrast straight from it — but it does not carry the AMR, SAS or EAS</span>
+<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a>equivalents, so three of that table&#39;s five rows can only come from the full release. Because the unpacked bits are committed, the count runs here rather</span>
+<span id="cb36-227"><a href="#cb36-227" aria-hidden="true" tabindex="-1"></a>than being quoted at you:</span>
+<span id="cb36-228"><a href="#cb36-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-231"><a href="#cb36-231" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-232"><a href="#cb36-232" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: snp-by-pop</span></span>
+<span id="cb36-233"><a href="#cb36-233" aria-hidden="true" tabindex="-1"></a><span class="co"># Both inputs are the committed output of the `yame unpack -a` call above, so this</span></span>
+<span id="cb36-234"><a href="#cb36-234" aria-hidden="true" tabindex="-1"></a><span class="co"># runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips</span></span>
+<span id="cb36-235"><a href="#cb36-235" aria-hidden="true" tabindex="-1"></a><span class="co"># from 40 MB down to 0.5 MB -- small enough to keep in the repository.</span></span>
+<span id="cb36-236"><a href="#cb36-236" aria-hidden="true" tabindex="-1"></a>terms  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/EPIC.hg38.mask.cm.idx&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>V1</span>
+<span id="cb36-237"><a href="#cb36-237" aria-hidden="true" tabindex="-1"></a>bits   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/mask_bits.tsv.gz&quot;</span>, <span class="at">header =</span> <span class="cn">FALSE</span>); <span class="fu">setnames</span>(bits, terms)</span>
+<span id="cb36-238"><a href="#cb36-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-239"><a href="#cb36-239" aria-hidden="true" tabindex="-1"></a><span class="co"># M_SNP_&lt;POP&gt;_1pt flags a common SNP (MAF &gt;= 1%) at the interrogated CpG in that</span></span>
+<span id="cb36-240"><a href="#cb36-240" aria-hidden="true" tabindex="-1"></a><span class="co"># 1000 Genomes super-population. Counted over the whole array, not over this</span></span>
+<span id="cb36-241"><a href="#cb36-241" aria-hidden="true" tabindex="-1"></a><span class="co"># study&#39;s probes, because it is a property of the platform.</span></span>
+<span id="cb36-242"><a href="#cb36-242" aria-hidden="true" tabindex="-1"></a>pops <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;AFR&quot;</span>, <span class="st">&quot;AMR&quot;</span>, <span class="st">&quot;SAS&quot;</span>, <span class="st">&quot;EUR&quot;</span>, <span class="st">&quot;EAS&quot;</span>)</span>
+<span id="cb36-243"><a href="#cb36-243" aria-hidden="true" tabindex="-1"></a>snp_by_pop <span class="ot">&lt;-</span> <span class="fu">vapply</span>(pops,</span>
+<span id="cb36-244"><a href="#cb36-244" aria-hidden="true" tabindex="-1"></a>                     <span class="cf">function</span>(p) <span class="fu">sum</span>(bits[[<span class="fu">paste0</span>(<span class="st">&quot;M_SNP_&quot;</span>, p, <span class="st">&quot;_1pt&quot;</span>)]] <span class="sc">==</span> <span class="dv">1</span>L),</span>
+<span id="cb36-245"><a href="#cb36-245" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">integer</span>(<span class="dv">1</span>))</span>
+<span id="cb36-246"><a href="#cb36-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-247"><a href="#cb36-247" aria-hidden="true" tabindex="-1"></a><span class="co"># Five rows of two columns, committed to the repository so the §2 table is</span></span>
+<span id="cb36-248"><a href="#cb36-248" aria-hidden="true" tabindex="-1"></a><span class="co"># readable straight from git without unpacking the mask first.</span></span>
+<span id="cb36-249"><a href="#cb36-249" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(<span class="fu">data.frame</span>(<span class="at">population =</span> pops, <span class="at">n_probes =</span> snp_by_pop),</span>
+<span id="cb36-250"><a href="#cb36-250" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb36-251"><a href="#cb36-251" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-252"><a href="#cb36-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-253"><a href="#cb36-253" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb36-254"><a href="#cb36-254" aria-hidden="true" tabindex="-1"></a><span class="fu">## The archived manifest is still there when you need it</span></span>
+<span id="cb36-255"><a href="#cb36-255" aria-hidden="true" tabindex="-1"></a><span class="in">`EPIC.hg38.manifest.pop.tsv.gz`</span> remains available and is the right choice when you</span>
+<span id="cb36-256"><a href="#cb36-256" aria-hidden="true" tabindex="-1"></a>need **sub-population** resolution: it carries <span class="in">`MASK_general_&lt;POP&gt;`</span> and</span>
+<span id="cb36-257"><a href="#cb36-257" aria-hidden="true" tabindex="-1"></a><span class="in">`MASK_snp5_&lt;POP&gt;`</span> columns for the 5 super-populations *and* 26 sub-populations</span>
+<span id="cb36-258"><a href="#cb36-258" aria-hidden="true" tabindex="-1"></a>(GWD, YRI, ASW, CEU, FIN, …), where v8.1&#39;s <span class="in">`.cm`</span> stops at the 5 super-populations.</span>
+<span id="cb36-259"><a href="#cb36-259" aria-hidden="true" tabindex="-1"></a>Note also that the two generations do not mask the same categories — see the</span>
+<span id="cb36-260"><a href="#cb36-260" aria-hidden="true" tabindex="-1"></a>comparison at the end of this section.</span>
+<span id="cb36-261"><a href="#cb36-261" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-262"><a href="#cb36-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-263"><a href="#cb36-263" aria-hidden="true" tabindex="-1"></a>The funnel below needs all three probe lists, so the two study-specific filters are</span>
+<span id="cb36-264"><a href="#cb36-264" aria-hidden="true" tabindex="-1"></a>computed here and explained in <span class="co">[</span><span class="ot">§4</span><span class="co">](#sec-detp-sex)</span>.</span>
+<span id="cb36-265"><a href="#cb36-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-266"><a href="#cb36-266" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb36-267"><a href="#cb36-267" aria-hidden="true" tabindex="-1"></a><span class="fu">## What this chapter needs</span></span>
+<span id="cb36-268"><a href="#cb36-268" aria-hidden="true" tabindex="-1"></a>This chapter starts from <span class="in">`data/01_RGset.rds`</span>, written by <span class="co">[</span><span class="ot">chapter 00</span><span class="co">](00_setup.qmd)</span>. If you</span>
+<span id="cb36-269"><a href="#cb36-269" aria-hidden="true" tabindex="-1"></a>did not run that chapter, fetch the published checkpoint instead:</span>
+<span id="cb36-270"><a href="#cb36-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-271"><a href="#cb36-271" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
+<span id="cb36-272"><a href="#cb36-272" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> B_qc</span>
+<span id="cb36-273"><a href="#cb36-273" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-274"><a href="#cb36-274" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-275"><a href="#cb36-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-278"><a href="#cb36-278" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-279"><a href="#cb36-279" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: probe-detp</span></span>
+<span id="cb36-280"><a href="#cb36-280" aria-hidden="true" tabindex="-1"></a><span class="co"># The detection-p filter is per PROBE, so it needs the full probe x sample</span></span>
+<span id="cb36-281"><a href="#cb36-281" aria-hidden="true" tabindex="-1"></a><span class="co"># p-value matrix. The QC chapter kept only per-sample summaries, so the matrix is</span></span>
+<span id="cb36-282"><a href="#cb36-282" aria-hidden="true" tabindex="-1"></a><span class="co"># recomputed from the raw two-channel object here: about 40 seconds and ~4 GB for</span></span>
+<span id="cb36-283"><a href="#cb36-283" aria-hidden="true" tabindex="-1"></a><span class="co"># 96 arrays, which is the most expensive step in this chapter.</span></span>
+<span id="cb36-284"><a href="#cb36-284" aria-hidden="true" tabindex="-1"></a>rg   <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/01_RGset.rds&quot;</span>)</span>
+<span id="cb36-285"><a href="#cb36-285" aria-hidden="true" tabindex="-1"></a>detP <span class="ot">&lt;-</span> <span class="fu">detectionP</span>(rg)</span>
+<span id="cb36-286"><a href="#cb36-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-287"><a href="#cb36-287" aria-hidden="true" tabindex="-1"></a><span class="co"># Fraction of samples in which each probe failed the p &gt; 0.01 cut, over the</span></span>
+<span id="cb36-288"><a href="#cb36-288" aria-hidden="true" tabindex="-1"></a><span class="co"># probes that survived normalization -- those are the only ones the funnel can</span></span>
+<span id="cb36-289"><a href="#cb36-289" aria-hidden="true" tabindex="-1"></a><span class="co"># drop. A probe unreliable in more than 10% of samples goes.</span></span>
+<span id="cb36-290"><a href="#cb36-290" aria-hidden="true" tabindex="-1"></a>frac_fail <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(detP[<span class="fu">rownames</span>(grs), ] <span class="sc">&gt;</span> <span class="fl">0.01</span>)</span>
+<span id="cb36-291"><a href="#cb36-291" aria-hidden="true" tabindex="-1"></a>drop_detp <span class="ot">&lt;-</span> <span class="fu">rownames</span>(grs)[frac_fail <span class="sc">&gt;</span> <span class="fl">0.10</span>]</span>
+<span id="cb36-292"><a href="#cb36-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-293"><a href="#cb36-293" aria-hidden="true" tabindex="-1"></a><span class="co"># Nothing below needs the raw object or the p-value matrix, and together they are</span></span>
+<span id="cb36-294"><a href="#cb36-294" aria-hidden="true" tabindex="-1"></a><span class="co"># the memory high-water mark of the chapter, so release them now.</span></span>
+<span id="cb36-295"><a href="#cb36-295" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(rg, detP); <span class="fu">invisible</span>(<span class="fu">gc</span>())</span>
+<span id="cb36-296"><a href="#cb36-296" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(drop_detp)</span>
+<span id="cb36-297"><a href="#cb36-297" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-298"><a href="#cb36-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-301"><a href="#cb36-301" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-302"><a href="#cb36-302" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: probe-filters</span></span>
+<span id="cb36-303"><a href="#cb36-303" aria-hidden="true" tabindex="-1"></a><span class="co"># The eight-code union from the TSV above, restricted to the probes actually present</span></span>
+<span id="cb36-304"><a href="#cb36-304" aria-hidden="true" tabindex="-1"></a><span class="co"># after normalization.</span></span>
+<span id="cb36-305"><a href="#cb36-305" aria-hidden="true" tabindex="-1"></a>drop_mask <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(grs), drop8)</span>
+<span id="cb36-306"><a href="#cb36-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-307"><a href="#cb36-307" aria-hidden="true" tabindex="-1"></a><span class="co"># Sex-chromosome probes, from the manifest coordinates minfi attached to the</span></span>
+<span id="cb36-308"><a href="#cb36-308" aria-hidden="true" tabindex="-1"></a><span class="co"># object -- removed for an autosomal EWAS, see §4.</span></span>
+<span id="cb36-309"><a href="#cb36-309" aria-hidden="true" tabindex="-1"></a>drop_sex <span class="ot">&lt;-</span> <span class="fu">rownames</span>(grs)[<span class="fu">getAnnotation</span>(grs)<span class="sc">$</span>chr <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;chrX&quot;</span>, <span class="st">&quot;chrY&quot;</span>)]</span>
+<span id="cb36-310"><a href="#cb36-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-311"><a href="#cb36-311" aria-hidden="true" tabindex="-1"></a><span class="co"># A probe is dropped if ANY of the three lists flags it, so the three counts</span></span>
+<span id="cb36-312"><a href="#cb36-312" aria-hidden="true" tabindex="-1"></a><span class="co"># below overlap and do not sum to the total dropped.</span></span>
+<span id="cb36-313"><a href="#cb36-313" aria-hidden="true" tabindex="-1"></a>keep <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">rownames</span>(grs), <span class="fu">Reduce</span>(union, <span class="fu">list</span>(drop_mask, drop_detp, drop_sex)))</span>
+<span id="cb36-314"><a href="#cb36-314" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-315"><a href="#cb36-315" aria-hidden="true" tabindex="-1"></a><span class="co"># The same filter with the EUR-only mask instead of the AFR + EUR union, for the</span></span>
+<span id="cb36-316"><a href="#cb36-316" aria-hidden="true" tabindex="-1"></a><span class="co"># ancestry contrast in §3. Detection-p and sex filters are held fixed.</span></span>
+<span id="cb36-317"><a href="#cb36-317" aria-hidden="true" tabindex="-1"></a>eur_cols  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
+<span id="cb36-318"><a href="#cb36-318" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
+<span id="cb36-319"><a href="#cb36-319" aria-hidden="true" tabindex="-1"></a>drop_eur8 <span class="ot">&lt;-</span> mask<span class="sc">$</span>Probe_ID[<span class="fu">Reduce</span>(<span class="st">`</span><span class="at">|</span><span class="st">`</span>, <span class="fu">lapply</span>(eur_cols, <span class="cf">function</span>(m) mask[[m]] <span class="sc">==</span> <span class="dv">1</span>L))]</span>
+<span id="cb36-320"><a href="#cb36-320" aria-hidden="true" tabindex="-1"></a>keep_eur  <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">rownames</span>(grs),</span>
+<span id="cb36-321"><a href="#cb36-321" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">Reduce</span>(union, <span class="fu">list</span>(<span class="fu">intersect</span>(<span class="fu">rownames</span>(grs), drop_eur8),</span>
+<span id="cb36-322"><a href="#cb36-322" aria-hidden="true" tabindex="-1"></a>                                        drop_detp, drop_sex)))</span>
+<span id="cb36-323"><a href="#cb36-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-324"><a href="#cb36-324" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-code probe sets, kept so §2 can ask how two codes overlap rather than just</span></span>
+<span id="cb36-325"><a href="#cb36-325" aria-hidden="true" tabindex="-1"></a><span class="co"># how many probes each one flags.</span></span>
+<span id="cb36-326"><a href="#cb36-326" aria-hidden="true" tabindex="-1"></a>mask_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;M_mapping&quot;</span>, <span class="st">&quot;M_nonuniq&quot;</span>,</span>
+<span id="cb36-327"><a href="#cb36-327" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_AFR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_AFR_1pt&quot;</span>,</span>
+<span id="cb36-328"><a href="#cb36-328" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;M_SNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_1baseSwitchSNP_EUR_1pt&quot;</span>, <span class="st">&quot;M_2extBase_SNP_EUR_1pt&quot;</span>)</span>
+<span id="cb36-329"><a href="#cb36-329" aria-hidden="true" tabindex="-1"></a>per_code_sets <span class="ot">&lt;-</span> <span class="fu">lapply</span>(mask_cols, <span class="cf">function</span>(m) mask<span class="sc">$</span>Probe_ID[mask[[m]] <span class="sc">==</span> <span class="dv">1</span>L])</span>
+<span id="cb36-330"><a href="#cb36-330" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(per_code_sets) <span class="ot">&lt;-</span> mask_cols</span>
+<span id="cb36-331"><a href="#cb36-331" aria-hidden="true" tabindex="-1"></a>mp <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">per_code_sets =</span> per_code_sets)</span>
+<span id="cb36-332"><a href="#cb36-332" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-333"><a href="#cb36-333" aria-hidden="true" tabindex="-1"></a><span class="co"># Per-population SNP counts, written by the `snp-by-pop` chunk above and read</span></span>
+<span id="cb36-334"><a href="#cb36-334" aria-hidden="true" tabindex="-1"></a><span class="co"># back here so the funnel and the §2 table quote one source.</span></span>
+<span id="cb36-335"><a href="#cb36-335" aria-hidden="true" tabindex="-1"></a>sp <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;data/03_snp_by_pop.tsv&quot;</span>)</span>
+<span id="cb36-336"><a href="#cb36-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-337"><a href="#cb36-337" aria-hidden="true" tabindex="-1"></a><span class="co"># Every count the funnel, the tables and the prose below quote, in one place.</span></span>
+<span id="cb36-338"><a href="#cb36-338" aria-hidden="true" tabindex="-1"></a>funl <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb36-339"><a href="#cb36-339" aria-hidden="true" tabindex="-1"></a>  <span class="at">n0               =</span> <span class="fu">nrow</span>(grs),                        <span class="co"># probes entering the funnel</span></span>
+<span id="cb36-340"><a href="#cb36-340" aria-hidden="true" tabindex="-1"></a>  <span class="at">drop_mask        =</span> <span class="fu">length</span>(drop_mask),</span>
+<span id="cb36-341"><a href="#cb36-341" aria-hidden="true" tabindex="-1"></a>  <span class="at">drop_detp        =</span> <span class="fu">length</span>(drop_detp),</span>
+<span id="cb36-342"><a href="#cb36-342" aria-hidden="true" tabindex="-1"></a>  <span class="at">drop_sex         =</span> <span class="fu">length</span>(drop_sex),</span>
+<span id="cb36-343"><a href="#cb36-343" aria-hidden="true" tabindex="-1"></a>  <span class="at">retained         =</span> <span class="fu">length</span>(keep),                     <span class="co"># EWAS-ready probes</span></span>
+<span id="cb36-344"><a href="#cb36-344" aria-hidden="true" tabindex="-1"></a>  <span class="at">retained_eur     =</span> <span class="fu">length</span>(keep_eur),                 <span class="co"># under a EUR-only mask</span></span>
+<span id="cb36-345"><a href="#cb36-345" aria-hidden="true" tabindex="-1"></a>  <span class="at">afr_not_eur_kept =</span> <span class="fu">length</span>(<span class="fu">setdiff</span>(keep_eur, keep)),  <span class="co"># what EUR-only would leave in</span></span>
+<span id="cb36-346"><a href="#cb36-346" aria-hidden="true" tabindex="-1"></a>  <span class="at">union8           =</span> <span class="fu">sum</span>(mask<span class="sc">$</span>mask_v81_8code),         <span class="co"># array-wide, before any study filter</span></span>
+<span id="cb36-347"><a href="#cb36-347" aria-hidden="true" tabindex="-1"></a>  <span class="at">snp_by_pop       =</span> <span class="fu">setNames</span>(sp<span class="sc">$</span>n_probes, sp<span class="sc">$</span>population)</span>
+<span id="cb36-348"><a href="#cb36-348" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-349"><a href="#cb36-349" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-350"><a href="#cb36-350" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-351"><a href="#cb36-351" aria-hidden="true" tabindex="-1"></a>Broken down, the probe removal includes: </span>
+<span id="cb36-352"><a href="#cb36-352" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-355"><a href="#cb36-355" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-356"><a href="#cb36-356" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: funnel-table</span></span>
+<span id="cb36-357"><a href="#cb36-357" aria-hidden="true" tabindex="-1"></a>funnel <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb36-358"><a href="#cb36-358" aria-hidden="true" tabindex="-1"></a>  <span class="at">step =</span> <span class="fu">c</span>(<span class="st">&quot;Start (normalized probes)&quot;</span>,</span>
+<span id="cb36-359"><a href="#cb36-359" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;− Zhou v8.1 mask (8 codes, AFR + EUR)&quot;</span>,</span>
+<span id="cb36-360"><a href="#cb36-360" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;− Detection-p failures (&gt;10% of samples)&quot;</span>,</span>
+<span id="cb36-361"><a href="#cb36-361" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;− Sex chromosomes (autosomal EWAS)&quot;</span>,</span>
+<span id="cb36-362"><a href="#cb36-362" aria-hidden="true" tabindex="-1"></a>           <span class="st">&quot;= Retained (EWAS-ready)&quot;</span>),</span>
+<span id="cb36-363"><a href="#cb36-363" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_dropped =</span> <span class="fu">c</span>(<span class="cn">NA</span>, funl<span class="sc">$</span>drop_mask, funl<span class="sc">$</span>drop_detp, funl<span class="sc">$</span>drop_sex, <span class="cn">NA</span>),</span>
+<span id="cb36-364"><a href="#cb36-364" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_remaining =</span> <span class="fu">c</span>(funl<span class="sc">$</span>n0, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, funl<span class="sc">$</span>retained)</span>
+<span id="cb36-365"><a href="#cb36-365" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-366"><a href="#cb36-366" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(funnel, <span class="at">caption =</span> <span class="st">&quot;Probe-filtering funnel on the 96-sample subset (AFR + EUR aware).&quot;</span>)</span>
+<span id="cb36-367"><a href="#cb36-367" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Retained %d of %d probes (%.1f%%).</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb36-368"><a href="#cb36-368" aria-hidden="true" tabindex="-1"></a>            funl<span class="sc">$</span>retained, funl<span class="sc">$</span>n0, <span class="dv">100</span> <span class="sc">*</span> funl<span class="sc">$</span>retained <span class="sc">/</span> funl<span class="sc">$</span>n0))</span>
+<span id="cb36-369"><a href="#cb36-369" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-370"><a href="#cb36-370" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-371"><a href="#cb36-371" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. The categories, quantified on EPIC {#sec-categories}</span></span>
+<span id="cb36-372"><a href="#cb36-372" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-373"><a href="#cb36-373" aria-hidden="true" tabindex="-1"></a>The SNP mask is **not the same for every study population**, because a &quot;common</span>
+<span id="cb36-374"><a href="#cb36-374" aria-hidden="true" tabindex="-1"></a>SNP&quot; depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:</span>
+<span id="cb36-375"><a href="#cb36-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-378"><a href="#cb36-378" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-379"><a href="#cb36-379" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: pop-snp-table</span></span>
+<span id="cb36-380"><a href="#cb36-380" aria-hidden="true" tabindex="-1"></a>snp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb36-381"><a href="#cb36-381" aria-hidden="true" tabindex="-1"></a>  <span class="at">population  =</span> <span class="fu">c</span>(<span class="st">&quot;AFR (African)&quot;</span>, <span class="st">&quot;AMR (Admixed American)&quot;</span>, <span class="st">&quot;SAS (South Asian)&quot;</span>,</span>
+<span id="cb36-382"><a href="#cb36-382" aria-hidden="true" tabindex="-1"></a>                  <span class="st">&quot;EUR (European)&quot;</span>, <span class="st">&quot;EAS (East Asian)&quot;</span>),</span>
+<span id="cb36-383"><a href="#cb36-383" aria-hidden="true" tabindex="-1"></a>  <span class="at">snp_masked  =</span> funl<span class="sc">$</span>snp_by_pop[<span class="fu">c</span>(<span class="st">&quot;AFR&quot;</span>, <span class="st">&quot;AMR&quot;</span>, <span class="st">&quot;SAS&quot;</span>, <span class="st">&quot;EUR&quot;</span>, <span class="st">&quot;EAS&quot;</span>)]</span>
+<span id="cb36-384"><a href="#cb36-384" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-385"><a href="#cb36-385" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(snp, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb36-386"><a href="#cb36-386" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Probes flagged by M_SNP_&lt;POP&gt;_1pt (common SNP at the interrogated CpG, MAF &gt;= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.&quot;</span>)</span>
+<span id="cb36-387"><a href="#cb36-387" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-388"><a href="#cb36-388" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-389"><a href="#cb36-389" aria-hidden="true" tabindex="-1"></a>African-ancestry populations carry the most common genetic variation, so more</span>
+<span id="cb36-390"><a href="#cb36-390" aria-hidden="true" tabindex="-1"></a>probes overlap a common SNP. Concretely, in these masks</span>
+<span id="cb36-391"><a href="#cb36-391" aria-hidden="true" tabindex="-1"></a>**`r format(funl$snp_by_pop[[&quot;AFR&quot;]], big.mark = &quot;,&quot;)`** probes are SNP-flagged for</span>
+<span id="cb36-392"><a href="#cb36-392" aria-hidden="true" tabindex="-1"></a>AFR versus **`r format(funl$snp_by_pop[[&quot;EUR&quot;]], big.mark = &quot;,&quot;)`** for EUR:</span>
+<span id="cb36-393"><a href="#cb36-393" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-396"><a href="#cb36-396" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-397"><a href="#cb36-397" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: afr-eur-overlap</span></span>
+<span id="cb36-398"><a href="#cb36-398" aria-hidden="true" tabindex="-1"></a><span class="co"># Both sets come from the per-code columns of the shipped mask table, so the</span></span>
+<span id="cb36-399"><a href="#cb36-399" aria-hidden="true" tabindex="-1"></a><span class="co"># comparison is between two mask terms over the same probe universe.</span></span>
+<span id="cb36-400"><a href="#cb36-400" aria-hidden="true" tabindex="-1"></a>afr <span class="ot">&lt;-</span> mp<span class="sc">$</span>per_code_sets<span class="sc">$</span>M_SNP_AFR_1pt</span>
+<span id="cb36-401"><a href="#cb36-401" aria-hidden="true" tabindex="-1"></a>eur <span class="ot">&lt;-</span> mp<span class="sc">$</span>per_code_sets<span class="sc">$</span>M_SNP_EUR_1pt</span>
+<span id="cb36-402"><a href="#cb36-402" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;masked in AFR but NOT EUR:&quot;</span>, <span class="fu">length</span>(<span class="fu">setdiff</span>(afr, eur)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb36-403"><a href="#cb36-403" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;masked in EUR but NOT AFR:&quot;</span>, <span class="fu">length</span>(<span class="fu">setdiff</span>(eur, afr)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb36-404"><a href="#cb36-404" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;masked in both:           &quot;</span>, <span class="fu">length</span>(<span class="fu">intersect</span>(afr, eur)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb36-405"><a href="#cb36-405" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-406"><a href="#cb36-406" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-407"><a href="#cb36-407" aria-hidden="true" tabindex="-1"></a>While there is some overlap between the AFR and EUR recommended SNP masks, there are distinct maskings for each</span>
+<span id="cb36-408"><a href="#cb36-408" aria-hidden="true" tabindex="-1"></a>population.</span>
+<span id="cb36-409"><a href="#cb36-409" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-410"><a href="#cb36-410" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Ancestry matters {#sec-ancestry}</span></span>
+<span id="cb36-411"><a href="#cb36-411" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-412"><a href="#cb36-412" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project subset is **~95% African American**. If we filtered with </span>
+<span id="cb36-413"><a href="#cb36-413" aria-hidden="true" tabindex="-1"></a>a general or only European-population mask (a common default), we would leave in </span>
+<span id="cb36-414"><a href="#cb36-414" aria-hidden="true" tabindex="-1"></a>probes that are SNP-affected in African-ancestry individuals. As African American </span>
+<span id="cb36-415"><a href="#cb36-415" aria-hidden="true" tabindex="-1"></a>individuals tend to have an admixture of both European and African Ancestry, it is </span>
+<span id="cb36-416"><a href="#cb36-416" aria-hidden="true" tabindex="-1"></a>important to include masking recommendations for both.</span>
+<span id="cb36-417"><a href="#cb36-417" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-420"><a href="#cb36-420" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-421"><a href="#cb36-421" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ancestry-contrast</span></span>
+<span id="cb36-422"><a href="#cb36-422" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Probes retained under the AFR+EUR union mask used here versus a EUR-only mask. Filtering this African-American cohort on European SNP flags alone would keep tens of thousands of probes that are SNP-affected in African-ancestry individuals.&quot;</span></span>
+<span id="cb36-423"><a href="#cb36-423" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6.5</span></span>
+<span id="cb36-424"><a href="#cb36-424" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3</span></span>
+<span id="cb36-425"><a href="#cb36-425" aria-hidden="true" tabindex="-1"></a>contrast <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb36-426"><a href="#cb36-426" aria-hidden="true" tabindex="-1"></a>  <span class="at">mask =</span> <span class="fu">c</span>(<span class="st">&quot;AFR + EUR union</span><span class="sc">\n</span><span class="st">(used here)&quot;</span>, <span class="st">&quot;EUR only</span><span class="sc">\n</span><span class="st">(wrong here)&quot;</span>),</span>
+<span id="cb36-427"><a href="#cb36-427" aria-hidden="true" tabindex="-1"></a>  <span class="at">retained =</span> <span class="fu">c</span>(funl<span class="sc">$</span>retained, funl<span class="sc">$</span>retained_eur)</span>
+<span id="cb36-428"><a href="#cb36-428" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-429"><a href="#cb36-429" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(contrast, <span class="fu">aes</span>(mask, retained, <span class="at">fill =</span> mask)) <span class="sc">+</span></span>
+<span id="cb36-430"><a href="#cb36-430" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb36-431"><a href="#cb36-431" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">format</span>(retained, <span class="at">big.mark =</span> <span class="st">&quot;,&quot;</span>)), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.4</span>, <span class="at">size =</span> <span class="fl">3.5</span>) <span class="sc">+</span></span>
+<span id="cb36-432"><a href="#cb36-432" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;#1A6B75&quot;</span>,      <span class="co"># teal: the mask this chapter applies</span></span>
+<span id="cb36-433"><a href="#cb36-433" aria-hidden="true" tabindex="-1"></a>                               <span class="st">&quot;#8C3A4A&quot;</span>),     <span class="co"># plum: the mask that would be wrong here</span></span>
+<span id="cb36-434"><a href="#cb36-434" aria-hidden="true" tabindex="-1"></a>                    <span class="at">guide =</span> <span class="st">&quot;none&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-435"><a href="#cb36-435" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;probes retained&quot;</span>,</span>
+<span id="cb36-436"><a href="#cb36-436" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Ancestry-aware probe filtering&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-437"><a href="#cb36-437" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand_limits</span>(<span class="at">y =</span> <span class="fu">max</span>(contrast<span class="sc">$</span>retained) <span class="sc">*</span> <span class="fl">1.06</span>)</span>
+<span id="cb36-438"><a href="#cb36-438" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-439"><a href="#cb36-439" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-442"><a href="#cb36-442" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-443"><a href="#cb36-443" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ancestry-diff</span></span>
+<span id="cb36-444"><a href="#cb36-444" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Probes kept by a EUR-only mask but dropped by the AFR + EUR union:&quot;</span>,</span>
+<span id="cb36-445"><a href="#cb36-445" aria-hidden="true" tabindex="-1"></a>    funl<span class="sc">$</span>afr_not_eur_kept, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb36-446"><a href="#cb36-446" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-447"><a href="#cb36-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-448"><a href="#cb36-448" aria-hidden="true" tabindex="-1"></a>The union is what the code below applies, and it is the operational meaning of</span>
+<span id="cb36-449"><a href="#cb36-449" aria-hidden="true" tabindex="-1"></a>&quot;include masking recommendations for both&quot;.</span>
+<span id="cb36-450"><a href="#cb36-450" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-451"><a href="#cb36-451" aria-hidden="true" tabindex="-1"></a>So, if we are using the latest recommended masking file (v8.1), the columns we would want</span>
+<span id="cb36-452"><a href="#cb36-452" aria-hidden="true" tabindex="-1"></a>to include in the masking would be <span class="in">`M_mapping`</span>, <span class="in">`M_nonuniq`</span>, <span class="in">`M_SNP_AFR_1pt`</span>,<span class="in">`M_1baseSwitchSNP_AFR_1pt`</span>,</span>
+<span id="cb36-453"><a href="#cb36-453" aria-hidden="true" tabindex="-1"></a><span class="in">`M_2extBase_SNP_AFR_1pt`</span>, <span class="in">`M_SNP_EUR_1pt`</span>, <span class="in">`M_1baseSwitchSNP_EUR_1pt`</span>, and <span class="in">`M_2extBase_SNP_EUR_1pt`</span>. If </span>
+<span id="cb36-454"><a href="#cb36-454" aria-hidden="true" tabindex="-1"></a>we were using the archived manifest population file, we would use the <span class="in">`MASK_general_AFR`</span> and <span class="in">`MASK_snp5_EUR`</span>.</span>
 <span id="cb36-455"><a href="#cb36-455" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-458"><a href="#cb36-458" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-459"><a href="#cb36-459" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mask-generation-contrast</span></span>
-<span id="cb36-460"><a href="#cb36-460" aria-hidden="true" tabindex="-1"></a>gen <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb36-461"><a href="#cb36-461" aria-hidden="true" tabindex="-1"></a>  <span class="at">mask =</span> <span class="fu">c</span>(<span class="st">&quot;Legacy MASK_general_AFR&quot;</span>, <span class="st">&quot;v8.1, 8 codes (AFR + EUR)&quot;</span>),</span>
-<span id="cb36-462"><a href="#cb36-462" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Legacy counts are quoted from the archived manifest; the v8.1 figures are the</span></span>
-<span id="cb36-463"><a href="#cb36-463" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ones derived above, so only the mask generation differs between the rows.</span></span>
-<span id="cb36-464"><a href="#cb36-464" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_masked   =</span> <span class="fu">c</span>(<span class="dv">124132</span>, funl<span class="sc">$</span>union8),</span>
-<span id="cb36-465"><a href="#cb36-465" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_retained =</span> <span class="fu">c</span>(<span class="dv">724282</span>, funl<span class="sc">$</span>retained)</span>
-<span id="cb36-466"><a href="#cb36-466" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-467"><a href="#cb36-467" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(gen, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb36-468"><a href="#cb36-468" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Same cohort, same detection-p and sex filters; only the mask generation differs.&quot;</span>)</span>
-<span id="cb36-469"><a href="#cb36-469" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-470"><a href="#cb36-470" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-471"><a href="#cb36-471" aria-hidden="true" tabindex="-1"></a>The difference is the repeat and copy-number terms described in §2: the legacy</span>
-<span id="cb36-472"><a href="#cb36-472" aria-hidden="true" tabindex="-1"></a><span class="in">`MASK_general_&lt;POP&gt;`</span> bundles them in, and v8.1 has no equivalent. So moving to v8.1</span>
-<span id="cb36-473"><a href="#cb36-473" aria-hidden="true" tabindex="-1"></a>retains **`r format(funl$retained - 724282, big.mark = &quot;,&quot;)`** more probes here — more</span>
-<span id="cb36-474"><a href="#cb36-474" aria-hidden="true" tabindex="-1"></a>sites tested, but also the repeat-overlapping probes no longer excluded. Neither</span>
-<span id="cb36-475"><a href="#cb36-475" aria-hidden="true" tabindex="-1"></a>choice is automatically right; what matters is that you state which mask generation</span>
-<span id="cb36-476"><a href="#cb36-476" aria-hidden="true" tabindex="-1"></a>and which terms you used, since the two are not interchangeable.</span>
+<span id="cb36-456"><a href="#cb36-456" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-457"><a href="#cb36-457" aria-hidden="true" tabindex="-1"></a><span class="fu">### What changing mask generation costs you</span></span>
+<span id="cb36-458"><a href="#cb36-458" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-459"><a href="#cb36-459" aria-hidden="true" tabindex="-1"></a>It is worth seeing the size of the version effect directly, because it runs the</span>
+<span id="cb36-460"><a href="#cb36-460" aria-hidden="true" tabindex="-1"></a>opposite way to intuition. The eight v8.1 codes cover **two** ancestries; the legacy</span>
+<span id="cb36-461"><a href="#cb36-461" aria-hidden="true" tabindex="-1"></a><span class="in">`MASK_general_AFR`</span> covers one. Yet the legacy mask is the more aggressive:</span>
+<span id="cb36-462"><a href="#cb36-462" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-465"><a href="#cb36-465" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-466"><a href="#cb36-466" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mask-generation-contrast</span></span>
+<span id="cb36-467"><a href="#cb36-467" aria-hidden="true" tabindex="-1"></a>gen <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb36-468"><a href="#cb36-468" aria-hidden="true" tabindex="-1"></a>  <span class="at">mask =</span> <span class="fu">c</span>(<span class="st">&quot;Legacy MASK_general_AFR&quot;</span>, <span class="st">&quot;v8.1, 8 codes (AFR + EUR)&quot;</span>),</span>
+<span id="cb36-469"><a href="#cb36-469" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Legacy counts are quoted from the archived manifest; the v8.1 figures are the</span></span>
+<span id="cb36-470"><a href="#cb36-470" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ones derived above, so only the mask generation differs between the rows.</span></span>
+<span id="cb36-471"><a href="#cb36-471" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_masked   =</span> <span class="fu">c</span>(<span class="dv">124132</span>, funl<span class="sc">$</span>union8),</span>
+<span id="cb36-472"><a href="#cb36-472" aria-hidden="true" tabindex="-1"></a>  <span class="at">probes_retained =</span> <span class="fu">c</span>(<span class="dv">724282</span>, funl<span class="sc">$</span>retained)</span>
+<span id="cb36-473"><a href="#cb36-473" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-474"><a href="#cb36-474" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(gen, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb36-475"><a href="#cb36-475" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Same cohort, same detection-p and sex filters; only the mask generation differs.&quot;</span>)</span>
+<span id="cb36-476"><a href="#cb36-476" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-477"><a href="#cb36-477" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-478"><a href="#cb36-478" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
-<span id="cb36-479"><a href="#cb36-479" aria-hidden="true" tabindex="-1"></a><span class="fu">## The teaching point</span></span>
-<span id="cb36-480"><a href="#cb36-480" aria-hidden="true" tabindex="-1"></a>Probe filtering is not a fixed recipe — the SNP component depends on your study</span>
-<span id="cb36-481"><a href="#cb36-481" aria-hidden="true" tabindex="-1"></a>population. For a cohort of known, relatively homogeneous ancestry, use that</span>
-<span id="cb36-482"><a href="#cb36-482" aria-hidden="true" tabindex="-1"></a>population&#39;s mask. For an admixed or mixed-ancestry cohort, the conservative choice</span>
-<span id="cb36-483"><a href="#cb36-483" aria-hidden="true" tabindex="-1"></a>is to take the **union** of the relevant population masks (drop a probe if it is</span>
-<span id="cb36-484"><a href="#cb36-484" aria-hidden="true" tabindex="-1"></a>SNP-affected in *any* represented ancestry). For a multi-ancestry cohort or cohort </span>
-<span id="cb36-485"><a href="#cb36-485" aria-hidden="true" tabindex="-1"></a>of unknown ancestry, the general population mask is the most appropriate.</span>
-<span id="cb36-486"><a href="#cb36-486" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-487"><a href="#cb36-487" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-488"><a href="#cb36-488" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb36-489"><a href="#cb36-489" aria-hidden="true" tabindex="-1"></a><span class="fu">## Smoking-associated probes</span></span>
-<span id="cb36-490"><a href="#cb36-490" aria-hidden="true" tabindex="-1"></a>Everything above masks probes that are unreliable *by design*. There is a separate,</span>
-<span id="cb36-491"><a href="#cb36-491" aria-hidden="true" tabindex="-1"></a>optional reason to drop probes: smoking is one of the largest environmental drivers</span>
-<span id="cb36-492"><a href="#cb36-492" aria-hidden="true" tabindex="-1"></a>of blood methylation, and if your dataset has no smoking variable — as the Grady</span>
-<span id="cb36-493"><a href="#cb36-493" aria-hidden="true" tabindex="-1"></a>deposit does not — one of the available strategies is to exclude CpGs known from the</span>
-<span id="cb36-494"><a href="#cb36-494" aria-hidden="true" tabindex="-1"></a>literature to be smoking-associated, at this filtering stage rather than after the</span>
-<span id="cb36-495"><a href="#cb36-495" aria-hidden="true" tabindex="-1"></a>fact. That is a decision about confounding, not about probe quality, so it does not</span>
-<span id="cb36-496"><a href="#cb36-496" aria-hidden="true" tabindex="-1"></a>belong in the funnel above. This tutorial does exclude smoking-associated CpGs, but</span>
-<span id="cb36-497"><a href="#cb36-497" aria-hidden="true" tabindex="-1"></a>at a later step as these probes are needed to create a proxy smoking variable. See</span>
-<span id="cb36-498"><a href="#cb36-498" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">the smoking section in the EWAS chapter</span><span class="co">](06_ewas.qmd)</span> for the full set of options.</span>
-<span id="cb36-499"><a href="#cb36-499" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-500"><a href="#cb36-500" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-501"><a href="#cb36-501" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Detection-p and sex-chromosome filtering {#sec-detp-sex}</span></span>
-<span id="cb36-502"><a href="#cb36-502" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-503"><a href="#cb36-503" aria-hidden="true" tabindex="-1"></a>Two study-specific filters complete the funnel:</span>
-<span id="cb36-504"><a href="#cb36-504" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-505"><a href="#cb36-505" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Detection-p failures.** From <span class="co">[</span><span class="ot">QC</span><span class="co">](01_qc.qmd)</span> we have the per-probe detection</span>
-<span id="cb36-506"><a href="#cb36-506" aria-hidden="true" tabindex="-1"></a>  p-values. A probe that fails (p &gt; 0.01) in more than ~10% of samples is</span>
-<span id="cb36-507"><a href="#cb36-507" aria-hidden="true" tabindex="-1"></a>  unreliable *in this dataset* and is dropped. Here that removed</span>
-<span id="cb36-508"><a href="#cb36-508" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r funl$drop_detp`</span> probes.</span>
-<span id="cb36-509"><a href="#cb36-509" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Sex chromosomes.** For an autosomal EWAS, X- and Y-chromosome probes are also removed </span>
-<span id="cb36-510"><a href="#cb36-510" aria-hidden="true" tabindex="-1"></a>  (<span class="in">`r funl$drop_sex`</span> probes): X-inactivation and sex differences would</span>
-<span id="cb36-511"><a href="#cb36-511" aria-hidden="true" tabindex="-1"></a>  otherwise dominate, and they need sex-stratified handling if analyzed. They are</span>
-<span id="cb36-512"><a href="#cb36-512" aria-hidden="true" tabindex="-1"></a>  *removed from the autosomal analysis*, not deleted from the study — a sex-specific</span>
-<span id="cb36-513"><a href="#cb36-513" aria-hidden="true" tabindex="-1"></a>  analysis would use them deliberately.</span>
-<span id="cb36-514"><a href="#cb36-514" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-515"><a href="#cb36-515" aria-hidden="true" tabindex="-1"></a>The exact filtering code (run once, checkpointed):</span>
-<span id="cb36-516"><a href="#cb36-516" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-519"><a href="#cb36-519" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-520"><a href="#cb36-520" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: apply-filter</span></span>
-<span id="cb36-521"><a href="#cb36-521" aria-hidden="true" tabindex="-1"></a><span class="co"># `keep` is the set union of the three drop lists, taken out of the normalized</span></span>
-<span id="cb36-522"><a href="#cb36-522" aria-hidden="true" tabindex="-1"></a><span class="co"># probe set: the mask from Route 1 (`drop_mask`), the detection-p failures</span></span>
-<span id="cb36-523"><a href="#cb36-523" aria-hidden="true" tabindex="-1"></a><span class="co"># (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does</span></span>
-<span id="cb36-524"><a href="#cb36-524" aria-hidden="true" tabindex="-1"></a><span class="co"># not matter -- a probe flagged by two filters is dropped once.</span></span>
-<span id="cb36-525"><a href="#cb36-525" aria-hidden="true" tabindex="-1"></a>grs_filt <span class="ot">&lt;-</span> grs[keep, ]</span>
-<span id="cb36-526"><a href="#cb36-526" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-527"><a href="#cb36-527" aria-hidden="true" tabindex="-1"></a><span class="co"># Subsetting a GenomicRatioSet carries the beta/M matrices, the genome</span></span>
-<span id="cb36-528"><a href="#cb36-528" aria-hidden="true" tabindex="-1"></a><span class="co"># coordinates and the sample metadata along with it, so this object is</span></span>
-<span id="cb36-529"><a href="#cb36-529" aria-hidden="true" tabindex="-1"></a><span class="co"># analysis-ready as it stands.</span></span>
-<span id="cb36-530"><a href="#cb36-530" aria-hidden="true" tabindex="-1"></a>grs_filt</span>
-<span id="cb36-531"><a href="#cb36-531" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-532"><a href="#cb36-532" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-533"><a href="#cb36-533" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. When you don&#39;t have IDATs: filtering a processed matrix {#sec-no-idats}</span></span>
-<span id="cb36-534"><a href="#cb36-534" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-535"><a href="#cb36-535" aria-hidden="true" tabindex="-1"></a>Probe filtering is one of the few preprocessing steps that works **identically**</span>
-<span id="cb36-536"><a href="#cb36-536" aria-hidden="true" tabindex="-1"></a>whether your data came from IDATs or from a processed β-matrix — because the masks</span>
-<span id="cb36-537"><a href="#cb36-537" aria-hidden="true" tabindex="-1"></a>are keyed on **probe IDs**, not intensities. The workflow:</span>
-<span id="cb36-538"><a href="#cb36-538" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-539"><a href="#cb36-539" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Load the matrix** (see the <span class="co">[</span><span class="ot">normalization</span><span class="co">](02_normalization.qmd)</span> non-IDAT</span>
-<span id="cb36-540"><a href="#cb36-540" aria-hidden="true" tabindex="-1"></a>   section) so you have a β-matrix with <span class="in">`cg`</span>/<span class="in">`ch`</span> probe IDs as rownames.</span>
-<span id="cb36-541"><a href="#cb36-541" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Apply the same masks by ID.** Read Zhou&#39;s mask/manifest for the correct array</span>
-<span id="cb36-542"><a href="#cb36-542" aria-hidden="true" tabindex="-1"></a>   (450K vs EPIC vs EPICv2 — they have different probe sets), pick the mask for</span>
-<span id="cb36-543"><a href="#cb36-543" aria-hidden="true" tabindex="-1"></a>   your study population, and subset:</span>
-<span id="cb36-544"><a href="#cb36-544" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-545"><a href="#cb36-545" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb36-546"><a href="#cb36-546" aria-hidden="true" tabindex="-1"></a>   <span class="co"># `drop8` is the eight-code union read in Route 1 above. It works unchanged on</span></span>
-<span id="cb36-547"><a href="#cb36-547" aria-hidden="true" tabindex="-1"></a>   <span class="co"># a matrix, because the mask is keyed on probe IDs and nothing else.</span></span>
-<span id="cb36-548"><a href="#cb36-548" aria-hidden="true" tabindex="-1"></a>   beta_filt <span class="ot">&lt;-</span> beta[<span class="sc">!</span><span class="fu">rownames</span>(beta) <span class="sc">%in%</span> drop8, ]</span>
-<span id="cb36-549"><a href="#cb36-549" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-550"><a href="#cb36-550" aria-hidden="true" tabindex="-1"></a>   <span class="co"># archived manifest, if you need sub-population resolution instead</span></span>
-<span id="cb36-551"><a href="#cb36-551" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(data.table)</span>
-<span id="cb36-552"><a href="#cb36-552" aria-hidden="true" tabindex="-1"></a>   pop  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.hg38.manifest.pop.tsv.gz&quot;</span>)</span>
-<span id="cb36-553"><a href="#cb36-553" aria-hidden="true" tabindex="-1"></a>   drop <span class="ot">&lt;-</span> pop<span class="sc">$</span>probeID[pop<span class="sc">$</span>MASK_general_ASW]           <span class="co"># e.g. African-ancestry SW US</span></span>
-<span id="cb36-554"><a href="#cb36-554" aria-hidden="true" tabindex="-1"></a>   beta_filt <span class="ot">&lt;-</span> beta[<span class="sc">!</span><span class="fu">rownames</span>(beta) <span class="sc">%in%</span> drop, ]</span>
-<span id="cb36-555"><a href="#cb36-555" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb36-556"><a href="#cb36-556" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**You lose the detection-p filter** unless the submitter deposited detection</span>
-<span id="cb36-557"><a href="#cb36-557" aria-hidden="true" tabindex="-1"></a>   p-values alongside the matrix (some do, as a separate supplementary file — use</span>
-<span id="cb36-558"><a href="#cb36-558" aria-hidden="true" tabindex="-1"></a>   it if present). Without it, rely on the mask plus removing probes with excessive</span>
-<span id="cb36-559"><a href="#cb36-559" aria-hidden="true" tabindex="-1"></a>   <span class="in">`NA`</span> values.</span>
-<span id="cb36-560"><a href="#cb36-560" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Sex chromosomes** filter the same way, by intersecting with the manifest&#39;s</span>
-<span id="cb36-561"><a href="#cb36-561" aria-hidden="true" tabindex="-1"></a>   chromosome annotation. It is possible sex chromosome CpGs will have already been </span>
-<span id="cb36-562"><a href="#cb36-562" aria-hidden="true" tabindex="-1"></a>   removed from a pre-processed dataset. </span>
-<span id="cb36-563"><a href="#cb36-563" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-564"><a href="#cb36-564" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
-<span id="cb36-565"><a href="#cb36-565" aria-hidden="true" tabindex="-1"></a><span class="fu">## Match the mask to the array *and* the genome build</span></span>
-<span id="cb36-566"><a href="#cb36-566" aria-hidden="true" tabindex="-1"></a>Zhou publishes masks per platform (450K / EPIC / EPICv2) and per genome build</span>
-<span id="cb36-567"><a href="#cb36-567" aria-hidden="true" tabindex="-1"></a>(hg19 / hg38). Use the manifest that matches the array the data were generated on;</span>
-<span id="cb36-568"><a href="#cb36-568" aria-hidden="true" tabindex="-1"></a>the probe IDs mostly overlap between 450K and EPIC but the mask *contents* differ.</span>
-<span id="cb36-569"><a href="#cb36-569" aria-hidden="true" tabindex="-1"></a>If you are combining a 450K series with an EPIC series, filter each on its own</span>
-<span id="cb36-570"><a href="#cb36-570" aria-hidden="true" tabindex="-1"></a>manifest, then intersect on the shared probe IDs.</span>
-<span id="cb36-571"><a href="#cb36-571" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-572"><a href="#cb36-572" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-573"><a href="#cb36-573" aria-hidden="true" tabindex="-1"></a>We save the filtered, EWAS-ready object for cell-composition estimation next:</span>
-<span id="cb36-574"><a href="#cb36-574" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-577"><a href="#cb36-577" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb36-578"><a href="#cb36-578" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-filtered</span></span>
-<span id="cb36-579"><a href="#cb36-579" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The EWAS-ready GenomicRatioSet. An S4 object with four parallel matrices and</span></span>
-<span id="cb36-580"><a href="#cb36-580" aria-hidden="true" tabindex="-1"></a><span class="co">#    a GRanges, so RDS rather than a flat file. Read by cell-composition</span></span>
-<span id="cb36-581"><a href="#cb36-581" aria-hidden="true" tabindex="-1"></a><span class="co">#    estimation ([chapter 04](04_cell_composition.qmd)) and the batch-effect</span></span>
-<span id="cb36-582"><a href="#cb36-582" aria-hidden="true" tabindex="-1"></a><span class="co">#    diagnostics ([chapter 05](05_batch_effects.qmd)).</span></span>
-<span id="cb36-583"><a href="#cb36-583" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(grs_filt, <span class="st">&quot;data/03_grs_filtered.rds&quot;</span>)</span>
-<span id="cb36-584"><a href="#cb36-584" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-585"><a href="#cb36-585" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The funnel counts, so a later chapter or a methods section can quote them</span></span>
-<span id="cb36-586"><a href="#cb36-586" aria-hidden="true" tabindex="-1"></a><span class="co">#    without re-running the filter.</span></span>
-<span id="cb36-587"><a href="#cb36-587" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(funl, <span class="st">&quot;data/03_filter_funnel.rds&quot;</span>)</span>
-<span id="cb36-588"><a href="#cb36-588" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-589"><a href="#cb36-589" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. The per-code probe sets behind §2. A list of eight character vectors of</span></span>
-<span id="cb36-590"><a href="#cb36-590" aria-hidden="true" tabindex="-1"></a><span class="co">#    unequal length, which a flat file would not hold.</span></span>
-<span id="cb36-591"><a href="#cb36-591" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mp, <span class="st">&quot;data/03_mask_pieces.rds&quot;</span>)</span>
-<span id="cb36-592"><a href="#cb36-592" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-593"><a href="#cb36-593" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. The funnel as a flat table as well: five rows, so it is committed to the</span></span>
-<span id="cb36-594"><a href="#cb36-594" aria-hidden="true" tabindex="-1"></a><span class="co">#    repository and readable straight from GitHub by anyone who cannot hold the</span></span>
-<span id="cb36-595"><a href="#cb36-595" aria-hidden="true" tabindex="-1"></a><span class="co">#    GenomicRatioSet in memory.</span></span>
-<span id="cb36-596"><a href="#cb36-596" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(funnel, <span class="st">&quot;data/03_filter_funnel.tsv&quot;</span>,</span>
-<span id="cb36-597"><a href="#cb36-597" aria-hidden="true" tabindex="-1"></a>            <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>, <span class="at">na =</span> <span class="st">&quot;&quot;</span>)</span>
-<span id="cb36-598"><a href="#cb36-598" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-478"><a href="#cb36-478" aria-hidden="true" tabindex="-1"></a>The difference is the repeat and copy-number terms described in §2: the legacy</span>
+<span id="cb36-479"><a href="#cb36-479" aria-hidden="true" tabindex="-1"></a><span class="in">`MASK_general_&lt;POP&gt;`</span> bundles them in, and v8.1 has no equivalent. So moving to v8.1</span>
+<span id="cb36-480"><a href="#cb36-480" aria-hidden="true" tabindex="-1"></a>retains **`r format(funl$retained - 724282, big.mark = &quot;,&quot;)`** more probes here — more</span>
+<span id="cb36-481"><a href="#cb36-481" aria-hidden="true" tabindex="-1"></a>sites tested, but also the repeat-overlapping probes no longer excluded. Neither</span>
+<span id="cb36-482"><a href="#cb36-482" aria-hidden="true" tabindex="-1"></a>choice is automatically right; what matters is that you state which mask generation</span>
+<span id="cb36-483"><a href="#cb36-483" aria-hidden="true" tabindex="-1"></a>and which terms you used, since the two are not interchangeable.</span>
+<span id="cb36-484"><a href="#cb36-484" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-485"><a href="#cb36-485" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
+<span id="cb36-486"><a href="#cb36-486" aria-hidden="true" tabindex="-1"></a><span class="fu">## The teaching point</span></span>
+<span id="cb36-487"><a href="#cb36-487" aria-hidden="true" tabindex="-1"></a>Probe filtering is not a fixed recipe — the SNP component depends on your study</span>
+<span id="cb36-488"><a href="#cb36-488" aria-hidden="true" tabindex="-1"></a>population. For a cohort of known, relatively homogeneous ancestry, use that</span>
+<span id="cb36-489"><a href="#cb36-489" aria-hidden="true" tabindex="-1"></a>population&#39;s mask. For an admixed or mixed-ancestry cohort, the conservative choice</span>
+<span id="cb36-490"><a href="#cb36-490" aria-hidden="true" tabindex="-1"></a>is to take the **union** of the relevant population masks (drop a probe if it is</span>
+<span id="cb36-491"><a href="#cb36-491" aria-hidden="true" tabindex="-1"></a>SNP-affected in *any* represented ancestry). For a multi-ancestry cohort or cohort </span>
+<span id="cb36-492"><a href="#cb36-492" aria-hidden="true" tabindex="-1"></a>of unknown ancestry, the general population mask is the most appropriate.</span>
+<span id="cb36-493"><a href="#cb36-493" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-494"><a href="#cb36-494" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-495"><a href="#cb36-495" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb36-496"><a href="#cb36-496" aria-hidden="true" tabindex="-1"></a><span class="fu">## Smoking-associated probes</span></span>
+<span id="cb36-497"><a href="#cb36-497" aria-hidden="true" tabindex="-1"></a>Everything above masks probes that are unreliable *by design*. There is a separate,</span>
+<span id="cb36-498"><a href="#cb36-498" aria-hidden="true" tabindex="-1"></a>optional reason to drop probes: smoking is one of the largest environmental drivers</span>
+<span id="cb36-499"><a href="#cb36-499" aria-hidden="true" tabindex="-1"></a>of blood methylation, and if your dataset has no smoking variable — as the Grady</span>
+<span id="cb36-500"><a href="#cb36-500" aria-hidden="true" tabindex="-1"></a>deposit does not — one of the available strategies is to exclude CpGs known from the</span>
+<span id="cb36-501"><a href="#cb36-501" aria-hidden="true" tabindex="-1"></a>literature to be smoking-associated, at this filtering stage rather than after the</span>
+<span id="cb36-502"><a href="#cb36-502" aria-hidden="true" tabindex="-1"></a>fact. That is a decision about confounding, not about probe quality, so it does not</span>
+<span id="cb36-503"><a href="#cb36-503" aria-hidden="true" tabindex="-1"></a>belong in the funnel above. This tutorial does exclude smoking-associated CpGs, but</span>
+<span id="cb36-504"><a href="#cb36-504" aria-hidden="true" tabindex="-1"></a>at a later step as these probes are needed to create a proxy smoking variable. See</span>
+<span id="cb36-505"><a href="#cb36-505" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">the smoking section in the EWAS chapter</span><span class="co">](06_ewas.qmd)</span> for the full set of options.</span>
+<span id="cb36-506"><a href="#cb36-506" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-507"><a href="#cb36-507" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-508"><a href="#cb36-508" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Detection-p and sex-chromosome filtering {#sec-detp-sex}</span></span>
+<span id="cb36-509"><a href="#cb36-509" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-510"><a href="#cb36-510" aria-hidden="true" tabindex="-1"></a>Two study-specific filters complete the funnel:</span>
+<span id="cb36-511"><a href="#cb36-511" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-512"><a href="#cb36-512" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Detection-p failures.** From <span class="co">[</span><span class="ot">QC</span><span class="co">](01_qc.qmd)</span> we have the per-probe detection</span>
+<span id="cb36-513"><a href="#cb36-513" aria-hidden="true" tabindex="-1"></a>  p-values. A probe that fails (p &gt; 0.01) in more than ~10% of samples is</span>
+<span id="cb36-514"><a href="#cb36-514" aria-hidden="true" tabindex="-1"></a>  unreliable *in this dataset* and is dropped. Here that removed</span>
+<span id="cb36-515"><a href="#cb36-515" aria-hidden="true" tabindex="-1"></a>  <span class="in">`r funl$drop_detp`</span> probes.</span>
+<span id="cb36-516"><a href="#cb36-516" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Sex chromosomes.** For an autosomal EWAS, X- and Y-chromosome probes are also removed </span>
+<span id="cb36-517"><a href="#cb36-517" aria-hidden="true" tabindex="-1"></a>  (<span class="in">`r funl$drop_sex`</span> probes): X-inactivation and sex differences would</span>
+<span id="cb36-518"><a href="#cb36-518" aria-hidden="true" tabindex="-1"></a>  otherwise dominate, and they need sex-stratified handling if analyzed. They are</span>
+<span id="cb36-519"><a href="#cb36-519" aria-hidden="true" tabindex="-1"></a>  *removed from the autosomal analysis*, not deleted from the study — a sex-specific</span>
+<span id="cb36-520"><a href="#cb36-520" aria-hidden="true" tabindex="-1"></a>  analysis would use them deliberately.</span>
+<span id="cb36-521"><a href="#cb36-521" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-522"><a href="#cb36-522" aria-hidden="true" tabindex="-1"></a>The exact filtering code (run once, checkpointed):</span>
+<span id="cb36-523"><a href="#cb36-523" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-526"><a href="#cb36-526" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-527"><a href="#cb36-527" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: apply-filter</span></span>
+<span id="cb36-528"><a href="#cb36-528" aria-hidden="true" tabindex="-1"></a><span class="co"># `keep` is the set union of the three drop lists, taken out of the normalized</span></span>
+<span id="cb36-529"><a href="#cb36-529" aria-hidden="true" tabindex="-1"></a><span class="co"># probe set: the eight-code mask (`drop_mask`), the detection-p failures</span></span>
+<span id="cb36-530"><a href="#cb36-530" aria-hidden="true" tabindex="-1"></a><span class="co"># (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does</span></span>
+<span id="cb36-531"><a href="#cb36-531" aria-hidden="true" tabindex="-1"></a><span class="co"># not matter -- a probe flagged by two filters is dropped once.</span></span>
+<span id="cb36-532"><a href="#cb36-532" aria-hidden="true" tabindex="-1"></a>grs_filt <span class="ot">&lt;-</span> grs[keep, ]</span>
+<span id="cb36-533"><a href="#cb36-533" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-534"><a href="#cb36-534" aria-hidden="true" tabindex="-1"></a><span class="co"># Subsetting a GenomicRatioSet carries the beta/M matrices, the genome</span></span>
+<span id="cb36-535"><a href="#cb36-535" aria-hidden="true" tabindex="-1"></a><span class="co"># coordinates and the sample metadata along with it, so this object is</span></span>
+<span id="cb36-536"><a href="#cb36-536" aria-hidden="true" tabindex="-1"></a><span class="co"># analysis-ready as it stands.</span></span>
+<span id="cb36-537"><a href="#cb36-537" aria-hidden="true" tabindex="-1"></a>grs_filt</span>
+<span id="cb36-538"><a href="#cb36-538" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-539"><a href="#cb36-539" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-540"><a href="#cb36-540" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. When you don&#39;t have IDATs: filtering a processed matrix {#sec-no-idats}</span></span>
+<span id="cb36-541"><a href="#cb36-541" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-542"><a href="#cb36-542" aria-hidden="true" tabindex="-1"></a>Probe filtering is one of the few preprocessing steps that works **identically**</span>
+<span id="cb36-543"><a href="#cb36-543" aria-hidden="true" tabindex="-1"></a>whether your data came from IDATs or from a processed β-matrix — because the masks</span>
+<span id="cb36-544"><a href="#cb36-544" aria-hidden="true" tabindex="-1"></a>are keyed on **probe IDs**, not intensities. The workflow:</span>
+<span id="cb36-545"><a href="#cb36-545" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-546"><a href="#cb36-546" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Load the matrix** (see the <span class="co">[</span><span class="ot">normalization</span><span class="co">](02_normalization.qmd)</span> non-IDAT</span>
+<span id="cb36-547"><a href="#cb36-547" aria-hidden="true" tabindex="-1"></a>   section) so you have a β-matrix with <span class="in">`cg`</span>/<span class="in">`ch`</span> probe IDs as rownames.</span>
+<span id="cb36-548"><a href="#cb36-548" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Apply the same masks by ID.** Read Zhou&#39;s mask/manifest for the correct array</span>
+<span id="cb36-549"><a href="#cb36-549" aria-hidden="true" tabindex="-1"></a>   (450K vs EPIC vs EPICv2 — they have different probe sets), pick the mask for</span>
+<span id="cb36-550"><a href="#cb36-550" aria-hidden="true" tabindex="-1"></a>   your study population, and subset:</span>
+<span id="cb36-551"><a href="#cb36-551" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-552"><a href="#cb36-552" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb36-553"><a href="#cb36-553" aria-hidden="true" tabindex="-1"></a>   <span class="co"># `drop8` is the eight-code union read from the TSV above. It works unchanged on</span></span>
+<span id="cb36-554"><a href="#cb36-554" aria-hidden="true" tabindex="-1"></a>   <span class="co"># a matrix, because the mask is keyed on probe IDs and nothing else.</span></span>
+<span id="cb36-555"><a href="#cb36-555" aria-hidden="true" tabindex="-1"></a>   beta_filt <span class="ot">&lt;-</span> beta[<span class="sc">!</span><span class="fu">rownames</span>(beta) <span class="sc">%in%</span> drop8, ]</span>
+<span id="cb36-556"><a href="#cb36-556" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-557"><a href="#cb36-557" aria-hidden="true" tabindex="-1"></a>   <span class="co"># archived manifest, if you need sub-population resolution instead</span></span>
+<span id="cb36-558"><a href="#cb36-558" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(data.table)</span>
+<span id="cb36-559"><a href="#cb36-559" aria-hidden="true" tabindex="-1"></a>   pop  <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;EPIC.hg38.manifest.pop.tsv.gz&quot;</span>)</span>
+<span id="cb36-560"><a href="#cb36-560" aria-hidden="true" tabindex="-1"></a>   drop <span class="ot">&lt;-</span> pop<span class="sc">$</span>probeID[pop<span class="sc">$</span>MASK_general_ASW]           <span class="co"># e.g. African-ancestry SW US</span></span>
+<span id="cb36-561"><a href="#cb36-561" aria-hidden="true" tabindex="-1"></a>   beta_filt <span class="ot">&lt;-</span> beta[<span class="sc">!</span><span class="fu">rownames</span>(beta) <span class="sc">%in%</span> drop, ]</span>
+<span id="cb36-562"><a href="#cb36-562" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb36-563"><a href="#cb36-563" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**You lose the detection-p filter** unless the submitter deposited detection</span>
+<span id="cb36-564"><a href="#cb36-564" aria-hidden="true" tabindex="-1"></a>   p-values alongside the matrix (some do, as a separate supplementary file — use</span>
+<span id="cb36-565"><a href="#cb36-565" aria-hidden="true" tabindex="-1"></a>   it if present). Without it, rely on the mask plus removing probes with excessive</span>
+<span id="cb36-566"><a href="#cb36-566" aria-hidden="true" tabindex="-1"></a>   <span class="in">`NA`</span> values.</span>
+<span id="cb36-567"><a href="#cb36-567" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**Sex chromosomes** filter the same way, by intersecting with the manifest&#39;s</span>
+<span id="cb36-568"><a href="#cb36-568" aria-hidden="true" tabindex="-1"></a>   chromosome annotation. It is possible sex chromosome CpGs will have already been </span>
+<span id="cb36-569"><a href="#cb36-569" aria-hidden="true" tabindex="-1"></a>   removed from a pre-processed dataset. </span>
+<span id="cb36-570"><a href="#cb36-570" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-571"><a href="#cb36-571" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb36-572"><a href="#cb36-572" aria-hidden="true" tabindex="-1"></a><span class="fu">## Match the mask to the array *and* the genome build</span></span>
+<span id="cb36-573"><a href="#cb36-573" aria-hidden="true" tabindex="-1"></a>Zhou publishes masks per platform (450K / EPIC / EPICv2) and per genome build</span>
+<span id="cb36-574"><a href="#cb36-574" aria-hidden="true" tabindex="-1"></a>(hg19 / hg38). Use the manifest that matches the array the data were generated on;</span>
+<span id="cb36-575"><a href="#cb36-575" aria-hidden="true" tabindex="-1"></a>the probe IDs mostly overlap between 450K and EPIC but the mask *contents* differ.</span>
+<span id="cb36-576"><a href="#cb36-576" aria-hidden="true" tabindex="-1"></a>If you are combining a 450K series with an EPIC series, filter each on its own</span>
+<span id="cb36-577"><a href="#cb36-577" aria-hidden="true" tabindex="-1"></a>manifest, then intersect on the shared probe IDs.</span>
+<span id="cb36-578"><a href="#cb36-578" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-579"><a href="#cb36-579" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-580"><a href="#cb36-580" aria-hidden="true" tabindex="-1"></a>We save the filtered, EWAS-ready object for cell-composition estimation next:</span>
+<span id="cb36-581"><a href="#cb36-581" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-584"><a href="#cb36-584" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-585"><a href="#cb36-585" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-filtered</span></span>
+<span id="cb36-586"><a href="#cb36-586" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The EWAS-ready GenomicRatioSet. An S4 object with four parallel matrices and</span></span>
+<span id="cb36-587"><a href="#cb36-587" aria-hidden="true" tabindex="-1"></a><span class="co">#    a GRanges, so RDS rather than a flat file. Read by cell-composition</span></span>
+<span id="cb36-588"><a href="#cb36-588" aria-hidden="true" tabindex="-1"></a><span class="co">#    estimation ([chapter 04](04_cell_composition.qmd)) and the batch-effect</span></span>
+<span id="cb36-589"><a href="#cb36-589" aria-hidden="true" tabindex="-1"></a><span class="co">#    diagnostics ([chapter 05](05_batch_effects.qmd)).</span></span>
+<span id="cb36-590"><a href="#cb36-590" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(grs_filt, <span class="st">&quot;data/03_grs_filtered.rds&quot;</span>)</span>
+<span id="cb36-591"><a href="#cb36-591" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-592"><a href="#cb36-592" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The funnel counts, so a later chapter or a methods section can quote them</span></span>
+<span id="cb36-593"><a href="#cb36-593" aria-hidden="true" tabindex="-1"></a><span class="co">#    without re-running the filter.</span></span>
+<span id="cb36-594"><a href="#cb36-594" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(funl, <span class="st">&quot;data/03_filter_funnel.rds&quot;</span>)</span>
+<span id="cb36-595"><a href="#cb36-595" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-596"><a href="#cb36-596" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. The per-code probe sets behind §2. A list of eight character vectors of</span></span>
+<span id="cb36-597"><a href="#cb36-597" aria-hidden="true" tabindex="-1"></a><span class="co">#    unequal length, which a flat file would not hold.</span></span>
+<span id="cb36-598"><a href="#cb36-598" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(mp, <span class="st">&quot;data/03_mask_pieces.rds&quot;</span>)</span>
 <span id="cb36-599"><a href="#cb36-599" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-600"><a href="#cb36-600" aria-hidden="true" tabindex="-1"></a>::: {.callout-note collapse=&quot;true&quot;}</span>
-<span id="cb36-601"><a href="#cb36-601" aria-hidden="true" tabindex="-1"></a><span class="fu">## If the detection-p step will not fit on your machine</span></span>
-<span id="cb36-602"><a href="#cb36-602" aria-hidden="true" tabindex="-1"></a>Recomputing <span class="in">`detectionP()`</span> holds the raw two-channel object and a probe × sample</span>
-<span id="cb36-603"><a href="#cb36-603" aria-hidden="true" tabindex="-1"></a>p-value matrix in memory at once — roughly 4 GB on top of the normalized object. If</span>
-<span id="cb36-604"><a href="#cb36-604" aria-hidden="true" tabindex="-1"></a>that is more than you have, fetch the filtered checkpoint this chapter writes and</span>
-<span id="cb36-605"><a href="#cb36-605" aria-hidden="true" tabindex="-1"></a>start from it instead:</span>
+<span id="cb36-600"><a href="#cb36-600" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. The funnel as a flat table as well: five rows, so it is committed to the</span></span>
+<span id="cb36-601"><a href="#cb36-601" aria-hidden="true" tabindex="-1"></a><span class="co">#    repository and readable straight from GitHub by anyone who cannot hold the</span></span>
+<span id="cb36-602"><a href="#cb36-602" aria-hidden="true" tabindex="-1"></a><span class="co">#    GenomicRatioSet in memory.</span></span>
+<span id="cb36-603"><a href="#cb36-603" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(funnel, <span class="st">&quot;data/03_filter_funnel.tsv&quot;</span>,</span>
+<span id="cb36-604"><a href="#cb36-604" aria-hidden="true" tabindex="-1"></a>            <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>, <span class="at">na =</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb36-605"><a href="#cb36-605" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb36-606"><a href="#cb36-606" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-607"><a href="#cb36-607" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
-<span id="cb36-608"><a href="#cb36-608" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> D_filtered</span>
-<span id="cb36-609"><a href="#cb36-609" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-610"><a href="#cb36-610" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-611"><a href="#cb36-611" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb36-612"><a href="#cb36-612" aria-hidden="true" tabindex="-1"></a>grs_filt <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/03_grs_filtered.rds&quot;</span>)</span>
-<span id="cb36-613"><a href="#cb36-613" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb36-614"><a href="#cb36-614" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-615"><a href="#cb36-615" aria-hidden="true" tabindex="-1"></a>What you give up is the funnel: every count above is computed from the three probe</span>
-<span id="cb36-616"><a href="#cb36-616" aria-hidden="true" tabindex="-1"></a>lists, not read from a file, so none of it appears if you skip the chapter&#39;s code.</span>
-<span id="cb36-617"><a href="#cb36-617" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb36-618"><a href="#cb36-618" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-619"><a href="#cb36-619" aria-hidden="true" tabindex="-1"></a>The result: **`r format(funl$retained, big.mark=&quot;,&quot;)`** autosomal probes on</span>
-<span id="cb36-620"><a href="#cb36-620" aria-hidden="true" tabindex="-1"></a>96 samples, filtered under the Zhou v8.1 mask for mapping quality, SNP masking</span>
-<span id="cb36-621"><a href="#cb36-621" aria-hidden="true" tabindex="-1"></a>appropriate to an admixed African-American cohort (AFR and EUR terms together),</span>
-<span id="cb36-622"><a href="#cb36-622" aria-hidden="true" tabindex="-1"></a>detection reliability, and sex chromosomes.</span>
-<span id="cb36-623"><a href="#cb36-623" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-624"><a href="#cb36-624" aria-hidden="true" tabindex="-1"></a>Nearly every probe that survives here is tested in the EWAS. Two small deductions</span>
-<span id="cb36-625"><a href="#cb36-625" aria-hidden="true" tabindex="-1"></a>happen later, both in <span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span>:</span>
-<span id="cb36-626"><a href="#cb36-626" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-627"><a href="#cb36-627" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>the **20 CpGs used to build the smoking proxy** are excluded, because regressing</span>
-<span id="cb36-628"><a href="#cb36-628" aria-hidden="true" tabindex="-1"></a>  those probes on a score derived from themselves is circular; and</span>
-<span id="cb36-629"><a href="#cb36-629" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**two probes** (<span class="in">`cg17759086`</span>, <span class="in">`cg01801182`</span>) have β pinned at 0 or 1 in the</span>
-<span id="cb36-630"><a href="#cb36-630" aria-hidden="true" tabindex="-1"></a>  87-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.</span>
-<span id="cb36-631"><a href="#cb36-631" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-632"><a href="#cb36-632" aria-hidden="true" tabindex="-1"></a>So <span class="in">`r format(funl$retained, big.mark=&quot;,&quot;)`</span> probes pass filtering and</span>
-<span id="cb36-633"><a href="#cb36-633" aria-hidden="true" tabindex="-1"></a>**756,251** are actually tested.</span>
-<span id="cb36-634"><a href="#cb36-634" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-635"><a href="#cb36-635" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb36-636"><a href="#cb36-636" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-637"><a href="#cb36-637" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Cell composition</span><span class="co">](04_cell_composition.qmd)</span> — whole blood is a mixture of</span>
-<span id="cb36-638"><a href="#cb36-638" aria-hidden="true" tabindex="-1"></a>cell types with very different methylomes; we estimate the proportions and validate</span>
-<span id="cb36-639"><a href="#cb36-639" aria-hidden="true" tabindex="-1"></a>against the study&#39;s deposited values.</span>
-<span id="cb36-640"><a href="#cb36-640" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-641"><a href="#cb36-641" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
-<span id="cb36-642"><a href="#cb36-642" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-643"><a href="#cb36-643" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb36-644"><a href="#cb36-644" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-607"><a href="#cb36-607" aria-hidden="true" tabindex="-1"></a>::: {.callout-note collapse=&quot;true&quot;}</span>
+<span id="cb36-608"><a href="#cb36-608" aria-hidden="true" tabindex="-1"></a><span class="fu">## If the detection-p step will not fit on your machine</span></span>
+<span id="cb36-609"><a href="#cb36-609" aria-hidden="true" tabindex="-1"></a>Recomputing <span class="in">`detectionP()`</span> holds the raw two-channel object and a probe × sample</span>
+<span id="cb36-610"><a href="#cb36-610" aria-hidden="true" tabindex="-1"></a>p-value matrix in memory at once — roughly 4 GB on top of the normalized object. If</span>
+<span id="cb36-611"><a href="#cb36-611" aria-hidden="true" tabindex="-1"></a>that is more than you have, fetch the filtered checkpoint this chapter writes and</span>
+<span id="cb36-612"><a href="#cb36-612" aria-hidden="true" tabindex="-1"></a>start from it instead:</span>
+<span id="cb36-613"><a href="#cb36-613" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-614"><a href="#cb36-614" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
+<span id="cb36-615"><a href="#cb36-615" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> D_filtered</span>
+<span id="cb36-616"><a href="#cb36-616" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-617"><a href="#cb36-617" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-618"><a href="#cb36-618" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb36-619"><a href="#cb36-619" aria-hidden="true" tabindex="-1"></a>grs_filt <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/03_grs_filtered.rds&quot;</span>)</span>
+<span id="cb36-620"><a href="#cb36-620" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-621"><a href="#cb36-621" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-622"><a href="#cb36-622" aria-hidden="true" tabindex="-1"></a>What you give up is the funnel: every count above is computed from the three probe</span>
+<span id="cb36-623"><a href="#cb36-623" aria-hidden="true" tabindex="-1"></a>lists, not read from a file, so none of it appears if you skip the chapter&#39;s code.</span>
+<span id="cb36-624"><a href="#cb36-624" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb36-625"><a href="#cb36-625" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-626"><a href="#cb36-626" aria-hidden="true" tabindex="-1"></a>The result: **`r format(funl$retained, big.mark=&quot;,&quot;)`** autosomal probes on</span>
+<span id="cb36-627"><a href="#cb36-627" aria-hidden="true" tabindex="-1"></a>96 samples, filtered under the Zhou v8.1 mask for mapping quality, SNP masking</span>
+<span id="cb36-628"><a href="#cb36-628" aria-hidden="true" tabindex="-1"></a>appropriate to an admixed African-American cohort (AFR and EUR terms together),</span>
+<span id="cb36-629"><a href="#cb36-629" aria-hidden="true" tabindex="-1"></a>detection reliability, and sex chromosomes.</span>
+<span id="cb36-630"><a href="#cb36-630" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-631"><a href="#cb36-631" aria-hidden="true" tabindex="-1"></a>Nearly every probe that survives here is tested in the EWAS. Two small deductions</span>
+<span id="cb36-632"><a href="#cb36-632" aria-hidden="true" tabindex="-1"></a>happen later, both in <span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span>:</span>
+<span id="cb36-633"><a href="#cb36-633" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-634"><a href="#cb36-634" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>the **20 CpGs used to build the smoking proxy** are excluded, because regressing</span>
+<span id="cb36-635"><a href="#cb36-635" aria-hidden="true" tabindex="-1"></a>  those probes on a score derived from themselves is circular; and</span>
+<span id="cb36-636"><a href="#cb36-636" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**two probes** (<span class="in">`cg17759086`</span>, <span class="in">`cg01801182`</span>) have β pinned at 0 or 1 in the</span>
+<span id="cb36-637"><a href="#cb36-637" aria-hidden="true" tabindex="-1"></a>  87-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.</span>
+<span id="cb36-638"><a href="#cb36-638" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-639"><a href="#cb36-639" aria-hidden="true" tabindex="-1"></a>So <span class="in">`r format(funl$retained, big.mark=&quot;,&quot;)`</span> probes pass filtering and</span>
+<span id="cb36-640"><a href="#cb36-640" aria-hidden="true" tabindex="-1"></a>**756,251** are actually tested.</span>
+<span id="cb36-641"><a href="#cb36-641" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-642"><a href="#cb36-642" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-643"><a href="#cb36-643" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-644"><a href="#cb36-644" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Cell composition</span><span class="co">](04_cell_composition.qmd)</span> — whole blood is a mixture of</span>
+<span id="cb36-645"><a href="#cb36-645" aria-hidden="true" tabindex="-1"></a>cell types with very different methylomes; we estimate the proportions and validate</span>
+<span id="cb36-646"><a href="#cb36-646" aria-hidden="true" tabindex="-1"></a>against the study&#39;s deposited values.</span>
+<span id="cb36-647"><a href="#cb36-647" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-648"><a href="#cb36-648" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb36-649"><a href="#cb36-649" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-650"><a href="#cb36-650" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb36-651"><a href="#cb36-651" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
