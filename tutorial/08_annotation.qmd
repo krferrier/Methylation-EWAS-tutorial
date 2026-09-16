@@ -589,9 +589,10 @@ This section starts from `data/08_annotation/PTSD_ewas_annotated_results.bed`, w
 
 ```{r}
 #| label: enmix-combp
-# Needs the ENmix stack. This repeats the whole region search on every render,
-# for a result the chapter only compares against; the numbers reported below
-# came from the command-line tool.
+#| eval: false
+# ENmix is not in `envs/methyl.yml` and comb-p itself lives in `envs/combp.yml`
+# (Python 2.7), so this cannot run in the render environment. Shown here; the
+# DMR outputs it produces come from the H_annotation tier.
 library(ENmix)
 
 bed <- data.table::fread("data/08_annotation/PTSD_ewas_annotated_results.bed")
@@ -930,9 +931,12 @@ below is the BACON top-table CSV written by chapter 06.
 
 ```{r}
 #| label: methylgsa
-# This needs the packages described in the callout above -- methylGSA with the
-# array annotation LOADED, not merely installed. If you render the book in an
-# environment without them, this is the chunk that will stop it.
+#| eval: false
+# This chunk needs `envs/methylgsa.yml`, a separate R 4.2 environment -- bioconda
+# has no r45 build of methylGSA, and pinning the whole tutorial back to R 4.2 for
+# one section is the trade this project deliberately refuses. So it cannot run in
+# the render environment and is shown instead; its two output tables are
+# committed and read below.
 library(methylGSA)
 library(data.table)   # fwrite(), for the two top-tables written at the end
 # methylGSA needs the array annotation LOADED, not merely installed --
@@ -1063,10 +1067,12 @@ so the coordinates and databases are build-consistent by construction.
 
 ```{r}
 #| label: kycg
-# The four knowledgebases are downloaded from ExperimentHub on first use and
-# cached outside the repository, so the first render of this chunk needs network
-# access. The CSV written at the end is what the two summary tables below are
-# built from.
+#| eval: false
+# knowYourCG is not in `envs/methyl.yml`: it needs Bioconductor 3.18+ and the
+# environment is pinned at r-base=4.5/Bioc 3.22 for the rest of the stack, so
+# this call is shown rather than run. Its output is the committed
+# data/08_annotation/08_kycg_results.csv that the next three chunks read, so
+# every number below is derived from a real run of exactly this code.
 library(knowYourCG)
 library(sesameData)
 tt      <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
