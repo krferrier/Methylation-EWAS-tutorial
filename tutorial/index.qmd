@@ -7,7 +7,8 @@ subtitle: "From raw IDATs to annotated hits, using the Grady Trauma Project (GSE
 #| label: setup
 #| include: false
 source("_setup.R")
-ss <- readRDS("data/sample_sheet.rds")
+# The same sample sheet every chapter reads; only used here for the inline counts below.
+ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 ss <- ss[order(ss$slide, ss$array_pos), ]
 ```
 

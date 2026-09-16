@@ -1,8 +1,18 @@
-# Shared setup sourced by every notebook.
-# Ensures the writable library holding the EPIC data packages is on the path.
+# Shared setup sourced by every notebook in a hidden chunk.
+#
+# What this file is allowed to do, by design:
+#   * put the writable library holding the EPIC data packages on the path
+#   * register the figure font and set the ggplot theme
+# What it must NOT do: supply objects, paths or packages that a chapter's code
+# depends on. Every chapter loads the packages it calls with a visible
+# library(), writes its paths literally as "data/<file>", and names colours by
+# hex, so that the code a reader copies out of the rendered page runs in a
+# fresh session. If you find yourself wanting to add a helper here, add it to
+# the chapter instead.
+#
 # Notebooks render from tutorial/, so also look one level up at the workspace libs.
+# Set EWAS_EPIC_LIB to point at your own library if it lives somewhere else.
 .cand_libs <- c(".r-libs/methyl", "../.r-libs/methyl",
-                "/home/krferrier/.claude-science/r-libs/28e92aec-1a42-49fe-9453-8f7c0cb91a8e/methyl",
                 Sys.getenv("EWAS_EPIC_LIB", unset = NA))
 .cand_libs <- .cand_libs[!is.na(.cand_libs) & nzchar(.cand_libs)]
 .cand_libs <- .cand_libs[dir.exists(.cand_libs)]
@@ -94,5 +104,3 @@ theme_ewas <- function(base_size = 12, base_family = .ewas_family) {
     )
 }
 theme_set(theme_ewas())
-
-data_path <- function(f) file.path("data", f)

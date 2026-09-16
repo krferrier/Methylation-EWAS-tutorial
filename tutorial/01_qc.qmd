@@ -14,15 +14,32 @@ downstream if it slips through. This notebook runs the standard `minfi`
 [@aryee2014minfi] QC 
 process on the 96-sample subset and walks you through how to decide what (if anything) to drop.
 
-We start from the raw two-channel object saved by the [Setup](00_setup.qmd) step.
+We start from the raw two-channel object saved at the end of the
+[Setup](00_setup.qmd) step — `data/01_RGset.rds`. Nothing in this chapter is
+pre-computed: every number and every figure below is derived from that object by the
+code you see, and the four QC measures are saved at the end so later work does not have
+to recompute them.
 
 ```{r}
 #| label: load
-rg  <- readRDS(data_path("01_RGset.rds"))
-qcp <- readRDS(data_path("01_qc_pieces.rds"))
-ss  <- as.data.frame(pData(rg))
+library(minfi)     # detectionP(), getQC(), getSex(), getSnpBeta()
+library(ggplot2)   # every figure in this chapter
+
+# The RGChannelSet written by the Setup chapter: raw red and green intensities
+# for 1,051,943 addresses across 96 arrays, with no normalization applied.
+rg <- readRDS("data/01_RGset.rds")
+
+# Setup attached the sample sheet to the object, so the phenotype table comes
+# back out of it here rather than being read from the CSV a second time. Its row
+# order is guaranteed to match the column order of `rg`.
+ss <- as.data.frame(pData(rg))
+
 rg
 ```
+
+The four checks below are independent of one another, and each one reduces the
+million-probe object to a handful of numbers per sample. Running all four takes under a
+minute.
 
 ## 1. Detection p-values — did the probe beat background?
 
@@ -32,15 +49,32 @@ measurement is noise. We summarize per sample: the mean detection p, and the
 fraction of probes failing at p > 0.01.
 
 ```{r}
+#| label: detp-compute
+# detectionP() compares every probe on every array against that array's own
+# distribution of negative-control probes, and returns a probe x sample matrix
+# of p-values. This is the one expensive step in the chapter: roughly 40 seconds
+# and 4 GB for 96 arrays, because the full 1,051,943 x 96 matrix is built.
+detP <- detectionP(rg)
+
+# Two per-sample summaries are all QC needs, so we collapse the big matrix
+# immediately and keep only these:
+det_mean <- colMeans(detP)          # average detection p-value across all probes
+det_fail <- colMeans(detP > 0.01)   # fraction of probes that failed the 0.01 cut
+
+# One row per array, ready to plot.
+det <- data.frame(sample    = colnames(rg),
+                  mean_detP = as.numeric(det_mean),
+                  frac_fail = as.numeric(det_fail),
+                  slide     = ss$slide)
+head(det, 3)
+```
+
+```{r}
 #| label: detp-plot
 #| fig-cap: "Per-sample detection p-value. All 96 samples are far below the 0.01 concern line — no failed arrays."
-det <- data.frame(sample = names(qcp$det_mean),
-                  mean_detP = qcp$det_mean,
-                  frac_fail = qcp$det_fail,
-                  slide = ss$slide)
 ggplot(det, aes(x = reorder(sample, mean_detP), y = mean_detP)) +
-  geom_point(color = ewas_col[["teal"]], size = 1.6) +
-  geom_hline(yintercept = 0.01, linetype = "dashed", color = ewas_col[["plum"]]) +
+  geom_point(color = "#1A6B75", size = 1.6) +                                  # teal
+  geom_hline(yintercept = 0.01, linetype = "dashed", color = "#8C3A4A") +      # plum
   labs(x = "sample (ranked)", y = "mean detection p-value",
        title = "Detection p-value per sample") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
@@ -67,14 +101,27 @@ normalization.
 convention flags samples below a line at `(mMed + uMed)/2 = 10.5`.
 
 ```{r}
+#| label: intensity-compute
+# getQC() needs the two channels separated into methylated and unmethylated
+# signal, which is what preprocessRaw() does -- it is a re-arrangement of the
+# raw intensities, not a normalization, so nothing is altered here.
+mset  <- preprocessRaw(rg)
+qc_df <- getQC(mset)           # one row per sample: mMed and uMed
+
+qc <- as.data.frame(qc_df)
+qc$sample <- rownames(qc)
+# minfi's convention: flag an array whose two medians average below 10.5.
+qc$flag <- ((qc$mMed + qc$uMed) / 2) < 10.5
+head(qc, 3)
+```
+
+```{r}
 #| label: intensity-plot
 #| fig-cap: "Median methylated vs unmethylated log2 intensity. All samples sit well above the 10.5 low-signal cutoff."
-qc <- as.data.frame(qcp$qc); qc$sample <- rownames(qc)
-qc$flag <- ((qc$mMed + qc$uMed) / 2) < 10.5
 ggplot(qc, aes(mMed, uMed, color = flag)) +
   geom_point(size = 2) +
   geom_abline(intercept = 2 * 10.5, slope = -1, linetype = "dashed", color = "gray40") +
-  scale_color_manual(values = c(`FALSE` = ewas_col[["teal"]], `TRUE` = ewas_col[["plum"]]),
+  scale_color_manual(values = c(`FALSE` = "#1A6B75", `TRUE` = "#8C3A4A"),
                      labels = c("pass", "low signal"), name = NULL) +
   labs(x = "median methylated log2 int (mMed)",
        y = "median unmethylated log2 int (uMed)",
@@ -97,15 +144,28 @@ X vs Y. A mismatch between predicted and reported sex is a strong signal of a
 covariate we must model, catching it here is important.
 
 ```{r}
+#| label: sex-compute
+# getSex() works on median intensity per chromosome, so the probes have to know
+# where they sit in the genome first. mapToGenome() attaches those coordinates
+# using the EPIC annotation package; it adds no new measurement.
+gmset <- mapToGenome(mset)
+psex  <- getSex(gmset)         # xMed, yMed and predictedSex per sample
+
+sx <- data.frame(sample    = colnames(rg),
+                 xMed      = psex$xMed,
+                 yMed      = psex$yMed,
+                 predicted = as.character(psex$predictedSex),
+                 reported  = as.character(ss$sex))   # reported sex from the sample sheet
+sx$mismatch <- sx$predicted != sx$reported
+head(sx, 3)
+```
+
+```{r}
 #| label: sex-plot
 #| fig-cap: "Predicted sex from X/Y intensity, colored by reported sex. Clean separation, zero mismatches."
-sx <- data.frame(xMed = qcp$psex$xMed, yMed = qcp$psex$yMed,
-                 predicted = qcp$psex$predictedSex,
-                 reported = qcp$rep_sex)
-sx$mismatch <- sx$predicted != sx$reported
 ggplot(sx, aes(xMed, yMed, color = reported, shape = mismatch)) +
   geom_point(size = 2.5) +
-  scale_color_manual(values = c(F = ewas_col[["sand"]], M = ewas_col[["teal"]]), name = "reported") +
+  scale_color_manual(values = c(F = "#B8873F", M = "#1A6B75"), name = "reported") +
   scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 4), guide = "none") +
   labs(x = "median X log2 int", y = "median Y log2 int",
        title = "Predicted vs reported sex")
@@ -129,11 +189,15 @@ samples really are the same individual.
 ```{r}
 #| label: snp-heatmap
 #| fig-cap: "The ~59 rs SNP probes across samples. Discrete banding near 0 / 0.5 / 1 is the expected genotype signal; no two columns are identical, so no duplicate samples."
-snps <- qcp$snps
-# cluster samples by SNP fingerprint
-d <- dist(t(snps))
+# getSnpBeta() pulls just the rs probes out of the raw object and returns their
+# beta values -- a 59 x 96 genotype matrix, small enough to handle directly.
+snps <- getSnpBeta(rg)
+
+# Cluster the samples by fingerprint so that any identical pair would sit
+# side by side in the image below.
+d   <- dist(t(snps))
 ord <- hclust(d)$order
-image(t(snps[, ord]), col = colorRampPalette(c(ewas_col[["teal"]],"white",ewas_col[["plum"]]))(64),
+image(t(snps[, ord]), col = colorRampPalette(c("#1A6B75", "white", "#8C3A4A"))(64),
       axes = FALSE, main = "rs SNP-probe fingerprints (samples clustered)")
 box()
 ```
@@ -153,16 +217,21 @@ cat("smallest between-sample fingerprint distance:", round(min(nn), 3),
 
 ```{r}
 #| label: verdict
+# Each check contributes a list of sample IDs to drop.
 drop_detp <- det$sample[det$mean_detP > 0.01]
 drop_int  <- qc$sample[qc$flag]
-drop_sex  <- sx$reported[sx$mismatch]
+drop_sex  <- sx$sample[sx$mismatch]     # sample IDs, to investigate rather than drop
+
+# Only the first two are automatic. A sex mismatch is a signal to go and find
+# out what happened, not grounds for silent removal, so it is reported and
+# deliberately left out of `keep`.
 keep <- setdiff(colnames(rg), unique(c(drop_detp, drop_int)))
+
 cat("Samples in:", ncol(rg), "\n")
 cat("Dropped for detection p:", length(drop_detp), "\n")
 cat("Dropped for low intensity:", length(drop_int), "\n")
 cat("Sex mismatches (investigate, don't auto-drop):", length(drop_sex), "\n")
 cat("Samples passing QC:", length(keep), "\n")
-saveRDS(keep, data_path("01_qc_pass_samples.rds"))
 ```
 
 All 96 samples pass. We carry the full set forward to
@@ -178,6 +247,82 @@ Even though all samples passed QC thresholds in this subset, doing the QC was
 still important as now we have evidence supporting that these samples are 'clean'.
 In a real dataset there are typically several samples that will not pass
 QC for one of the 4 checks.
+:::
+
+## Saving what we just computed
+
+The four checks cost a minute of compute and reduce a 460 MB object to a few numbers per
+sample. Save them, so that revisiting a figure or a threshold later does not mean reading
+the IDATs and recomputing detection p-values again.
+
+Two files, for two different readers:
+
+```{r}
+#| label: save-qc
+# 1. The full set of pieces, exactly as deposited in the Zenodo record. Keeping
+#    the S4 objects (`qc` and `psex` are DFrames) means the saved file is the
+#    same object the code above produced, with nothing coerced or rounded.
+qc_pieces <- list(
+  det_mean = det_mean,                 # named numeric, one per sample
+  det_fail = det_fail,                 # named numeric, one per sample
+  qc       = qc_df,                    # DFrame: mMed, uMed
+  psex     = psex,                     # DFrame: xMed, yMed, predictedSex
+  rep_sex  = as.character(ss$sex),     # reported sex, from the sample sheet
+  snps     = snps                      # 59 rs probes x 96 samples
+)
+saveRDS(qc_pieces, "data/01_qc_pieces.rds")
+
+# 2. A flat, per-sample table of the same measurements. This one is small enough
+#    to live in the repository, so a reader who cannot hold the RGChannelSet in
+#    memory can still reproduce every figure in this chapter (see the callout).
+qc_metrics <- data.frame(
+  sample         = colnames(rg),
+  mean_detP      = as.numeric(det_mean),
+  frac_detP_fail = as.numeric(det_fail),
+  mMed           = as.numeric(qc_df$mMed),
+  uMed           = as.numeric(qc_df$uMed),
+  xMed           = as.numeric(psex$xMed),
+  yMed           = as.numeric(psex$yMed),
+  predicted_sex  = as.character(psex$predictedSex),
+  reported_sex   = as.character(ss$sex),
+  slide          = ss$slide,
+  array_pos      = ss$array_pos,
+  qc_pass        = colnames(rg) %in% keep,
+  stringsAsFactors = FALSE)
+
+write.table(qc_metrics, "data/01_qc_sample_metrics.tsv",
+            sep = "\t", row.names = FALSE, quote = FALSE)
+```
+
+::: {.callout-note collapse="true"}
+## Picking the chapter up from the saved table instead
+
+If reading the IDATs or holding the raw object in memory is not practical on your machine,
+you can skip straight to the figures. The per-sample table is in the repository, so it can
+be read directly over the network — no clone and no download step:
+
+```{.r filename="RStudio Console"}
+library(data.table)
+qc_metrics <- fread(paste0("https://raw.githubusercontent.com/krferrier/",
+                           "Methylation-EWAS-tutorial/main/tutorial/data/",
+                           "01_qc_sample_metrics.tsv"))
+
+# The plotting frames used above, rebuilt from the table:
+det <- data.frame(sample = qc_metrics$sample, mean_detP = qc_metrics$mean_detP,
+                  frac_fail = qc_metrics$frac_detP_fail, slide = qc_metrics$slide)
+qc  <- data.frame(sample = qc_metrics$sample, mMed = qc_metrics$mMed,
+                  uMed = qc_metrics$uMed)
+qc$flag <- ((qc$mMed + qc$uMed) / 2) < 10.5
+sx  <- data.frame(sample = qc_metrics$sample, xMed = qc_metrics$xMed,
+                  yMed = qc_metrics$yMed, predicted = qc_metrics$predicted_sex,
+                  reported = qc_metrics$reported_sex)
+sx$mismatch <- sx$predicted != sx$reported
+```
+
+Everything except the SNP-fingerprint heatmap will then run, because that one needs the
+59 x 96 genotype matrix rather than a per-sample summary. What this route does *not* give
+you is the experience of watching the checks run — so use it because you have to, not to
+save a minute.
 :::
 
 ## What the phenotype file is missing

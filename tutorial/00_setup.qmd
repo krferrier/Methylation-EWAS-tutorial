@@ -31,6 +31,23 @@ tab. If you are not using RStudio, `R` at a terminal gives you the same `>` prom
 works fine.
 :::
 
+::: {.callout-note collapse="true"}
+## One thing that runs before each chapter, and what it is not allowed to do
+
+Every chapter begins with a hidden chunk that does `source("_setup.R")`. That file is
+deliberately limited to two housekeeping jobs: it puts the library holding the EPIC
+annotation packages on R's search path, and it registers the figure font and ggplot theme
+so the plots share the site's look.
+
+What it does **not** do is supply anything the code you read depends on. Each chapter
+loads the packages it uses with its own visible `library()` call, writes its file paths out
+in full as `data/<file>`, and names colors by hex code. So if you copy a block out of a
+chapter into a fresh R session, it runs — you are never silently relying on something
+defined in a file you cannot see. If a chapter's code ever fails for you with
+`object not found` or `could not find function`, that is a bug in the chapter, not
+something you are missing.
+:::
+
 ## Building the software environment {#sec-env}
 
 Everything except the pipeline chapter needs **only R**. If you are new to computing,
@@ -468,25 +485,52 @@ and pairs the two channels for you:
 
 ```{r}
 #| label: read-idats
-#| eval: false
 #| filename: "RStudio Console"
 library(minfi)
 
+# The sample sheet does double duty: it lists the files to read, and it holds
+# the phenotype row for each array that we attach to the object below.
 ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 
+# Type the variables we intend to model, now, once. Level order matters: R uses
+# the FIRST level as the reference category, so listing "Control" first is what
+# makes chapter 06 report the effect of PTSD relative to controls. Left to
+# itself, factor() sorts alphabetically, puts "Case" first, and silently
+# reverses the sign of every effect estimate downstream.
+ss$ptsd            <- factor(ss$ptsd,            levels = c("Control", "Case"))
+ss$sex             <- factor(ss$sex,             levels = c("F", "M"))
+ss$childhood_abuse <- factor(ss$childhood_abuse, levels = c("neg", "pos"))
+
+# Read the 192 IDATs (two channels x 96 arrays) into one RGChannelSet.
 RGset <- read.metharray(
   basenames = file.path("data/idats", basename(ss$Basename)),
   force     = TRUE          # see the callout below -- required for this dataset
 )
 
+# read.metharray() reads intensities and nothing else -- it does not carry the
+# sample sheet along with it. Attach the phenotype table now so that every later
+# chapter can recover it with pData(RGset) rather than re-reading the CSV and
+# hoping the row order still matches. It does match here, because the files were
+# read in sample-sheet order.
+colnames(RGset) <- ss$sample_id                       # label arrays by GEO accession
+pData(RGset)    <- DataFrame(ss, row.names = ss$sample_id)   # DataFrame() comes from
+                                                             # S4Vectors, attached by minfi
+
 RGset
 dim(RGset)                  # 1051943 addresses x 96 arrays
+
+# Save it. Chapters 01 and 02 both start from this object, and re-reading 192
+# IDATs costs about two and a half minutes every time. The file is roughly
+# 460 MB, so keep it on a disk you have room on.
+saveRDS(RGset, "data/01_RGset.rds")
 ```
 
 The result is an `RGChannelSet`: raw red and green intensities per address, with no
-normalization and no probe filtering yet. That object is the input to
-[Quality control](01_qc.qmd), and it is what the `B_qc` tier gives you if you skip
-this step.
+normalization and no probe filtering yet. Saved as `data/01_RGset.rds`, it is the input to
+[Quality control](01_qc.qmd) and to [normalization](02_normalization.qmd) — both chapters
+open by reading that exact file. It is also what the `B_qc` tier gives you if you skip this
+step, so if reading the IDATs is impractical on your machine you can download the object
+instead and carry on from chapter 01 unchanged.
 
 ::: {.callout-warning}
 ## `force = TRUE` is required here, and it is not a formality
@@ -512,7 +556,6 @@ are before you force it:
 
 ```{r}
 #| label: idat-sizes
-#| eval: false
 #| filename: "RStudio Console"
 library(illuminaio)
 sizes <- sapply(file.path("data/idats", paste0(basename(ss$Basename), "_Grn.idat.gz")),
@@ -589,7 +632,6 @@ Before you plan a run, find out what you are working with.
 We can use R to determine the number of cores available on your machine. This uses base R and should work for Windows, Mac, or Linux OS. 
 ```{r}
 #| label: check-resources
-#| eval: false
 #| filename: "RStudio Console"
 # --- cores -----------------------------------------------------------------
 parallel::detectCores()                      # logical cores, incl. hyperthreading
@@ -786,7 +828,6 @@ column at all — it has to be recovered from the supplementary-file URL.
 
 ```{r}
 #| label: full-sample-sheet
-#| eval: false
 #| filename: "RStudio Console"
 library(GEOquery)
 
@@ -858,7 +899,6 @@ using that variable, exactly as 9 of the 96 do in this tutorial.
 
 ```{r}
 #| label: verify-full-sheet
-#| eval: false
 #| filename: "RStudio Console"
 ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 i  <- match(ss$sample_id, full$sample_id)
@@ -877,8 +917,9 @@ each Basename with the phenotype row for that GSM. Here is the first 8 rows of t
 
 ```{r}
 #| label: sample-sheet
-ss <- readRDS("data/sample_sheet.rds")
-ss <- ss[order(ss$slide, ss$array_pos), ]
+# The same CSV you downloaded above -- this is the file the whole tutorial reads.
+ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
+ss <- ss[order(ss$slide, ss$array_pos), ]   # chip, then position within the chip
 cat("Samples:", nrow(ss), " | Chips:", length(unique(ss$slide)), "\n")
 knitr::kable(head(ss[, c("sample_id","slide","array_pos","gender","age",
                          "ptsd","race")], 8),

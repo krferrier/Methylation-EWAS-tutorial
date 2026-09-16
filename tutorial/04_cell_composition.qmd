@@ -6,7 +6,6 @@ title: "Cell composition: Whole Blood"
 #| label: setup
 #| include: false
 source("_setup.R")
-library(data.table)
 ```
 
 Whole blood is not one thing. It is a mixture of neutrophils, monocytes, natural killer (NK) cells,
@@ -19,11 +18,29 @@ For most blood EWAS, cell composition is a large source of confounding
 proportions, explains the reference-based method, and validates our estimates
 against the proportions the study deposited.
 
+::: {.callout-note}
+## What this chapter needs
+This chapter starts from `data/01_RGset.rds`, written by [chapter 00](00_setup.qmd). If you
+did not run that chapter, fetch the published checkpoint instead:
+
+```{.bash filename="Terminal"}
+./get_data.sh B_qc
+```
+:::
+
 ```{r}
 #| label: load
-props <- readRDS(data_path("04_cc_full.rds"))$prop   # 96 x 6
-val   <- readRDS(data_path("04_validation.rds"))
-ss    <- fread(data_path("sample_sheet.csv"))
+library(minfi)                  # estimateCellCounts2(), getBeta()
+library(FlowSorted.Blood.EPIC)  # the flow-sorted EPIC reference and the IDOL probe library
+library(GEOquery)               # getGEO(), for the study's own deposited proportions
+library(data.table)             # fread() for the deposited table, rbindlist() for the figure
+library(ggplot2)                # every figure in this chapter
+
+# The raw two-channel object written by the Setup chapter: 1,051,943 addresses
+# across 96 arrays, with no normalization applied. Deconvolution is one of the
+# few steps that needs the raw intensities rather than the normalized object
+# from chapter 02 -- the reason is in the callout below.
+rg <- readRDS("data/01_RGset.rds")
 ```
 
 ## 1. Why cell composition matters
@@ -62,9 +79,22 @@ technical differences don't confound composition. `minfi`'s
 `estimateCellCounts2` handles this by combining `RGChannelSet` with the
 reference `RGChannelSet`, normalizing jointly (here with noob), then deconvolving:
 
-```r
-library(FlowSorted.Blood.EPIC)
+```{r}
+#| label: deconvolve
+# The IDOL-optimized probe library ships with FlowSorted.Blood.EPIC as a dataset
+# rather than a function, so it has to be attached before it can be passed in.
 data("IDOLOptimizedCpGs")
+
+# The published proportions were produced with this seed set; keeping it means a
+# re-render reproduces the same numbers rather than something merely similar.
+set.seed(1)
+
+# This is the most memory-hungry step in the whole tutorial: roughly 1 min 54 s
+# and a 15.0 GB peak for 96 arrays. The cost is structural, not wasteful -- the
+# 96 arrays and the flow-sorted reference are stacked into one object and noob-
+# normalized together (see the callout below), so the peak holds both datasets
+# at full probe resolution at once. An 8 GB laptop cannot run this chunk; the
+# collapsed callout further down is the route around it.
 cc <- estimateCellCounts2(
   rg,                                   # raw RGChannelSet (not yet normalized)
   compositeCellType   = "Blood",
@@ -74,7 +104,12 @@ cc <- estimateCellCounts2(
   referencePlatform   = "IlluminaHumanMethylationEPIC",
   IDOLOptimizedCpGs   = IDOLOptimizedCpGs,
   returnAll           = FALSE)
+
+# `prop` is the estimated proportion per cell type; the sibling `counts` element
+# is only filled in when you supply absolute cell counts to compare against, so
+# on this call it comes back empty. Read `prop`.
 props <- cc$prop                        # 96 samples x 6 cell types
+dim(props)
 ```
 
 ::: {.callout-note}
@@ -86,10 +121,35 @@ to the raw IDATs. The reference dataset itself is downloaded once from Bioconduc
 ExperimentHub and cached.
 :::
 
+::: {.callout-note collapse="true"}
+## Running out of memory on the chunk above
+
+A 15.0 GB peak is more than a 16 GB laptop has spare, and far more than an 8 GB one
+has at all. The proportions this chapter writes at the end are committed to the
+repository, so you can skip the `deconvolve` chunk and read them instead — every
+section below it then runs:
+
+```{.r filename="RStudio Console"}
+props <- readRDS(url(paste0("https://raw.githubusercontent.com/krferrier/",
+                            "Methylation-EWAS-tutorial/main/tutorial/data/",
+                            "04_cellcounts.rds")))
+```
+
+What this route costs you is the one thing this chapter is about: you do not see the
+reference being fetched, you do not see the joint normalization, and if your own study
+ever needs different cell types or a different reference, you will not have run the
+call that changes. It also leaves `cc` undefined, so the save of the full
+deconvolution return at the end of the chapter cannot run. Use it because your
+machine forces you to.
+:::
+
 ## 3. The composition of this subset
 
 ```{r}
 #| label: comp-summary
+# Collapse the 96 x 6 matrix to one row per cell type: the mean proportion and
+# the observed range across samples. Percentages read more easily than
+# proportions in a table, hence the 100x.
 comp <- data.frame(cell_type = colnames(props),
                    mean_pct   = round(100 * colMeans(props), 1),
                    min_pct    = round(100 * apply(props, 2, min), 1),
@@ -101,15 +161,20 @@ knitr::kable(comp, row.names = FALSE,
 
 ```{r}
 #| label: comp-stack
-#| fig-cap: "Estimated cell-type proportions per sample (stacked). The neutrophil fraction (largest band) varies from roughly 20% to 85% across individuals — a swing that would swamp most disease effects if left unmodeled."
+#| fig-cap: "Estimated cell-type proportions per sample (stacked). The neutrophil fraction (largest band) varies from 17% to 84% across individuals — a swing that would swamp most disease effects if left unmodeled."
 #| fig-width: 8
 #| fig-height: 3.4
-library(ggplot2)
+# reshape() wants a data.frame with an id column, so the matrix goes wide-to-long
+# by hand here: one row per sample x cell type, which is what geom_col stacks.
 pl <- as.data.frame(props); pl$sample_id <- rownames(pl)
 plm <- reshape(pl, varying = colnames(props), v.names = "prop",
                timevar = "cell", times = colnames(props),
                direction = "long")
+# Stacking order is the factor order, so set it explicitly: largest fraction at
+# the bottom of the bar, rarest at the top.
 plm$cell <- factor(plm$cell, levels = c("Neu","CD4T","CD8T","Mono","Bcell","NK"))
+# Order the bars by neutrophil fraction so the gradient across samples is
+# visible instead of being scattered by array order.
 ord <- order(props[,"Neu"]); plm$sample_id <- factor(plm$sample_id,
                                                      levels = rownames(props)[ord])
 ggplot(plm, aes(sample_id, prop, fill = cell)) +
@@ -125,9 +190,76 @@ ggplot(plm, aes(sample_id, prop, fill = cell)) +
 
 The Grady Trauma Project deposited its own cell-type proportion estimates with the
 GEO record. That gives us the opportunity to check our deconvolution.
+
+```{r}
+#| label: deposited-fetch
+# The deposited proportions are part of the GEO record's *phenotype*, not of the
+# IDATs, so they come out of the series matrix rather than out of `rg`. GEOquery
+# parses each "label: value" characteristic into its own column named
+# "<label>:ch1", which is where the six proportions arrive.
+dep_file <- "data/04_deposited_cellcounts.tsv"
+
+if (file.exists(dep_file)) {
+  # The series matrix is ~30 MB and the deposited values never change, so once
+  # the small table below exists it is what later renders read. Delete it to
+  # force the fetch again.
+  dep <- as.data.frame(fread(dep_file))
+} else {
+  # 60 seconds is not enough to pull 30 MB from GEO on a slow link.
+  options(timeout = max(1200, getOption("timeout")))
+
+  # getGPL = FALSE skips the platform manifest, which we do not need here.
+  gse <- getGEO("GSE132203", GSEMatrix = TRUE, getGPL = FALSE)[[1]]
+  pd  <- Biobase::pData(gse)
+
+  # Our cell-type names on the left, GEO's column names on the right.
+  dep_cols <- c(CD8T = "cd8t:ch1", CD4T = "cd4t:ch1", NK = "nk:ch1",
+                Bcell = "bcell:ch1", Mono = "mono:ch1", Neu = "neu:ch1")
+
+  # Everything out of a series matrix is text, including the numbers.
+  dep <- as.data.frame(lapply(dep_cols,
+                              function(k) as.numeric(as.character(pd[[k]]))))
+  dep$sample_id <- as.character(pd$geo_accession)
+
+  # The series carries 795 samples; match() keeps the 96 on our plate subset,
+  # in the row order of `props` so the merge below cannot silently misalign.
+  dep <- dep[match(rownames(props), dep$sample_id), c("sample_id", names(dep_cols))]
+}
+```
+
+```{r}
+#| label: validation-compute
+cells <- c("CD8T","CD4T","NK","Bcell","Mono","Neu")
+
+# One row per sample with both sets of numbers side by side. Both frames carry
+# the same six column names, so merge() appends the suffixes that tell them
+# apart -- .est for ours, .dep for the study's.
+est <- as.data.frame(props); est$sample_id <- rownames(props)
+m   <- merge(est, dep, by = "sample_id", suffixes = c(".est", ".dep"))
+
+# Three complementary summaries per cell type: correlation says whether the
+# between-sample variation agrees (the part that matters for confounding
+# adjustment), mean absolute error says how far apart the absolute values are,
+# and the two means expose a systematic offset the correlation would hide.
+res <- data.frame(cell = cells, r = NA_real_, mae = NA_real_,
+                  mean_est = NA_real_, mean_dep = NA_real_)
+for (i in seq_along(cells)) {
+  e <- m[[paste0(cells[i], ".est")]]
+  d <- m[[paste0(cells[i], ".dep")]]
+  res$r[i]        <- cor(e, d, use = "complete.obs")
+  res$mae[i]      <- mean(abs(e - d), na.rm = TRUE)
+  res$mean_est[i] <- mean(e, na.rm = TRUE)
+  res$mean_dep[i] <- mean(d, na.rm = TRUE)
+}
+
+# The per-sample comparison and the per-cell-type summary travel together: this
+# is the object saved at the end of the chapter, and the one the paragraph below
+# the figure reads its numbers from.
+val <- list(merged = m, validation = res)
+```
+
 ```{r}
 #| label: validation-table
-res <- val$validation
 disp <- data.frame(
   `cell type`        = res$cell,
   `Pearson r`        = sprintf("%.3f", res$r),
@@ -141,8 +273,28 @@ knitr::kable(disp, caption = "Our estimates vs the study's deposited proportions
 ```{r}
 #| label: validation-scatter
 #| fig-cap: "Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates > 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study's own estimates."
-#| echo: false
-knitr::include_graphics(data_path("04_validation_scatter.png"))
+#| fig-width: 8
+#| fig-height: 5.2
+# Six panels, one per cell type, so stack the pairs into a long table.
+long <- rbindlist(lapply(cells, function(k)
+  data.table(cell = k, est = m[[paste0(k, ".est")]], dep = m[[paste0(k, ".dep")]])))
+long$cell <- factor(long$cell, levels = cells)
+
+# The correlation from the table above, printed in each panel's corner: with
+# free axes per panel a reader cannot judge agreement by eye alone.
+labs_r <- data.frame(cell = factor(res$cell, levels = cells),
+                     lab  = sprintf("r = %.3f", res$r))
+
+p_val <- ggplot(long, aes(dep, est)) +
+  # y = x first, so the points sit on top of it.
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "#6E675B") +  # gray
+  geom_point(alpha = .6, size = 1.3, color = "#1A6B75") +                          # teal
+  facet_wrap(~cell, scales = "free") +
+  geom_text(data = labs_r, aes(x = -Inf, y = Inf, label = lab),
+            hjust = -0.15, vjust = 1.5, size = 3, inherit.aes = FALSE) +
+  labs(x = "deposited proportion (study answer key)", y = "our Houseman/IDOL estimate",
+       title = "Deconvolution validation: estimated vs deposited cell proportions")
+p_val
 ```
 
 Correlations range from **`r sprintf("%.3f", min(val$validation$r))`** (NK, the
@@ -175,6 +327,9 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
    ```r
    library(FlowSorted.Blood.EPIC)
    library(genefilter)
+   # `beta` is a CpG x sample matrix -- in the deposit-only case it is whatever
+   # the submitter posted. Locally, the filtered object from chapter 03 gives one:
+   beta <- minfi::getBeta(readRDS("data/03_grs_filtered.rds"))
    # reference cell-type means at the IDOL CpGs (from the package)
    ref <- ...   # matrix: IDOL CpGs x 6 cell types
    shared <- intersect(rownames(beta), rownames(ref))
@@ -192,6 +347,8 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
 
    ```r
    library(EpiDISH)
+   library(minfi)
+   beta <- minfi::getBeta(readRDS("data/03_grs_filtered.rds"))   # CpG x sample, as above
    data(centDHSbloodDMC.m)                     # blood reference centroids
    out <- epidish(beta, ref.m = centDHSbloodDMC.m, method = "RPC")
    props <- out$estF
@@ -209,8 +366,31 @@ components are not labeled cell types, only surrogate variables to adjust for.
 
 We carry the estimated proportions forward as EWAS covariates:
 
-```r
-saveRDS(props, data_path("04_cellcounts.rds"))
+```{r}
+#| label: save-cellcounts
+# 1. The proportions themselves: a 96 x 6 matrix with GSM ids as rownames. This
+#    is the file the later chapters read when they need cell-type covariates.
+saveRDS(props, "data/04_cellcounts.rds")
+
+# 2. The whole estimateCellCounts2() return, as deposited in the Zenodo record.
+#    Keeping the full object means the file on record is the object the code
+#    above produced, with nothing dropped or coerced.
+saveRDS(cc, "data/04_cc_full.rds")
+
+# 3. The validation: the per-sample comparison (`merged`) and the per-cell-type
+#    summary (`validation`) that the table, the figure and the paragraph above
+#    are all drawn from.
+saveRDS(val, "data/04_validation.rds")
+
+# 4. The deposited proportions, flat and small enough to live in the repository
+#    rather than in a Zenodo tier -- which is what lets the fetch above run once
+#    instead of on every render.
+write.table(dep, "data/04_deposited_cellcounts.tsv",
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+# 5. The validation figure at the size the rendered page uses. The site serves
+#    the committed copy, so it is written by the same code that drew it above.
+ggsave("data/04_validation_scatter.png", p_val, width = 8, height = 5.2, dpi = 130)
 ```
 
 Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not

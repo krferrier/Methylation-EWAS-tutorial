@@ -6,7 +6,6 @@ title: "EWAS"
 #| label: setup
 #| include: false
 source("_setup.R")
-library(data.table)
 ```
 
 We now have everything an epigenome-wide association study needs: a normalized,
@@ -21,10 +20,55 @@ residualization workflow that is common in practice.
 The worked example tests **PTSD case/control status** against methylation at each
 CpG, adjusting for sex, age, cell composition, and surrogate variables.
 
+::: {.callout-note}
+## What this chapter needs
+This chapter starts from `data/05_mvals_combat.rds`, written by [chapter 05](05_batch_effects.qmd). If you
+did not run that chapter, fetch the published checkpoint instead:
+
+```{.bash filename="Terminal"}
+./get_data.sh E_model_inputs
+```
+:::
+
 ```{r}
 #| label: load
-ew <- readRDS(data_path("06_ewas.rds"))
-tt <- ew$tt
+library(limma)   # lmFit(), eBayes(), topTable()
+library(bacon)   # bacon(), and the four diagnostic plots in section 4
+
+# The matrix the model is fit to: the stratified-ComBat M-values chapter 05
+# wrote, 756,251 probes x 87 samples. It is ~510 MB on disk and about the same
+# again in memory, so this read takes several seconds.
+Mcb <- readRDS("data/05_mvals_combat.rds")
+
+# Its small companion, which is committed to the repository: the 87-sample
+# phenotype table, the six cell proportions from chapter 04, the smoking proxy,
+# and the surrogate variables with the k that chapter 05's sweep settled on.
+sv_pieces <- readRDS("data/05_sva.rds")
+mdk   <- sv_pieces$mdk            # phenotype table, rows in Mcb's column order
+propk <- sv_pieces$propk          # CD8T, CD4T, NK, Bcell, Mono, Neu
+smoke <- sv_pieces$smoke          # continuous smoking proxy score
+K     <- sv_pieces$k_selected     # the k chapter 05 settled on
+SV    <- sv_pieces$SV[, seq_len(K), drop = FALSE]
+
+# lmFit() pairs matrix columns with design rows by position and does not check
+# that they describe the same samples, so confirm the counts agree here.
+stopifnot(ncol(Mcb) == nrow(mdk))
+
+# Control is the reference level, which is what makes the tested coefficient
+# `ptsdCase` and makes its sign read as case minus control rather than the
+# reverse. Left to alphabetical ordering, "Case" would become the reference.
+ptsd    <- relevel(factor(mdk$ptsd), ref = "Control")
+is_case <- ptsd == "Case"
+
+# `ew` is the handoff object this chapter saves as data/06_ewas.rds and that
+# chapter 08 reads back. The sample counts are known before any model is fit;
+# the design size, the results table and lambda are added below as they are
+# computed, and the whole list is written out in one place at the end.
+ew <- list(n = ncol(Mcb), ncase = sum(is_case), nctrl = sum(!is_case),
+           k_sv = K, n_tested = nrow(Mcb),
+           panel_excluded = sv_pieces$excluded_n)
+
+cat("EWAS matrix:", nrow(Mcb), "probes x", ncol(Mcb), "samples | k =", K, "\n")
 ```
 
 ## 1. Two ways to write the model — and why the outcome matters {#sec-model}
@@ -110,15 +154,61 @@ As a last resort, you can run the EWAS without accounting for smoking, just keep
 interpreting results. 
 :::
 
-```r
-library(limma)
-# Mcb = ComBat-adjusted M-values from chapter 05, probes x samples
-# smoke = smoking proxy (chapter 05); pos = array position factor; SV = surrogate variables
+```{r}
+#| label: ewas-fit
+# Array position is an 8-level factor on an EPIC chip, so it costs 7 dummy
+# columns. Rebuilding the factor from as.character() drops any level the sample
+# sheet defines but no modeled sample occupies; an empty level would add an
+# all-zero dummy column and leave the design rank-deficient.
+pos <- factor(as.character(mdk$array_pos))
+
+# Every model term goes into one data frame so that model.matrix() can name the
+# columns it builds: `propk` expands to the six cell proportions by their own
+# names, and `SV` to SV1...SV6. check.names = FALSE keeps those names intact.
+dd <- data.frame(ptsd = ptsd, sex = factor(mdk$sex), age = mdk$age,
+                 smoke = smoke, pos = pos, propk, SV = SV, check.names = FALSE)
 design <- model.matrix(~ ptsd + sex + age + smoke + pos +
-                         CD8T + CD4T + NK + Bcell + Mono + Neu + SV)
+                         CD8T + CD4T + NK + Bcell + Mono + Neu + SV, data = dd)
+stopifnot("ptsdCase" %in% colnames(design))
+ew$design_ncol <- ncol(design)
+ew$resid_df    <- ncol(Mcb) - ncol(design)
+
+# 756,251 least-squares fits in a single call -- which is why limma is the tool
+# here rather than a loop over lm(). This is the expensive step in the chapter:
+# roughly a minute, and several GB while the per-probe coefficients and residual
+# variances are held in memory.
 fit <- lmFit(Mcb, design)        # per-probe weighted least squares
 fit <- eBayes(fit)               # empirical-Bayes moderation of the variance
-tt  <- topTable(fit, coef = "ptsdCase", number = Inf)
+
+# sort.by = "P" fixes the row order of the saved table to increasing p-value;
+# topTable()'s default sorts by the log-odds column B instead.
+#
+# limma:: is required, not decoration. bacon exports its own topTable method,
+# and because bacon is attached after limma above, a bare topTable() call
+# resolves to bacon's -- whose signature is (object, number, adjust.method,
+# sort.by) and which fails with "unused argument (coef = ...)". Qualifying the
+# call is the fix that does not depend on library() order.
+tt <- limma::topTable(fit, coef = "ptsdCase", number = Inf, sort.by = "P")
+tt$probe <- rownames(tt)
+
+# Delta-beta: the case-minus-control difference on the beta scale, taken from
+# the same ComBat-adjusted M-values the model saw, so the effect reported and
+# the effect tested describe one matrix. The back-transform is a second copy of
+# 756,251 x 87 doubles, so it is dropped again as soon as the means are taken.
+bcb <- 2^Mcb / (2^Mcb + 1)
+db  <- rowMeans(bcb[, is_case, drop = FALSE],  na.rm = TRUE) -
+       rowMeans(bcb[, !is_case, drop = FALSE], na.rm = TRUE)
+tt$delta_beta <- db[tt$probe]
+rm(bcb); invisible(gc())
+
+# Genomic inflation factor from the p-values: the conventional definition, and
+# the same one chapter 05's k-selection sweep used, so the two are comparable.
+lam    <- function(p) median(qchisq(1 - p, 1), na.rm = TRUE) / qchisq(0.5, 1)
+lambda <- lam(tt$P.Value)
+
+# Fix the column order of the table that gets saved and deposited.
+tt <- tt[, c("probe", "logFC", "delta_beta", "AveExpr", "t", "P.Value",
+             "adj.P.Val", "B")]
 ```
 
 `limma`'s `eBayes` step is what makes this appropriate for an EWAS on a modest sample
@@ -172,26 +262,42 @@ estimates are needed down stream if a meta-analysis is performed.
 
 ```{r}
 #| label: run-bacon
-#| eval: false
-library(bacon)
+# The Gibbs sampler is stochastic, so the seed is what makes the inflation,
+# the bias and every adjusted p-value below reproducible run to run.
 set.seed(42)
 
 es <- tt$logFC              # effect size per CpG
 se <- tt$logFC / tt$t       # standard error = beta / t-statistic
 
+# 5,000 iterations with 2,000 burn-in (bacon's defaults) over all 756,251
+# statistics: about a minute. Passing NULL for the test statistics tells bacon
+# to work from the effect size / standard error pair instead.
 bc <- bacon(NULL, effectsizes = es, standarderrors = se)
 
+# es() and se() below are bacon's accessor functions, not the two numeric
+# vectors of the same name defined above: R resolves a name used in function
+# position to a function and skips the vector.
 inflation(bc)   # estimated inflation (sigma.0); 1 = none
 bias(bc)        # estimated bias (mu); 0 = none
 tt$bacon.p  <- pval(bc)     # empirical-null-adjusted p-values
 tt$bacon.es <- es(bc)       # adjusted effect sizes
 tt$bacon.se <- se(bc)       # adjusted standard errors
+
+# BH across the adjusted p-values. The results section thresholds on this
+# column, so it has to be computed from bacon.p rather than reused from limma.
+tt$bacon.adj.P <- p.adjust(tt$bacon.p, method = "BH")
 ```
 
 ```{r}
 #| label: bacon-summary
-#| echo: false
-bs <- readRDS(data_path("06_bacon_summary.rds"))
+# The four calibration numbers, collected into the object saved at the end of
+# the chapter as data/06_bacon_summary.rds. lambda_raw is limma's, lambda_bacon
+# is the same statistic recomputed on the empirical-null-adjusted p-values.
+bs <- list(inflation    = inflation(bc),
+           bias         = bias(bc),
+           lambda_raw   = lambda,
+           lambda_bacon = lam(tt$bacon.p),
+           n            = ew$n)
 cat(sprintf("Estimated inflation (sigma.0): %.3f\n", bs$inflation))
 cat(sprintf("Estimated bias (mu):           %.3f\n", bs$bias))
 cat(sprintf("lambda before BACON:           %.3f\n", bs$lambda_raw))
@@ -213,31 +319,62 @@ repository](https://github.com/krferrier/EWAS) README, where these are documente
 full.)
 
 ```{r}
+#| label: bacon-diagnostics
+# The four plots below are drawn from `bc` and written to disk here, so the
+# figures that follow display this run rather than a stored copy of an older
+# one. They are base and lattice graphics rather than ggplots, so each goes to
+# its own jpeg() device instead of through ggsave().
+dir.create("data/06_bacon", showWarnings = FALSE, recursive = TRUE)
+
+# fit() is bacon's mixture-fit plot. The limma object named `fit` above does not
+# get in the way, for the same reason es() and se() still worked: a name in
+# function position resolves to a function.
+jpeg("data/06_bacon/fit.jpg", width = 1600, height = 1200, res = 200)
+print(fit(bc, n = 100))                  # n = 100 histogram bins
+dev.off()
+
+jpeg("data/06_bacon/qq.jpg", width = 1600, height = 1200, res = 200)
+print(plot(bc, type = "qq"))             # a ggplot, hence the print()
+dev.off()
+
+# traces() and posteriors() draw straight onto the device, so no print() here.
+# burnin = FALSE shows the chain after burn-in only, which is the part you
+# judge convergence on.
+jpeg("data/06_bacon/traces.jpg", width = 1600, height = 1400, res = 180)
+traces(bc, burnin = FALSE)
+dev.off()
+
+jpeg("data/06_bacon/posteriors.jpg", width = 1600, height = 1200, res = 200)
+posteriors(bc)
+dev.off()
+```
+
+```{r}
 #| label: bacon-fit
 #| fig-cap: "**Fit plot.** Histogram of the observed z-scores with the fitted three-component mixture overlaid: the black curve is the overall fit, red is the estimated null component, and blue/green are the two alternative components. The black curve tracks the histogram closely — the model is well-specified. A large gap between the fitted (black) and observed (histogram) densities would signal mis-specification or non-convergence."
 #| echo: false
-knitr::include_graphics(data_path("06_bacon/fit.jpg"))
+knitr::include_graphics("data/06_bacon/fit.jpg")
 ```
 
 ```{r}
 #| label: bacon-qq
 #| fig-cap: "**QQ plots, before (uncorrected) and after (corrected) BACON.** Points should hug the diagonal, breaking upward into a tail spike only for genuine associations. Systematic departure from the line *before* the spike is bias/inflation; after correction the bulk of points should sit closer to the diagonal. Here the two panels are nearly identical because the input was already calibrated."
 #| echo: false
-knitr::include_graphics(data_path("06_bacon/qq.jpg"))
+knitr::include_graphics("data/06_bacon/qq.jpg")
 ```
 
 ```{r}
 #| label: bacon-traces
 #| fig-cap: "**Traces plot.** The Gibbs sampler's value for each parameter (p, mu, sigma for each of the three components) across iterations. A well-mixed, converged chain looks like a fuzzy horizontal band with a narrow range in estimates — a 'hairy caterpillar' — with no drift or trend. A sharp early sweep followed by settling is normal (the prior was far from the estimate); a chain that never settles means non-convergence."
 #| echo: false
-knitr::include_graphics(data_path("06_bacon/traces.jpg"))
+knitr::include_graphics("data/06_bacon/traces.jpg")
 ```
 
 ```{r}
 #| label: bacon-posteriors
 #| fig-cap: "**Posteriors plot.** Scatter of the sampled posterior draws for the null inflation (sigma.0) and the null proportion (p.0), with 75/90/95% probability ellipses. A dense, roughly elliptical cloud sitting inside the contours indicates the sampler converged on a stable estimate; a sparse or lopsided cloud spilling outside the ellipses indicates it did not."
 #| echo: false
-knitr::include_graphics(data_path("06_bacon/posteriors.jpg"))
+knitr::include_graphics("data/06_bacon/posteriors.jpg")
 ```
 
 In this run the fit tracks the histogram, the QQ panels are near-diagonal, the traces
@@ -283,21 +420,21 @@ not independently of it. Report the adjusted version.
 #| label: manhattan
 #| fig-cap: "Manhattan plot of the EWAS, drawn on limma's uncorrected p-values. Nothing crosses the Bonferroni line (red) on this scale — the single CpG that clears Bonferroni does so only after BACON rescaling, which shifts it just past the threshold. A near-empty Manhattan is the expected result for a subtle psychiatric phenotype in a small teaching subset (n=87); the full-scale analysis (n≈800) and meta-analysis across cohorts is what powers genome-wide discovery for PTSD [@katrinli2020ptsd]."
 #| echo: false
-knitr::include_graphics(data_path("06_manhattan.png"))
+knitr::include_graphics("data/06_manhattan.png")
 ```
 
 ```{r}
 #| label: manhattan-bacon
 #| fig-cap: "The same Manhattan plot drawn on the BACON-adjusted p-values — the ones the chapter recommends you report. The axes, the coordinates, and the Bonferroni line are identical to the previous figure; only the y-values change. Rescaling by the empirical null lifts `cg15434749` (filled point) just across Bonferroni and leaves `cg20600436` (open ring) passing FDR < 0.05 alone. Comparing the two panels is the point: BACON does not manufacture signal, it re-centres and re-scales the whole test-statistic distribution, and a CpG that was already at the top of the uncorrected plot is the one that moves across."
 #| echo: false
-knitr::include_graphics(data_path("06_manhattan_bacon.png"))
+knitr::include_graphics("data/06_manhattan_bacon.png")
 ```
 
 ```{r}
 #| label: volcano
 #| fig-cap: "Volcano plot. The x-axis is the EWAS effect size itself — the `ptsdCase` coefficient from the limma fit, on the M-value scale, adjusted for every covariate in the design. Colour marks the sign of that coefficient: teal for CpGs less methylated in cases, plum for those more methylated. Note that this is the adjusted effect, so its sign can differ from a raw case-minus-control β difference for probes where the covariates carry part of the signal. The three most significant probes are ringed and labelled. Even they move methylation only slightly, illustrating that EWAS effect sizes for complex phenotypes are typically small and require large samples to detect reliably."
 #| echo: false
-knitr::include_graphics(data_path("06_volcano.png"))
+knitr::include_graphics("data/06_volcano.png")
 ```
 
 ## 6. An alternative in common use: the M-value residual workflow {#sec-residual}
@@ -417,10 +554,13 @@ dozen lines of R over the two strata's BACON-adjusted result tables:
 library(data.table)
 
 # each stratum's BACON-adjusted results: one row per CpG
-mF <- fread("F_PTSD_ewas_bacon_results.csv.gz")[, .(probe = cpgid,
-                                                    bF = bacon.es, seF = bacon.se)]
-mM <- fread("M_PTSD_ewas_bacon_results.csv.gz")[, .(probe = cpgid,
-                                                    bM = bacon.es, seM = bacon.se)]
+# Written by the stratified pipeline run in chapter 07; paths are relative to
+# the tutorial folder. If you have not run the pipeline, `./get_data.sh
+# G_pipeline_run` fetches the published run these two files come from.
+mF <- fread("../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz")[
+        , .(probe = cpgid, bF = bacon.es, seF = bacon.se)]
+mM <- fread("../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz")[
+        , .(probe = cpgid, bM = bacon.es, seM = bacon.se)]
 mt <- merge(mF, mM, by = "probe")          # CpGs tested in both strata
 
 mt[, wF := 1 / seF^2][, wM := 1 / seM^2]                      # precision weights
@@ -472,6 +612,54 @@ table, so the non-IDAT path is identical once you have M-values:
   ([chapter 04](04_cell_composition.qmd) covers this), and surrogate variables from
   `sva` run on the matrix ([chapter 05](05_batch_effects.qmd)).
 - Fit the identical `limma` model. The association step never touches raw intensities.
+
+## Saving what we just computed
+
+The fit and the BACON correction are the whole cost of this chapter. Three files carry
+them forward: the object [chapter 08](08_annotation.qmd) reads, the calibration summary
+section 4 reports from, and a flat copy of the results table.
+
+```{r}
+#| label: save-ewas
+# 1. The handoff object. `tt` is attached only now, after BACON, so that the
+#    saved table already carries bacon.p / bacon.es / bacon.se / bacon.adj.P --
+#    chapter 08 reads those columns straight out of this file and never reruns
+#    the sampler.
+ew$tt     <- tt
+ew$lambda <- lambda
+saveRDS(ew, "data/06_ewas.rds")
+
+# 2. The four calibration numbers, on their own, for anything that needs them
+#    without loading a 756,251-row table.
+saveRDS(bs, "data/06_bacon_summary.rds")
+
+# 3. A flat copy of the results table, one row per CpG. Gzipped CSV rather than
+#    a tab-delimited file in the repository: 756,251 rows is far too large to
+#    commit, so this one is deposited in the Zenodo record instead. The write
+#    takes about a minute.
+write.csv(tt, gzfile("data/06_ewas_bacon_toptable.csv.gz"), row.names = FALSE)
+```
+
+::: {.callout-note collapse="true"}
+## Picking the chapter up from the saved fit instead
+
+Fitting 756,251 probes needs the 510 MB ComBat matrix in memory with a few GB of working
+space on top of it. If that is not practical on your machine, fetch the published fit and
+read it instead of running the two chunks above:
+
+```{.bash filename="Terminal"}
+./get_data.sh F_ewas_results
+```
+
+```{.r filename="RStudio Console"}
+ew <- readRDS("data/06_ewas.rds")
+tt <- ew$tt                                   # already carries the BACON columns
+bs <- readRDS("data/06_bacon_summary.rds")
+```
+
+Every number and table in this chapter will then run. The four diagnostic plots will
+not, because they are drawn from the `bc` object rather than from the saved table.
+:::
 
 ---
 

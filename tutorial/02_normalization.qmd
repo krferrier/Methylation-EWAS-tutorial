@@ -18,10 +18,28 @@ Since all of the samples from our small example subset passed QC, we will start 
 from the raw two-channel object produced in [QC](01_qc.qmd). If you did identify samples that 
 failed to meet QC thresholds, those samples should be removed prior to normalization.
 
+::: {.callout-note}
+## What this chapter needs
+This chapter starts from `data/01_RGset.rds`, written by [chapter 00](00_setup.qmd). If you
+did not run that chapter, fetch the published checkpoint instead:
+
+```{.bash filename="Terminal"}
+./get_data.sh B_qc
+```
+:::
+
 ```{r}
 #| label: load
-rg <- readRDS(data_path("01_RGset.rds"))
-np <- readRDS(data_path("02_norm_pieces.rds"))
+library(minfi)                                        # preprocessRaw/Noob/Funnorm(), getBeta()
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19) # EPIC probe annotation: design type, coordinates
+library(ggplot2)                                       # every figure in this chapter
+
+# The RGChannelSet written by the Setup chapter: raw red and green intensities
+# for 1,051,943 addresses across 96 arrays, with no normalization applied. This
+# is the same object the QC chapter worked from -- all 96 samples passed, so
+# nothing has been dropped from it.
+rg <- readRDS("data/01_RGset.rds")
+
 rg
 ```
 
@@ -42,7 +60,8 @@ assay chemistries [@pidsley2016epic]:
   dynamic range but use up two bead addresses per site.
 - **Type II** probes use a single bead per CpG, with methylated and unmethylated
   states read in *different* channels. They are twice as space-efficient — which
-  is why ~72% of EPIC probes are Type II — but their β-value distribution is
+  is why **84%** of EPIC probes are Type II (723,722 of 865,859; the comparable
+  450K figure is 72%) — but their β-value distribution is
   **compressed toward the center**: they under-call fully methylated and fully
   unmethylated sites relative to Type I.
 
@@ -50,7 +69,45 @@ We can see this compression directly in the subset. Below are the median β and 
 between-probe spread (SD of per-probe mean β) for each design, on raw data:
 
 ```{r}
+#| label: probe-design
+# Which design each CpG uses comes from the EPIC annotation package, not from the
+# data: the `Type` column is "I" or "II" for each of the 865,859 annotated probes.
+# These are the probes that carry hg19 coordinates, which is also what the genome
+# mapping inside preprocessFunnorm needs -- so sampling from this set guarantees
+# the same probes exist in all three normalized matrices built below.
+ann    <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+typeI  <- rownames(ann)[ann$Type == "I"]
+typeII <- rownames(ann)[ann$Type == "II"]
+
+# preprocessRaw() only re-arranges the two raw channels into methylated and
+# unmethylated signal -- no correction of any kind is applied, which is exactly
+# what we want as the "before" picture. It takes a few seconds.
+mset_raw     <- preprocessRaw(rg)
+beta_raw_all <- getBeta(mset_raw)
+
+# The figures and tables in this chapter describe the shape of the β
+# distribution, and 20,000 probes describe that shape as well as 865,859 do at a
+# thirtieth of the memory (a full matrix is ~665 MB; three of them will not fit
+# comfortably alongside normalization). The seed is fixed so the sample -- and
+# therefore every number in the tables below -- is the same on every render.
+set.seed(1)
+probe_sample <- sample(intersect(rownames(ann), rownames(beta_raw_all)), 20000)
+
+beta_raw <- beta_raw_all[probe_sample, ]
+
+# Drop the full-size objects as soon as the subset exists; the peak memory of
+# this chapter is set by the normalization step below, not by this one.
+rm(beta_raw_all, mset_raw)
+invisible(gc())
+
+dim(beta_raw)
+```
+
+```{r}
 #| label: type-bias-table
+# One summary row per probe design. `spread_sd` is the SD of the per-probe mean β
+# across samples, i.e. how much the probes of a design differ from one another --
+# not within-probe noise, which is why rowMeans() comes first.
 type_summ <- function(beta, typeI, typeII) {
   bi  <- beta[rownames(beta) %in% typeI, , drop = FALSE]
   bii <- beta[rownames(beta) %in% typeII, , drop = FALSE]
@@ -62,7 +119,7 @@ type_summ <- function(beta, typeI, typeII) {
                           sd(rowMeans(bii, na.rm = TRUE))), 3)
   )
 }
-knitr::kable(type_summ(np$beta_raw, np$typeI, np$typeII),
+knitr::kable(type_summ(beta_raw, typeI, typeII),
              caption = "Raw β by probe design (20k-probe sample). Type II sits closer to 0.5 with a narrower spread — the design-bias normalization must correct.")
 ```
 
@@ -126,11 +183,66 @@ M-values ready for analysis.
 The code to produce these subsets is shown below. It may take several minutes to 
 complete. 
 
-```r
-mset_raw  <- preprocessRaw(rg);   beta_raw  <- getBeta(mset_raw)
-mset_noob <- preprocessNoob(rg);  beta_noob <- getBeta(mset_noob)
-grs_fun   <- preprocessFunnorm(rg); beta_fun <- getBeta(grs_fun)  # GenomicRatioSet
+```{r}
+#| label: normalize-noob
+# noob on its own: background correction from the out-of-band Type I signals plus
+# a dye-bias correction, one array at a time. Roughly a minute and several GB for
+# 96 arrays. Subset to the same 20,000 probes immediately and drop the full
+# MethylSet, so the funnorm step below starts from a clean slate.
+mset_noob <- preprocessNoob(rg)
+beta_noob <- getBeta(mset_noob)[probe_sample, ]
+
+rm(mset_noob)
+invisible(gc())
 ```
+
+```{r}
+#| label: normalize-funnorm
+# This is the expensive step in the chapter: about 2 minutes and a peak of
+# ~12.5 GB at 96 arrays, because funnorm runs noob first and then fits the
+# control-probe PCA across the full 865,859-probe matrix. If your machine cannot
+# hold that, take the resume path in the callout below.
+grs_fun <- preprocessFunnorm(rg)
+
+# `grs_fun` is the handoff object for the rest of the tutorial -- keep it whole.
+# Only the β matrix gets subset, for the figures in this chapter.
+beta_fun <- getBeta(grs_fun)[probe_sample, ]
+
+# A design comparison is only meaningful if all three matrices describe the same
+# probes; fail loudly here rather than silently comparing different probe sets.
+stopifnot(identical(rownames(beta_raw), rownames(beta_noob)),
+          identical(rownames(beta_raw), rownames(beta_fun)))
+
+grs_fun
+```
+
+::: {.callout-note collapse="true"}
+## If normalization does not fit on your machine
+
+The two chunks above need the 460 MB `RGChannelSet` in memory and peak around
+12.5 GB. If that is not practical, the published checkpoint holds exactly the
+pieces the figures below use — the three 20,000-probe β matrices and the two
+design lists — so you can fetch it and carry on:
+
+```{.bash filename="Terminal"}
+./get_data.sh C_normalized
+```
+
+```{.r filename="RStudio Console"}
+np <- readRDS("data/02_norm_pieces.rds")
+beta_raw  <- np$beta_raw
+beta_noob <- np$beta_noob
+beta_fun  <- np$beta_fun
+typeI     <- np$typeI
+typeII    <- np$typeII
+```
+
+Every figure and table in this chapter will then run. What you give up is
+`grs_fun` itself, which [probe filtering](03_probe_filtering.qmd) reads — for
+that chapter, fetch `./get_data.sh D_filtered` instead. You also give up
+watching the normalization run, so take this route because you have to, not to
+save two minutes.
+:::
 
 Then we can compare the distribution of signals across the three versions of the data and the probe types. 
 
@@ -139,25 +251,30 @@ Then we can compare the distribution of signals across the three versions of the
 #| fig-cap: "β-value density by probe design, before and after normalization (20k-probe sample). Raw Type II (dashed) is visibly pulled toward the center; noob and funnorm restore a more bimodal shape and bring the two designs closer together."
 #| fig-width: 9
 #| fig-height: 3.4
-library(ggplot2)
+# Reshape one β matrix into the long form ggplot needs. 8,000 probes x 96 samples
+# is already ~768,000 density points per method, which is plenty -- the extra
+# thinning keeps the three panels quick to draw.
 mk_long <- function(beta, label, typeII) {
   b <- beta[sample(nrow(beta), min(8000, nrow(beta))), ]
-  v <- as.vector(b)
   design <- ifelse(rownames(b) %in% typeII, "Type II", "Type I")
+  # as.vector() unstacks a matrix column by column, so the probe labels repeat
+  # once per sample -- rep(..., times = ncol(b)) keeps them aligned to `beta`.
   data.frame(beta = as.vector(b),
              design = rep(design, times = ncol(b)),
              method = label)
 }
 long <- rbind(
-  mk_long(np$beta_raw,  "raw",     np$typeII),
-  mk_long(np$beta_noob, "noob",    np$typeII),
-  mk_long(np$beta_fun,  "funnorm", np$typeII)
+  mk_long(beta_raw,  "raw",     typeII),
+  mk_long(beta_noob, "noob",    typeII),
+  mk_long(beta_fun,  "funnorm", typeII)
 )
+# Panels in processing order, not alphabetical: raw is the "before" picture.
 long$method <- factor(long$method, levels = c("raw", "noob", "funnorm"))
 ggplot(long, aes(x = beta, color = design, linetype = design)) +
   geom_density(na.rm = TRUE, linewidth = 0.7) +
   facet_wrap(~method) +
-  scale_color_manual(values = c("Type I" = ewas_col[["teal"]], "Type II" = ewas_col[["plum"]])) +
+  scale_color_manual(values = c("Type I"  = "#1A6B75",     # teal
+                                "Type II" = "#8C3A4A")) +  # plum
   labs(x = "β-value", y = "density",
        title = "Probe-design bias, before and after normalization") +
   theme(legend.position = "bottom")
@@ -165,18 +282,33 @@ ggplot(long, aes(x = beta, color = design, linetype = design)) +
 
 ```{r}
 #| label: post-norm-table
+# The same two-row summary as above, stacked across the three methods, so the
+# Type I / Type II gap can be read down the column.
 tab <- rbind(
-  cbind(method = "raw",     type_summ(np$beta_raw,  np$typeI, np$typeII)),
-  cbind(method = "noob",    type_summ(np$beta_noob, np$typeI, np$typeII)),
-  cbind(method = "funnorm", type_summ(np$beta_fun,  np$typeI, np$typeII))
+  cbind(method = "raw",     type_summ(beta_raw,  typeI, typeII)),
+  cbind(method = "noob",    type_summ(beta_noob, typeI, typeII)),
+  cbind(method = "funnorm", type_summ(beta_fun,  typeI, typeII))
 )
 knitr::kable(tab, row.names = FALSE,
-             caption = "Type I vs Type II β summaries across methods. The gap in median β between the two designs narrows after normalization.")
+             caption = "Type I vs Type II β summaries across methods. The Type II spread widens toward the Type I spread after normalization. The medians do not converge, and are not expected to — see the text.")
 ```
 
-The Type II median moves from **0.75 (raw)** toward the Type I scale after
-correction, and the design-specific density curves in the figure come into closer
-agreement — exactly what design-bias correction should do. Functional
+Read the `spread_sd` column, not the medians. Type II's spread rises from **0.286
+(raw)** to **0.313** after functional normalization, closing about a sixth of the
+gap to the Type I spread of 0.385. That expansion of the compressed Type II range
+is what design-bias correction does, and it is the same thing the density curves
+above show.
+
+The medians move the other way: Type II sits at **0.745** raw and **0.790** after
+correction, so the median gap between the two designs widens slightly rather than
+closing. That is not a failure of the correction, and it is worth understanding why.
+Type I probes are enriched in CpG islands, which are predominantly unmethylated,
+while Type II probes cover proportionally more open sea. The two rows are therefore
+summarising different populations of CpGs, and the distance between their medians is
+a fact about where each design sits in the genome rather than a measure of design
+bias. A statistic that mixes the two cannot tell you whether normalization worked.
+
+Functional
 normalization additionally removes between-array technical variance that these
 density plots do not show; its payoff appears later, in the [batch-effects](05_batch_effects.qmd)
 notebook, as reduced technical structure in the principal components.
@@ -206,10 +338,13 @@ follow the same steps, just with the Beta value matrix instead of the M-value ma
 #| fig-cap: "The β→M transform. β is bounded and heteroscedastic; M is unbounded and closer to constant-variance."
 #| fig-width: 7
 #| fig-height: 3
+# The transform itself, drawn over the open interval: β = 0 and β = 1 map to
+# -Inf and +Inf, which is the practical reason M-values need a bounded β.
 b <- seq(0.001, 0.999, length.out = 500)
 m <- log2(b / (1 - b))
 dfm <- data.frame(beta = b, M = m)
-ggplot(dfm, aes(beta, M)) + geom_line(color = ewas_col[["teal"]], linewidth = 0.9) +
+ggplot(dfm, aes(beta, M)) +
+  geom_line(color = "#1A6B75", linewidth = 0.9) +        # teal
   geom_hline(yintercept = 0, color = "gray70") +
   geom_vline(xintercept = 0.5, color = "gray70") +
   labs(x = "β-value", y = "M-value", title = "β → M-value transform")
@@ -225,7 +360,7 @@ intensities are gone. Here is how to work with them.
 
 **Step 1 — get the matrix into R.** For a series matrix:
 
-```r
+```{.r filename="RStudio Console"}
 library(GEOquery)
 gse  <- getGEO("GSExxxxxx", GSEMatrix = TRUE)      # returns a list of ExpressionSets
 eset <- gse[[1]]
@@ -274,8 +409,27 @@ processing state of every series you use — reviewers will ask.
 
 We save the functional-normalized `GenomicRatioSet` for the downstream steps:
 
-```r
-saveRDS(grs_fun, data_path("02_funnorm_grs.rds"))
+```{r}
+#| label: save-norm
+# 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +
+#    functional normalized. This is what probe filtering (chapter 03) reads, and
+#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.
+saveRDS(grs_fun, "data/02_funnorm_grs.rds")
+
+# 2. The pieces the figures above are drawn from: the three 20,000-probe β
+#    matrices and the two design lists. Saving them means the resume callout in
+#    section 3 restores exactly the objects this chapter computed, and that a
+#    reader who cannot run normalization still gets every figure. Small next to
+#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it
+#    is three matrices and two character vectors, not one rectangle.
+norm_pieces <- list(
+  beta_raw  = beta_raw,    # 20,000 x 96, no correction
+  beta_noob = beta_noob,   # 20,000 x 96, noob only
+  beta_fun  = beta_fun,    # 20,000 x 96, noob + functional normalization
+  typeI     = typeI,       # Type I probe IDs, whole array
+  typeII    = typeII       # Type II probe IDs, whole array
+)
+saveRDS(norm_pieces, "data/02_norm_pieces.rds")
 ```
 
 ---

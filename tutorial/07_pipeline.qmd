@@ -6,7 +6,6 @@ title: "Running an EWAS with a Snakemake pipeline"
 #| label: setup
 #| include: false
 source("_setup.R")
-library(data.table)
 ```
 
 The previous notebook fit a single association model interactively with `limma`.
@@ -96,12 +95,29 @@ like .csv, .txt, etc., you can also use '.fst' filetypes (a fast data serializat
 which is by far the format type the pipeline can process the fastest. 
 
 
+::: {.callout-note}
+## What this chapter needs
+Every file this chapter reads lives under `../ewas_pipeline/` and was written by the
+pipeline run shown below, not by an earlier chapter. If you have not run the pipeline
+yourself, fetch the published run instead:
+
+```{.bash filename="Terminal"}
+./get_data.sh G_pipeline_run
+```
+:::
+
 ```{r}
 #| label: show-inputs
-#| eval: true
+library(data.table)   # fread() for every pipeline output read in this chapter
+
+# The phenotype file the pipeline was given. The paths in this chapter are
+# relative to the tutorial folder, so `../ewas_pipeline/` is the pipeline
+# checkout sitting beside it -- which is where tier G extracts to.
 pheno <- fread("../ewas_pipeline/data/pheno.csv")
 cat("pheno.csv:", nrow(pheno), "samples x", ncol(pheno), "columns\n")
 cat("columns:", paste(names(pheno), collapse = ", "), "\n\n")
+# PTSD is coded 0/1 here rather than Control/Case: ewas.R builds the design from
+# the column as it stands, so the coding in this file is the coding modeled.
 cat("PTSD (1=Case, 0=Control):\n"); print(table(pheno$PTSD))
 cat("\nsex:\n"); print(table(pheno$sex))
 ```
@@ -171,7 +187,7 @@ pipeline fits one `glm` per CpG. On this run:
 - **Both reference the same *t* distribution** with 63 residual degrees of
   freedom.
 - **The p-values still differ slightly** (correlation 0.999 on the −log₁₀ scale;
-  λ = 1.021 either way). The reason is `eBayes`: limma shrinks each probe's
+  λ = 1.022 from `limma` against 1.021 from the pipeline). The reason is `eBayes`: limma shrinks each probe's
   residual variance toward a prior fitted across all probes, so its standard
   errors differ from the per-probe `glm` ones by up to ~22%. Neither is wrong,
   which highlights the importance of being transparent about which method is used.
@@ -183,6 +199,10 @@ method used for association testing.
 
 ```{r}
 #| label: load-all
+# The non-stratified arm, straight out of the ewas.R call above: one row per
+# CpG with the per-probe glm estimate, its standard error, the t-statistic and
+# the p-value. These are the pre-BACON numbers; the BACON-adjusted file that
+# section 7 reads is a separate output of the same run.
 allres <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz")
 cat("columns:", paste(names(allres), collapse = ", "), "\n")
 cat("n CpGs:", nrow(allres), " | samples per model (n):", allres$n[1], "\n")
@@ -251,7 +271,47 @@ Here is what BACON did to the genomic inflation in each arm:
 
 ```{r}
 #| label: lambda-table
-summ <- fread("data/07_pipeline_summary.csv")
+# Genomic inflation: the median observed chi-square over its null expectation.
+# Zero and non-finite p-values are dropped first -- METAL writes a handful of
+# exact zeros at the extreme tail, and qchisq() would return Inf for those.
+lam <- function(p) { p <- p[is.finite(p) & p > 0]
+                     median(qchisq(p, 1, lower.tail = FALSE)) / qchisq(0.5, 1) }
+
+# The four arms. Each BACON results file carries both the raw `p.value` and the
+# adjusted `bacon.pval`, which is what lets one row report lambda before and
+# after the correction. Reading all four costs ~160 MB of compressed CSV.
+res_all <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz")
+res_f   <- fread("../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz")
+res_m   <- fread("../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz")
+# The METAL table is read again in section 8, where the chapter works through
+# its columns; here only its p-values are needed.
+res_meta <- fread("../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt")
+setnames(res_meta, "P-value", "P")
+
+# One row per EWAS arm. `n` comes out of the results file itself: ewas.R records
+# the number of samples that entered each per-CpG model.
+row1 <- function(lab, d) {
+  setorder(d, bacon.pval)
+  data.table(Analysis = lab, n = d$n[1],
+             lambda_raw = lam(d$p.value), lambda_bacon = lam(d$bacon.pval),
+             n_P_lt_1e5 = sum(d$bacon.pval < 1e-5, na.rm = TRUE),
+             top_cpg = d$cpgid[1], top_P = d$bacon.pval[1])
+}
+# The meta-analysis row is built by hand rather than through row1(): METAL's
+# output has no per-CpG sample size and no uncorrected p-value to compare
+# against, because its inputs were already BACON-adjusted.
+summ <- rbindlist(list(
+  row1("Overall", res_all), row1("Female", res_f), row1("Male", res_m),
+  data.table(Analysis = "Meta (F+M)", n = NA_integer_,
+             lambda_raw = NA_real_, lambda_bacon = lam(res_meta$P),
+             n_P_lt_1e5 = sum(res_meta$P < 1e-5, na.rm = TRUE),
+             top_cpg = res_meta$MarkerName[which.min(res_meta$P)],
+             top_P = min(res_meta$P))))
+
+# Small and rectangular, so it goes in the repository as a flat file: a reader
+# who cannot hold four 756,251-row tables in memory can still read this table.
+fwrite(summ, "data/07_pipeline_summary.csv")
+
 print(summ[, .(Analysis, n, lambda_raw = round(lambda_raw, 3),
                lambda_bacon = round(lambda_bacon, 3),
                n_P_lt_1e5, top_cpg, top_P = signif(top_P, 3))])
@@ -259,7 +319,7 @@ print(summ[, .(Analysis, n, lambda_raw = round(lambda_raw, 3),
 
 The raw λ values start close to 1 but pull in *opposite directions* across the
 strata: 1.021 in the combined arm, 0.967 in females (mildly deflated), 1.070 in
-males (mildly inflated). BACON pulls all three to within 1.5% of 1.0 — 1.023 /
+males (mildly inflated). BACON pulls all three to within 2.5% of 1.0 — 1.023 /
 1.014 / 1.013 — which is the behavior you want from it: a small, symmetric
 correction of residual bias, not a rescue of a badly specified model.
 
@@ -270,6 +330,23 @@ the general pattern in stratified EWAS — the smaller stratum is the more likel
 the λ is to be in- or de-flated.
 
 The mixture fit and the before/after QQ for the overall analysis:
+
+```{r}
+#| label: copy-bacon-plots
+# run_bacon.R already drew these four; copying them in under the names the
+# figures below use is honest provenance and avoids redrawing a plot from a
+# sampler that has already been run. The pipeline writes them per analysis, so
+# the overall arm's files carry no group prefix and the strata do.
+dir.create("data/07_bacon", showWarnings = FALSE, recursive = TRUE)
+invisible(file.copy(
+  c("../ewas_pipeline/run_grady_all/bacon_plots/PTSD_fit.jpg",
+    "../ewas_pipeline/run_grady_all/bacon_plots/PTSD_qqs.jpg",
+    "../ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_qqs.jpg",
+    "../ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_qqs.jpg"),
+  c("data/07_bacon/all_fit.jpg", "data/07_bacon/all_qqs.jpg",
+    "data/07_bacon/F_qqs.jpg",   "data/07_bacon/M_qqs.jpg"),
+  overwrite = TRUE))
+```
 
 ::: {layout-ncol=2}
 ![BACON mixture fit (overall): the test-statistic histogram with the fitted null component in red.](data/07_bacon/all_fit.jpg){#fig-bacon-fit}
@@ -328,6 +405,9 @@ ANALYZE HETEROGENEITY
 
 ```{r}
 #| label: load-meta
+# METAL's output table, one row per CpG present in both strata. The `_1` suffix
+# is METAL's own: it numbers the analyses in a command file, and this run has
+# one. Column names come from METAL, hence the backticks around `P-value`.
 meta <- fread("../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt")
 setorder(meta, `P-value`)
 cat("markers meta-analyzed:", nrow(meta), "\n\n")
@@ -390,6 +470,8 @@ This is why you read `Direction` and `HetISq` alongside `P-value`. Two tips:
 
 ```{r}
 #| label: meta-summary
+# Same genomic-inflation function as the summary table above, restated so this
+# chunk stands on its own if you run it in isolation.
 lam <- function(p){p<-p[is.finite(p)&p>0]; median(qchisq(p,1,lower.tail=FALSE))/qchisq(0.5,1)}
 cat("meta genomic inflation lambda:", round(lam(meta$`P-value`), 3), "\n")
 cat("CpGs with heterogeneity P < 0.05:",
@@ -460,7 +542,7 @@ A few caveats about these results:
 
 The point of the chapter is
 that the pipeline executes correctly, reproduces chapter 06's estimates to
-floating-point precision, and produces calibrated statistics (λ within 1.5% of
+floating-point precision, and produces calibrated statistics (λ within 2.5% of
 1 in every arm). It is not that PTSD associates with these nine CpGs in 87
 people.
 
