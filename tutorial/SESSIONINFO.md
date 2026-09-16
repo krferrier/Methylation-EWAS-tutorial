@@ -97,13 +97,43 @@ ERROR; return code from pthread_create() is 22
 `preprocessCore` maintains its own pthread pool, and the packaged build's threading path
 fails on some multi-core Linux hosts and inside containers. It is **not universal** —
 many people run the packaged build without trouble — so try the environment as shipped
-first. If you hit it, rebuild without threading:
+first. Note that `OMP_NUM_THREADS=1` and `OPENBLAS_NUM_THREADS=1` do **not** help; the
+threading has to come out of the package.
 
-```bash
-R CMD INSTALL --configure-args="--disable-threading" preprocessCore_1.60.2.tar.gz
+Rebuild it from source with threading disabled. This form picks the right version for
+whatever Bioconductor release you are on, so it does not go stale:
+
+```r
+BiocManager::install(
+  "preprocessCore",
+  configure.args = c(preprocessCore = "--disable-threading"),
+  force  = TRUE,
+  update = TRUE,
+  type   = "source"
+)
 ```
 
-The numbers here were produced with that rebuilt copy, which changes only the threading
+Answer **`n`** to `Update all/some/none? [a/s/n]:` — that prompt concerns your other
+out-of-date packages, not `preprocessCore`, and `a` recompiles much of the stack from
+source and can lift the deliberate `r-lattice<0.23` pin. Restart R afterwards and check
+`find.package("preprocessCore")` points at the library you just wrote to, not the conda
+one. This was verified against the error: with the packaged build `preprocessFunnorm`
+fails on 6 arrays, and with the rebuilt copy it completes in 20 seconds.
+
+In a conda environment you can instead downgrade the threaded OpenBLAS that
+`preprocessCore` picks its threads up from:
+
+```bash
+conda activate ewas-methyl
+conda install "openblas=0.3.3"
+```
+
+That is a larger change than it looks: `openblas=0.3.3` is the old standalone package,
+so conda removes `libopenblas` and satisfies BLAS and LAPACK from `blis` and Netlib
+reference LAPACK. Reference LAPACK is much slower, and chapters 02, 05 and 06 are all
+linear-algebra heavy, so the source rebuild is the better default.
+
+The numbers here were produced with the rebuilt copy, which changes only the threading
 strategy, not the arithmetic. Because it was installed into a user library rather than
 via conda, it does not appear in `envs/methyl.yml`.
 

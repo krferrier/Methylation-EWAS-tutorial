@@ -216,6 +216,74 @@ stopifnot(identical(rownames(beta_raw), rownames(beta_noob)),
 grs_fun
 ```
 
+::: {.callout-important}
+## If `preprocessFunnorm` stops with `pthread_create() is 22`
+
+On some installs — most often a conda environment — the chunk above dies partway
+through normalization with:
+
+```
+Error in preprocessCore::normalize.quantiles.use.target(matrix(crtColumn.reduced),  : 
+  ERROR; return code from pthread_create() is 22
+```
+
+Nothing is wrong with your data, and nothing is wrong with the chapter. The
+quantile-normalization step inside `preprocessFunnorm` calls `preprocessCore`,
+whose pre-built binary is compiled with threading enabled, and on these
+installs the threads it asks for cannot be created. Setting
+`OPENBLAS_NUM_THREADS=1` or `OMP_NUM_THREADS=1` does **not** help — the
+threading has to come out of the package itself.
+
+**The fix that works in any R installation** is to rebuild `preprocessCore`
+from source with threading disabled:
+
+```{.r filename="RStudio Console"}
+BiocManager::install(
+  "preprocessCore",
+  configure.args = c(preprocessCore = "--disable-threading"),
+  force  = TRUE,
+  update = TRUE,
+  type   = "source"
+)
+```
+
+`BiocManager` will then ask about your other packages:
+
+```
+Update all/some/none? [a/s/n]:
+```
+
+Answer **`n`**. That prompt is about every *other* out-of-date package, not
+about `preprocessCore` — the one you asked for is rebuilt either way. Answering
+`a` recompiles a large part of the Bioconductor stack from source, which takes
+a long time and can move packages this tutorial deliberately holds back (the
+`r-lattice<0.23` pin in `envs/methyl.yml` exists for exactly that reason).
+
+Restart R, then confirm you picked up the rebuilt copy before re-running the
+chunk:
+
+```{.r filename="RStudio Console"}
+find.package("preprocessCore")   # should NOT be your conda env's library
+```
+
+**If you are in a conda environment** there is a second route: the threaded
+OpenBLAS build is what `preprocessCore` is picking its threads up from, so
+downgrading it also clears the error:
+
+```{.bash filename="Terminal"}
+conda activate ewas-methyl
+conda install "openblas=0.3.3"
+```
+
+Be aware of what that transaction does, though. `openblas=0.3.3` is the old
+standalone package, so conda removes `libopenblas` and satisfies BLAS and
+LAPACK from `blis` and Netlib reference LAPACK instead. Reference LAPACK is
+markedly slower than OpenBLAS, and every linear-algebra-heavy step after this
+chapter — the control-probe PCA here, `sva` in chapter 05, `lmFit` in chapter
+06 — pays for it. The source rebuild above leaves your numeric libraries alone,
+so prefer it unless you have a reason not to.
+:::
+
 ::: {.callout-note collapse="true"}
 ## If normalization does not fit on your machine
 
