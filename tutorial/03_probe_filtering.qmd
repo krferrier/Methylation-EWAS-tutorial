@@ -13,7 +13,7 @@ Some probes need to be removed because they were designed for assessing quality
 control, as we did in [QC](01_qc.qmd). Other probes need to be removed because 
 they have been found to be problematic in some way: cross-hybridization to more than 
 one place in the genome; proximity to a common SNP (so what looks like a methylation 
-difference is really a genotype difference); mapping to repetitive regions. These are 
+difference is really a genotype difference). These are 
 properties of the **probe**, so these problematic probes are filtered out from everyone. 
 This notebook explains the categories and applies Wanding Zhou's curated
 masks [@zhou2017comprehensive] for Illumina methylation arrays. 
@@ -44,15 +44,18 @@ grs
 
 ## 1. Why some probes are unreliable by design {#sec-why}
 
-There are three main types of problematic probes and each has been characterized 
-in dedicated methods papers:
+There are two main types of problematic probes, each characterized in dedicated
+methods papers:
 
 **Cross-reactive / non-specific probes.** A 50-mer probe sequence is not
 guaranteed to be unique in the genome. Some probes hybridize to multiple loci, so
 their signal is a blend from several genomic locations. Chen et al.
 [@chen2013crossreactive] cataloged cross-reactive probes on the 450K; McCartney
-et al. [@mccartney2016identification] extended this to the EPIC array. Zhou's
-`MASK_mapping` flag captures probes that do not map uniquely.
+et al. [@mccartney2016identification] extended this to the EPIC array. In Zhou's
+v8.1 masks this is two flags: `M_mapping`, for probes that do not map at all, align
+below score 35, or (for Infinium-I) whose two alleles land in different places; and
+`M_nonuniq`, for probes that map but with mapping quality under 10 — which is the one
+that catches a probe hybridising in several locations.
 
 **SNP-affected probes.** If a common SNP falls in the probe body — especially at
 the interrogated CpG or the single-base extension position — then the assay may 
@@ -68,14 +71,6 @@ within the last 5bp of the CpG probe. If there is no appropriate 1000 Genomes po
 you don't have population/study-specific allele frequencies, you can use the general population SNP
 mask and note this as a limitation of the study. If you are performing a study on a multi-ancestry 
 cohort or don't know the ancestry of your cohort, then the general population masking is appropriate.
-
-**Repetitive / structurally masked probes.** Probes overlapping RepeatMasker
-regions, copy-number-variable segments, or requiring an extension-base substitution
-have also been flagged historically — as `MASK_rmsk15`, `MASK_sub25_copy` and
-`MASK_typeINextBaseSwitch` in the legacy manifest files from Zhou's annotation database. The current v8.1
-mask retains only the extension-base category (as `M_1baseSwitchSNP_*`), and the
-repeat and copy-number terms are now handled by the `MASK_mapping` criteria (based on a
-mapping quality score).
 
 The latest CpG masking recommendations from Zhou (`EPIC.hg38.mask.cm`, v8.1) include
 24 separate mask terms. One of those terms is `M_general`, which
@@ -430,9 +425,7 @@ file, the `MASK_general_<POP>` column includes the recommended problematic probe
 well as the population-specific probes. The `MASK_snp5_<POP>` columns only flag the
 population-specific masking.
 
-The two generations do not mask the same things, and the legacy pair masks more. The
-reason is not the one the column names suggest, so it is worth deriving rather than
-asserting.
+The two generations do not mask the same things, and the legacy pair masks more.
 
 The legacy equivalent of the eight v8.1 codes is `MASK_general_AFR` — problematic probes
 *plus* AFR population SNPs — together with `MASK_snp5_EUR`, the EUR SNP column on its own
@@ -443,8 +436,8 @@ tutorial ships only its flagged probe IDs:
 # How data/03_legacy_pop_mask.tsv.gz was built from the archived manifest.
 library(data.table)
 pop  <- fread("EPIC.hg38.manifest.pop.tsv.gz",
-              select = c("probeID", "MASK_general_AFR", "MASK_snp5_AFR", "MASK_snp5_EUR"))
-long <- rbindlist(lapply(c("MASK_general_AFR", "MASK_snp5_AFR", "MASK_snp5_EUR"),
+              select = c("probeID", "MASK_general_AFR", "MASK_snp5_EUR"))
+long <- rbindlist(lapply(c("MASK_general_AFR", "MASK_snp5_EUR"),
   function(cl) data.table(probeID = pop$probeID[pop[[cl]]], mask = cl)))
 fwrite(long[order(mask, probeID)], "data/03_legacy_pop_mask.tsv.gz", sep = "\t")
 ```
@@ -452,7 +445,7 @@ fwrite(long[order(mask, probeID)], "data/03_legacy_pop_mask.tsv.gz", sep = "\t")
 ```{r}
 #| label: mask-generation-contrast
 # Long form: one row per (probe, legacy mask column) pair, flagged probes only --
-# which is how an 866k-probe annotation fits in 0.8 MB.
+# which is how two columns of an 866k-probe annotation fit in 0.6 MB.
 leg <- fread("data/03_legacy_pop_mask.tsv.gz")
 L   <- split(leg$probeID, leg$mask)
 
@@ -471,54 +464,29 @@ knitr::kable(gen, row.names = FALSE, format.args = list(big.mark = ","),
              caption = "Same cohort, same detection-p and sex filters; only the mask generation differs.")
 ```
 
-Where the gap comes from is worth one more table, because two plausible explanations are
-both wrong. Split each generation into its population-SNP terms and everything else:
+The population SNP masks are slightly different between v8.1 and the legacy masking,
+but overall are quite consistent. Both generations flag a SNP of at least 1% frequency
+within 5 bp of the 3′ extension, so `MASK_snp5_AFR` and v8.1's three AFR SNP terms are
+the same criterion: 59,361 probes against 55,405. What differs is mostly *which*
+probes — 7,110 flagged only by the legacy columns, 3,154 only by v8.1. These
+differences are largely because a new aligner and genome build were used in v8.1; a
+probe's coordinates and therefore its 5 bp window could have shifted, as well as
+updated data on population-specific allele frequencies which are used to define SNPs.
 
-```{r}
-#| label: mask-generation-decomp
-# Both generations mask SNPs at >1% allele frequency, so these rows are comparable:
-# the `5` in the legacy `snp5` name is a 5 bp window around the target, not a 5%
-# frequency cut-off [@zhou2017comprehensive]. Everything is restricted to the probes
-# the v8.1 annotation covers; the archived manifest covers 635 fewer.
-v81_snp  <- Reduce(union, mp$per_code_sets[c("M_SNP_AFR_1pt", "M_1baseSwitchSNP_AFR_1pt",
-              "M_2extBase_SNP_AFR_1pt", "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt",
-              "M_2extBase_SNP_EUR_1pt")])
-v81_rest <- union(mp$per_code_sets$M_mapping, mp$per_code_sets$M_nonuniq)
-leg_snp  <- intersect(union(L$MASK_snp5_AFR, L$MASK_snp5_EUR), mask$Probe_ID)
-leg_rest <- intersect(setdiff(L$MASK_general_AFR, L$MASK_snp5_AFR), mask$Probe_ID)
+The mapping criteria is where the majority of the difference in count for recommended
+probe masks come from. The legacy mask flagged 65,537 probes as mapping failures and
+another 25,194 for a non-unique 30-base 3′ subsequence; v8.1 flags 428 under
+`M_mapping` (unmapped, alignment score below 35, or Infinium-I alleles landing in
+different places) and 28,833 under `M_nonuniq` (mapped, but mapping quality under 10).
+v8.1 has no separate copy-number term because mapping quality now captures that
+information. In total that means the legacy code recommended masking for mapping
+criteria for 70,632 probes, whereas v8.1 that decreased to 29,261.
 
-knitr::kable(data.frame(
-  component = c("population SNP terms (>1% allele frequency)", "everything else"),
-  legacy    = c(length(leg_snp),  length(leg_rest)),
-  v8.1      = c(length(v81_snp),  length(v81_rest))),
-  row.names = FALSE, format.args = list(big.mark = ","),
-  caption = "Array-wide, not restricted to this study's probes.")
-
-cat("legacy 'everything else' probes also flagged by v8.1 mapping/nonuniq:",
-    sprintf("%.0f%%", 100 * length(intersect(leg_rest, v81_rest)) / length(leg_rest)), "\n")
-cat("...flagged by none of the eight v8.1 codes:",
-    format(length(setdiff(leg_rest, Reduce(union, mp$per_code_sets))), big.mark = ","), "\n")
-```
-
-So it is **not** the allele-frequency threshold — both generations use >1% — and the SNP
-components come out within about four thousand probes of each other. What differs there is
-*where* a SNP counts: the legacy columns flag any qualifying SNP within 5 bp of the target,
-while v8.1 flags specific positions (the interrogated CpG, a 1-base colour-channel switch,
-the two extension bases).
-
-Nor is it that v8.1 abandoned the repeat and copy-number criteria. Almost the whole gap is
-the non-SNP content `MASK_general_<POP>` bundles in — mapping quality, repeat overlap and
-copy number of the 3′ subsequence. Around 40% of those probes are still flagged by v8.1's
-mapping terms, and the remainder are no longer masked on that basis, which is the original
-paper's own conclusion: 95.1% of probes overlapping repeats map uniquely to the genome
-[@zhou2017comprehensive]. v8.1 does publish an `M_general` term, but it is not one of the
-eight codes this chapter uses.
-
-Moving to v8.1 therefore retains
-**`r format(funl$retained - length(leg_keep), big.mark = ",")`** more probes in this
-cohort — more sites tested, at the cost of the repeat-overlapping probes the legacy mask
-excluded. Neither choice is automatically right; what matters is that you state which mask
-generation and which terms you used, since the two are not interchangeable.
+Given the vast difference in mapping-related criteria between versions, it's
+recommended to use the current `M_mapping` and `M_nonuniq` and only use the population
+specific columns (`MASK_snp5_<POP>`) from the legacy version if you need sub-population
+SNP masking. And, make sure to record which columns from which versions of the masking
+information you are using.
 
 ::: {.callout-note}
 ## Smoking-associated probes
