@@ -33,7 +33,6 @@ published checkpoint instead — note it is a 1.25 GB download:
 #| label: load
 library(minfi)       # getAnnotation() for probe coordinates, detectionP() for the p-value matrix
 library(data.table)  # fread() for the mask tables
-library(ggplot2)     # the ancestry-contrast figure
 
 # The functional-normalized GenomicRatioSet written at the end of
 # [normalization](02_normalization.qmd): 96 samples, beta and M-values for every
@@ -97,13 +96,6 @@ their union. The full set of 24 terms for EPIC is:
 - **SNP at the extension base** — `M_2extBase_SNP_*` (same population suffixes)
 - **Type I extension-base switch** — `M_1baseSwitchSNP_*`
 - **the recommended general default** — `M_general`
-
-If you need more specific sub-population masking, there is an archived version of the
-recommended population masking (`EPIC.hg38.manifest.pop.tsv.gz`) that includes the 5
-super-populations and 26 sub-populations. If using the archived population masking
-file, the `MASK_general_<POP>` column includes the recommended problematic probes as
-well as the population-specific probes. The `MASK_snp5_<POP>` columns only flag the
-population-specific masking.
 
 ::: {.callout-note}
 ## Why use Zhou's masks specifically
@@ -245,11 +237,10 @@ write.table(data.frame(population = pops, n_probes = snp_by_pop),
 ::: {.callout-note}
 ## The archived manifest is still there when you need it
 `EPIC.hg38.manifest.pop.tsv.gz` remains available and is the right choice when you
-need **sub-population** resolution: it carries `MASK_general_<POP>` and
-`MASK_snp5_<POP>` columns for the 5 super-populations *and* 26 sub-populations
-(GWD, YRI, ASW, CEU, FIN, …), where v8.1's `.cm` stops at the 5 super-populations.
-Note also that the two generations do not mask the same categories — see the
-comparison at the end of this section.
+need **sub-population** resolution: it covers 26 sub-populations (GWD, YRI, ASW, CEU,
+FIN, …) as well as the 5 super-populations, where v8.1's `.cm` stops at the 5. The two
+generations do not mask the same categories either — [§4](#sec-apply) quantifies the
+difference and shows what it costs this cohort.
 :::
 
 ## 2. Ancestry matters {#sec-ancestry}
@@ -384,27 +375,6 @@ drop_sex <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
 # below overlap and do not sum to the total dropped.
 keep <- setdiff(rownames(grs), Reduce(union, list(drop_mask, drop_detp, drop_sex)))
 
-# The same filter with one ancestry's SNP codes instead of both, for the contrast
-# below. M_mapping and M_nonuniq are not ancestry-specific, so they stay in every
-# variant; detection-p and sex filters are held fixed too. Only the SNP codes move.
-one_anc <- function(pop) {
-  cols <- c("M_mapping", "M_nonuniq",
-            paste0(c("M_SNP_", "M_1baseSwitchSNP_", "M_2extBase_SNP_"), pop, "_1pt"))
-  dropped <- mask$Probe_ID[Reduce(`|`, lapply(cols, function(m) mask[[m]] == 1L))]
-  in_study <- intersect(rownames(grs), dropped)
-  list(masked   = length(in_study),
-       retained = length(setdiff(rownames(grs),
-                                 Reduce(union, list(in_study, drop_detp, drop_sex)))))
-}
-afr_only <- one_anc("AFR")
-eur_only <- one_anc("EUR")
-keep_eur <- setdiff(rownames(grs),
-                    Reduce(union, list(intersect(rownames(grs),
-                             mask$Probe_ID[Reduce(`|`, lapply(
-                               c("M_mapping", "M_nonuniq", "M_SNP_EUR_1pt",
-                                 "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt"),
-                               function(m) mask[[m]] == 1L))]),
-                                       drop_detp, drop_sex)))
 
 # Every count the funnel, the tables and the prose below quote, in one place.
 funl <- list(
@@ -413,10 +383,6 @@ funl <- list(
   drop_detp        = length(drop_detp),
   drop_sex         = length(drop_sex),
   retained         = length(keep),                     # EWAS-ready probes
-  retained_eur     = length(keep_eur),                 # under EUR SNP codes only
-  afr_only         = afr_only,                         # masked / retained, AFR codes only
-  eur_only         = eur_only,                         # masked / retained, EUR codes only
-  afr_not_eur_kept = length(setdiff(keep_eur, keep)),  # what EUR-only would leave in
   union8           = sum(mask$mask_v81_8code),         # array-wide, before any study filter
   snp_by_pop       = setNames(sp$n_probes, sp$population)
 )
@@ -455,59 +421,104 @@ grs_filt <- grs[keep, ]
 grs_filt
 ```
 
-```{r}
-#| label: ancestry-contrast
-#| tbl-cap: "Probes masked and retained when only the SNP codes change. `M_mapping` and `M_nonuniq` are in all three variants, and the detection-p and sex-chromosome filters are held fixed, so the rows differ only in which ancestry's SNP flags are applied."
-anc <- data.frame(
-  mask = c("AFR SNP codes only", "EUR SNP codes only",
-           "AFR + EUR union (used here)"),
-  probes_masked   = c(funl$afr_only$masked,   funl$eur_only$masked,   funl$drop_mask),
-  probes_retained = c(funl$afr_only$retained, funl$eur_only$retained, funl$retained)
-)
-knitr::kable(anc, row.names = FALSE,
-             format.args = list(big.mark = ","),
-             col.names = c("SNP codes applied", "probes masked", "probes retained"))
+### Sub-population masks
+
+If you need more specific sub-population masking, there is an archived version of the
+recommended population masking (`EPIC.hg38.manifest.pop.tsv.gz`) that includes the 5
+super-populations and 26 sub-populations. If using the archived population masking
+file, the `MASK_general_<POP>` column includes the recommended problematic probes as
+well as the population-specific probes. The `MASK_snp5_<POP>` columns only flag the
+population-specific masking.
+
+The two generations do not mask the same things, and the legacy pair masks more. The
+reason is not the one the column names suggest, so it is worth deriving rather than
+asserting.
+
+The legacy equivalent of the eight v8.1 codes is `MASK_general_AFR` — problematic probes
+*plus* AFR population SNPs — together with `MASK_snp5_EUR`, the EUR SNP column on its own
+so the general terms are not counted twice. The archived manifest is 14 MB, so the
+tutorial ships only its flagged probe IDs:
+
+```{.r filename="RStudio Console"}
+# How data/03_legacy_pop_mask.tsv.gz was built from the archived manifest.
+library(data.table)
+pop  <- fread("EPIC.hg38.manifest.pop.tsv.gz",
+              select = c("probeID", "MASK_general_AFR", "MASK_snp5_AFR", "MASK_snp5_EUR"))
+long <- rbindlist(lapply(c("MASK_general_AFR", "MASK_snp5_AFR", "MASK_snp5_EUR"),
+  function(cl) data.table(probeID = pop$probeID[pop[[cl]]], mask = cl)))
+fwrite(long[order(mask, probeID)], "data/03_legacy_pop_mask.tsv.gz", sep = "\t")
 ```
-
-A EUR-only mask retains `r format(funl$afr_not_eur_kept, big.mark = ",")` probes that
-the union removes. Those are the probes carrying a common SNP in African-ancestry
-individuals but not in Europeans — exactly the ones that would be left in this cohort
-by the common default.
-
-The union is what the code below applies, and it is the operational meaning of
-"include masking recommendations for both".
-
-So, if we are using the latest recommended masking file (v8.1), the columns we would want
-to include in the masking would be `M_mapping`, `M_nonuniq`, `M_SNP_AFR_1pt`,`M_1baseSwitchSNP_AFR_1pt`,
-`M_2extBase_SNP_AFR_1pt`, `M_SNP_EUR_1pt`, `M_1baseSwitchSNP_EUR_1pt`, and `M_2extBase_SNP_EUR_1pt`. If 
-we were using the archived manifest population file, we would use the `MASK_general_AFR` and `MASK_snp5_EUR`.
-
-
-### What changing mask generation costs you
-
-It is worth seeing the size of the version effect directly, because it runs the
-opposite way to intuition. The eight v8.1 codes cover **two** ancestries; the legacy
-`MASK_general_AFR` covers one. Yet the legacy mask is the more aggressive:
 
 ```{r}
 #| label: mask-generation-contrast
+# Long form: one row per (probe, legacy mask column) pair, flagged probes only --
+# which is how an 866k-probe annotation fits in 0.8 MB.
+leg <- fread("data/03_legacy_pop_mask.tsv.gz")
+L   <- split(leg$probeID, leg$mask)
+
+# The legacy mask applied to this study, with detection-p and sex held fixed so the
+# mask generation is the only thing that differs from the funnel in §4.
+legacy_union <- union(L$MASK_general_AFR, L$MASK_snp5_EUR)
+leg_masked   <- intersect(rownames(grs), legacy_union)
+leg_keep     <- setdiff(rownames(grs), Reduce(union, list(leg_masked, drop_detp, drop_sex)))
+
 gen <- data.frame(
-  mask = c("Legacy MASK_general_AFR", "v8.1, 8 codes (AFR + EUR)"),
-  # Legacy counts are quoted from the archived manifest; the v8.1 figures are the
-  # ones derived above, so only the mask generation differs between the rows.
-  probes_masked   = c(124132, funl$union8),
-  probes_retained = c(724282, funl$retained)
+  mask = c("Legacy MASK_general_AFR + MASK_snp5_EUR", "v8.1, 8 codes (AFR + EUR)"),
+  probes_masked   = c(length(leg_masked), funl$drop_mask),
+  probes_retained = c(length(leg_keep),   funl$retained)
 )
-knitr::kable(gen, row.names = FALSE,
+knitr::kable(gen, row.names = FALSE, format.args = list(big.mark = ","),
              caption = "Same cohort, same detection-p and sex filters; only the mask generation differs.")
 ```
 
-The difference is the repeat and copy-number terms described in §1: the legacy
-`MASK_general_<POP>` bundles them in, and v8.1 has no equivalent. So moving to v8.1
-retains **`r format(funl$retained - 724282, big.mark = ",")`** more probes here — more
-sites tested, but also the repeat-overlapping probes no longer excluded. Neither
-choice is automatically right; what matters is that you state which mask generation
-and which terms you used, since the two are not interchangeable.
+Where the gap comes from is worth one more table, because two plausible explanations are
+both wrong. Split each generation into its population-SNP terms and everything else:
+
+```{r}
+#| label: mask-generation-decomp
+# Both generations mask SNPs at >1% allele frequency, so these rows are comparable:
+# the `5` in the legacy `snp5` name is a 5 bp window around the target, not a 5%
+# frequency cut-off [@zhou2017comprehensive]. Everything is restricted to the probes
+# the v8.1 annotation covers; the archived manifest covers 635 fewer.
+v81_snp  <- Reduce(union, mp$per_code_sets[c("M_SNP_AFR_1pt", "M_1baseSwitchSNP_AFR_1pt",
+              "M_2extBase_SNP_AFR_1pt", "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt",
+              "M_2extBase_SNP_EUR_1pt")])
+v81_rest <- union(mp$per_code_sets$M_mapping, mp$per_code_sets$M_nonuniq)
+leg_snp  <- intersect(union(L$MASK_snp5_AFR, L$MASK_snp5_EUR), mask$Probe_ID)
+leg_rest <- intersect(setdiff(L$MASK_general_AFR, L$MASK_snp5_AFR), mask$Probe_ID)
+
+knitr::kable(data.frame(
+  component = c("population SNP terms (>1% allele frequency)", "everything else"),
+  legacy    = c(length(leg_snp),  length(leg_rest)),
+  v8.1      = c(length(v81_snp),  length(v81_rest))),
+  row.names = FALSE, format.args = list(big.mark = ","),
+  caption = "Array-wide, not restricted to this study's probes.")
+
+cat("legacy 'everything else' probes also flagged by v8.1 mapping/nonuniq:",
+    sprintf("%.0f%%", 100 * length(intersect(leg_rest, v81_rest)) / length(leg_rest)), "\n")
+cat("...flagged by none of the eight v8.1 codes:",
+    format(length(setdiff(leg_rest, Reduce(union, mp$per_code_sets))), big.mark = ","), "\n")
+```
+
+So it is **not** the allele-frequency threshold — both generations use >1% — and the SNP
+components come out within about four thousand probes of each other. What differs there is
+*where* a SNP counts: the legacy columns flag any qualifying SNP within 5 bp of the target,
+while v8.1 flags specific positions (the interrogated CpG, a 1-base colour-channel switch,
+the two extension bases).
+
+Nor is it that v8.1 abandoned the repeat and copy-number criteria. Almost the whole gap is
+the non-SNP content `MASK_general_<POP>` bundles in — mapping quality, repeat overlap and
+copy number of the 3′ subsequence. Around 40% of those probes are still flagged by v8.1's
+mapping terms, and the remainder are no longer masked on that basis, which is the original
+paper's own conclusion: 95.1% of probes overlapping repeats map uniquely to the genome
+[@zhou2017comprehensive]. v8.1 does publish an `M_general` term, but it is not one of the
+eight codes this chapter uses.
+
+Moving to v8.1 therefore retains
+**`r format(funl$retained - length(leg_keep), big.mark = ",")`** more probes in this
+cohort — more sites tested, at the cost of the repeat-overlapping probes the legacy mask
+excluded. Neither choice is automatically right; what matters is that you state which mask
+generation and which terms you used, since the two are not interchangeable.
 
 ::: {.callout-note}
 ## Smoking-associated probes
