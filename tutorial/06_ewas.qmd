@@ -450,13 +450,14 @@ tutorial's pipeline author) prefer, is a **two-stage residualization**:
 2. **Run the association on the residuals** with only the biological model:
    $$\text{resid}(\text{M})_{\text{CpG}} \sim \text{PTSD} + \text{sex} + \text{age} + \text{cell composition}$$
 
-```r
+```{.r filename="Generic example, do not run"}
+# Schematic only -- placeholder names, not objects this chapter creates.
 # Stage 1: residualize M-values on the technical terms (SVs here; or chip + position)
-tech <- model.matrix(~ SV)                       # nuisance-only design
-M_resid <- residuals(lmFit(M, tech), M)          # limma residuals, probes x samples
+tech    <- model.matrix(~ SV)                      # nuisance-only design
+M_resid <- residuals(lmFit(mvals, tech), mvals)    # limma residuals, probes x samples
 
 # Stage 2: association model on the residuals, biological covariates only
-bio <- model.matrix(~ ptsd + sex + age + Neu + NK + CD4T + CD8T + Bcell + Mono, data = md)
+bio <- model.matrix(~ exposure + sex + age + cell_proportions, data = pheno)
 fit <- eBayes(lmFit(M_resid, bio))
 ```
 
@@ -521,7 +522,8 @@ The workflow is three steps:
 
 Inverse-variance meta-analysis of a single CpG is short enough to show by hand:
 
-```r
+```{.r filename="Generic example, do not run"}
+# Schematic only -- the arithmetic, with the inputs named rather than built.
 # per-CpG effect + SE from each stratum's BACON-adjusted results
 # (bF, seF) from females; (bM, seM) from males
 wF <- 1 / seF^2                       # inverse-variance weights
@@ -550,7 +552,7 @@ METAL's `SCHEME STDERR` *is* inverse-variance-weighted fixed-effects meta-analys
 single-CpG code above vectorizes directly, so the whole genome-wide meta-analysis is a
 dozen lines of R over the two strata's BACON-adjusted result tables:
 
-```r
+```{.r filename="RStudio Console"}
 library(data.table)
 
 # each stratum's BACON-adjusted results: one row per CpG

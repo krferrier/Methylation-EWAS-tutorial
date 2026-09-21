@@ -5915,14 +5915,20 @@ sex:</code></pre>
 45 42 </code></pre>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mvals.csv.gz — SAMPLES in rows, CpGs in columns, first column = sample IDs.</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This orientation matters: ewas.R moves the first column to rownames and then</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># chunks over the *columns*, so the file must be samples x CpGs, not CpGs x samples.</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">log2</span>((betas <span class="sc">+</span> <span class="fl">1e-3</span>) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> betas <span class="sc">+</span> <span class="fl">1e-3</span>))   <span class="co"># betas = filtered matrix, probes x samples</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> M[<span class="fu">complete.cases</span>(M), ]</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>Mt <span class="ot">&lt;-</span> <span class="fu">t</span>(M)</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>data.table<span class="sc">::</span><span class="fu">fwrite</span>(<span class="fu">data.table</span>(<span class="at">SampleID =</span> <span class="fu">rownames</span>(Mt), data.table<span class="sc">::</span><span class="fu">as.data.table</span>(Mt)),</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;data/mvals.csv.gz&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-with-filename">
+<div class="code-with-filename-file">
+<pre><strong>Generic example, do not run</strong></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14" data-filename="Generic example, do not run"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Schematic only -- `betas` stands for your own filtered matrix.</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># mvals.csv.gz — SAMPLES in rows, CpGs in columns, first column = sample IDs.</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># This orientation matters: ewas.R moves the first column to rownames and then</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># chunks over the *columns*, so the file must be samples x CpGs, not CpGs x samples.</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">log2</span>((betas <span class="sc">+</span> <span class="fl">1e-3</span>) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> betas <span class="sc">+</span> <span class="fl">1e-3</span>))   <span class="co"># betas = filtered matrix, probes x samples</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> M[<span class="fu">complete.cases</span>(M), ]</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>Mt <span class="ot">&lt;-</span> <span class="fu">t</span>(M)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>data.table<span class="sc">::</span><span class="fu">fwrite</span>(<span class="fu">data.table</span>(<span class="at">SampleID =</span> <span class="fu">rownames</span>(Mt), data.table<span class="sc">::</span><span class="fu">as.data.table</span>(Mt)),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;data/mvals.csv.gz&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 <p>This writes the <strong>full filtered probe set</strong> — every CpG that survived chapter 03. The chunking machinery is what makes that affordable: <code>ewas.R</code> reads the matrix once, splits the CpGs into chunks of <code>chunk-size</code>, and distributes chunks across workers, so memory stays flat as the probe count grows.</p>
 </section>
 <section id="sec-metal-build" class="level2">
@@ -7027,453 +7033,454 @@ Willer, Cristen J, Yun Li, and Gonçalo R Abecasis. 2010. <span>“METAL: Fast a
 <span id="cb38-126"><a href="#cb38-126" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">sex:</span><span class="sc">\n</span><span class="st">&quot;</span>); <span class="fu">print</span>(<span class="fu">table</span>(pheno<span class="sc">$</span>sex))</span>
 <span id="cb38-127"><a href="#cb38-127" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb38-128"><a href="#cb38-128" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-129"><a href="#cb38-129" aria-hidden="true" tabindex="-1"></a><span class="in">```r</span></span>
-<span id="cb38-130"><a href="#cb38-130" aria-hidden="true" tabindex="-1"></a><span class="co"># mvals.csv.gz — SAMPLES in rows, CpGs in columns, first column = sample IDs.</span></span>
-<span id="cb38-131"><a href="#cb38-131" aria-hidden="true" tabindex="-1"></a><span class="co"># This orientation matters: ewas.R moves the first column to rownames and then</span></span>
-<span id="cb38-132"><a href="#cb38-132" aria-hidden="true" tabindex="-1"></a><span class="co"># chunks over the *columns*, so the file must be samples x CpGs, not CpGs x samples.</span></span>
-<span id="cb38-133"><a href="#cb38-133" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">log2</span>((betas <span class="sc">+</span> <span class="fl">1e-3</span>) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> betas <span class="sc">+</span> <span class="fl">1e-3</span>))   <span class="co"># betas = filtered matrix, probes x samples</span></span>
-<span id="cb38-134"><a href="#cb38-134" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> M[<span class="fu">complete.cases</span>(M), ]</span>
-<span id="cb38-135"><a href="#cb38-135" aria-hidden="true" tabindex="-1"></a>Mt <span class="ot">&lt;-</span> <span class="fu">t</span>(M)</span>
-<span id="cb38-136"><a href="#cb38-136" aria-hidden="true" tabindex="-1"></a>data.table<span class="sc">::</span><span class="fu">fwrite</span>(<span class="fu">data.table</span>(<span class="at">SampleID =</span> <span class="fu">rownames</span>(Mt), data.table<span class="sc">::</span><span class="fu">as.data.table</span>(Mt)),</span>
-<span id="cb38-137"><a href="#cb38-137" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;data/mvals.csv.gz&quot;</span>)</span>
-<span id="cb38-138"><a href="#cb38-138" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-139"><a href="#cb38-139" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-140"><a href="#cb38-140" aria-hidden="true" tabindex="-1"></a>This writes the **full filtered probe set** — every CpG that survived chapter 03. The chunking machinery is what makes that affordable: <span class="in">`ewas.R`</span> reads</span>
-<span id="cb38-141"><a href="#cb38-141" aria-hidden="true" tabindex="-1"></a>the matrix once, splits the CpGs into chunks of <span class="in">`chunk-size`</span>, and distributes chunks</span>
-<span id="cb38-142"><a href="#cb38-142" aria-hidden="true" tabindex="-1"></a>across workers, so memory stays flat as the probe count grows.</span>
-<span id="cb38-143"><a href="#cb38-143" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-144"><a href="#cb38-144" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Building METAL {#sec-metal-build}</span></span>
-<span id="cb38-145"><a href="#cb38-145" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-146"><a href="#cb38-146" aria-hidden="true" tabindex="-1"></a>METAL is distributed as C++ source. The pipeline vendors it under</span>
-<span id="cb38-147"><a href="#cb38-147" aria-hidden="true" tabindex="-1"></a><span class="in">`software/metal/`</span> and builds it once:</span>
-<span id="cb38-148"><a href="#cb38-148" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-149"><a href="#cb38-149" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb38-150"><a href="#cb38-150" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> software/metal</span>
-<span id="cb38-151"><a href="#cb38-151" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-xzf</span> METAL.tar.gz <span class="at">--strip-components</span><span class="op">=</span>1</span>
-<span id="cb38-152"><a href="#cb38-152" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-DCMAKE_BUILD_TYPE</span><span class="op">=</span>Release</span>
-<span id="cb38-153"><a href="#cb38-153" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build</span>
-<span id="cb38-154"><a href="#cb38-154" aria-hidden="true" tabindex="-1"></a><span class="co"># → software/metal/build/metal/metal</span></span>
-<span id="cb38-155"><a href="#cb38-155" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-156"><a href="#cb38-156" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-157"><a href="#cb38-157" aria-hidden="true" tabindex="-1"></a>This installation/build is automatically handled by the Snakemake pipeline. </span>
-<span id="cb38-158"><a href="#cb38-158" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-159"><a href="#cb38-159" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Running a non-stratified EWAS {#sec-run}</span></span>
-<span id="cb38-160"><a href="#cb38-160" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-161"><a href="#cb38-161" aria-hidden="true" tabindex="-1"></a>If you don&#39;t want to stratify your EWAS by any terms, the pipeline begins </span>
-<span id="cb38-162"><a href="#cb38-162" aria-hidden="true" tabindex="-1"></a>running the EWAS across all 87 complete-data samples with the <span class="in">`ewas.R`</span> script.</span>
-<span id="cb38-163"><a href="#cb38-163" aria-hidden="true" tabindex="-1"></a>This script reads the methylation matrix in chunks, fits one <span class="in">`glm`</span> per CpG, and</span>
-<span id="cb38-164"><a href="#cb38-164" aria-hidden="true" tabindex="-1"></a>uses the <span class="in">`PTSD`</span> term as the main predictor to test for association:</span>
-<span id="cb38-165"><a href="#cb38-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-166"><a href="#cb38-166" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb38-167"><a href="#cb38-167" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/ewas.R <span class="dt">\</span></span>
-<span id="cb38-168"><a href="#cb38-168" aria-hidden="true" tabindex="-1"></a>  <span class="at">--pheno</span> data/pheno.csv <span class="at">--methyl</span> data/mvals.csv.gz <span class="dt">\</span></span>
-<span id="cb38-169"><a href="#cb38-169" aria-hidden="true" tabindex="-1"></a>  <span class="at">--assoc</span> PTSD <span class="at">--stratified</span> no <span class="dt">\</span></span>
-<span id="cb38-170"><a href="#cb38-170" aria-hidden="true" tabindex="-1"></a>  <span class="at">--chunk-size</span> 5000 <span class="at">--processing-type</span> multicore <span class="at">--workers</span> 8 <span class="dt">\</span></span>
-<span id="cb38-171"><a href="#cb38-171" aria-hidden="true" tabindex="-1"></a>  <span class="at">--out-dir</span> run_grady_all <span class="at">--out-type</span> .csv.gz</span>
-<span id="cb38-172"><a href="#cb38-172" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)</span></span>
-<span id="cb38-173"><a href="#cb38-173" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-174"><a href="#cb38-174" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-175"><a href="#cb38-175" aria-hidden="true" tabindex="-1"></a>On the machine that produced this tutorial — 32 logical cores (24 physical), 126 GB RAM — that took</span>
-<span id="cb38-176"><a href="#cb38-176" aria-hidden="true" tabindex="-1"></a>**5 min 24 s** of EWAS time at 8 workers, and 6 min 12 s including the BACON step that</span>
-<span id="cb38-177"><a href="#cb38-177" aria-hidden="true" tabindex="-1"></a>follows. The two stratified analyses in the next section took 11 min 37 s together at</span>
-<span id="cb38-178"><a href="#cb38-178" aria-hidden="true" tabindex="-1"></a>4 workers each, running concurrently. <span class="co">[</span><span class="ot">Setup</span><span class="co">](00_setup.qmd)</span> has the memory figures and</span>
-<span id="cb38-179"><a href="#cb38-179" aria-hidden="true" tabindex="-1"></a>guidance on choosing <span class="in">`workers`</span> for your own machine.</span>
-<span id="cb38-180"><a href="#cb38-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-129"><a href="#cb38-129" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;Generic example, do not run&quot;}</span></span>
+<span id="cb38-130"><a href="#cb38-130" aria-hidden="true" tabindex="-1"></a><span class="co"># Schematic only -- `betas` stands for your own filtered matrix.</span></span>
+<span id="cb38-131"><a href="#cb38-131" aria-hidden="true" tabindex="-1"></a><span class="co"># mvals.csv.gz — SAMPLES in rows, CpGs in columns, first column = sample IDs.</span></span>
+<span id="cb38-132"><a href="#cb38-132" aria-hidden="true" tabindex="-1"></a><span class="co"># This orientation matters: ewas.R moves the first column to rownames and then</span></span>
+<span id="cb38-133"><a href="#cb38-133" aria-hidden="true" tabindex="-1"></a><span class="co"># chunks over the *columns*, so the file must be samples x CpGs, not CpGs x samples.</span></span>
+<span id="cb38-134"><a href="#cb38-134" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">log2</span>((betas <span class="sc">+</span> <span class="fl">1e-3</span>) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> betas <span class="sc">+</span> <span class="fl">1e-3</span>))   <span class="co"># betas = filtered matrix, probes x samples</span></span>
+<span id="cb38-135"><a href="#cb38-135" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> M[<span class="fu">complete.cases</span>(M), ]</span>
+<span id="cb38-136"><a href="#cb38-136" aria-hidden="true" tabindex="-1"></a>Mt <span class="ot">&lt;-</span> <span class="fu">t</span>(M)</span>
+<span id="cb38-137"><a href="#cb38-137" aria-hidden="true" tabindex="-1"></a>data.table<span class="sc">::</span><span class="fu">fwrite</span>(<span class="fu">data.table</span>(<span class="at">SampleID =</span> <span class="fu">rownames</span>(Mt), data.table<span class="sc">::</span><span class="fu">as.data.table</span>(Mt)),</span>
+<span id="cb38-138"><a href="#cb38-138" aria-hidden="true" tabindex="-1"></a>                   <span class="st">&quot;data/mvals.csv.gz&quot;</span>)</span>
+<span id="cb38-139"><a href="#cb38-139" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-140"><a href="#cb38-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-141"><a href="#cb38-141" aria-hidden="true" tabindex="-1"></a>This writes the **full filtered probe set** — every CpG that survived chapter 03. The chunking machinery is what makes that affordable: <span class="in">`ewas.R`</span> reads</span>
+<span id="cb38-142"><a href="#cb38-142" aria-hidden="true" tabindex="-1"></a>the matrix once, splits the CpGs into chunks of <span class="in">`chunk-size`</span>, and distributes chunks</span>
+<span id="cb38-143"><a href="#cb38-143" aria-hidden="true" tabindex="-1"></a>across workers, so memory stays flat as the probe count grows.</span>
+<span id="cb38-144"><a href="#cb38-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-145"><a href="#cb38-145" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Building METAL {#sec-metal-build}</span></span>
+<span id="cb38-146"><a href="#cb38-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-147"><a href="#cb38-147" aria-hidden="true" tabindex="-1"></a>METAL is distributed as C++ source. The pipeline vendors it under</span>
+<span id="cb38-148"><a href="#cb38-148" aria-hidden="true" tabindex="-1"></a><span class="in">`software/metal/`</span> and builds it once:</span>
+<span id="cb38-149"><a href="#cb38-149" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-150"><a href="#cb38-150" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb38-151"><a href="#cb38-151" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> software/metal</span>
+<span id="cb38-152"><a href="#cb38-152" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> <span class="at">-xzf</span> METAL.tar.gz <span class="at">--strip-components</span><span class="op">=</span>1</span>
+<span id="cb38-153"><a href="#cb38-153" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-DCMAKE_BUILD_TYPE</span><span class="op">=</span>Release</span>
+<span id="cb38-154"><a href="#cb38-154" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="at">--build</span> build</span>
+<span id="cb38-155"><a href="#cb38-155" aria-hidden="true" tabindex="-1"></a><span class="co"># → software/metal/build/metal/metal</span></span>
+<span id="cb38-156"><a href="#cb38-156" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-157"><a href="#cb38-157" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-158"><a href="#cb38-158" aria-hidden="true" tabindex="-1"></a>This installation/build is automatically handled by the Snakemake pipeline. </span>
+<span id="cb38-159"><a href="#cb38-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-160"><a href="#cb38-160" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Running a non-stratified EWAS {#sec-run}</span></span>
+<span id="cb38-161"><a href="#cb38-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-162"><a href="#cb38-162" aria-hidden="true" tabindex="-1"></a>If you don&#39;t want to stratify your EWAS by any terms, the pipeline begins </span>
+<span id="cb38-163"><a href="#cb38-163" aria-hidden="true" tabindex="-1"></a>running the EWAS across all 87 complete-data samples with the <span class="in">`ewas.R`</span> script.</span>
+<span id="cb38-164"><a href="#cb38-164" aria-hidden="true" tabindex="-1"></a>This script reads the methylation matrix in chunks, fits one <span class="in">`glm`</span> per CpG, and</span>
+<span id="cb38-165"><a href="#cb38-165" aria-hidden="true" tabindex="-1"></a>uses the <span class="in">`PTSD`</span> term as the main predictor to test for association:</span>
+<span id="cb38-166"><a href="#cb38-166" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-167"><a href="#cb38-167" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb38-168"><a href="#cb38-168" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/ewas.R <span class="dt">\</span></span>
+<span id="cb38-169"><a href="#cb38-169" aria-hidden="true" tabindex="-1"></a>  <span class="at">--pheno</span> data/pheno.csv <span class="at">--methyl</span> data/mvals.csv.gz <span class="dt">\</span></span>
+<span id="cb38-170"><a href="#cb38-170" aria-hidden="true" tabindex="-1"></a>  <span class="at">--assoc</span> PTSD <span class="at">--stratified</span> no <span class="dt">\</span></span>
+<span id="cb38-171"><a href="#cb38-171" aria-hidden="true" tabindex="-1"></a>  <span class="at">--chunk-size</span> 5000 <span class="at">--processing-type</span> multicore <span class="at">--workers</span> 8 <span class="dt">\</span></span>
+<span id="cb38-172"><a href="#cb38-172" aria-hidden="true" tabindex="-1"></a>  <span class="at">--out-dir</span> run_grady_all <span class="at">--out-type</span> .csv.gz</span>
+<span id="cb38-173"><a href="#cb38-173" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady_all/PTSD_ewas_results.csv.gz   (756,251 CpGs)</span></span>
+<span id="cb38-174"><a href="#cb38-174" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-175"><a href="#cb38-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-176"><a href="#cb38-176" aria-hidden="true" tabindex="-1"></a>On the machine that produced this tutorial — 32 logical cores (24 physical), 126 GB RAM — that took</span>
+<span id="cb38-177"><a href="#cb38-177" aria-hidden="true" tabindex="-1"></a>**5 min 24 s** of EWAS time at 8 workers, and 6 min 12 s including the BACON step that</span>
+<span id="cb38-178"><a href="#cb38-178" aria-hidden="true" tabindex="-1"></a>follows. The two stratified analyses in the next section took 11 min 37 s together at</span>
+<span id="cb38-179"><a href="#cb38-179" aria-hidden="true" tabindex="-1"></a>4 workers each, running concurrently. <span class="co">[</span><span class="ot">Setup</span><span class="co">](00_setup.qmd)</span> has the memory figures and</span>
+<span id="cb38-180"><a href="#cb38-180" aria-hidden="true" tabindex="-1"></a>guidance on choosing <span class="in">`workers`</span> for your own machine.</span>
 <span id="cb38-181"><a href="#cb38-181" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-182"><a href="#cb38-182" aria-hidden="true" tabindex="-1"></a><span class="fu">### Does the pipeline agree with chapter 06?</span></span>
-<span id="cb38-183"><a href="#cb38-183" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-184"><a href="#cb38-184" aria-hidden="true" tabindex="-1"></a>Chapter 06 fit this model with <span class="in">`limma::lmFit`</span> + <span class="in">`eBayes`</span>; the</span>
-<span id="cb38-185"><a href="#cb38-185" aria-hidden="true" tabindex="-1"></a>pipeline fits one <span class="in">`glm`</span> per CpG. On this run:</span>
-<span id="cb38-186"><a href="#cb38-186" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-187"><a href="#cb38-187" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Effect estimates are identical** — the largest disagreement between the</span>
-<span id="cb38-188"><a href="#cb38-188" aria-hidden="true" tabindex="-1"></a>  pipeline&#39;s <span class="in">`estimate`</span> and limma&#39;s <span class="in">`logFC`</span> across all 756,251 CpGs is</span>
-<span id="cb38-189"><a href="#cb38-189" aria-hidden="true" tabindex="-1"></a>  8.9 × 10⁻¹⁵, i.e. floating-point noise. Same design matrix, same least-squares</span>
-<span id="cb38-190"><a href="#cb38-190" aria-hidden="true" tabindex="-1"></a>  solution.</span>
-<span id="cb38-191"><a href="#cb38-191" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Both reference the same *t* distribution** with 63 residual degrees of</span>
-<span id="cb38-192"><a href="#cb38-192" aria-hidden="true" tabindex="-1"></a>  freedom.</span>
-<span id="cb38-193"><a href="#cb38-193" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The p-values still differ slightly** (correlation 0.999 on the −log₁₀ scale;</span>
-<span id="cb38-194"><a href="#cb38-194" aria-hidden="true" tabindex="-1"></a>  λ = 1.022 from <span class="in">`limma`</span> against 1.021 from the pipeline). The reason is <span class="in">`eBayes`</span>: limma shrinks each probe&#39;s</span>
-<span id="cb38-195"><a href="#cb38-195" aria-hidden="true" tabindex="-1"></a>  residual variance toward a prior fitted across all probes, so its standard</span>
-<span id="cb38-196"><a href="#cb38-196" aria-hidden="true" tabindex="-1"></a>  errors differ from the per-probe <span class="in">`glm`</span> ones by up to ~22%. Neither is wrong,</span>
-<span id="cb38-197"><a href="#cb38-197" aria-hidden="true" tabindex="-1"></a>  which highlights the importance of being transparent about which method is used.</span>
-<span id="cb38-198"><a href="#cb38-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-199"><a href="#cb38-199" aria-hidden="true" tabindex="-1"></a>Identical point estimates plus a small, explainable difference in the variance</span>
-<span id="cb38-200"><a href="#cb38-200" aria-hidden="true" tabindex="-1"></a>model gives confidence that the results we are seeing are not an artifact of the </span>
-<span id="cb38-201"><a href="#cb38-201" aria-hidden="true" tabindex="-1"></a>method used for association testing.</span>
-<span id="cb38-202"><a href="#cb38-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-182"><a href="#cb38-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-183"><a href="#cb38-183" aria-hidden="true" tabindex="-1"></a><span class="fu">### Does the pipeline agree with chapter 06?</span></span>
+<span id="cb38-184"><a href="#cb38-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-185"><a href="#cb38-185" aria-hidden="true" tabindex="-1"></a>Chapter 06 fit this model with <span class="in">`limma::lmFit`</span> + <span class="in">`eBayes`</span>; the</span>
+<span id="cb38-186"><a href="#cb38-186" aria-hidden="true" tabindex="-1"></a>pipeline fits one <span class="in">`glm`</span> per CpG. On this run:</span>
+<span id="cb38-187"><a href="#cb38-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-188"><a href="#cb38-188" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Effect estimates are identical** — the largest disagreement between the</span>
+<span id="cb38-189"><a href="#cb38-189" aria-hidden="true" tabindex="-1"></a>  pipeline&#39;s <span class="in">`estimate`</span> and limma&#39;s <span class="in">`logFC`</span> across all 756,251 CpGs is</span>
+<span id="cb38-190"><a href="#cb38-190" aria-hidden="true" tabindex="-1"></a>  8.9 × 10⁻¹⁵, i.e. floating-point noise. Same design matrix, same least-squares</span>
+<span id="cb38-191"><a href="#cb38-191" aria-hidden="true" tabindex="-1"></a>  solution.</span>
+<span id="cb38-192"><a href="#cb38-192" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Both reference the same *t* distribution** with 63 residual degrees of</span>
+<span id="cb38-193"><a href="#cb38-193" aria-hidden="true" tabindex="-1"></a>  freedom.</span>
+<span id="cb38-194"><a href="#cb38-194" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The p-values still differ slightly** (correlation 0.999 on the −log₁₀ scale;</span>
+<span id="cb38-195"><a href="#cb38-195" aria-hidden="true" tabindex="-1"></a>  λ = 1.022 from <span class="in">`limma`</span> against 1.021 from the pipeline). The reason is <span class="in">`eBayes`</span>: limma shrinks each probe&#39;s</span>
+<span id="cb38-196"><a href="#cb38-196" aria-hidden="true" tabindex="-1"></a>  residual variance toward a prior fitted across all probes, so its standard</span>
+<span id="cb38-197"><a href="#cb38-197" aria-hidden="true" tabindex="-1"></a>  errors differ from the per-probe <span class="in">`glm`</span> ones by up to ~22%. Neither is wrong,</span>
+<span id="cb38-198"><a href="#cb38-198" aria-hidden="true" tabindex="-1"></a>  which highlights the importance of being transparent about which method is used.</span>
+<span id="cb38-199"><a href="#cb38-199" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-200"><a href="#cb38-200" aria-hidden="true" tabindex="-1"></a>Identical point estimates plus a small, explainable difference in the variance</span>
+<span id="cb38-201"><a href="#cb38-201" aria-hidden="true" tabindex="-1"></a>model gives confidence that the results we are seeing are not an artifact of the </span>
+<span id="cb38-202"><a href="#cb38-202" aria-hidden="true" tabindex="-1"></a>method used for association testing.</span>
 <span id="cb38-203"><a href="#cb38-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-206"><a href="#cb38-206" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb38-207"><a href="#cb38-207" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-all</span></span>
-<span id="cb38-208"><a href="#cb38-208" aria-hidden="true" tabindex="-1"></a><span class="co"># The non-stratified arm, straight out of the ewas.R call above: one row per</span></span>
-<span id="cb38-209"><a href="#cb38-209" aria-hidden="true" tabindex="-1"></a><span class="co"># CpG with the per-probe glm estimate, its standard error, the t-statistic and</span></span>
-<span id="cb38-210"><a href="#cb38-210" aria-hidden="true" tabindex="-1"></a><span class="co"># the p-value. These are the pre-BACON numbers; the BACON-adjusted file that</span></span>
-<span id="cb38-211"><a href="#cb38-211" aria-hidden="true" tabindex="-1"></a><span class="co"># section 7 reads is a separate output of the same run.</span></span>
-<span id="cb38-212"><a href="#cb38-212" aria-hidden="true" tabindex="-1"></a>allres <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz&quot;</span>)</span>
-<span id="cb38-213"><a href="#cb38-213" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;columns:&quot;</span>, <span class="fu">paste</span>(<span class="fu">names</span>(allres), <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb38-214"><a href="#cb38-214" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;n CpGs:&quot;</span>, <span class="fu">nrow</span>(allres), <span class="st">&quot; | samples per model (n):&quot;</span>, allres<span class="sc">$</span>n[<span class="dv">1</span>], <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb38-215"><a href="#cb38-215" aria-hidden="true" tabindex="-1"></a><span class="fu">setorder</span>(allres, p.value)</span>
-<span id="cb38-216"><a href="#cb38-216" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(allres[, .(cpgid, estimate, std.error, statistic, p.value)], <span class="dv">5</span>))</span>
-<span id="cb38-217"><a href="#cb38-217" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-218"><a href="#cb38-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-219"><a href="#cb38-219" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Stratifying by sex, then running each stratum {#sec-strata}</span></span>
-<span id="cb38-220"><a href="#cb38-220" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-221"><a href="#cb38-221" aria-hidden="true" tabindex="-1"></a>If you want to run a stratified EWAS, you first run <span class="in">`stratify.R`</span> on your variable(s) </span>
-<span id="cb38-222"><a href="#cb38-222" aria-hidden="true" tabindex="-1"></a>that you&#39;d like to stratify by. The script splits both the phenotype and methylation </span>
-<span id="cb38-223"><a href="#cb38-223" aria-hidden="true" tabindex="-1"></a>tables by the stratify variable(s) and drops that variable from the phenotype file before </span>
-<span id="cb38-224"><a href="#cb38-224" aria-hidden="true" tabindex="-1"></a>being passed on to the EWAS step. </span>
-<span id="cb38-225"><a href="#cb38-225" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-226"><a href="#cb38-226" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb38-227"><a href="#cb38-227" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/stratify.R <span class="at">--stratify</span> sex <span class="at">--out-dir</span> run_grady <span class="at">--threads</span> 4</span>
-<span id="cb38-228"><a href="#cb38-228" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/F/{F_mvals.fst, F_pheno.fst}</span></span>
-<span id="cb38-229"><a href="#cb38-229" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/M/{M_mvals.fst, M_pheno.fst}</span></span>
-<span id="cb38-230"><a href="#cb38-230" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-231"><a href="#cb38-231" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> S <span class="kw">in</span> F M<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb38-232"><a href="#cb38-232" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Rscript</span> scripts/ewas.R <span class="dt">\</span></span>
-<span id="cb38-233"><a href="#cb38-233" aria-hidden="true" tabindex="-1"></a>    <span class="at">--pheno</span> run_grady/<span class="va">$S</span>/<span class="va">${S}</span>_pheno.fst <span class="dt">\</span></span>
-<span id="cb38-234"><a href="#cb38-234" aria-hidden="true" tabindex="-1"></a>    <span class="at">--methyl</span> run_grady/<span class="va">$S</span>/<span class="va">${S}</span>_mvals.fst <span class="dt">\</span></span>
-<span id="cb38-235"><a href="#cb38-235" aria-hidden="true" tabindex="-1"></a>    <span class="at">--assoc</span> PTSD <span class="at">--stratified</span> yes <span class="dt">\</span></span>
-<span id="cb38-236"><a href="#cb38-236" aria-hidden="true" tabindex="-1"></a>    <span class="at">--chunk-size</span> 5000 <span class="at">--processing-type</span> multicore <span class="at">--workers</span> 4 <span class="dt">\</span></span>
-<span id="cb38-237"><a href="#cb38-237" aria-hidden="true" tabindex="-1"></a>    <span class="at">--out-dir</span> run_grady/<span class="va">$S</span> <span class="at">--out-prefix</span> <span class="va">$S</span> <span class="at">--out-type</span> .csv.gz</span>
-<span id="cb38-238"><a href="#cb38-238" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb38-239"><a href="#cb38-239" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/F/F_PTSD_ewas_results.csv.gz  (n = 45)</span></span>
-<span id="cb38-240"><a href="#cb38-240" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/M/M_PTSD_ewas_results.csv.gz  (n = 42)</span></span>
-<span id="cb38-241"><a href="#cb38-241" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-242"><a href="#cb38-242" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-243"><a href="#cb38-243" aria-hidden="true" tabindex="-1"></a>The female stratum has 45 samples, the male 42. Each within-stratum model is now</span>
-<span id="cb38-244"><a href="#cb38-244" aria-hidden="true" tabindex="-1"></a><span class="in">`methylation ~ PTSD + age + cell composition`</span>.</span>
-<span id="cb38-245"><a href="#cb38-245" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-246"><a href="#cb38-246" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. BACON: correcting residual inflation and bias {#sec-bacon}</span></span>
-<span id="cb38-247"><a href="#cb38-247" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-248"><a href="#cb38-248" aria-hidden="true" tabindex="-1"></a>A well-specified EWAS should have a genomic-inflation factor <span class="in">`λ ≈ 1`</span> and a QQ</span>
-<span id="cb38-249"><a href="#cb38-249" aria-hidden="true" tabindex="-1"></a>plot on the diagonal until the extreme tail. In practice small-sample EWAS often</span>
-<span id="cb38-250"><a href="#cb38-250" aria-hidden="true" tabindex="-1"></a>show *deflation* (<span class="in">`λ &lt; 1`</span>) or a slight bias in the test-statistic distribution</span>
-<span id="cb38-251"><a href="#cb38-251" aria-hidden="true" tabindex="-1"></a>that covariate adjustment does not fix. **BACON** <span class="co">[</span><span class="ot">@vanIterson2017bacon</span><span class="co">]</span> fits a</span>
-<span id="cb38-252"><a href="#cb38-252" aria-hidden="true" tabindex="-1"></a>three-component Gaussian mixture to the test statistics by Gibbs sampling,</span>
-<span id="cb38-253"><a href="#cb38-253" aria-hidden="true" tabindex="-1"></a>estimates the bias (mean) and inflation (SD) of the *null* component, and rescales</span>
-<span id="cb38-254"><a href="#cb38-254" aria-hidden="true" tabindex="-1"></a>every statistic accordingly. The pipeline runs it on each analysis (or just the output</span>
-<span id="cb38-255"><a href="#cb38-255" aria-hidden="true" tabindex="-1"></a>EWAS results if no stratification is done):</span>
-<span id="cb38-256"><a href="#cb38-256" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-257"><a href="#cb38-257" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb38-258"><a href="#cb38-258" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> S <span class="kw">in</span> F M<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb38-259"><a href="#cb38-259" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Rscript</span> scripts/run_bacon.R <span class="dt">\</span></span>
-<span id="cb38-260"><a href="#cb38-260" aria-hidden="true" tabindex="-1"></a>    <span class="at">-i</span> run_grady/<span class="va">$S</span>/<span class="va">${S}</span>_PTSD_ewas_results.csv.gz <span class="dt">\</span></span>
-<span id="cb38-261"><a href="#cb38-261" aria-hidden="true" tabindex="-1"></a>    <span class="at">--out-dir</span> run_grady/<span class="va">$S</span> <span class="at">--out-prefix</span> <span class="va">$S</span> <span class="at">--out-type</span> .csv.gz</span>
-<span id="cb38-262"><a href="#cb38-262" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb38-263"><a href="#cb38-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-264"><a href="#cb38-264" aria-hidden="true" tabindex="-1"></a><span class="co"># the combined arm, whose output carries no group prefix</span></span>
-<span id="cb38-265"><a href="#cb38-265" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/run_bacon.R <span class="dt">\</span></span>
-<span id="cb38-266"><a href="#cb38-266" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> run_grady_all/PTSD_ewas_results.csv.gz <span class="dt">\</span></span>
-<span id="cb38-267"><a href="#cb38-267" aria-hidden="true" tabindex="-1"></a>  <span class="at">--out-dir</span> run_grady_all <span class="at">--out-type</span> .csv.gz</span>
-<span id="cb38-268"><a href="#cb38-268" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-269"><a href="#cb38-269" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-270"><a href="#cb38-270" aria-hidden="true" tabindex="-1"></a><span class="in">`run_bacon.R`</span> uses fixed priors and seeds (<span class="in">`niter = 5000`</span>, <span class="in">`nburnin = 2000`</span>,</span>
-<span id="cb38-271"><a href="#cb38-271" aria-hidden="true" tabindex="-1"></a><span class="in">`globalSeed = 42`</span>) so the correction is reproducible, and it writes four</span>
-<span id="cb38-272"><a href="#cb38-272" aria-hidden="true" tabindex="-1"></a>diagnostic plots per analysis (mixture fit, MCMC traces, posteriors, and a</span>
-<span id="cb38-273"><a href="#cb38-273" aria-hidden="true" tabindex="-1"></a>before/after QQ). It appends <span class="in">`bacon.pval`</span>, <span class="in">`bacon.es`</span>, <span class="in">`bacon.se`</span>,</span>
-<span id="cb38-274"><a href="#cb38-274" aria-hidden="true" tabindex="-1"></a><span class="in">`bacon.statistic`</span>, and the pre/post <span class="in">`lambda`</span>/<span class="in">`b.lambda`</span> to the results.</span>
-<span id="cb38-275"><a href="#cb38-275" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-276"><a href="#cb38-276" aria-hidden="true" tabindex="-1"></a>Here is what BACON did to the genomic inflation in each arm:</span>
-<span id="cb38-277"><a href="#cb38-277" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-280"><a href="#cb38-280" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb38-281"><a href="#cb38-281" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: lambda-table</span></span>
-<span id="cb38-282"><a href="#cb38-282" aria-hidden="true" tabindex="-1"></a><span class="co"># Genomic inflation: the median observed chi-square over its null expectation.</span></span>
-<span id="cb38-283"><a href="#cb38-283" aria-hidden="true" tabindex="-1"></a><span class="co"># Zero and non-finite p-values are dropped first -- METAL writes a handful of</span></span>
-<span id="cb38-284"><a href="#cb38-284" aria-hidden="true" tabindex="-1"></a><span class="co"># exact zeros at the extreme tail, and qchisq() would return Inf for those.</span></span>
-<span id="cb38-285"><a href="#cb38-285" aria-hidden="true" tabindex="-1"></a>lam <span class="ot">&lt;-</span> <span class="cf">function</span>(p) { p <span class="ot">&lt;-</span> p[<span class="fu">is.finite</span>(p) <span class="sc">&amp;</span> p <span class="sc">&gt;</span> <span class="dv">0</span>]</span>
-<span id="cb38-286"><a href="#cb38-286" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">median</span>(<span class="fu">qchisq</span>(p, <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)) <span class="sc">/</span> <span class="fu">qchisq</span>(<span class="fl">0.5</span>, <span class="dv">1</span>) }</span>
-<span id="cb38-287"><a href="#cb38-287" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-288"><a href="#cb38-288" aria-hidden="true" tabindex="-1"></a><span class="co"># The four arms. Each BACON results file carries both the raw `p.value` and the</span></span>
-<span id="cb38-289"><a href="#cb38-289" aria-hidden="true" tabindex="-1"></a><span class="co"># adjusted `bacon.pval`, which is what lets one row report lambda before and</span></span>
-<span id="cb38-290"><a href="#cb38-290" aria-hidden="true" tabindex="-1"></a><span class="co"># after the correction. Reading all four costs ~160 MB of compressed CSV.</span></span>
-<span id="cb38-291"><a href="#cb38-291" aria-hidden="true" tabindex="-1"></a>res_all <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz&quot;</span>)</span>
-<span id="cb38-292"><a href="#cb38-292" aria-hidden="true" tabindex="-1"></a>res_f   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz&quot;</span>)</span>
-<span id="cb38-293"><a href="#cb38-293" aria-hidden="true" tabindex="-1"></a>res_m   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz&quot;</span>)</span>
-<span id="cb38-294"><a href="#cb38-294" aria-hidden="true" tabindex="-1"></a><span class="co"># The METAL table is read again in section 8, where the chapter works through</span></span>
-<span id="cb38-295"><a href="#cb38-295" aria-hidden="true" tabindex="-1"></a><span class="co"># its columns; here only its p-values are needed.</span></span>
-<span id="cb38-296"><a href="#cb38-296" aria-hidden="true" tabindex="-1"></a>res_meta <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt&quot;</span>)</span>
-<span id="cb38-297"><a href="#cb38-297" aria-hidden="true" tabindex="-1"></a><span class="fu">setnames</span>(res_meta, <span class="st">&quot;P-value&quot;</span>, <span class="st">&quot;P&quot;</span>)</span>
-<span id="cb38-298"><a href="#cb38-298" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-299"><a href="#cb38-299" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per EWAS arm. `n` comes out of the results file itself: ewas.R records</span></span>
-<span id="cb38-300"><a href="#cb38-300" aria-hidden="true" tabindex="-1"></a><span class="co"># the number of samples that entered each per-CpG model.</span></span>
-<span id="cb38-301"><a href="#cb38-301" aria-hidden="true" tabindex="-1"></a>row1 <span class="ot">&lt;-</span> <span class="cf">function</span>(lab, d) {</span>
-<span id="cb38-302"><a href="#cb38-302" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setorder</span>(d, bacon.pval)</span>
-<span id="cb38-303"><a href="#cb38-303" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.table</span>(<span class="at">Analysis =</span> lab, <span class="at">n =</span> d<span class="sc">$</span>n[<span class="dv">1</span>],</span>
-<span id="cb38-304"><a href="#cb38-304" aria-hidden="true" tabindex="-1"></a>             <span class="at">lambda_raw =</span> <span class="fu">lam</span>(d<span class="sc">$</span>p.value), <span class="at">lambda_bacon =</span> <span class="fu">lam</span>(d<span class="sc">$</span>bacon.pval),</span>
-<span id="cb38-305"><a href="#cb38-305" aria-hidden="true" tabindex="-1"></a>             <span class="at">n_P_lt_1e5 =</span> <span class="fu">sum</span>(d<span class="sc">$</span>bacon.pval <span class="sc">&lt;</span> <span class="fl">1e-5</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb38-306"><a href="#cb38-306" aria-hidden="true" tabindex="-1"></a>             <span class="at">top_cpg =</span> d<span class="sc">$</span>cpgid[<span class="dv">1</span>], <span class="at">top_P =</span> d<span class="sc">$</span>bacon.pval[<span class="dv">1</span>])</span>
-<span id="cb38-307"><a href="#cb38-307" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb38-308"><a href="#cb38-308" aria-hidden="true" tabindex="-1"></a><span class="co"># The meta-analysis row is built by hand rather than through row1(): METAL&#39;s</span></span>
-<span id="cb38-309"><a href="#cb38-309" aria-hidden="true" tabindex="-1"></a><span class="co"># output has no per-CpG sample size and no uncorrected p-value to compare</span></span>
-<span id="cb38-310"><a href="#cb38-310" aria-hidden="true" tabindex="-1"></a><span class="co"># against, because its inputs were already BACON-adjusted.</span></span>
-<span id="cb38-311"><a href="#cb38-311" aria-hidden="true" tabindex="-1"></a>summ <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(<span class="fu">list</span>(</span>
-<span id="cb38-312"><a href="#cb38-312" aria-hidden="true" tabindex="-1"></a>  <span class="fu">row1</span>(<span class="st">&quot;Overall&quot;</span>, res_all), <span class="fu">row1</span>(<span class="st">&quot;Female&quot;</span>, res_f), <span class="fu">row1</span>(<span class="st">&quot;Male&quot;</span>, res_m),</span>
-<span id="cb38-313"><a href="#cb38-313" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.table</span>(<span class="at">Analysis =</span> <span class="st">&quot;Meta (F+M)&quot;</span>, <span class="at">n =</span> <span class="cn">NA_integer_</span>,</span>
-<span id="cb38-314"><a href="#cb38-314" aria-hidden="true" tabindex="-1"></a>             <span class="at">lambda_raw =</span> <span class="cn">NA_real_</span>, <span class="at">lambda_bacon =</span> <span class="fu">lam</span>(res_meta<span class="sc">$</span>P),</span>
-<span id="cb38-315"><a href="#cb38-315" aria-hidden="true" tabindex="-1"></a>             <span class="at">n_P_lt_1e5 =</span> <span class="fu">sum</span>(res_meta<span class="sc">$</span>P <span class="sc">&lt;</span> <span class="fl">1e-5</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb38-316"><a href="#cb38-316" aria-hidden="true" tabindex="-1"></a>             <span class="at">top_cpg =</span> res_meta<span class="sc">$</span>MarkerName[<span class="fu">which.min</span>(res_meta<span class="sc">$</span>P)],</span>
-<span id="cb38-317"><a href="#cb38-317" aria-hidden="true" tabindex="-1"></a>             <span class="at">top_P =</span> <span class="fu">min</span>(res_meta<span class="sc">$</span>P))))</span>
-<span id="cb38-318"><a href="#cb38-318" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-319"><a href="#cb38-319" aria-hidden="true" tabindex="-1"></a><span class="co"># Small and rectangular, so it goes in the repository as a flat file: a reader</span></span>
-<span id="cb38-320"><a href="#cb38-320" aria-hidden="true" tabindex="-1"></a><span class="co"># who cannot hold four 756,251-row tables in memory can still read this table.</span></span>
-<span id="cb38-321"><a href="#cb38-321" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(summ, <span class="st">&quot;data/07_pipeline_summary.csv&quot;</span>)</span>
-<span id="cb38-322"><a href="#cb38-322" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-323"><a href="#cb38-323" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(summ[, .(Analysis, n, <span class="at">lambda_raw =</span> <span class="fu">round</span>(lambda_raw, <span class="dv">3</span>),</span>
-<span id="cb38-324"><a href="#cb38-324" aria-hidden="true" tabindex="-1"></a>               <span class="at">lambda_bacon =</span> <span class="fu">round</span>(lambda_bacon, <span class="dv">3</span>),</span>
-<span id="cb38-325"><a href="#cb38-325" aria-hidden="true" tabindex="-1"></a>               n_P_lt_1e5, top_cpg, <span class="at">top_P =</span> <span class="fu">signif</span>(top_P, <span class="dv">3</span>))])</span>
-<span id="cb38-326"><a href="#cb38-326" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-327"><a href="#cb38-327" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-328"><a href="#cb38-328" aria-hidden="true" tabindex="-1"></a>The raw λ values start close to 1 but pull in *opposite directions* across the</span>
-<span id="cb38-329"><a href="#cb38-329" aria-hidden="true" tabindex="-1"></a>strata: 1.021 in the combined arm, 0.967 in females (mildly deflated), 1.070 in</span>
-<span id="cb38-330"><a href="#cb38-330" aria-hidden="true" tabindex="-1"></a>males (mildly inflated). BACON pulls all three to within 2.5% of 1.0 — 1.023 /</span>
-<span id="cb38-331"><a href="#cb38-331" aria-hidden="true" tabindex="-1"></a>1.014 / 1.013 — which is the behavior you want from it: a small, symmetric</span>
-<span id="cb38-332"><a href="#cb38-332" aria-hidden="true" tabindex="-1"></a>correction of residual bias, not a rescue of a badly specified model.</span>
-<span id="cb38-333"><a href="#cb38-333" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-334"><a href="#cb38-334" aria-hidden="true" tabindex="-1"></a>Note that the male arm needed the largest correction. With 42 samples and the</span>
-<span id="cb38-335"><a href="#cb38-335" aria-hidden="true" tabindex="-1"></a>same covariate count, it has the least residual signal to estimate a variance</span>
-<span id="cb38-336"><a href="#cb38-336" aria-hidden="true" tabindex="-1"></a>from, so its test statistics are the most over-dispersed to begin with. This is</span>
-<span id="cb38-337"><a href="#cb38-337" aria-hidden="true" tabindex="-1"></a>the general pattern in stratified EWAS — the smaller stratum is the more likely</span>
-<span id="cb38-338"><a href="#cb38-338" aria-hidden="true" tabindex="-1"></a>the λ is to be in- or de-flated.</span>
-<span id="cb38-339"><a href="#cb38-339" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-340"><a href="#cb38-340" aria-hidden="true" tabindex="-1"></a>The mixture fit and the before/after QQ for the overall analysis:</span>
-<span id="cb38-341"><a href="#cb38-341" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-344"><a href="#cb38-344" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb38-345"><a href="#cb38-345" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: copy-bacon-plots</span></span>
-<span id="cb38-346"><a href="#cb38-346" aria-hidden="true" tabindex="-1"></a><span class="co"># run_bacon.R already drew these four; copying them in under the names the</span></span>
-<span id="cb38-347"><a href="#cb38-347" aria-hidden="true" tabindex="-1"></a><span class="co"># figures below use is honest provenance and avoids redrawing a plot from a</span></span>
-<span id="cb38-348"><a href="#cb38-348" aria-hidden="true" tabindex="-1"></a><span class="co"># sampler that has already been run. The pipeline writes them per analysis, so</span></span>
-<span id="cb38-349"><a href="#cb38-349" aria-hidden="true" tabindex="-1"></a><span class="co"># the overall arm&#39;s files carry no group prefix and the strata do.</span></span>
-<span id="cb38-350"><a href="#cb38-350" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;data/07_bacon&quot;</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb38-351"><a href="#cb38-351" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">file.copy</span>(</span>
-<span id="cb38-352"><a href="#cb38-352" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;../ewas_pipeline/run_grady_all/bacon_plots/PTSD_fit.jpg&quot;</span>,</span>
-<span id="cb38-353"><a href="#cb38-353" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;../ewas_pipeline/run_grady_all/bacon_plots/PTSD_qqs.jpg&quot;</span>,</span>
-<span id="cb38-354"><a href="#cb38-354" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;../ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_qqs.jpg&quot;</span>,</span>
-<span id="cb38-355"><a href="#cb38-355" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;../ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_qqs.jpg&quot;</span>),</span>
-<span id="cb38-356"><a href="#cb38-356" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;data/07_bacon/all_fit.jpg&quot;</span>, <span class="st">&quot;data/07_bacon/all_qqs.jpg&quot;</span>,</span>
-<span id="cb38-357"><a href="#cb38-357" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;data/07_bacon/F_qqs.jpg&quot;</span>,   <span class="st">&quot;data/07_bacon/M_qqs.jpg&quot;</span>),</span>
-<span id="cb38-358"><a href="#cb38-358" aria-hidden="true" tabindex="-1"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb38-359"><a href="#cb38-359" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-360"><a href="#cb38-360" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-361"><a href="#cb38-361" aria-hidden="true" tabindex="-1"></a>::: {layout-ncol=2}</span>
-<span id="cb38-362"><a href="#cb38-362" aria-hidden="true" tabindex="-1"></a><span class="al">![BACON mixture fit (overall): the test-statistic histogram with the fitted null component in red.](data/07_bacon/all_fit.jpg)</span>{#fig-bacon-fit}</span>
-<span id="cb38-363"><a href="#cb38-363" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-364"><a href="#cb38-364" aria-hidden="true" tabindex="-1"></a><span class="al">![Overall QQ before (uncorrected) and after (corrected) BACON.](data/07_bacon/all_qqs.jpg)</span>{#fig-bacon-qq}</span>
-<span id="cb38-365"><a href="#cb38-365" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb38-366"><a href="#cb38-366" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-367"><a href="#cb38-367" aria-hidden="true" tabindex="-1"></a>The two stratum QQs after correction:</span>
-<span id="cb38-368"><a href="#cb38-368" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-369"><a href="#cb38-369" aria-hidden="true" tabindex="-1"></a>::: {layout-ncol=2}</span>
-<span id="cb38-370"><a href="#cb38-370" aria-hidden="true" tabindex="-1"></a><span class="al">![Female stratum, BACON-corrected vs uncorrected.](data/07_bacon/F_qqs.jpg)</span>{#fig-f-qq}</span>
-<span id="cb38-371"><a href="#cb38-371" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-372"><a href="#cb38-372" aria-hidden="true" tabindex="-1"></a><span class="al">![Male stratum, BACON-corrected vs uncorrected.](data/07_bacon/M_qqs.jpg)</span>{#fig-m-qq}</span>
-<span id="cb38-373"><a href="#cb38-373" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb38-374"><a href="#cb38-374" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-375"><a href="#cb38-375" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
-<span id="cb38-376"><a href="#cb38-376" aria-hidden="true" tabindex="-1"></a><span class="fu">## BACON is not an excuse to ignore λ</span></span>
-<span id="cb38-377"><a href="#cb38-377" aria-hidden="true" tabindex="-1"></a>BACON corrects the *distribution* of test statistics; it does not manufacture</span>
-<span id="cb38-378"><a href="#cb38-378" aria-hidden="true" tabindex="-1"></a>signal. If your λ is inflated because of unmodeled batch or cell composition,</span>
-<span id="cb38-379"><a href="#cb38-379" aria-hidden="true" tabindex="-1"></a>the right response is to fix the model (chapters 04 and 05), not to lean on BACON. Use it for</span>
-<span id="cb38-380"><a href="#cb38-380" aria-hidden="true" tabindex="-1"></a>the residual bias that remains after adjustment.</span>
-<span id="cb38-381"><a href="#cb38-381" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb38-382"><a href="#cb38-382" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-383"><a href="#cb38-383" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Meta-analyzing the strata with METAL {#sec-meta}</span></span>
-<span id="cb38-384"><a href="#cb38-384" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-385"><a href="#cb38-385" aria-hidden="true" tabindex="-1"></a>Now we combine the two sex-specific results with **METAL** <span class="co">[</span><span class="ot">@willer2010metal</span><span class="co">]</span>.</span>
-<span id="cb38-386"><a href="#cb38-386" aria-hidden="true" tabindex="-1"></a>Because the pipeline wrote its columns with the labels METAL expects, generating the</span>
-<span id="cb38-387"><a href="#cb38-387" aria-hidden="true" tabindex="-1"></a>command file is simple:</span>
-<span id="cb38-388"><a href="#cb38-388" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-389"><a href="#cb38-389" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
-<span id="cb38-390"><a href="#cb38-390" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/metal_cmd.sh <span class="dt">\</span></span>
-<span id="cb38-391"><a href="#cb38-391" aria-hidden="true" tabindex="-1"></a>  run_grady/meta_analysis/PTSD_metal_commands.txt <span class="dt">\</span></span>
-<span id="cb38-392"><a href="#cb38-392" aria-hidden="true" tabindex="-1"></a>  run_grady/meta_analysis/PTSD_ewas_meta_analysis_results_ <span class="dt">\</span></span>
-<span id="cb38-393"><a href="#cb38-393" aria-hidden="true" tabindex="-1"></a>  run_grady/F/F_PTSD_ewas_bacon_results.csv.gz <span class="dt">\</span></span>
-<span id="cb38-394"><a href="#cb38-394" aria-hidden="true" tabindex="-1"></a>  run_grady/M/M_PTSD_ewas_bacon_results.csv.gz</span>
-<span id="cb38-395"><a href="#cb38-395" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-396"><a href="#cb38-396" aria-hidden="true" tabindex="-1"></a><span class="ex">software/metal/build/metal/metal</span> run_grady/meta_analysis/PTSD_metal_commands.txt</span>
-<span id="cb38-397"><a href="#cb38-397" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-398"><a href="#cb38-398" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-399"><a href="#cb38-399" aria-hidden="true" tabindex="-1"></a>The generated command file tells METAL to run an **inverse-variance** (`SCHEME</span>
-<span id="cb38-400"><a href="#cb38-400" aria-hidden="true" tabindex="-1"></a>STDERR`) meta-analysis, reading the **BACON-adjusted** effect, SE, and p-value</span>
-<span id="cb38-401"><a href="#cb38-401" aria-hidden="true" tabindex="-1"></a>columns, weighting by <span class="in">`n`</span>, and testing for **heterogeneity** across the sexes:</span>
-<span id="cb38-402"><a href="#cb38-402" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-403"><a href="#cb38-403" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-404"><a href="#cb38-404" aria-hidden="true" tabindex="-1"></a><span class="in">SCHEME STDERR</span></span>
-<span id="cb38-405"><a href="#cb38-405" aria-hidden="true" tabindex="-1"></a><span class="in">SEPARATOR COMMA</span></span>
-<span id="cb38-406"><a href="#cb38-406" aria-hidden="true" tabindex="-1"></a><span class="in">PVALUELABEL bacon.pval</span></span>
-<span id="cb38-407"><a href="#cb38-407" aria-hidden="true" tabindex="-1"></a><span class="in">EFFECTLABEL  bacon.es</span></span>
-<span id="cb38-408"><a href="#cb38-408" aria-hidden="true" tabindex="-1"></a><span class="in">STDERRLABEL  bacon.se</span></span>
-<span id="cb38-409"><a href="#cb38-409" aria-hidden="true" tabindex="-1"></a><span class="in">MARKER cpgid</span></span>
-<span id="cb38-410"><a href="#cb38-410" aria-hidden="true" tabindex="-1"></a><span class="in">WEIGHT n</span></span>
-<span id="cb38-411"><a href="#cb38-411" aria-hidden="true" tabindex="-1"></a><span class="in">PROCESSFILE .../F_PTSD_ewas_bacon_results.csv.gz</span></span>
-<span id="cb38-412"><a href="#cb38-412" aria-hidden="true" tabindex="-1"></a><span class="in">PROCESSFILE .../M_PTSD_ewas_bacon_results.csv.gz</span></span>
-<span id="cb38-413"><a href="#cb38-413" aria-hidden="true" tabindex="-1"></a><span class="in">ANALYZE HETEROGENEITY</span></span>
-<span id="cb38-414"><a href="#cb38-414" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-415"><a href="#cb38-415" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-418"><a href="#cb38-418" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb38-419"><a href="#cb38-419" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-meta</span></span>
-<span id="cb38-420"><a href="#cb38-420" aria-hidden="true" tabindex="-1"></a><span class="co"># METAL&#39;s output table, one row per CpG present in both strata. The `_1` suffix</span></span>
-<span id="cb38-421"><a href="#cb38-421" aria-hidden="true" tabindex="-1"></a><span class="co"># is METAL&#39;s own: it numbers the analyses in a command file, and this run has</span></span>
-<span id="cb38-422"><a href="#cb38-422" aria-hidden="true" tabindex="-1"></a><span class="co"># one. Column names come from METAL, hence the backticks around `P-value`.</span></span>
-<span id="cb38-423"><a href="#cb38-423" aria-hidden="true" tabindex="-1"></a>meta <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt&quot;</span>)</span>
-<span id="cb38-424"><a href="#cb38-424" aria-hidden="true" tabindex="-1"></a><span class="fu">setorder</span>(meta, <span class="st">`</span><span class="at">P-value</span><span class="st">`</span>)</span>
-<span id="cb38-425"><a href="#cb38-425" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;markers meta-analyzed:&quot;</span>, <span class="fu">nrow</span>(meta), <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
-<span id="cb38-426"><a href="#cb38-426" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(meta[, .(MarkerName, Effect, StdErr, <span class="st">`</span><span class="at">P-value</span><span class="st">`</span>, Direction,</span>
-<span id="cb38-427"><a href="#cb38-427" aria-hidden="true" tabindex="-1"></a>                    HetISq, HetPVal)], <span class="dv">6</span>))</span>
-<span id="cb38-428"><a href="#cb38-428" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-429"><a href="#cb38-429" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-430"><a href="#cb38-430" aria-hidden="true" tabindex="-1"></a>Output columns from METAL to note:</span>
-<span id="cb38-431"><a href="#cb38-431" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-432"><a href="#cb38-432" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**`Direction`** is one character per input file (<span class="in">`F`</span> then <span class="in">`M`</span>). <span class="in">`++`</span> or <span class="in">`--`</span></span>
-<span id="cb38-433"><a href="#cb38-433" aria-hidden="true" tabindex="-1"></a>  means the effect pointed the same way in both sexes; <span class="in">`+-`</span> or <span class="in">`-+`</span> means it</span>
-<span id="cb38-434"><a href="#cb38-434" aria-hidden="true" tabindex="-1"></a>  flipped. The top hit **cg22671410** is <span class="in">`+-`</span>, P = 2.0×10⁻¹³ — and that mismatch</span>
-<span id="cb38-435"><a href="#cb38-435" aria-hidden="true" tabindex="-1"></a>  between a tiny p-value and a discordant direction signifies that there may be a</span>
-<span id="cb38-436"><a href="#cb38-436" aria-hidden="true" tabindex="-1"></a>  true difference in effect for that CpG across sexes.</span>
-<span id="cb38-437"><a href="#cb38-437" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**`HetISq` / `HetPVal`** quantify how much the two strata *disagree*.</span>
-<span id="cb38-438"><a href="#cb38-438" aria-hidden="true" tabindex="-1"></a>  A large <span class="in">`HetISq`</span> with small <span class="in">`HetPVal`</span> flags a CpG whose PTSD association differs</span>
-<span id="cb38-439"><a href="#cb38-439" aria-hidden="true" tabindex="-1"></a>  by sex. In a model where both sexes are combined, this signal would be missed.</span>
-<span id="cb38-440"><a href="#cb38-440" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-441"><a href="#cb38-441" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
-<span id="cb38-442"><a href="#cb38-442" aria-hidden="true" tabindex="-1"></a>The sample sizes of each strata are quite small for an EWAS, so these results</span>
-<span id="cb38-443"><a href="#cb38-443" aria-hidden="true" tabindex="-1"></a>should be interpreted with caution and replicated in a larger subset (or the full</span>
-<span id="cb38-444"><a href="#cb38-444" aria-hidden="true" tabindex="-1"></a>cohort) before any real conclusions about sex-specific signals can be made.</span>
-<span id="cb38-445"><a href="#cb38-445" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb38-446"><a href="#cb38-446" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-447"><a href="#cb38-447" aria-hidden="true" tabindex="-1"></a>Nine CpGs clear Bonferroni in the meta-analysis. **Eight of the nine are driven</span>
-<span id="cb38-448"><a href="#cb38-448" aria-hidden="true" tabindex="-1"></a>by one stratum alone**, with the other stratum&#39;s p-value above 0.05:</span>
-<span id="cb38-449"><a href="#cb38-449" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-450"><a href="#cb38-450" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> CpG <span class="pp">|</span> Direction <span class="pp">|</span> Meta P <span class="pp">|</span> Female P <span class="pp">|</span> Male P <span class="pp">|</span> HetI² <span class="pp">|</span></span>
-<span id="cb38-451"><a href="#cb38-451" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|---|---|---|</span></span>
-<span id="cb38-452"><a href="#cb38-452" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg22671410 <span class="pp">|</span> <span class="in">`+-`</span> <span class="pp">|</span> 2.0×10⁻¹³ <span class="pp">|</span> 1.4×10⁻¹³ <span class="pp">|</span> 0.91 <span class="pp">|</span> 0.0 <span class="pp">|</span></span>
-<span id="cb38-453"><a href="#cb38-453" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg03126377 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 1.4×10⁻¹⁰ <span class="pp">|</span> 2.2×10⁻¹¹ <span class="pp">|</span> 0.79 <span class="pp">|</span> 72.7 <span class="pp">|</span></span>
-<span id="cb38-454"><a href="#cb38-454" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg08002657 <span class="pp">|</span> <span class="in">`--`</span> <span class="pp">|</span> 4.2×10⁻¹⁰ <span class="pp">|</span> 0.32 <span class="pp">|</span> 1.9×10⁻¹⁰ <span class="pp">|</span> 61.7 <span class="pp">|</span></span>
-<span id="cb38-455"><a href="#cb38-455" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg25298683 <span class="pp">|</span> <span class="in">`--`</span> <span class="pp">|</span> 3.7×10⁻⁹ <span class="pp">|</span> 8.9×10⁻¹¹ <span class="pp">|</span> 0.97 <span class="pp">|</span> 86.3 <span class="pp">|</span></span>
-<span id="cb38-456"><a href="#cb38-456" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg08907819 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 3.9×10⁻⁹ <span class="pp">|</span> 0.059 <span class="pp">|</span> 5.1×10⁻⁹ <span class="pp">|</span> 67.2 <span class="pp">|</span></span>
-<span id="cb38-457"><a href="#cb38-457" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg12248040 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 2.2×10⁻⁸ <span class="pp">|</span> 0.22 <span class="pp">|</span> 1.1×10⁻⁹ <span class="pp">|</span> 86.4 <span class="pp">|</span></span>
-<span id="cb38-458"><a href="#cb38-458" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg09473383 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 2.9×10⁻⁸ <span class="pp">|</span> 9.5×10⁻⁸ <span class="pp">|</span> 0.050 <span class="pp">|</span> 34.5 <span class="pp">|</span></span>
-<span id="cb38-459"><a href="#cb38-459" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg21102739 <span class="pp">|</span> <span class="in">`--`</span> <span class="pp">|</span> 3.1×10⁻⁸ <span class="pp">|</span> 1.1×10⁻⁷ <span class="pp">|</span> 0.11 <span class="pp">|</span> 0.0 <span class="pp">|</span></span>
-<span id="cb38-460"><a href="#cb38-460" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg24256418 <span class="pp">|</span> <span class="in">`-+`</span> <span class="pp">|</span> 4.4×10⁻⁸ <span class="pp">|</span> 4.2×10⁻⁹ <span class="pp">|</span> 0.78 <span class="pp">|</span> 78.5 <span class="pp">|</span></span>
-<span id="cb38-461"><a href="#cb38-461" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-462"><a href="#cb38-462" aria-hidden="true" tabindex="-1"></a>Inverse-variance meta-analysis is a *weighted average*, not a concordance test.</span>
-<span id="cb38-463"><a href="#cb38-463" aria-hidden="true" tabindex="-1"></a>A single stratum with a large effect and a small SE can carry the pooled estimate</span>
-<span id="cb38-464"><a href="#cb38-464" aria-hidden="true" tabindex="-1"></a>past a genome-wide threshold on its own, and the pooled p-value says nothing</span>
-<span id="cb38-465"><a href="#cb38-465" aria-hidden="true" tabindex="-1"></a>about whether the second stratum agreed. Only <span class="in">`cg09473383`</span> is nominally</span>
-<span id="cb38-466"><a href="#cb38-466" aria-hidden="true" tabindex="-1"></a>significant in both arms with matching sign, and it clears 0.05 in the male stratum by</span>
-<span id="cb38-467"><a href="#cb38-467" aria-hidden="true" tabindex="-1"></a>the thinnest possible margin (P = 0.0499) — so even the one apparent replication here is</span>
-<span id="cb38-468"><a href="#cb38-468" aria-hidden="true" tabindex="-1"></a>not something to lean on.</span>
-<span id="cb38-469"><a href="#cb38-469" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-470"><a href="#cb38-470" aria-hidden="true" tabindex="-1"></a>This is why you read <span class="in">`Direction`</span> and <span class="in">`HetISq`</span> alongside <span class="in">`P-value`</span>. Two tips:</span>
-<span id="cb38-471"><a href="#cb38-471" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-472"><a href="#cb38-472" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Check the arms.** For every hit you plan to report, look up the per-stratum</span>
-<span id="cb38-473"><a href="#cb38-473" aria-hidden="true" tabindex="-1"></a>   estimate, SE, and p-value. If one arm is flat, you have a stratum-specific</span>
-<span id="cb38-474"><a href="#cb38-474" aria-hidden="true" tabindex="-1"></a>   finding and you should describe it that way.</span>
-<span id="cb38-475"><a href="#cb38-475" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Distrust `HetISq` at *k* = 2.** With two studies and one heterogeneity</span>
-<span id="cb38-476"><a href="#cb38-476" aria-hidden="true" tabindex="-1"></a>   degree of freedom, I² is extremely noisy. <span class="in">`cg22671410`</span> has I² = 0.0 despite</span>
-<span id="cb38-477"><a href="#cb38-477" aria-hidden="true" tabindex="-1"></a>   effects of +0.40 and −0.06, because the male SE is so large (0.51) that the</span>
-<span id="cb38-478"><a href="#cb38-478" aria-hidden="true" tabindex="-1"></a>   two estimates are statistically compatible with each other. Low I² here means</span>
-<span id="cb38-479"><a href="#cb38-479" aria-hidden="true" tabindex="-1"></a>   &quot;not enough precision to tell them apart&quot;, not &quot;they agree&quot;. That doesn&#39;t mean</span>
-<span id="cb38-480"><a href="#cb38-480" aria-hidden="true" tabindex="-1"></a>   the results aren&#39;t meaningful, they may be an indication of a true sex</span>
-<span id="cb38-481"><a href="#cb38-481" aria-hidden="true" tabindex="-1"></a>   difference worth investigating with a more suitable statistical method.</span>
-<span id="cb38-482"><a href="#cb38-482" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-485"><a href="#cb38-485" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb38-486"><a href="#cb38-486" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: meta-summary</span></span>
-<span id="cb38-487"><a href="#cb38-487" aria-hidden="true" tabindex="-1"></a><span class="co"># Same genomic-inflation function as the summary table above, restated so this</span></span>
-<span id="cb38-488"><a href="#cb38-488" aria-hidden="true" tabindex="-1"></a><span class="co"># chunk stands on its own if you run it in isolation.</span></span>
-<span id="cb38-489"><a href="#cb38-489" aria-hidden="true" tabindex="-1"></a>lam <span class="ot">&lt;-</span> <span class="cf">function</span>(p){p<span class="ot">&lt;-</span>p[<span class="fu">is.finite</span>(p)<span class="sc">&amp;</span>p<span class="sc">&gt;</span><span class="dv">0</span>]; <span class="fu">median</span>(<span class="fu">qchisq</span>(p,<span class="dv">1</span>,<span class="at">lower.tail=</span><span class="cn">FALSE</span>))<span class="sc">/</span><span class="fu">qchisq</span>(<span class="fl">0.5</span>,<span class="dv">1</span>)}</span>
-<span id="cb38-490"><a href="#cb38-490" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;meta genomic inflation lambda:&quot;</span>, <span class="fu">round</span>(<span class="fu">lam</span>(meta<span class="sc">$</span><span class="st">`</span><span class="at">P-value</span><span class="st">`</span>), <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb38-491"><a href="#cb38-491" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;CpGs with heterogeneity P &lt; 0.05:&quot;</span>,</span>
-<span id="cb38-492"><a href="#cb38-492" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(meta<span class="sc">$</span>HetPVal <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb38-493"><a href="#cb38-493" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sprintf</span>(<span class="st">&quot;(%.1f%% — right at the 5%% null expectation)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
-<span id="cb38-494"><a href="#cb38-494" aria-hidden="true" tabindex="-1"></a>            <span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(meta<span class="sc">$</span>HetPVal <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
-<span id="cb38-495"><a href="#cb38-495" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb38-496"><a href="#cb38-496" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-497"><a href="#cb38-497" aria-hidden="true" tabindex="-1"></a><span class="al">![Meta-analysis QQ plot (F+M combined).](data/07_meta_qq.png)</span>{#fig-meta-qq width=70%}</span>
-<span id="cb38-498"><a href="#cb38-498" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-499"><a href="#cb38-499" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Reading the run as a whole {#sec-reading}</span></span>
-<span id="cb38-500"><a href="#cb38-500" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-501"><a href="#cb38-501" aria-hidden="true" tabindex="-1"></a>For the purposes of this tutorial, we ran the EWAS with and without stratification, so </span>
-<span id="cb38-502"><a href="#cb38-502" aria-hidden="true" tabindex="-1"></a>we show results for: an &#39;overall&#39; EWAS model where sex is a covariate, female-only, male-only, </span>
-<span id="cb38-503"><a href="#cb38-503" aria-hidden="true" tabindex="-1"></a>and sex-combined by meta-analysis:</span>
-<span id="cb38-504"><a href="#cb38-504" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-505"><a href="#cb38-505" aria-hidden="true" tabindex="-1"></a><span class="al">![QQ plots of all four analyses (BACON-adjusted p-values), overlaid.](data/07_qq_overlay.png)</span>{#fig-qq-overlay width=75%}</span>
-<span id="cb38-506"><a href="#cb38-506" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-507"><a href="#cb38-507" aria-hidden="true" tabindex="-1"></a>The QQ plots show *how much* signal each analysis reports, but not *where* it sits or</span>
-<span id="cb38-508"><a href="#cb38-508" aria-hidden="true" tabindex="-1"></a>whether the analyses agree. A faceted volcano answers the first question — effect</span>
-<span id="cb38-509"><a href="#cb38-509" aria-hidden="true" tabindex="-1"></a>size against significance, one panel per analysis, on shared axes so the panels are</span>
-<span id="cb38-510"><a href="#cb38-510" aria-hidden="true" tabindex="-1"></a>directly comparable:</span>
-<span id="cb38-511"><a href="#cb38-511" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-512"><a href="#cb38-512" aria-hidden="true" tabindex="-1"></a><span class="al">![PTSD effect size against significance for each of the four analyses. The red line is the Bonferroni threshold and red points are the CpGs that clear it; the null cloud is thinned to 60,000 points per panel for legibility. Labels name every Bonferroni-significant CpG.](data/07_volcano_facets.png)</span>{#fig-volcano-facets}</span>
-<span id="cb38-513"><a href="#cb38-513" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-514"><a href="#cb38-514" aria-hidden="true" tabindex="-1"></a>One feature stands out immediately. The stratified arms report far more Bonferroni hits (11 and 17)</span>
-<span id="cb38-515"><a href="#cb38-515" aria-hidden="true" tabindex="-1"></a>than the combined arm (2), despite having roughly half the samples each. While </span>
-<span id="cb38-516"><a href="#cb38-516" aria-hidden="true" tabindex="-1"></a>it is possible some of these are true-positive signals, the small sample size and evidence of poor-fit </span>
-<span id="cb38-517"><a href="#cb38-517" aria-hidden="true" tabindex="-1"></a>prior to BACON adjustment point towards these results being spurious or an artifact of the BACON adjustment. </span>
-<span id="cb38-518"><a href="#cb38-518" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-519"><a href="#cb38-519" aria-hidden="true" tabindex="-1"></a>Ranking the union of each analysis&#39;s strongest CpGs makes the disagreement explicit:</span>
-<span id="cb38-520"><a href="#cb38-520" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-521"><a href="#cb38-521" aria-hidden="true" tabindex="-1"></a><span class="al">![The union of each analysis&#39;s top 8 CpGs, with every analysis&#39;s result for each one. Point shape shows the direction of effect; the red line is Bonferroni. A CpG carried by only one analysis appears as one high point with three low ones.](data/07_foothills.png)</span>{#fig-foothills}</span>
-<span id="cb38-522"><a href="#cb38-522" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-523"><a href="#cb38-523" aria-hidden="true" tabindex="-1"></a>Almost every CpG here is carried by a single analysis. Read across any column and you</span>
-<span id="cb38-524"><a href="#cb38-524" aria-hidden="true" tabindex="-1"></a>typically find one point above the Bonferroni line and three well below it — the same</span>
-<span id="cb38-525"><a href="#cb38-525" aria-hidden="true" tabindex="-1"></a>CpG, the same cohort, tested four ways, agreeing only occasionally. <span class="in">`cg22671410`</span> is the</span>
-<span id="cb38-526"><a href="#cb38-526" aria-hidden="true" tabindex="-1"></a>clearest case: top of the female arm and top of the meta-analysis, but essentially null</span>
-<span id="cb38-527"><a href="#cb38-527" aria-hidden="true" tabindex="-1"></a>in the male arm and in the whole-cohort fit.</span>
-<span id="cb38-528"><a href="#cb38-528" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-529"><a href="#cb38-529" aria-hidden="true" tabindex="-1"></a>That is the pattern @fig-concordance quantifies for the nine meta-analysis hits:</span>
-<span id="cb38-530"><a href="#cb38-530" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-531"><a href="#cb38-531" aria-hidden="true" tabindex="-1"></a><span class="al">![Female versus male effect size for the nine CpGs that clear Bonferroni in the meta-analysis. Bars are ±1 standard error; the solid diagonal is *y* = *x*, where both strata would agree exactly. Fill shows whether the two strata estimate the same sign.](data/07_effect_concordance.png)</span>{#fig-concordance width=70%}</span>
-<span id="cb38-532"><a href="#cb38-532" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-533"><a href="#cb38-533" aria-hidden="true" tabindex="-1"></a>A few caveats about these results:</span>
-<span id="cb38-534"><a href="#cb38-534" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-535"><a href="#cb38-535" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The combined arm finds two CpGs at Bonferroni; the stratified arms and the</span>
-<span id="cb38-536"><a href="#cb38-536" aria-hidden="true" tabindex="-1"></a>  meta-analysis find many more.** The single-sex arms have an n that is too small to run</span>
-<span id="cb38-537"><a href="#cb38-537" aria-hidden="true" tabindex="-1"></a>  an EWAS. The sex-strata results prior to BACON adjustment were deflated and</span>
-<span id="cb38-538"><a href="#cb38-538" aria-hidden="true" tabindex="-1"></a>  inflated, and while BACON does adjust the stratum towards a lambda of 1,</span>
-<span id="cb38-539"><a href="#cb38-539" aria-hidden="true" tabindex="-1"></a>  respectively, it likely did not perform an optimal adjustment. The inflation</span>
-<span id="cb38-540"><a href="#cb38-540" aria-hidden="true" tabindex="-1"></a>  makes it appear as if there are statistically significant results where there</span>
-<span id="cb38-541"><a href="#cb38-541" aria-hidden="true" tabindex="-1"></a>  are none and is persisted in the meta-analysis results. This is not meant to be an</span>
-<span id="cb38-542"><a href="#cb38-542" aria-hidden="true" tabindex="-1"></a>  argument against doing stratified analyses, but it does bring to light the importance of</span>
-<span id="cb38-543"><a href="#cb38-543" aria-hidden="true" tabindex="-1"></a>  considering whether the sample size of your strata is sufficiently powered to do a stratified analysis.</span>
-<span id="cb38-544"><a href="#cb38-544" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Those two are not the same as chapter 06&#39;s one.** Both analyses call</span>
-<span id="cb38-545"><a href="#cb38-545" aria-hidden="true" tabindex="-1"></a>  <span class="in">`cg15434749`</span>. The pipeline additionally calls <span class="in">`cg20600436`</span>, and the two runs agree on</span>
-<span id="cb38-546"><a href="#cb38-546" aria-hidden="true" tabindex="-1"></a>  its effect estimate to seven decimal places (0.1717060) — they differ only in the</span>
-<span id="cb38-547"><a href="#cb38-547" aria-hidden="true" tabindex="-1"></a>  variance model. Its BACON p is 2.33 × 10⁻⁸ from the per-probe <span class="in">`glm`</span> and</span>
-<span id="cb38-548"><a href="#cb38-548" aria-hidden="true" tabindex="-1"></a>  6.73 × 10⁻⁸ from <span class="in">`eBayes`</span>, against a threshold of 6.61 × 10⁻⁸. The second value misses</span>
-<span id="cb38-549"><a href="#cb38-549" aria-hidden="true" tabindex="-1"></a>  by under 2%. A CpG this close to an arbitrary cutoff is likely a true result, 87 samples is </span>
-<span id="cb38-550"><a href="#cb38-550" aria-hidden="true" tabindex="-1"></a>  just too small to consistently detect it as genome-wide significant. </span>
-<span id="cb38-551"><a href="#cb38-551" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Heterogeneity sits at 5.4%** of CpGs below P = 0.05, against a 5% null</span>
-<span id="cb38-552"><a href="#cb38-552" aria-hidden="true" tabindex="-1"></a>  expectation, with a median I² of 0. There is no evidence of systematic</span>
-<span id="cb38-553"><a href="#cb38-553" aria-hidden="true" tabindex="-1"></a>  sex-differential methylation genome-wide. That does not mean that the heterogeneity</span>
-<span id="cb38-554"><a href="#cb38-554" aria-hidden="true" tabindex="-1"></a>  observed at the extremes is false, but with a sample size this small it does</span>
-<span id="cb38-555"><a href="#cb38-555" aria-hidden="true" tabindex="-1"></a>  warrant further investigation to validate if there are true sex differences at these sites.</span>
-<span id="cb38-556"><a href="#cb38-556" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-557"><a href="#cb38-557" aria-hidden="true" tabindex="-1"></a>The point of the chapter is</span>
-<span id="cb38-558"><a href="#cb38-558" aria-hidden="true" tabindex="-1"></a>that the pipeline executes correctly, reproduces chapter 06&#39;s estimates to</span>
-<span id="cb38-559"><a href="#cb38-559" aria-hidden="true" tabindex="-1"></a>floating-point precision, and produces calibrated statistics (λ within 2.5% of</span>
-<span id="cb38-560"><a href="#cb38-560" aria-hidden="true" tabindex="-1"></a>1 in every arm). It is not that PTSD associates with these nine CpGs in 87</span>
-<span id="cb38-561"><a href="#cb38-561" aria-hidden="true" tabindex="-1"></a>people.</span>
-<span id="cb38-562"><a href="#cb38-562" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-563"><a href="#cb38-563" aria-hidden="true" tabindex="-1"></a><span class="fu">## 10. Scaling up {#sec-scaling}</span></span>
-<span id="cb38-564"><a href="#cb38-564" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-565"><a href="#cb38-565" aria-hidden="true" tabindex="-1"></a>Nothing about the commands changes when you move from this demo to a real study —</span>
-<span id="cb38-566"><a href="#cb38-566" aria-hidden="true" tabindex="-1"></a>you change <span class="in">`config.yml`</span>, not the code:</span>
-<span id="cb38-567"><a href="#cb38-567" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-568"><a href="#cb38-568" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Point <span class="in">`mvals`</span>/<span class="in">`pheno`</span> at the full filtered matrix and sample table.</span>
-<span id="cb38-569"><a href="#cb38-569" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Set <span class="in">`processing_type: cluster`</span> and give Snakemake a cluster profile; the</span>
-<span id="cb38-570"><a href="#cb38-570" aria-hidden="true" tabindex="-1"></a>  chunking (<span class="in">`chunk_size`</span>) turns each block of CpGs into a scheduler job.</span>
-<span id="cb38-571"><a href="#cb38-571" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Add <span class="in">`dmr_analysis: &quot;yes&quot;`</span> and the annotation settings to get region-level</span>
-<span id="cb38-572"><a href="#cb38-572" aria-hidden="true" tabindex="-1"></a>  results and gene annotation on top of the single-CpG output — which is what the</span>
-<span id="cb38-573"><a href="#cb38-573" aria-hidden="true" tabindex="-1"></a>  <span class="co">[</span><span class="ot">next notebook</span><span class="co">](08_annotation.qmd)</span> covers.</span>
-<span id="cb38-574"><a href="#cb38-574" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Run <span class="in">`snakemake --cores N`</span> (or <span class="in">`--profile &lt;cluster&gt;`</span>) once, and every target in</span>
-<span id="cb38-575"><a href="#cb38-575" aria-hidden="true" tabindex="-1"></a>  the DAG — combined EWAS, stratified EWAS, BACON, METAL, DMRs, annotation,</span>
-<span id="cb38-576"><a href="#cb38-576" aria-hidden="true" tabindex="-1"></a>  plots — is built in order from a single reproducible entry point.</span>
-<span id="cb38-577"><a href="#cb38-577" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-578"><a href="#cb38-578" aria-hidden="true" tabindex="-1"></a>That is the payoff of the pipeline: the statistics are identical to what you did</span>
-<span id="cb38-579"><a href="#cb38-579" aria-hidden="true" tabindex="-1"></a>by hand in chapter 06, but the *process* is now a versioned, parallel, one-command</span>
-<span id="cb38-580"><a href="#cb38-580" aria-hidden="true" tabindex="-1"></a>artifact you can hand to a collaborator or a reviewer.</span>
-<span id="cb38-581"><a href="#cb38-581" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-582"><a href="#cb38-582" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
-<span id="cb38-583"><a href="#cb38-583" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-584"><a href="#cb38-584" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb38-585"><a href="#cb38-585" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb38-204"><a href="#cb38-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-207"><a href="#cb38-207" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb38-208"><a href="#cb38-208" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-all</span></span>
+<span id="cb38-209"><a href="#cb38-209" aria-hidden="true" tabindex="-1"></a><span class="co"># The non-stratified arm, straight out of the ewas.R call above: one row per</span></span>
+<span id="cb38-210"><a href="#cb38-210" aria-hidden="true" tabindex="-1"></a><span class="co"># CpG with the per-probe glm estimate, its standard error, the t-statistic and</span></span>
+<span id="cb38-211"><a href="#cb38-211" aria-hidden="true" tabindex="-1"></a><span class="co"># the p-value. These are the pre-BACON numbers; the BACON-adjusted file that</span></span>
+<span id="cb38-212"><a href="#cb38-212" aria-hidden="true" tabindex="-1"></a><span class="co"># section 7 reads is a separate output of the same run.</span></span>
+<span id="cb38-213"><a href="#cb38-213" aria-hidden="true" tabindex="-1"></a>allres <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz&quot;</span>)</span>
+<span id="cb38-214"><a href="#cb38-214" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;columns:&quot;</span>, <span class="fu">paste</span>(<span class="fu">names</span>(allres), <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb38-215"><a href="#cb38-215" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;n CpGs:&quot;</span>, <span class="fu">nrow</span>(allres), <span class="st">&quot; | samples per model (n):&quot;</span>, allres<span class="sc">$</span>n[<span class="dv">1</span>], <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb38-216"><a href="#cb38-216" aria-hidden="true" tabindex="-1"></a><span class="fu">setorder</span>(allres, p.value)</span>
+<span id="cb38-217"><a href="#cb38-217" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(allres[, .(cpgid, estimate, std.error, statistic, p.value)], <span class="dv">5</span>))</span>
+<span id="cb38-218"><a href="#cb38-218" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-219"><a href="#cb38-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-220"><a href="#cb38-220" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. Stratifying by sex, then running each stratum {#sec-strata}</span></span>
+<span id="cb38-221"><a href="#cb38-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-222"><a href="#cb38-222" aria-hidden="true" tabindex="-1"></a>If you want to run a stratified EWAS, you first run <span class="in">`stratify.R`</span> on your variable(s) </span>
+<span id="cb38-223"><a href="#cb38-223" aria-hidden="true" tabindex="-1"></a>that you&#39;d like to stratify by. The script splits both the phenotype and methylation </span>
+<span id="cb38-224"><a href="#cb38-224" aria-hidden="true" tabindex="-1"></a>tables by the stratify variable(s) and drops that variable from the phenotype file before </span>
+<span id="cb38-225"><a href="#cb38-225" aria-hidden="true" tabindex="-1"></a>being passed on to the EWAS step. </span>
+<span id="cb38-226"><a href="#cb38-226" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-227"><a href="#cb38-227" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb38-228"><a href="#cb38-228" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/stratify.R <span class="at">--stratify</span> sex <span class="at">--out-dir</span> run_grady <span class="at">--threads</span> 4</span>
+<span id="cb38-229"><a href="#cb38-229" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/F/{F_mvals.fst, F_pheno.fst}</span></span>
+<span id="cb38-230"><a href="#cb38-230" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/M/{M_mvals.fst, M_pheno.fst}</span></span>
+<span id="cb38-231"><a href="#cb38-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-232"><a href="#cb38-232" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> S <span class="kw">in</span> F M<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb38-233"><a href="#cb38-233" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Rscript</span> scripts/ewas.R <span class="dt">\</span></span>
+<span id="cb38-234"><a href="#cb38-234" aria-hidden="true" tabindex="-1"></a>    <span class="at">--pheno</span> run_grady/<span class="va">$S</span>/<span class="va">${S}</span>_pheno.fst <span class="dt">\</span></span>
+<span id="cb38-235"><a href="#cb38-235" aria-hidden="true" tabindex="-1"></a>    <span class="at">--methyl</span> run_grady/<span class="va">$S</span>/<span class="va">${S}</span>_mvals.fst <span class="dt">\</span></span>
+<span id="cb38-236"><a href="#cb38-236" aria-hidden="true" tabindex="-1"></a>    <span class="at">--assoc</span> PTSD <span class="at">--stratified</span> yes <span class="dt">\</span></span>
+<span id="cb38-237"><a href="#cb38-237" aria-hidden="true" tabindex="-1"></a>    <span class="at">--chunk-size</span> 5000 <span class="at">--processing-type</span> multicore <span class="at">--workers</span> 4 <span class="dt">\</span></span>
+<span id="cb38-238"><a href="#cb38-238" aria-hidden="true" tabindex="-1"></a>    <span class="at">--out-dir</span> run_grady/<span class="va">$S</span> <span class="at">--out-prefix</span> <span class="va">$S</span> <span class="at">--out-type</span> .csv.gz</span>
+<span id="cb38-239"><a href="#cb38-239" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb38-240"><a href="#cb38-240" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/F/F_PTSD_ewas_results.csv.gz  (n = 45)</span></span>
+<span id="cb38-241"><a href="#cb38-241" aria-hidden="true" tabindex="-1"></a><span class="co"># → run_grady/M/M_PTSD_ewas_results.csv.gz  (n = 42)</span></span>
+<span id="cb38-242"><a href="#cb38-242" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-243"><a href="#cb38-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-244"><a href="#cb38-244" aria-hidden="true" tabindex="-1"></a>The female stratum has 45 samples, the male 42. Each within-stratum model is now</span>
+<span id="cb38-245"><a href="#cb38-245" aria-hidden="true" tabindex="-1"></a><span class="in">`methylation ~ PTSD + age + cell composition`</span>.</span>
+<span id="cb38-246"><a href="#cb38-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-247"><a href="#cb38-247" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. BACON: correcting residual inflation and bias {#sec-bacon}</span></span>
+<span id="cb38-248"><a href="#cb38-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-249"><a href="#cb38-249" aria-hidden="true" tabindex="-1"></a>A well-specified EWAS should have a genomic-inflation factor <span class="in">`λ ≈ 1`</span> and a QQ</span>
+<span id="cb38-250"><a href="#cb38-250" aria-hidden="true" tabindex="-1"></a>plot on the diagonal until the extreme tail. In practice small-sample EWAS often</span>
+<span id="cb38-251"><a href="#cb38-251" aria-hidden="true" tabindex="-1"></a>show *deflation* (<span class="in">`λ &lt; 1`</span>) or a slight bias in the test-statistic distribution</span>
+<span id="cb38-252"><a href="#cb38-252" aria-hidden="true" tabindex="-1"></a>that covariate adjustment does not fix. **BACON** <span class="co">[</span><span class="ot">@vanIterson2017bacon</span><span class="co">]</span> fits a</span>
+<span id="cb38-253"><a href="#cb38-253" aria-hidden="true" tabindex="-1"></a>three-component Gaussian mixture to the test statistics by Gibbs sampling,</span>
+<span id="cb38-254"><a href="#cb38-254" aria-hidden="true" tabindex="-1"></a>estimates the bias (mean) and inflation (SD) of the *null* component, and rescales</span>
+<span id="cb38-255"><a href="#cb38-255" aria-hidden="true" tabindex="-1"></a>every statistic accordingly. The pipeline runs it on each analysis (or just the output</span>
+<span id="cb38-256"><a href="#cb38-256" aria-hidden="true" tabindex="-1"></a>EWAS results if no stratification is done):</span>
+<span id="cb38-257"><a href="#cb38-257" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-258"><a href="#cb38-258" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb38-259"><a href="#cb38-259" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> S <span class="kw">in</span> F M<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb38-260"><a href="#cb38-260" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Rscript</span> scripts/run_bacon.R <span class="dt">\</span></span>
+<span id="cb38-261"><a href="#cb38-261" aria-hidden="true" tabindex="-1"></a>    <span class="at">-i</span> run_grady/<span class="va">$S</span>/<span class="va">${S}</span>_PTSD_ewas_results.csv.gz <span class="dt">\</span></span>
+<span id="cb38-262"><a href="#cb38-262" aria-hidden="true" tabindex="-1"></a>    <span class="at">--out-dir</span> run_grady/<span class="va">$S</span> <span class="at">--out-prefix</span> <span class="va">$S</span> <span class="at">--out-type</span> .csv.gz</span>
+<span id="cb38-263"><a href="#cb38-263" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb38-264"><a href="#cb38-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-265"><a href="#cb38-265" aria-hidden="true" tabindex="-1"></a><span class="co"># the combined arm, whose output carries no group prefix</span></span>
+<span id="cb38-266"><a href="#cb38-266" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> scripts/run_bacon.R <span class="dt">\</span></span>
+<span id="cb38-267"><a href="#cb38-267" aria-hidden="true" tabindex="-1"></a>  <span class="at">-i</span> run_grady_all/PTSD_ewas_results.csv.gz <span class="dt">\</span></span>
+<span id="cb38-268"><a href="#cb38-268" aria-hidden="true" tabindex="-1"></a>  <span class="at">--out-dir</span> run_grady_all <span class="at">--out-type</span> .csv.gz</span>
+<span id="cb38-269"><a href="#cb38-269" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-270"><a href="#cb38-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-271"><a href="#cb38-271" aria-hidden="true" tabindex="-1"></a><span class="in">`run_bacon.R`</span> uses fixed priors and seeds (<span class="in">`niter = 5000`</span>, <span class="in">`nburnin = 2000`</span>,</span>
+<span id="cb38-272"><a href="#cb38-272" aria-hidden="true" tabindex="-1"></a><span class="in">`globalSeed = 42`</span>) so the correction is reproducible, and it writes four</span>
+<span id="cb38-273"><a href="#cb38-273" aria-hidden="true" tabindex="-1"></a>diagnostic plots per analysis (mixture fit, MCMC traces, posteriors, and a</span>
+<span id="cb38-274"><a href="#cb38-274" aria-hidden="true" tabindex="-1"></a>before/after QQ). It appends <span class="in">`bacon.pval`</span>, <span class="in">`bacon.es`</span>, <span class="in">`bacon.se`</span>,</span>
+<span id="cb38-275"><a href="#cb38-275" aria-hidden="true" tabindex="-1"></a><span class="in">`bacon.statistic`</span>, and the pre/post <span class="in">`lambda`</span>/<span class="in">`b.lambda`</span> to the results.</span>
+<span id="cb38-276"><a href="#cb38-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-277"><a href="#cb38-277" aria-hidden="true" tabindex="-1"></a>Here is what BACON did to the genomic inflation in each arm:</span>
+<span id="cb38-278"><a href="#cb38-278" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-281"><a href="#cb38-281" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb38-282"><a href="#cb38-282" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: lambda-table</span></span>
+<span id="cb38-283"><a href="#cb38-283" aria-hidden="true" tabindex="-1"></a><span class="co"># Genomic inflation: the median observed chi-square over its null expectation.</span></span>
+<span id="cb38-284"><a href="#cb38-284" aria-hidden="true" tabindex="-1"></a><span class="co"># Zero and non-finite p-values are dropped first -- METAL writes a handful of</span></span>
+<span id="cb38-285"><a href="#cb38-285" aria-hidden="true" tabindex="-1"></a><span class="co"># exact zeros at the extreme tail, and qchisq() would return Inf for those.</span></span>
+<span id="cb38-286"><a href="#cb38-286" aria-hidden="true" tabindex="-1"></a>lam <span class="ot">&lt;-</span> <span class="cf">function</span>(p) { p <span class="ot">&lt;-</span> p[<span class="fu">is.finite</span>(p) <span class="sc">&amp;</span> p <span class="sc">&gt;</span> <span class="dv">0</span>]</span>
+<span id="cb38-287"><a href="#cb38-287" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">median</span>(<span class="fu">qchisq</span>(p, <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)) <span class="sc">/</span> <span class="fu">qchisq</span>(<span class="fl">0.5</span>, <span class="dv">1</span>) }</span>
+<span id="cb38-288"><a href="#cb38-288" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-289"><a href="#cb38-289" aria-hidden="true" tabindex="-1"></a><span class="co"># The four arms. Each BACON results file carries both the raw `p.value` and the</span></span>
+<span id="cb38-290"><a href="#cb38-290" aria-hidden="true" tabindex="-1"></a><span class="co"># adjusted `bacon.pval`, which is what lets one row report lambda before and</span></span>
+<span id="cb38-291"><a href="#cb38-291" aria-hidden="true" tabindex="-1"></a><span class="co"># after the correction. Reading all four costs ~160 MB of compressed CSV.</span></span>
+<span id="cb38-292"><a href="#cb38-292" aria-hidden="true" tabindex="-1"></a>res_all <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz&quot;</span>)</span>
+<span id="cb38-293"><a href="#cb38-293" aria-hidden="true" tabindex="-1"></a>res_f   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz&quot;</span>)</span>
+<span id="cb38-294"><a href="#cb38-294" aria-hidden="true" tabindex="-1"></a>res_m   <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz&quot;</span>)</span>
+<span id="cb38-295"><a href="#cb38-295" aria-hidden="true" tabindex="-1"></a><span class="co"># The METAL table is read again in section 8, where the chapter works through</span></span>
+<span id="cb38-296"><a href="#cb38-296" aria-hidden="true" tabindex="-1"></a><span class="co"># its columns; here only its p-values are needed.</span></span>
+<span id="cb38-297"><a href="#cb38-297" aria-hidden="true" tabindex="-1"></a>res_meta <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt&quot;</span>)</span>
+<span id="cb38-298"><a href="#cb38-298" aria-hidden="true" tabindex="-1"></a><span class="fu">setnames</span>(res_meta, <span class="st">&quot;P-value&quot;</span>, <span class="st">&quot;P&quot;</span>)</span>
+<span id="cb38-299"><a href="#cb38-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-300"><a href="#cb38-300" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per EWAS arm. `n` comes out of the results file itself: ewas.R records</span></span>
+<span id="cb38-301"><a href="#cb38-301" aria-hidden="true" tabindex="-1"></a><span class="co"># the number of samples that entered each per-CpG model.</span></span>
+<span id="cb38-302"><a href="#cb38-302" aria-hidden="true" tabindex="-1"></a>row1 <span class="ot">&lt;-</span> <span class="cf">function</span>(lab, d) {</span>
+<span id="cb38-303"><a href="#cb38-303" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setorder</span>(d, bacon.pval)</span>
+<span id="cb38-304"><a href="#cb38-304" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.table</span>(<span class="at">Analysis =</span> lab, <span class="at">n =</span> d<span class="sc">$</span>n[<span class="dv">1</span>],</span>
+<span id="cb38-305"><a href="#cb38-305" aria-hidden="true" tabindex="-1"></a>             <span class="at">lambda_raw =</span> <span class="fu">lam</span>(d<span class="sc">$</span>p.value), <span class="at">lambda_bacon =</span> <span class="fu">lam</span>(d<span class="sc">$</span>bacon.pval),</span>
+<span id="cb38-306"><a href="#cb38-306" aria-hidden="true" tabindex="-1"></a>             <span class="at">n_P_lt_1e5 =</span> <span class="fu">sum</span>(d<span class="sc">$</span>bacon.pval <span class="sc">&lt;</span> <span class="fl">1e-5</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb38-307"><a href="#cb38-307" aria-hidden="true" tabindex="-1"></a>             <span class="at">top_cpg =</span> d<span class="sc">$</span>cpgid[<span class="dv">1</span>], <span class="at">top_P =</span> d<span class="sc">$</span>bacon.pval[<span class="dv">1</span>])</span>
+<span id="cb38-308"><a href="#cb38-308" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb38-309"><a href="#cb38-309" aria-hidden="true" tabindex="-1"></a><span class="co"># The meta-analysis row is built by hand rather than through row1(): METAL&#39;s</span></span>
+<span id="cb38-310"><a href="#cb38-310" aria-hidden="true" tabindex="-1"></a><span class="co"># output has no per-CpG sample size and no uncorrected p-value to compare</span></span>
+<span id="cb38-311"><a href="#cb38-311" aria-hidden="true" tabindex="-1"></a><span class="co"># against, because its inputs were already BACON-adjusted.</span></span>
+<span id="cb38-312"><a href="#cb38-312" aria-hidden="true" tabindex="-1"></a>summ <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(<span class="fu">list</span>(</span>
+<span id="cb38-313"><a href="#cb38-313" aria-hidden="true" tabindex="-1"></a>  <span class="fu">row1</span>(<span class="st">&quot;Overall&quot;</span>, res_all), <span class="fu">row1</span>(<span class="st">&quot;Female&quot;</span>, res_f), <span class="fu">row1</span>(<span class="st">&quot;Male&quot;</span>, res_m),</span>
+<span id="cb38-314"><a href="#cb38-314" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.table</span>(<span class="at">Analysis =</span> <span class="st">&quot;Meta (F+M)&quot;</span>, <span class="at">n =</span> <span class="cn">NA_integer_</span>,</span>
+<span id="cb38-315"><a href="#cb38-315" aria-hidden="true" tabindex="-1"></a>             <span class="at">lambda_raw =</span> <span class="cn">NA_real_</span>, <span class="at">lambda_bacon =</span> <span class="fu">lam</span>(res_meta<span class="sc">$</span>P),</span>
+<span id="cb38-316"><a href="#cb38-316" aria-hidden="true" tabindex="-1"></a>             <span class="at">n_P_lt_1e5 =</span> <span class="fu">sum</span>(res_meta<span class="sc">$</span>P <span class="sc">&lt;</span> <span class="fl">1e-5</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb38-317"><a href="#cb38-317" aria-hidden="true" tabindex="-1"></a>             <span class="at">top_cpg =</span> res_meta<span class="sc">$</span>MarkerName[<span class="fu">which.min</span>(res_meta<span class="sc">$</span>P)],</span>
+<span id="cb38-318"><a href="#cb38-318" aria-hidden="true" tabindex="-1"></a>             <span class="at">top_P =</span> <span class="fu">min</span>(res_meta<span class="sc">$</span>P))))</span>
+<span id="cb38-319"><a href="#cb38-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-320"><a href="#cb38-320" aria-hidden="true" tabindex="-1"></a><span class="co"># Small and rectangular, so it goes in the repository as a flat file: a reader</span></span>
+<span id="cb38-321"><a href="#cb38-321" aria-hidden="true" tabindex="-1"></a><span class="co"># who cannot hold four 756,251-row tables in memory can still read this table.</span></span>
+<span id="cb38-322"><a href="#cb38-322" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(summ, <span class="st">&quot;data/07_pipeline_summary.csv&quot;</span>)</span>
+<span id="cb38-323"><a href="#cb38-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-324"><a href="#cb38-324" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(summ[, .(Analysis, n, <span class="at">lambda_raw =</span> <span class="fu">round</span>(lambda_raw, <span class="dv">3</span>),</span>
+<span id="cb38-325"><a href="#cb38-325" aria-hidden="true" tabindex="-1"></a>               <span class="at">lambda_bacon =</span> <span class="fu">round</span>(lambda_bacon, <span class="dv">3</span>),</span>
+<span id="cb38-326"><a href="#cb38-326" aria-hidden="true" tabindex="-1"></a>               n_P_lt_1e5, top_cpg, <span class="at">top_P =</span> <span class="fu">signif</span>(top_P, <span class="dv">3</span>))])</span>
+<span id="cb38-327"><a href="#cb38-327" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-328"><a href="#cb38-328" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-329"><a href="#cb38-329" aria-hidden="true" tabindex="-1"></a>The raw λ values start close to 1 but pull in *opposite directions* across the</span>
+<span id="cb38-330"><a href="#cb38-330" aria-hidden="true" tabindex="-1"></a>strata: 1.021 in the combined arm, 0.967 in females (mildly deflated), 1.070 in</span>
+<span id="cb38-331"><a href="#cb38-331" aria-hidden="true" tabindex="-1"></a>males (mildly inflated). BACON pulls all three to within 2.5% of 1.0 — 1.023 /</span>
+<span id="cb38-332"><a href="#cb38-332" aria-hidden="true" tabindex="-1"></a>1.014 / 1.013 — which is the behavior you want from it: a small, symmetric</span>
+<span id="cb38-333"><a href="#cb38-333" aria-hidden="true" tabindex="-1"></a>correction of residual bias, not a rescue of a badly specified model.</span>
+<span id="cb38-334"><a href="#cb38-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-335"><a href="#cb38-335" aria-hidden="true" tabindex="-1"></a>Note that the male arm needed the largest correction. With 42 samples and the</span>
+<span id="cb38-336"><a href="#cb38-336" aria-hidden="true" tabindex="-1"></a>same covariate count, it has the least residual signal to estimate a variance</span>
+<span id="cb38-337"><a href="#cb38-337" aria-hidden="true" tabindex="-1"></a>from, so its test statistics are the most over-dispersed to begin with. This is</span>
+<span id="cb38-338"><a href="#cb38-338" aria-hidden="true" tabindex="-1"></a>the general pattern in stratified EWAS — the smaller stratum is the more likely</span>
+<span id="cb38-339"><a href="#cb38-339" aria-hidden="true" tabindex="-1"></a>the λ is to be in- or de-flated.</span>
+<span id="cb38-340"><a href="#cb38-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-341"><a href="#cb38-341" aria-hidden="true" tabindex="-1"></a>The mixture fit and the before/after QQ for the overall analysis:</span>
+<span id="cb38-342"><a href="#cb38-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-345"><a href="#cb38-345" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb38-346"><a href="#cb38-346" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: copy-bacon-plots</span></span>
+<span id="cb38-347"><a href="#cb38-347" aria-hidden="true" tabindex="-1"></a><span class="co"># run_bacon.R already drew these four; copying them in under the names the</span></span>
+<span id="cb38-348"><a href="#cb38-348" aria-hidden="true" tabindex="-1"></a><span class="co"># figures below use is honest provenance and avoids redrawing a plot from a</span></span>
+<span id="cb38-349"><a href="#cb38-349" aria-hidden="true" tabindex="-1"></a><span class="co"># sampler that has already been run. The pipeline writes them per analysis, so</span></span>
+<span id="cb38-350"><a href="#cb38-350" aria-hidden="true" tabindex="-1"></a><span class="co"># the overall arm&#39;s files carry no group prefix and the strata do.</span></span>
+<span id="cb38-351"><a href="#cb38-351" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;data/07_bacon&quot;</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb38-352"><a href="#cb38-352" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">file.copy</span>(</span>
+<span id="cb38-353"><a href="#cb38-353" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;../ewas_pipeline/run_grady_all/bacon_plots/PTSD_fit.jpg&quot;</span>,</span>
+<span id="cb38-354"><a href="#cb38-354" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;../ewas_pipeline/run_grady_all/bacon_plots/PTSD_qqs.jpg&quot;</span>,</span>
+<span id="cb38-355"><a href="#cb38-355" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;../ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_qqs.jpg&quot;</span>,</span>
+<span id="cb38-356"><a href="#cb38-356" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;../ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_qqs.jpg&quot;</span>),</span>
+<span id="cb38-357"><a href="#cb38-357" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;data/07_bacon/all_fit.jpg&quot;</span>, <span class="st">&quot;data/07_bacon/all_qqs.jpg&quot;</span>,</span>
+<span id="cb38-358"><a href="#cb38-358" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;data/07_bacon/F_qqs.jpg&quot;</span>,   <span class="st">&quot;data/07_bacon/M_qqs.jpg&quot;</span>),</span>
+<span id="cb38-359"><a href="#cb38-359" aria-hidden="true" tabindex="-1"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb38-360"><a href="#cb38-360" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-361"><a href="#cb38-361" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-362"><a href="#cb38-362" aria-hidden="true" tabindex="-1"></a>::: {layout-ncol=2}</span>
+<span id="cb38-363"><a href="#cb38-363" aria-hidden="true" tabindex="-1"></a><span class="al">![BACON mixture fit (overall): the test-statistic histogram with the fitted null component in red.](data/07_bacon/all_fit.jpg)</span>{#fig-bacon-fit}</span>
+<span id="cb38-364"><a href="#cb38-364" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-365"><a href="#cb38-365" aria-hidden="true" tabindex="-1"></a><span class="al">![Overall QQ before (uncorrected) and after (corrected) BACON.](data/07_bacon/all_qqs.jpg)</span>{#fig-bacon-qq}</span>
+<span id="cb38-366"><a href="#cb38-366" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb38-367"><a href="#cb38-367" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-368"><a href="#cb38-368" aria-hidden="true" tabindex="-1"></a>The two stratum QQs after correction:</span>
+<span id="cb38-369"><a href="#cb38-369" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-370"><a href="#cb38-370" aria-hidden="true" tabindex="-1"></a>::: {layout-ncol=2}</span>
+<span id="cb38-371"><a href="#cb38-371" aria-hidden="true" tabindex="-1"></a><span class="al">![Female stratum, BACON-corrected vs uncorrected.](data/07_bacon/F_qqs.jpg)</span>{#fig-f-qq}</span>
+<span id="cb38-372"><a href="#cb38-372" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-373"><a href="#cb38-373" aria-hidden="true" tabindex="-1"></a><span class="al">![Male stratum, BACON-corrected vs uncorrected.](data/07_bacon/M_qqs.jpg)</span>{#fig-m-qq}</span>
+<span id="cb38-374"><a href="#cb38-374" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb38-375"><a href="#cb38-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-376"><a href="#cb38-376" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
+<span id="cb38-377"><a href="#cb38-377" aria-hidden="true" tabindex="-1"></a><span class="fu">## BACON is not an excuse to ignore λ</span></span>
+<span id="cb38-378"><a href="#cb38-378" aria-hidden="true" tabindex="-1"></a>BACON corrects the *distribution* of test statistics; it does not manufacture</span>
+<span id="cb38-379"><a href="#cb38-379" aria-hidden="true" tabindex="-1"></a>signal. If your λ is inflated because of unmodeled batch or cell composition,</span>
+<span id="cb38-380"><a href="#cb38-380" aria-hidden="true" tabindex="-1"></a>the right response is to fix the model (chapters 04 and 05), not to lean on BACON. Use it for</span>
+<span id="cb38-381"><a href="#cb38-381" aria-hidden="true" tabindex="-1"></a>the residual bias that remains after adjustment.</span>
+<span id="cb38-382"><a href="#cb38-382" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb38-383"><a href="#cb38-383" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-384"><a href="#cb38-384" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Meta-analyzing the strata with METAL {#sec-meta}</span></span>
+<span id="cb38-385"><a href="#cb38-385" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-386"><a href="#cb38-386" aria-hidden="true" tabindex="-1"></a>Now we combine the two sex-specific results with **METAL** <span class="co">[</span><span class="ot">@willer2010metal</span><span class="co">]</span>.</span>
+<span id="cb38-387"><a href="#cb38-387" aria-hidden="true" tabindex="-1"></a>Because the pipeline wrote its columns with the labels METAL expects, generating the</span>
+<span id="cb38-388"><a href="#cb38-388" aria-hidden="true" tabindex="-1"></a>command file is simple:</span>
+<span id="cb38-389"><a href="#cb38-389" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-390"><a href="#cb38-390" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb38-391"><a href="#cb38-391" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/metal_cmd.sh <span class="dt">\</span></span>
+<span id="cb38-392"><a href="#cb38-392" aria-hidden="true" tabindex="-1"></a>  run_grady/meta_analysis/PTSD_metal_commands.txt <span class="dt">\</span></span>
+<span id="cb38-393"><a href="#cb38-393" aria-hidden="true" tabindex="-1"></a>  run_grady/meta_analysis/PTSD_ewas_meta_analysis_results_ <span class="dt">\</span></span>
+<span id="cb38-394"><a href="#cb38-394" aria-hidden="true" tabindex="-1"></a>  run_grady/F/F_PTSD_ewas_bacon_results.csv.gz <span class="dt">\</span></span>
+<span id="cb38-395"><a href="#cb38-395" aria-hidden="true" tabindex="-1"></a>  run_grady/M/M_PTSD_ewas_bacon_results.csv.gz</span>
+<span id="cb38-396"><a href="#cb38-396" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-397"><a href="#cb38-397" aria-hidden="true" tabindex="-1"></a><span class="ex">software/metal/build/metal/metal</span> run_grady/meta_analysis/PTSD_metal_commands.txt</span>
+<span id="cb38-398"><a href="#cb38-398" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-399"><a href="#cb38-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-400"><a href="#cb38-400" aria-hidden="true" tabindex="-1"></a>The generated command file tells METAL to run an **inverse-variance** (`SCHEME</span>
+<span id="cb38-401"><a href="#cb38-401" aria-hidden="true" tabindex="-1"></a>STDERR`) meta-analysis, reading the **BACON-adjusted** effect, SE, and p-value</span>
+<span id="cb38-402"><a href="#cb38-402" aria-hidden="true" tabindex="-1"></a>columns, weighting by <span class="in">`n`</span>, and testing for **heterogeneity** across the sexes:</span>
+<span id="cb38-403"><a href="#cb38-403" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-404"><a href="#cb38-404" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-405"><a href="#cb38-405" aria-hidden="true" tabindex="-1"></a><span class="in">SCHEME STDERR</span></span>
+<span id="cb38-406"><a href="#cb38-406" aria-hidden="true" tabindex="-1"></a><span class="in">SEPARATOR COMMA</span></span>
+<span id="cb38-407"><a href="#cb38-407" aria-hidden="true" tabindex="-1"></a><span class="in">PVALUELABEL bacon.pval</span></span>
+<span id="cb38-408"><a href="#cb38-408" aria-hidden="true" tabindex="-1"></a><span class="in">EFFECTLABEL  bacon.es</span></span>
+<span id="cb38-409"><a href="#cb38-409" aria-hidden="true" tabindex="-1"></a><span class="in">STDERRLABEL  bacon.se</span></span>
+<span id="cb38-410"><a href="#cb38-410" aria-hidden="true" tabindex="-1"></a><span class="in">MARKER cpgid</span></span>
+<span id="cb38-411"><a href="#cb38-411" aria-hidden="true" tabindex="-1"></a><span class="in">WEIGHT n</span></span>
+<span id="cb38-412"><a href="#cb38-412" aria-hidden="true" tabindex="-1"></a><span class="in">PROCESSFILE .../F_PTSD_ewas_bacon_results.csv.gz</span></span>
+<span id="cb38-413"><a href="#cb38-413" aria-hidden="true" tabindex="-1"></a><span class="in">PROCESSFILE .../M_PTSD_ewas_bacon_results.csv.gz</span></span>
+<span id="cb38-414"><a href="#cb38-414" aria-hidden="true" tabindex="-1"></a><span class="in">ANALYZE HETEROGENEITY</span></span>
+<span id="cb38-415"><a href="#cb38-415" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-416"><a href="#cb38-416" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-419"><a href="#cb38-419" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb38-420"><a href="#cb38-420" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-meta</span></span>
+<span id="cb38-421"><a href="#cb38-421" aria-hidden="true" tabindex="-1"></a><span class="co"># METAL&#39;s output table, one row per CpG present in both strata. The `_1` suffix</span></span>
+<span id="cb38-422"><a href="#cb38-422" aria-hidden="true" tabindex="-1"></a><span class="co"># is METAL&#39;s own: it numbers the analyses in a command file, and this run has</span></span>
+<span id="cb38-423"><a href="#cb38-423" aria-hidden="true" tabindex="-1"></a><span class="co"># one. Column names come from METAL, hence the backticks around `P-value`.</span></span>
+<span id="cb38-424"><a href="#cb38-424" aria-hidden="true" tabindex="-1"></a>meta <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt&quot;</span>)</span>
+<span id="cb38-425"><a href="#cb38-425" aria-hidden="true" tabindex="-1"></a><span class="fu">setorder</span>(meta, <span class="st">`</span><span class="at">P-value</span><span class="st">`</span>)</span>
+<span id="cb38-426"><a href="#cb38-426" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;markers meta-analyzed:&quot;</span>, <span class="fu">nrow</span>(meta), <span class="st">&quot;</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb38-427"><a href="#cb38-427" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(meta[, .(MarkerName, Effect, StdErr, <span class="st">`</span><span class="at">P-value</span><span class="st">`</span>, Direction,</span>
+<span id="cb38-428"><a href="#cb38-428" aria-hidden="true" tabindex="-1"></a>                    HetISq, HetPVal)], <span class="dv">6</span>))</span>
+<span id="cb38-429"><a href="#cb38-429" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-430"><a href="#cb38-430" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-431"><a href="#cb38-431" aria-hidden="true" tabindex="-1"></a>Output columns from METAL to note:</span>
+<span id="cb38-432"><a href="#cb38-432" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-433"><a href="#cb38-433" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**`Direction`** is one character per input file (<span class="in">`F`</span> then <span class="in">`M`</span>). <span class="in">`++`</span> or <span class="in">`--`</span></span>
+<span id="cb38-434"><a href="#cb38-434" aria-hidden="true" tabindex="-1"></a>  means the effect pointed the same way in both sexes; <span class="in">`+-`</span> or <span class="in">`-+`</span> means it</span>
+<span id="cb38-435"><a href="#cb38-435" aria-hidden="true" tabindex="-1"></a>  flipped. The top hit **cg22671410** is <span class="in">`+-`</span>, P = 2.0×10⁻¹³ — and that mismatch</span>
+<span id="cb38-436"><a href="#cb38-436" aria-hidden="true" tabindex="-1"></a>  between a tiny p-value and a discordant direction signifies that there may be a</span>
+<span id="cb38-437"><a href="#cb38-437" aria-hidden="true" tabindex="-1"></a>  true difference in effect for that CpG across sexes.</span>
+<span id="cb38-438"><a href="#cb38-438" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**`HetISq` / `HetPVal`** quantify how much the two strata *disagree*.</span>
+<span id="cb38-439"><a href="#cb38-439" aria-hidden="true" tabindex="-1"></a>  A large <span class="in">`HetISq`</span> with small <span class="in">`HetPVal`</span> flags a CpG whose PTSD association differs</span>
+<span id="cb38-440"><a href="#cb38-440" aria-hidden="true" tabindex="-1"></a>  by sex. In a model where both sexes are combined, this signal would be missed.</span>
+<span id="cb38-441"><a href="#cb38-441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-442"><a href="#cb38-442" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning}</span>
+<span id="cb38-443"><a href="#cb38-443" aria-hidden="true" tabindex="-1"></a>The sample sizes of each strata are quite small for an EWAS, so these results</span>
+<span id="cb38-444"><a href="#cb38-444" aria-hidden="true" tabindex="-1"></a>should be interpreted with caution and replicated in a larger subset (or the full</span>
+<span id="cb38-445"><a href="#cb38-445" aria-hidden="true" tabindex="-1"></a>cohort) before any real conclusions about sex-specific signals can be made.</span>
+<span id="cb38-446"><a href="#cb38-446" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb38-447"><a href="#cb38-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-448"><a href="#cb38-448" aria-hidden="true" tabindex="-1"></a>Nine CpGs clear Bonferroni in the meta-analysis. **Eight of the nine are driven</span>
+<span id="cb38-449"><a href="#cb38-449" aria-hidden="true" tabindex="-1"></a>by one stratum alone**, with the other stratum&#39;s p-value above 0.05:</span>
+<span id="cb38-450"><a href="#cb38-450" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-451"><a href="#cb38-451" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> CpG <span class="pp">|</span> Direction <span class="pp">|</span> Meta P <span class="pp">|</span> Female P <span class="pp">|</span> Male P <span class="pp">|</span> HetI² <span class="pp">|</span></span>
+<span id="cb38-452"><a href="#cb38-452" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|---|---|---|</span></span>
+<span id="cb38-453"><a href="#cb38-453" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg22671410 <span class="pp">|</span> <span class="in">`+-`</span> <span class="pp">|</span> 2.0×10⁻¹³ <span class="pp">|</span> 1.4×10⁻¹³ <span class="pp">|</span> 0.91 <span class="pp">|</span> 0.0 <span class="pp">|</span></span>
+<span id="cb38-454"><a href="#cb38-454" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg03126377 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 1.4×10⁻¹⁰ <span class="pp">|</span> 2.2×10⁻¹¹ <span class="pp">|</span> 0.79 <span class="pp">|</span> 72.7 <span class="pp">|</span></span>
+<span id="cb38-455"><a href="#cb38-455" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg08002657 <span class="pp">|</span> <span class="in">`--`</span> <span class="pp">|</span> 4.2×10⁻¹⁰ <span class="pp">|</span> 0.32 <span class="pp">|</span> 1.9×10⁻¹⁰ <span class="pp">|</span> 61.7 <span class="pp">|</span></span>
+<span id="cb38-456"><a href="#cb38-456" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg25298683 <span class="pp">|</span> <span class="in">`--`</span> <span class="pp">|</span> 3.7×10⁻⁹ <span class="pp">|</span> 8.9×10⁻¹¹ <span class="pp">|</span> 0.97 <span class="pp">|</span> 86.3 <span class="pp">|</span></span>
+<span id="cb38-457"><a href="#cb38-457" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg08907819 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 3.9×10⁻⁹ <span class="pp">|</span> 0.059 <span class="pp">|</span> 5.1×10⁻⁹ <span class="pp">|</span> 67.2 <span class="pp">|</span></span>
+<span id="cb38-458"><a href="#cb38-458" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg12248040 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 2.2×10⁻⁸ <span class="pp">|</span> 0.22 <span class="pp">|</span> 1.1×10⁻⁹ <span class="pp">|</span> 86.4 <span class="pp">|</span></span>
+<span id="cb38-459"><a href="#cb38-459" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg09473383 <span class="pp">|</span> <span class="in">`++`</span> <span class="pp">|</span> 2.9×10⁻⁸ <span class="pp">|</span> 9.5×10⁻⁸ <span class="pp">|</span> 0.050 <span class="pp">|</span> 34.5 <span class="pp">|</span></span>
+<span id="cb38-460"><a href="#cb38-460" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg21102739 <span class="pp">|</span> <span class="in">`--`</span> <span class="pp">|</span> 3.1×10⁻⁸ <span class="pp">|</span> 1.1×10⁻⁷ <span class="pp">|</span> 0.11 <span class="pp">|</span> 0.0 <span class="pp">|</span></span>
+<span id="cb38-461"><a href="#cb38-461" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> cg24256418 <span class="pp">|</span> <span class="in">`-+`</span> <span class="pp">|</span> 4.4×10⁻⁸ <span class="pp">|</span> 4.2×10⁻⁹ <span class="pp">|</span> 0.78 <span class="pp">|</span> 78.5 <span class="pp">|</span></span>
+<span id="cb38-462"><a href="#cb38-462" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-463"><a href="#cb38-463" aria-hidden="true" tabindex="-1"></a>Inverse-variance meta-analysis is a *weighted average*, not a concordance test.</span>
+<span id="cb38-464"><a href="#cb38-464" aria-hidden="true" tabindex="-1"></a>A single stratum with a large effect and a small SE can carry the pooled estimate</span>
+<span id="cb38-465"><a href="#cb38-465" aria-hidden="true" tabindex="-1"></a>past a genome-wide threshold on its own, and the pooled p-value says nothing</span>
+<span id="cb38-466"><a href="#cb38-466" aria-hidden="true" tabindex="-1"></a>about whether the second stratum agreed. Only <span class="in">`cg09473383`</span> is nominally</span>
+<span id="cb38-467"><a href="#cb38-467" aria-hidden="true" tabindex="-1"></a>significant in both arms with matching sign, and it clears 0.05 in the male stratum by</span>
+<span id="cb38-468"><a href="#cb38-468" aria-hidden="true" tabindex="-1"></a>the thinnest possible margin (P = 0.0499) — so even the one apparent replication here is</span>
+<span id="cb38-469"><a href="#cb38-469" aria-hidden="true" tabindex="-1"></a>not something to lean on.</span>
+<span id="cb38-470"><a href="#cb38-470" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-471"><a href="#cb38-471" aria-hidden="true" tabindex="-1"></a>This is why you read <span class="in">`Direction`</span> and <span class="in">`HetISq`</span> alongside <span class="in">`P-value`</span>. Two tips:</span>
+<span id="cb38-472"><a href="#cb38-472" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-473"><a href="#cb38-473" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Check the arms.** For every hit you plan to report, look up the per-stratum</span>
+<span id="cb38-474"><a href="#cb38-474" aria-hidden="true" tabindex="-1"></a>   estimate, SE, and p-value. If one arm is flat, you have a stratum-specific</span>
+<span id="cb38-475"><a href="#cb38-475" aria-hidden="true" tabindex="-1"></a>   finding and you should describe it that way.</span>
+<span id="cb38-476"><a href="#cb38-476" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Distrust `HetISq` at *k* = 2.** With two studies and one heterogeneity</span>
+<span id="cb38-477"><a href="#cb38-477" aria-hidden="true" tabindex="-1"></a>   degree of freedom, I² is extremely noisy. <span class="in">`cg22671410`</span> has I² = 0.0 despite</span>
+<span id="cb38-478"><a href="#cb38-478" aria-hidden="true" tabindex="-1"></a>   effects of +0.40 and −0.06, because the male SE is so large (0.51) that the</span>
+<span id="cb38-479"><a href="#cb38-479" aria-hidden="true" tabindex="-1"></a>   two estimates are statistically compatible with each other. Low I² here means</span>
+<span id="cb38-480"><a href="#cb38-480" aria-hidden="true" tabindex="-1"></a>   &quot;not enough precision to tell them apart&quot;, not &quot;they agree&quot;. That doesn&#39;t mean</span>
+<span id="cb38-481"><a href="#cb38-481" aria-hidden="true" tabindex="-1"></a>   the results aren&#39;t meaningful, they may be an indication of a true sex</span>
+<span id="cb38-482"><a href="#cb38-482" aria-hidden="true" tabindex="-1"></a>   difference worth investigating with a more suitable statistical method.</span>
+<span id="cb38-483"><a href="#cb38-483" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-486"><a href="#cb38-486" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb38-487"><a href="#cb38-487" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: meta-summary</span></span>
+<span id="cb38-488"><a href="#cb38-488" aria-hidden="true" tabindex="-1"></a><span class="co"># Same genomic-inflation function as the summary table above, restated so this</span></span>
+<span id="cb38-489"><a href="#cb38-489" aria-hidden="true" tabindex="-1"></a><span class="co"># chunk stands on its own if you run it in isolation.</span></span>
+<span id="cb38-490"><a href="#cb38-490" aria-hidden="true" tabindex="-1"></a>lam <span class="ot">&lt;-</span> <span class="cf">function</span>(p){p<span class="ot">&lt;-</span>p[<span class="fu">is.finite</span>(p)<span class="sc">&amp;</span>p<span class="sc">&gt;</span><span class="dv">0</span>]; <span class="fu">median</span>(<span class="fu">qchisq</span>(p,<span class="dv">1</span>,<span class="at">lower.tail=</span><span class="cn">FALSE</span>))<span class="sc">/</span><span class="fu">qchisq</span>(<span class="fl">0.5</span>,<span class="dv">1</span>)}</span>
+<span id="cb38-491"><a href="#cb38-491" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;meta genomic inflation lambda:&quot;</span>, <span class="fu">round</span>(<span class="fu">lam</span>(meta<span class="sc">$</span><span class="st">`</span><span class="at">P-value</span><span class="st">`</span>), <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb38-492"><a href="#cb38-492" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;CpGs with heterogeneity P &lt; 0.05:&quot;</span>,</span>
+<span id="cb38-493"><a href="#cb38-493" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(meta<span class="sc">$</span>HetPVal <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb38-494"><a href="#cb38-494" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sprintf</span>(<span class="st">&quot;(%.1f%% — right at the 5%% null expectation)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb38-495"><a href="#cb38-495" aria-hidden="true" tabindex="-1"></a>            <span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(meta<span class="sc">$</span>HetPVal <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb38-496"><a href="#cb38-496" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb38-497"><a href="#cb38-497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-498"><a href="#cb38-498" aria-hidden="true" tabindex="-1"></a><span class="al">![Meta-analysis QQ plot (F+M combined).](data/07_meta_qq.png)</span>{#fig-meta-qq width=70%}</span>
+<span id="cb38-499"><a href="#cb38-499" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-500"><a href="#cb38-500" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Reading the run as a whole {#sec-reading}</span></span>
+<span id="cb38-501"><a href="#cb38-501" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-502"><a href="#cb38-502" aria-hidden="true" tabindex="-1"></a>For the purposes of this tutorial, we ran the EWAS with and without stratification, so </span>
+<span id="cb38-503"><a href="#cb38-503" aria-hidden="true" tabindex="-1"></a>we show results for: an &#39;overall&#39; EWAS model where sex is a covariate, female-only, male-only, </span>
+<span id="cb38-504"><a href="#cb38-504" aria-hidden="true" tabindex="-1"></a>and sex-combined by meta-analysis:</span>
+<span id="cb38-505"><a href="#cb38-505" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-506"><a href="#cb38-506" aria-hidden="true" tabindex="-1"></a><span class="al">![QQ plots of all four analyses (BACON-adjusted p-values), overlaid.](data/07_qq_overlay.png)</span>{#fig-qq-overlay width=75%}</span>
+<span id="cb38-507"><a href="#cb38-507" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-508"><a href="#cb38-508" aria-hidden="true" tabindex="-1"></a>The QQ plots show *how much* signal each analysis reports, but not *where* it sits or</span>
+<span id="cb38-509"><a href="#cb38-509" aria-hidden="true" tabindex="-1"></a>whether the analyses agree. A faceted volcano answers the first question — effect</span>
+<span id="cb38-510"><a href="#cb38-510" aria-hidden="true" tabindex="-1"></a>size against significance, one panel per analysis, on shared axes so the panels are</span>
+<span id="cb38-511"><a href="#cb38-511" aria-hidden="true" tabindex="-1"></a>directly comparable:</span>
+<span id="cb38-512"><a href="#cb38-512" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-513"><a href="#cb38-513" aria-hidden="true" tabindex="-1"></a><span class="al">![PTSD effect size against significance for each of the four analyses. The red line is the Bonferroni threshold and red points are the CpGs that clear it; the null cloud is thinned to 60,000 points per panel for legibility. Labels name every Bonferroni-significant CpG.](data/07_volcano_facets.png)</span>{#fig-volcano-facets}</span>
+<span id="cb38-514"><a href="#cb38-514" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-515"><a href="#cb38-515" aria-hidden="true" tabindex="-1"></a>One feature stands out immediately. The stratified arms report far more Bonferroni hits (11 and 17)</span>
+<span id="cb38-516"><a href="#cb38-516" aria-hidden="true" tabindex="-1"></a>than the combined arm (2), despite having roughly half the samples each. While </span>
+<span id="cb38-517"><a href="#cb38-517" aria-hidden="true" tabindex="-1"></a>it is possible some of these are true-positive signals, the small sample size and evidence of poor-fit </span>
+<span id="cb38-518"><a href="#cb38-518" aria-hidden="true" tabindex="-1"></a>prior to BACON adjustment point towards these results being spurious or an artifact of the BACON adjustment. </span>
+<span id="cb38-519"><a href="#cb38-519" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-520"><a href="#cb38-520" aria-hidden="true" tabindex="-1"></a>Ranking the union of each analysis&#39;s strongest CpGs makes the disagreement explicit:</span>
+<span id="cb38-521"><a href="#cb38-521" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-522"><a href="#cb38-522" aria-hidden="true" tabindex="-1"></a><span class="al">![The union of each analysis&#39;s top 8 CpGs, with every analysis&#39;s result for each one. Point shape shows the direction of effect; the red line is Bonferroni. A CpG carried by only one analysis appears as one high point with three low ones.](data/07_foothills.png)</span>{#fig-foothills}</span>
+<span id="cb38-523"><a href="#cb38-523" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-524"><a href="#cb38-524" aria-hidden="true" tabindex="-1"></a>Almost every CpG here is carried by a single analysis. Read across any column and you</span>
+<span id="cb38-525"><a href="#cb38-525" aria-hidden="true" tabindex="-1"></a>typically find one point above the Bonferroni line and three well below it — the same</span>
+<span id="cb38-526"><a href="#cb38-526" aria-hidden="true" tabindex="-1"></a>CpG, the same cohort, tested four ways, agreeing only occasionally. <span class="in">`cg22671410`</span> is the</span>
+<span id="cb38-527"><a href="#cb38-527" aria-hidden="true" tabindex="-1"></a>clearest case: top of the female arm and top of the meta-analysis, but essentially null</span>
+<span id="cb38-528"><a href="#cb38-528" aria-hidden="true" tabindex="-1"></a>in the male arm and in the whole-cohort fit.</span>
+<span id="cb38-529"><a href="#cb38-529" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-530"><a href="#cb38-530" aria-hidden="true" tabindex="-1"></a>That is the pattern @fig-concordance quantifies for the nine meta-analysis hits:</span>
+<span id="cb38-531"><a href="#cb38-531" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-532"><a href="#cb38-532" aria-hidden="true" tabindex="-1"></a><span class="al">![Female versus male effect size for the nine CpGs that clear Bonferroni in the meta-analysis. Bars are ±1 standard error; the solid diagonal is *y* = *x*, where both strata would agree exactly. Fill shows whether the two strata estimate the same sign.](data/07_effect_concordance.png)</span>{#fig-concordance width=70%}</span>
+<span id="cb38-533"><a href="#cb38-533" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-534"><a href="#cb38-534" aria-hidden="true" tabindex="-1"></a>A few caveats about these results:</span>
+<span id="cb38-535"><a href="#cb38-535" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-536"><a href="#cb38-536" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**The combined arm finds two CpGs at Bonferroni; the stratified arms and the</span>
+<span id="cb38-537"><a href="#cb38-537" aria-hidden="true" tabindex="-1"></a>  meta-analysis find many more.** The single-sex arms have an n that is too small to run</span>
+<span id="cb38-538"><a href="#cb38-538" aria-hidden="true" tabindex="-1"></a>  an EWAS. The sex-strata results prior to BACON adjustment were deflated and</span>
+<span id="cb38-539"><a href="#cb38-539" aria-hidden="true" tabindex="-1"></a>  inflated, and while BACON does adjust the stratum towards a lambda of 1,</span>
+<span id="cb38-540"><a href="#cb38-540" aria-hidden="true" tabindex="-1"></a>  respectively, it likely did not perform an optimal adjustment. The inflation</span>
+<span id="cb38-541"><a href="#cb38-541" aria-hidden="true" tabindex="-1"></a>  makes it appear as if there are statistically significant results where there</span>
+<span id="cb38-542"><a href="#cb38-542" aria-hidden="true" tabindex="-1"></a>  are none and is persisted in the meta-analysis results. This is not meant to be an</span>
+<span id="cb38-543"><a href="#cb38-543" aria-hidden="true" tabindex="-1"></a>  argument against doing stratified analyses, but it does bring to light the importance of</span>
+<span id="cb38-544"><a href="#cb38-544" aria-hidden="true" tabindex="-1"></a>  considering whether the sample size of your strata is sufficiently powered to do a stratified analysis.</span>
+<span id="cb38-545"><a href="#cb38-545" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Those two are not the same as chapter 06&#39;s one.** Both analyses call</span>
+<span id="cb38-546"><a href="#cb38-546" aria-hidden="true" tabindex="-1"></a>  <span class="in">`cg15434749`</span>. The pipeline additionally calls <span class="in">`cg20600436`</span>, and the two runs agree on</span>
+<span id="cb38-547"><a href="#cb38-547" aria-hidden="true" tabindex="-1"></a>  its effect estimate to seven decimal places (0.1717060) — they differ only in the</span>
+<span id="cb38-548"><a href="#cb38-548" aria-hidden="true" tabindex="-1"></a>  variance model. Its BACON p is 2.33 × 10⁻⁸ from the per-probe <span class="in">`glm`</span> and</span>
+<span id="cb38-549"><a href="#cb38-549" aria-hidden="true" tabindex="-1"></a>  6.73 × 10⁻⁸ from <span class="in">`eBayes`</span>, against a threshold of 6.61 × 10⁻⁸. The second value misses</span>
+<span id="cb38-550"><a href="#cb38-550" aria-hidden="true" tabindex="-1"></a>  by under 2%. A CpG this close to an arbitrary cutoff is likely a true result, 87 samples is </span>
+<span id="cb38-551"><a href="#cb38-551" aria-hidden="true" tabindex="-1"></a>  just too small to consistently detect it as genome-wide significant. </span>
+<span id="cb38-552"><a href="#cb38-552" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Heterogeneity sits at 5.4%** of CpGs below P = 0.05, against a 5% null</span>
+<span id="cb38-553"><a href="#cb38-553" aria-hidden="true" tabindex="-1"></a>  expectation, with a median I² of 0. There is no evidence of systematic</span>
+<span id="cb38-554"><a href="#cb38-554" aria-hidden="true" tabindex="-1"></a>  sex-differential methylation genome-wide. That does not mean that the heterogeneity</span>
+<span id="cb38-555"><a href="#cb38-555" aria-hidden="true" tabindex="-1"></a>  observed at the extremes is false, but with a sample size this small it does</span>
+<span id="cb38-556"><a href="#cb38-556" aria-hidden="true" tabindex="-1"></a>  warrant further investigation to validate if there are true sex differences at these sites.</span>
+<span id="cb38-557"><a href="#cb38-557" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-558"><a href="#cb38-558" aria-hidden="true" tabindex="-1"></a>The point of the chapter is</span>
+<span id="cb38-559"><a href="#cb38-559" aria-hidden="true" tabindex="-1"></a>that the pipeline executes correctly, reproduces chapter 06&#39;s estimates to</span>
+<span id="cb38-560"><a href="#cb38-560" aria-hidden="true" tabindex="-1"></a>floating-point precision, and produces calibrated statistics (λ within 2.5% of</span>
+<span id="cb38-561"><a href="#cb38-561" aria-hidden="true" tabindex="-1"></a>1 in every arm). It is not that PTSD associates with these nine CpGs in 87</span>
+<span id="cb38-562"><a href="#cb38-562" aria-hidden="true" tabindex="-1"></a>people.</span>
+<span id="cb38-563"><a href="#cb38-563" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-564"><a href="#cb38-564" aria-hidden="true" tabindex="-1"></a><span class="fu">## 10. Scaling up {#sec-scaling}</span></span>
+<span id="cb38-565"><a href="#cb38-565" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-566"><a href="#cb38-566" aria-hidden="true" tabindex="-1"></a>Nothing about the commands changes when you move from this demo to a real study —</span>
+<span id="cb38-567"><a href="#cb38-567" aria-hidden="true" tabindex="-1"></a>you change <span class="in">`config.yml`</span>, not the code:</span>
+<span id="cb38-568"><a href="#cb38-568" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-569"><a href="#cb38-569" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Point <span class="in">`mvals`</span>/<span class="in">`pheno`</span> at the full filtered matrix and sample table.</span>
+<span id="cb38-570"><a href="#cb38-570" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Set <span class="in">`processing_type: cluster`</span> and give Snakemake a cluster profile; the</span>
+<span id="cb38-571"><a href="#cb38-571" aria-hidden="true" tabindex="-1"></a>  chunking (<span class="in">`chunk_size`</span>) turns each block of CpGs into a scheduler job.</span>
+<span id="cb38-572"><a href="#cb38-572" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Add <span class="in">`dmr_analysis: &quot;yes&quot;`</span> and the annotation settings to get region-level</span>
+<span id="cb38-573"><a href="#cb38-573" aria-hidden="true" tabindex="-1"></a>  results and gene annotation on top of the single-CpG output — which is what the</span>
+<span id="cb38-574"><a href="#cb38-574" aria-hidden="true" tabindex="-1"></a>  <span class="co">[</span><span class="ot">next notebook</span><span class="co">](08_annotation.qmd)</span> covers.</span>
+<span id="cb38-575"><a href="#cb38-575" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Run <span class="in">`snakemake --cores N`</span> (or <span class="in">`--profile &lt;cluster&gt;`</span>) once, and every target in</span>
+<span id="cb38-576"><a href="#cb38-576" aria-hidden="true" tabindex="-1"></a>  the DAG — combined EWAS, stratified EWAS, BACON, METAL, DMRs, annotation,</span>
+<span id="cb38-577"><a href="#cb38-577" aria-hidden="true" tabindex="-1"></a>  plots — is built in order from a single reproducible entry point.</span>
+<span id="cb38-578"><a href="#cb38-578" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-579"><a href="#cb38-579" aria-hidden="true" tabindex="-1"></a>That is the payoff of the pipeline: the statistics are identical to what you did</span>
+<span id="cb38-580"><a href="#cb38-580" aria-hidden="true" tabindex="-1"></a>by hand in chapter 06, but the *process* is now a versioned, parallel, one-command</span>
+<span id="cb38-581"><a href="#cb38-581" aria-hidden="true" tabindex="-1"></a>artifact you can hand to a collaborator or a reviewer.</span>
+<span id="cb38-582"><a href="#cb38-582" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-583"><a href="#cb38-583" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb38-584"><a href="#cb38-584" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-585"><a href="#cb38-585" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb38-586"><a href="#cb38-586" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

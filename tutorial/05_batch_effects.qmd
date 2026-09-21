@@ -331,10 +331,13 @@ toward the global estimate — borrowing strength across probes so small batches
 corrected stably. You protect the biology by passing a model matrix of covariates to
 keep (`mod`), and ComBat removes only the batch-associated shift:
 
-```r
+```{.r filename="Generic example, do not run"}
+# Schematic only -- these object names are placeholders, not objects this
+# chapter creates. `mvals` is a probe x sample matrix, `pheno` a data frame with
+# one row per sample, and `pheno$batch` the recorded batch you are correcting.
 library(sva)
-mod <- model.matrix(~ ptsd + sex + age + Neu + CD4T + CD8T + Bcell + Mono, data = md)
-M_combat <- ComBat(dat = M, batch = md$plate, mod = mod)   # M = M-value matrix
+mod <- model.matrix(~ exposure + sex + age + cell_proportions, data = pheno)
+mvals_combat <- ComBat(dat = mvals, batch = pheno$batch, mod = mod)
 ```
 
 ComBat is fast, matrix-native, and the default in many pipelines. But it applies a
@@ -398,22 +401,26 @@ Within the female samples alone, chip is no longer confounded with sex — there
 batch factor, and the same holds within the males. So we run ComBat on `slide`
 separately in each sex stratum and then recombine:
 
-```r
-## ComBat on chip, separately within each sex stratum, then recombine.
-## Within a stratum, chip is no longer confounded with sex.
-##
-## This is the call; it is *run* in section 6, not here, because `smoke` -- the
-## methylation-derived smoking covariate ComBat has to protect -- is not built
-## until section 5. Nothing about the design changes in between.
-M_adj <- M
-for (s in c("F", "M")) {
-  i <- which(md$sex == s)
-  mod_s <- model.matrix(~ ptsd + age + smoke + Neu + NK + CD4T + CD8T + Bcell + Mono,
-                        data = md[i, ])
-  M_adj[, i] <- sva::ComBat(dat = M[, i], batch = factor(as.character(md$slide[i])),
-                            mod = mod_s, mean.only = TRUE, par.prior = TRUE)
+```{.r filename="Generic example, do not run"}
+# Schematic only -- placeholder object names again. Correct the batch variable
+# separately within each level of the covariate it is confounded with, then put
+# the strata back together. Within a stratum the two are no longer confounded,
+# and the confounded covariate is constant, so it is not in `mod_s`.
+mvals_adj <- mvals
+for (s in levels(pheno$stratum)) {
+  i     <- which(pheno$stratum == s)
+  mod_s <- model.matrix(~ exposure + age + smoking + cell_proportions,
+                        data = pheno[i, ])
+  mvals_adj[, i] <- sva::ComBat(dat = mvals[, i, drop = FALSE],
+                                batch = droplevels(pheno$batch[i]),
+                                mod = mod_s, mean.only = TRUE, par.prior = TRUE)
 }
 ```
+
+The version of this that actually runs on our data is the `combat-run` chunk in
+[section 6](#sec-sva) — it has to wait until then because `smoke`, the
+methylation-derived smoking covariate ComBat must protect, is not built until
+section 5. Nothing about the design changes in between.
 
 Two choices in that call are worth explaining:
 
@@ -689,6 +696,7 @@ n_sv_be <- num.sv(Mk, mod, method = "be")
 k_candidates <- c(6, 8, 10, 15)
 k_selected   <- 6
 svobj <- sva(Mcb, mod, mod0, n.sv = k_selected)
+cat("\n")                                 # terminate sva()'s progress line
 SV <- svobj$sv                            # add these as covariates in the EWAS
 colnames(SV) <- paste0("SV", seq_len(ncol(SV)))
 cat("num.sv (Buja-Eyuboglu):", n_sv_be, "| surrogate variables carried forward:",
@@ -746,8 +754,13 @@ rows <- list(data.frame(
   df_F = 45 - (ncol(mod) - 1), df_M = 42 - (ncol(mod) - 1)))
 
 for (K in k_candidates) {
+  # sva() prints its own progress and leaves the last line unterminated, so
+  # without the banner and the newline below the four candidates run together
+  # and the final one looks as though it never finished.
+  cat(sprintf("\n===== k = %d =====\n", K))
   set.seed(42)                                  # same seed at every k
   SVk <- sva(Mcb, mod, mod0, n.sv = K)$sv       # SVA's native order, first K
+  cat("\n")
   colnames(SVk) <- paste0("SV", seq_len(K))
   dm  <- cbind(mod, SVk)
   fit <- eBayes(lmFit(Mcb, dm))
@@ -996,7 +1009,8 @@ non-IDAT path is largely the same — with two caveats:
    (see [normalization](02_normalization.qmd)), run the identical SVA recipe, and
    add the surrogate variables to your model:
 
-   ```r
+   ```{.r filename="Generic example, do not run"}
+   # Schematic only -- `exposure + covariates` stands for your own model terms.
    M <- log2(beta / (1 - beta))          # from a processed beta-matrix
    mod  <- model.matrix(~ exposure + covariates, data = pData)
    mod0 <- model.matrix(~ covariates, data = pData)

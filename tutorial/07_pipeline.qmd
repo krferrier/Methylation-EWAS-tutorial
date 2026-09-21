@@ -122,7 +122,8 @@ cat("PTSD (1=Case, 0=Control):\n"); print(table(pheno$PTSD))
 cat("\nsex:\n"); print(table(pheno$sex))
 ```
 
-```r
+```{.r filename="Generic example, do not run"}
+# Schematic only -- `betas` stands for your own filtered matrix.
 # mvals.csv.gz — SAMPLES in rows, CpGs in columns, first column = sample IDs.
 # This orientation matters: ewas.R moves the first column to rownames and then
 # chunks over the *columns*, so the file must be samples x CpGs, not CpGs x samples.

@@ -130,7 +130,7 @@ Answer `yes` — it is the standard per-user cache location, and you are asked o
 machine. The question only appears in an interactive session (like an RStudio or
 PyCharm console). To put the cache somewhere else, set it before the call:
 
-```r
+```{.r filename="RStudio Console"}
 ExperimentHub::setExperimentHubOption("CACHE", "/path/of/your/choosing")
 ```
 :::
@@ -338,16 +338,17 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
    β-values and its cell-type means, subset your matrix to the shared reference CpGs,
    and run the constrained projection directly:
 
-   ```r
+   ```{.r filename="Generic example, do not run"}
+   # Schematic only. `beta_mat` is a CpG x sample matrix -- in the deposit-only
+   # case, whatever the submitter posted; locally, getBeta() on the chapter 03
+   # object gives one. The result is deliberately NOT called `props`: that name
+   # holds this chapter's IDOL estimates, and overwriting it would change every
+   # number downstream without any error to warn you.
    library(FlowSorted.Blood.EPIC)
    library(genefilter)
-   # `beta` is a CpG x sample matrix -- in the deposit-only case it is whatever
-   # the submitter posted. Locally, the filtered object from chapter 03 gives one:
-   beta <- minfi::getBeta(readRDS("data/03_grs_filtered.rds"))
-   # reference cell-type means at the IDOL CpGs (from the package)
-   ref <- ...   # matrix: IDOL CpGs x 6 cell types
-   shared <- intersect(rownames(beta), rownames(ref))
-   props  <- minfi:::projectCellType(beta[shared, ], ref[shared, ])
+   ref <- ...   # matrix: IDOL CpGs x 6 cell types, from the package
+   shared       <- intersect(rownames(beta_mat), rownames(ref))
+   props_manual <- minfi:::projectCellType(beta_mat[shared, ], ref[shared, ])
    ```
    The estimates are slightly noisier than the joint-normalization route because the
    sample and reference weren't normalized together, but for a well-processed matrix
@@ -359,13 +360,15 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
    CIBERSORT, or constrained projection. It ships blood reference centroids and is
    the most convenient option when you only have processed data:
 
-   ```r
+   ```{.r filename="Generic example, do not run"}
+   # Schematic only, and this one *would* run if you pasted it -- which is the
+   # problem. It assigns to `props`, so it would silently replace the IDOL
+   # estimates computed above with EpiDISH's, and every figure and model after
+   # this point would quietly change. Give the result its own name.
    library(EpiDISH)
-   library(minfi)
-   beta <- minfi::getBeta(readRDS("data/03_grs_filtered.rds"))   # CpG x sample, as above
    data(centDHSbloodDMC.m)                     # blood reference centroids
-   out <- epidish(beta, ref.m = centDHSbloodDMC.m, method = "RPC")
-   props <- out$estF
+   out <- epidish(beta_mat, ref.m = centDHSbloodDMC.m, method = "RPC")
+   props_epidish <- out$estF
    ```
 
 ::: {.callout-note}
