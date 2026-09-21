@@ -5776,6 +5776,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#running-it-on-the-subset" id="toc-running-it-on-the-subset" class="nav-link" data-scroll-target="#running-it-on-the-subset">3. Running it on the subset</a></li>
   <li><a href="#β-values-vs-m-values" id="toc-β-values-vs-m-values" class="nav-link" data-scroll-target="#β-values-vs-m-values">4. β-values vs M-values</a></li>
+  <li><a href="#save-the-normalized-data" id="toc-save-the-normalized-data" class="nav-link" data-scroll-target="#save-the-normalized-data">Save the normalized data</a></li>
   <li><a href="#normalizing-from-a-processed-matrix" id="toc-normalizing-from-a-processed-matrix" class="nav-link" data-scroll-target="#normalizing-from-a-processed-matrix">5. Normalizing from a processed matrix</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
@@ -6016,22 +6017,25 @@ Annotation
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This is the expensive step in the chapter: about 2 minutes and a peak of</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ~12.5 GB at 96 arrays, because funnorm runs noob first and then fits the</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># control-probe PCA across the full 865,859-probe matrix. If your machine cannot</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># hold that, take the resume path in the callout below.</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>grs_fun <span class="ot">&lt;-</span> <span class="fu">preprocessFunnorm</span>(rg)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># `grs_fun` is the handoff object for the rest of the tutorial -- keep it whole.</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Only the β matrix gets subset, for the figures in this chapter.</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>beta_fun <span class="ot">&lt;-</span> <span class="fu">getBeta</span>(grs_fun)[probe_sample, ]</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># A design comparison is only meaningful if all three matrices describe the same</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># probes; fail loudly here rather than silently comparing different probe sets.</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)),</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>grs_fun</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This is the expensive step in the chapter, and the one long silent wait in it:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># about 2 minutes and a peak of ~12.5 GB at 96 arrays, because funnorm runs noob</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># first and then fits the control-probe PCA across the full 865,859-probe matrix.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># It prints nothing while it works. The 2 minutes assume the peak fits in RAM; on</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># a machine with less than that it swaps and can take five to ten times longer,</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># which is the usual explanation for this chunk seeming to hang. If your machine</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># cannot hold it, take the resume path in the callout below.</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>grs_fun <span class="ot">&lt;-</span> <span class="fu">preprocessFunnorm</span>(rg)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># `grs_fun` is the handoff object for the rest of the tutorial -- keep it whole.</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Only the β matrix gets subset, for the figures in this chapter.</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>beta_fun <span class="ot">&lt;-</span> <span class="fu">getBeta</span>(grs_fun)[probe_sample, ]</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># A design comparison is only meaningful if all three matrices describe the same</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co"># probes; fail loudly here rather than silently comparing different probe sets.</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)),</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>grs_fun</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>class: GenomicRatioSet 
@@ -6052,14 +6056,16 @@ Preprocessing
 </div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
 <span class="screen-reader-only">Important</span>If <code>preprocessFunnorm</code> stops with <code>pthread_create() is 22</code>
 </div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>If you see this error:</p>
 <pre><code>Error in preprocessCore::normalize.quantiles.use.target(matrix(crtColumn.reduced),  : 
@@ -6097,6 +6103,7 @@ Preprocessing
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install <span class="st">&quot;openblas=0.3.3&quot;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Restart R, then re-run the chunk.</p>
+</div>
 </div>
 </div>
 </div>
@@ -6284,19 +6291,50 @@ M = \log_2\!\left(\frac{\beta}{1-\beta}\right)
 </div>
 </div>
 </section>
+<section id="save-the-normalized-data" class="level2">
+<h2 class="anchored" data-anchor-id="save-the-normalized-data">Save the normalized data</h2>
+<p><a href="./03_probe_filtering.html">Probe filtering</a> opens by reading <code>data/02_funnorm_grs.rds</code>, so if you skip it that chapter fails on a missing file.</p>
+<div class="cell">
+<details open class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#    functional normalized. This is what probe filtering (chapter 03) reads, and</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(grs_fun, <span class="st">&quot;data/02_funnorm_grs.rds&quot;</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The pieces the figures above are drawn from: the three 20,000-probe β</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#    matrices and the two design lists. Saving them means the resume callout in</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">#    section 3 restores exactly the objects this chapter computed, and that a</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#    reader who cannot run normalization still gets every figure. Small next to</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    is three matrices and two character vectors, not one rectangle.</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>norm_pieces <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_raw  =</span> beta_raw,    <span class="co"># 20,000 x 96, no correction</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_noob =</span> beta_noob,   <span class="co"># 20,000 x 96, noob only</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_fun  =</span> beta_fun,    <span class="co"># 20,000 x 96, noob + functional normalization</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeI     =</span> typeI,       <span class="co"># Type I probe IDs, whole array</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeII    =</span> typeII       <span class="co"># Type II probe IDs, whole array</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(norm_pieces, <span class="st">&quot;data/02_norm_pieces.rds&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
 <section id="normalizing-from-a-processed-matrix" class="level2">
 <h2 class="anchored" data-anchor-id="normalizing-from-a-processed-matrix">5. Normalizing from a processed matrix</h2>
 <p>Many GEO series do not deposit raw IDATs, but do provide a processed matrix: a table of β-values (or sometimes M-values) with CpGs in rows and samples in columns, often as a <code>GSExxxxx_series_matrix.txt.gz</code> or a supplementary file. You cannot run <code>minfi</code>’s IDAT-based normalization on these, because the raw two-channel intensities are gone. Here is how to work with them.</p>
 <p><strong>Step 1 — get the matrix into R.</strong> For a series matrix:</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
-<pre><strong>RStudio Console</strong></pre>
+<pre><strong>Generic example, do not run</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19" data-filename="RStudio Console"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GEOquery)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>gse  <span class="ot">&lt;-</span> <span class="fu">getGEO</span>(<span class="st">&quot;GSExxxxxx&quot;</span>, <span class="at">GSEMatrix =</span> <span class="cn">TRUE</span>)      <span class="co"># returns a list of ExpressionSets</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>eset <span class="ot">&lt;-</span> gse[[<span class="dv">1</span>]]</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">exprs</span>(eset)                        <span class="co"># CpG x sample β matrix</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>pheno <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">pData</span>(eset)                       <span class="co"># sample metadata</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20" data-filename="Generic example, do not run"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Schematic only, for your own data -- nothing in this tutorial needs it. The</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># tutorial dataset ships as IDATs, which the chapters above normalize directly.</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># &quot;GSExxxxxx&quot; is a placeholder: substitute the accession of the series you want.</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GEOquery)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>gse   <span class="ot">&lt;-</span> <span class="fu">getGEO</span>(<span class="st">&quot;GSExxxxxx&quot;</span>, <span class="at">GSEMatrix =</span> <span class="cn">TRUE</span>)      <span class="co"># returns a list of ExpressionSets</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>eset  <span class="ot">&lt;-</span> gse[[<span class="dv">1</span>]]</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>beta  <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">exprs</span>(eset)                       <span class="co"># CpG x sample β matrix</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>pheno <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">pData</span>(eset)                       <span class="co"># sample metadata</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>For a supplementary flat file (<code>getGEOSuppFiles</code> downloads it), read it with <code>data.table::fread()</code> and coerce to a matrix with CpG IDs as rownames.</p>
 <p><strong>Step 2 — find out what was already done.</strong> Read the series’ processing description (<code>experimentData()</code> / <code>pData(eset)$data_processing</code>) to learn whether the matrix is already normalized, and how. Common cases:</p>
@@ -6325,31 +6363,6 @@ M = \log_2\!\left(\frac{\beta}{1-\beta}\right)
 <div class="callout-body-container callout-body">
 <p>From IDATs you control normalization; from a processed matrix you <strong>inherit</strong> it. The job shifts from “normalize” to “audit what was done and decide whether it is adequate,” then continue from probe filtering. Always record, in your methods, the processing state of every series you use — reviewers will ask.</p>
 </div>
-</div>
-<p>We save the functional-normalized <code>GenomicRatioSet</code> for the downstream steps:</p>
-<div class="cell">
-<details open class="code-fold">
-<summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co">#    functional normalized. This is what probe filtering (chapter 03) reads, and</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(grs_fun, <span class="st">&quot;data/02_funnorm_grs.rds&quot;</span>)</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The pieces the figures above are drawn from: the three 20,000-probe β</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">#    matrices and the two design lists. Saving them means the resume callout in</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co">#    section 3 restores exactly the objects this chapter computed, and that a</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#    reader who cannot run normalization still gets every figure. Small next to</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    is three matrices and two character vectors, not one rectangle.</span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>norm_pieces <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_raw  =</span> beta_raw,    <span class="co"># 20,000 x 96, no correction</span></span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_noob =</span> beta_noob,   <span class="co"># 20,000 x 96, noob only</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_fun  =</span> beta_fun,    <span class="co"># 20,000 x 96, noob + functional normalization</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeI     =</span> typeI,       <span class="co"># Type I probe IDs, whole array</span></span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeII    =</span> typeII       <span class="co"># Type II probe IDs, whole array</span></span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(norm_pieces, <span class="st">&quot;data/02_norm_pieces.rds&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 </div>
 <hr>
 <p><strong>Next:</strong> <a href="./03_probe_filtering.html">Probe filtering</a> — removing probes that are unreliable by design (cross-reactive, SNP-affected, sex-chromosome), using Zhou’s curated masks with ancestry awareness.</p>
@@ -7034,309 +7047,318 @@ Triche, Timothy J, Daniel J Weisenberger, David Van Den Berg, Peter W Laird, and
 <span id="cb21-208"><a href="#cb21-208" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-211"><a href="#cb21-211" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
 <span id="cb21-212"><a href="#cb21-212" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: normalize-funnorm</span></span>
-<span id="cb21-213"><a href="#cb21-213" aria-hidden="true" tabindex="-1"></a><span class="co"># This is the expensive step in the chapter: about 2 minutes and a peak of</span></span>
-<span id="cb21-214"><a href="#cb21-214" aria-hidden="true" tabindex="-1"></a><span class="co"># ~12.5 GB at 96 arrays, because funnorm runs noob first and then fits the</span></span>
-<span id="cb21-215"><a href="#cb21-215" aria-hidden="true" tabindex="-1"></a><span class="co"># control-probe PCA across the full 865,859-probe matrix. If your machine cannot</span></span>
-<span id="cb21-216"><a href="#cb21-216" aria-hidden="true" tabindex="-1"></a><span class="co"># hold that, take the resume path in the callout below.</span></span>
-<span id="cb21-217"><a href="#cb21-217" aria-hidden="true" tabindex="-1"></a>grs_fun <span class="ot">&lt;-</span> <span class="fu">preprocessFunnorm</span>(rg)</span>
-<span id="cb21-218"><a href="#cb21-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-219"><a href="#cb21-219" aria-hidden="true" tabindex="-1"></a><span class="co"># `grs_fun` is the handoff object for the rest of the tutorial -- keep it whole.</span></span>
-<span id="cb21-220"><a href="#cb21-220" aria-hidden="true" tabindex="-1"></a><span class="co"># Only the β matrix gets subset, for the figures in this chapter.</span></span>
-<span id="cb21-221"><a href="#cb21-221" aria-hidden="true" tabindex="-1"></a>beta_fun <span class="ot">&lt;-</span> <span class="fu">getBeta</span>(grs_fun)[probe_sample, ]</span>
-<span id="cb21-222"><a href="#cb21-222" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-223"><a href="#cb21-223" aria-hidden="true" tabindex="-1"></a><span class="co"># A design comparison is only meaningful if all three matrices describe the same</span></span>
-<span id="cb21-224"><a href="#cb21-224" aria-hidden="true" tabindex="-1"></a><span class="co"># probes; fail loudly here rather than silently comparing different probe sets.</span></span>
-<span id="cb21-225"><a href="#cb21-225" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)),</span>
-<span id="cb21-226"><a href="#cb21-226" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
-<span id="cb21-227"><a href="#cb21-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-228"><a href="#cb21-228" aria-hidden="true" tabindex="-1"></a>grs_fun</span>
-<span id="cb21-229"><a href="#cb21-229" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-213"><a href="#cb21-213" aria-hidden="true" tabindex="-1"></a><span class="co"># This is the expensive step in the chapter, and the one long silent wait in it:</span></span>
+<span id="cb21-214"><a href="#cb21-214" aria-hidden="true" tabindex="-1"></a><span class="co"># about 2 minutes and a peak of ~12.5 GB at 96 arrays, because funnorm runs noob</span></span>
+<span id="cb21-215"><a href="#cb21-215" aria-hidden="true" tabindex="-1"></a><span class="co"># first and then fits the control-probe PCA across the full 865,859-probe matrix.</span></span>
+<span id="cb21-216"><a href="#cb21-216" aria-hidden="true" tabindex="-1"></a><span class="co"># It prints nothing while it works. The 2 minutes assume the peak fits in RAM; on</span></span>
+<span id="cb21-217"><a href="#cb21-217" aria-hidden="true" tabindex="-1"></a><span class="co"># a machine with less than that it swaps and can take five to ten times longer,</span></span>
+<span id="cb21-218"><a href="#cb21-218" aria-hidden="true" tabindex="-1"></a><span class="co"># which is the usual explanation for this chunk seeming to hang. If your machine</span></span>
+<span id="cb21-219"><a href="#cb21-219" aria-hidden="true" tabindex="-1"></a><span class="co"># cannot hold it, take the resume path in the callout below.</span></span>
+<span id="cb21-220"><a href="#cb21-220" aria-hidden="true" tabindex="-1"></a>grs_fun <span class="ot">&lt;-</span> <span class="fu">preprocessFunnorm</span>(rg)</span>
+<span id="cb21-221"><a href="#cb21-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-222"><a href="#cb21-222" aria-hidden="true" tabindex="-1"></a><span class="co"># `grs_fun` is the handoff object for the rest of the tutorial -- keep it whole.</span></span>
+<span id="cb21-223"><a href="#cb21-223" aria-hidden="true" tabindex="-1"></a><span class="co"># Only the β matrix gets subset, for the figures in this chapter.</span></span>
+<span id="cb21-224"><a href="#cb21-224" aria-hidden="true" tabindex="-1"></a>beta_fun <span class="ot">&lt;-</span> <span class="fu">getBeta</span>(grs_fun)[probe_sample, ]</span>
+<span id="cb21-225"><a href="#cb21-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-226"><a href="#cb21-226" aria-hidden="true" tabindex="-1"></a><span class="co"># A design comparison is only meaningful if all three matrices describe the same</span></span>
+<span id="cb21-227"><a href="#cb21-227" aria-hidden="true" tabindex="-1"></a><span class="co"># probes; fail loudly here rather than silently comparing different probe sets.</span></span>
+<span id="cb21-228"><a href="#cb21-228" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)),</span>
+<span id="cb21-229"><a href="#cb21-229" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
 <span id="cb21-230"><a href="#cb21-230" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-231"><a href="#cb21-231" aria-hidden="true" tabindex="-1"></a>::::: {.callout-important}</span>
-<span id="cb21-232"><a href="#cb21-232" aria-hidden="true" tabindex="-1"></a><span class="fu">## If `preprocessFunnorm` stops with `pthread_create() is 22`</span></span>
+<span id="cb21-231"><a href="#cb21-231" aria-hidden="true" tabindex="-1"></a>grs_fun</span>
+<span id="cb21-232"><a href="#cb21-232" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb21-233"><a href="#cb21-233" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-234"><a href="#cb21-234" aria-hidden="true" tabindex="-1"></a>If you see this error:</span>
-<span id="cb21-235"><a href="#cb21-235" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-236"><a href="#cb21-236" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-237"><a href="#cb21-237" aria-hidden="true" tabindex="-1"></a><span class="in">Error in preprocessCore::normalize.quantiles.use.target(matrix(crtColumn.reduced),  : </span></span>
-<span id="cb21-238"><a href="#cb21-238" aria-hidden="true" tabindex="-1"></a><span class="in">  ERROR; return code from pthread_create() is 22</span></span>
+<span id="cb21-234"><a href="#cb21-234" aria-hidden="true" tabindex="-1"></a>::::: {.callout-important collapse=&quot;true&quot;}</span>
+<span id="cb21-235"><a href="#cb21-235" aria-hidden="true" tabindex="-1"></a><span class="fu">## If `preprocessFunnorm` stops with `pthread_create() is 22`</span></span>
+<span id="cb21-236"><a href="#cb21-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-237"><a href="#cb21-237" aria-hidden="true" tabindex="-1"></a>If you see this error:</span>
+<span id="cb21-238"><a href="#cb21-238" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-239"><a href="#cb21-239" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-240"><a href="#cb21-240" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-241"><a href="#cb21-241" aria-hidden="true" tabindex="-1"></a>nothing is wrong with your data or with the chapter. The quantile-normalization</span>
-<span id="cb21-242"><a href="#cb21-242" aria-hidden="true" tabindex="-1"></a>step inside <span class="in">`preprocessFunnorm`</span> calls <span class="in">`preprocessCore`</span>, whose pre-built binary is</span>
-<span id="cb21-243"><a href="#cb21-243" aria-hidden="true" tabindex="-1"></a>compiled with threading enabled, and the threads it asks for cannot be created.</span>
-<span id="cb21-244"><a href="#cb21-244" aria-hidden="true" tabindex="-1"></a>Either fix below clears it; both were tested against this error.</span>
-<span id="cb21-245"><a href="#cb21-245" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-246"><a href="#cb21-246" aria-hidden="true" tabindex="-1"></a>:::: {.panel-tabset}</span>
-<span id="cb21-247"><a href="#cb21-247" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-248"><a href="#cb21-248" aria-hidden="true" tabindex="-1"></a><span class="fu">### In R</span></span>
-<span id="cb21-249"><a href="#cb21-249" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-250"><a href="#cb21-250" aria-hidden="true" tabindex="-1"></a>Rebuild <span class="in">`preprocessCore`</span> from source with threading disabled:</span>
-<span id="cb21-251"><a href="#cb21-251" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-252"><a href="#cb21-252" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb21-253"><a href="#cb21-253" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(</span>
-<span id="cb21-254"><a href="#cb21-254" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;preprocessCore&quot;</span>,</span>
-<span id="cb21-255"><a href="#cb21-255" aria-hidden="true" tabindex="-1"></a>  <span class="at">configure.args =</span> <span class="fu">c</span>(<span class="at">preprocessCore =</span> <span class="st">&quot;--disable-threading&quot;</span>),</span>
-<span id="cb21-256"><a href="#cb21-256" aria-hidden="true" tabindex="-1"></a>  <span class="at">force  =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb21-257"><a href="#cb21-257" aria-hidden="true" tabindex="-1"></a>  <span class="at">update =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb21-258"><a href="#cb21-258" aria-hidden="true" tabindex="-1"></a>  <span class="at">type   =</span> <span class="st">&quot;source&quot;</span></span>
-<span id="cb21-259"><a href="#cb21-259" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-260"><a href="#cb21-260" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-261"><a href="#cb21-261" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-262"><a href="#cb21-262" aria-hidden="true" tabindex="-1"></a><span class="in">`BiocManager`</span> will then ask about your other packages:</span>
-<span id="cb21-263"><a href="#cb21-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-264"><a href="#cb21-264" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-265"><a href="#cb21-265" aria-hidden="true" tabindex="-1"></a><span class="in">Update all/some/none? [a/s/n]:</span></span>
-<span id="cb21-266"><a href="#cb21-266" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-267"><a href="#cb21-267" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-268"><a href="#cb21-268" aria-hidden="true" tabindex="-1"></a>Answer **`n`**. Answering <span class="in">`a`</span> recompiles a large part of the Bioconductor stack</span>
-<span id="cb21-269"><a href="#cb21-269" aria-hidden="true" tabindex="-1"></a>from source, which takes a long time. Letting Bioconductor recompile all the</span>
-<span id="cb21-270"><a href="#cb21-270" aria-hidden="true" tabindex="-1"></a>packages can also potentially break a conda environment if that is how you</span>
-<span id="cb21-271"><a href="#cb21-271" aria-hidden="true" tabindex="-1"></a>installed the necessary R packages.</span>
-<span id="cb21-272"><a href="#cb21-272" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-273"><a href="#cb21-273" aria-hidden="true" tabindex="-1"></a>Restart R, then re-run the chunk.</span>
-<span id="cb21-274"><a href="#cb21-274" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-275"><a href="#cb21-275" aria-hidden="true" tabindex="-1"></a><span class="fu">### With conda</span></span>
-<span id="cb21-276"><a href="#cb21-276" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-277"><a href="#cb21-277" aria-hidden="true" tabindex="-1"></a>If you are using conda, you can install a specific version of OpenBLAS that is</span>
-<span id="cb21-278"><a href="#cb21-278" aria-hidden="true" tabindex="-1"></a>compatible with the <span class="in">`preprocessCore`</span> package:</span>
+<span id="cb21-240"><a href="#cb21-240" aria-hidden="true" tabindex="-1"></a><span class="in">Error in preprocessCore::normalize.quantiles.use.target(matrix(crtColumn.reduced),  : </span></span>
+<span id="cb21-241"><a href="#cb21-241" aria-hidden="true" tabindex="-1"></a><span class="in">  ERROR; return code from pthread_create() is 22</span></span>
+<span id="cb21-242"><a href="#cb21-242" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-243"><a href="#cb21-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-244"><a href="#cb21-244" aria-hidden="true" tabindex="-1"></a>nothing is wrong with your data or with the chapter. The quantile-normalization</span>
+<span id="cb21-245"><a href="#cb21-245" aria-hidden="true" tabindex="-1"></a>step inside <span class="in">`preprocessFunnorm`</span> calls <span class="in">`preprocessCore`</span>, whose pre-built binary is</span>
+<span id="cb21-246"><a href="#cb21-246" aria-hidden="true" tabindex="-1"></a>compiled with threading enabled, and the threads it asks for cannot be created.</span>
+<span id="cb21-247"><a href="#cb21-247" aria-hidden="true" tabindex="-1"></a>Either fix below clears it; both were tested against this error.</span>
+<span id="cb21-248"><a href="#cb21-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-249"><a href="#cb21-249" aria-hidden="true" tabindex="-1"></a>:::: {.panel-tabset}</span>
+<span id="cb21-250"><a href="#cb21-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-251"><a href="#cb21-251" aria-hidden="true" tabindex="-1"></a><span class="fu">### In R</span></span>
+<span id="cb21-252"><a href="#cb21-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-253"><a href="#cb21-253" aria-hidden="true" tabindex="-1"></a>Rebuild <span class="in">`preprocessCore`</span> from source with threading disabled:</span>
+<span id="cb21-254"><a href="#cb21-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-255"><a href="#cb21-255" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb21-256"><a href="#cb21-256" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(</span>
+<span id="cb21-257"><a href="#cb21-257" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;preprocessCore&quot;</span>,</span>
+<span id="cb21-258"><a href="#cb21-258" aria-hidden="true" tabindex="-1"></a>  <span class="at">configure.args =</span> <span class="fu">c</span>(<span class="at">preprocessCore =</span> <span class="st">&quot;--disable-threading&quot;</span>),</span>
+<span id="cb21-259"><a href="#cb21-259" aria-hidden="true" tabindex="-1"></a>  <span class="at">force  =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb21-260"><a href="#cb21-260" aria-hidden="true" tabindex="-1"></a>  <span class="at">update =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb21-261"><a href="#cb21-261" aria-hidden="true" tabindex="-1"></a>  <span class="at">type   =</span> <span class="st">&quot;source&quot;</span></span>
+<span id="cb21-262"><a href="#cb21-262" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-263"><a href="#cb21-263" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-264"><a href="#cb21-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-265"><a href="#cb21-265" aria-hidden="true" tabindex="-1"></a><span class="in">`BiocManager`</span> will then ask about your other packages:</span>
+<span id="cb21-266"><a href="#cb21-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-267"><a href="#cb21-267" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-268"><a href="#cb21-268" aria-hidden="true" tabindex="-1"></a><span class="in">Update all/some/none? [a/s/n]:</span></span>
+<span id="cb21-269"><a href="#cb21-269" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-270"><a href="#cb21-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-271"><a href="#cb21-271" aria-hidden="true" tabindex="-1"></a>Answer **`n`**. Answering <span class="in">`a`</span> recompiles a large part of the Bioconductor stack</span>
+<span id="cb21-272"><a href="#cb21-272" aria-hidden="true" tabindex="-1"></a>from source, which takes a long time. Letting Bioconductor recompile all the</span>
+<span id="cb21-273"><a href="#cb21-273" aria-hidden="true" tabindex="-1"></a>packages can also potentially break a conda environment if that is how you</span>
+<span id="cb21-274"><a href="#cb21-274" aria-hidden="true" tabindex="-1"></a>installed the necessary R packages.</span>
+<span id="cb21-275"><a href="#cb21-275" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-276"><a href="#cb21-276" aria-hidden="true" tabindex="-1"></a>Restart R, then re-run the chunk.</span>
+<span id="cb21-277"><a href="#cb21-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-278"><a href="#cb21-278" aria-hidden="true" tabindex="-1"></a><span class="fu">### With conda</span></span>
 <span id="cb21-279"><a href="#cb21-279" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-280"><a href="#cb21-280" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
-<span id="cb21-281"><a href="#cb21-281" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate ewas-methyl</span>
-<span id="cb21-282"><a href="#cb21-282" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install <span class="st">&quot;openblas=0.3.3&quot;</span></span>
-<span id="cb21-283"><a href="#cb21-283" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-284"><a href="#cb21-284" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-285"><a href="#cb21-285" aria-hidden="true" tabindex="-1"></a>Restart R, then re-run the chunk.</span>
-<span id="cb21-286"><a href="#cb21-286" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-287"><a href="#cb21-287" aria-hidden="true" tabindex="-1"></a>::::</span>
-<span id="cb21-288"><a href="#cb21-288" aria-hidden="true" tabindex="-1"></a>:::::</span>
+<span id="cb21-280"><a href="#cb21-280" aria-hidden="true" tabindex="-1"></a>If you are using conda, you can install a specific version of OpenBLAS that is</span>
+<span id="cb21-281"><a href="#cb21-281" aria-hidden="true" tabindex="-1"></a>compatible with the <span class="in">`preprocessCore`</span> package:</span>
+<span id="cb21-282"><a href="#cb21-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-283"><a href="#cb21-283" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
+<span id="cb21-284"><a href="#cb21-284" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate ewas-methyl</span>
+<span id="cb21-285"><a href="#cb21-285" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install <span class="st">&quot;openblas=0.3.3&quot;</span></span>
+<span id="cb21-286"><a href="#cb21-286" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-287"><a href="#cb21-287" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-288"><a href="#cb21-288" aria-hidden="true" tabindex="-1"></a>Restart R, then re-run the chunk.</span>
 <span id="cb21-289"><a href="#cb21-289" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-290"><a href="#cb21-290" aria-hidden="true" tabindex="-1"></a>::: {.callout-note collapse=&quot;true&quot;}</span>
-<span id="cb21-291"><a href="#cb21-291" aria-hidden="true" tabindex="-1"></a><span class="fu">## If normalization does not fit on your machine</span></span>
+<span id="cb21-290"><a href="#cb21-290" aria-hidden="true" tabindex="-1"></a>::::</span>
+<span id="cb21-291"><a href="#cb21-291" aria-hidden="true" tabindex="-1"></a>:::::</span>
 <span id="cb21-292"><a href="#cb21-292" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-293"><a href="#cb21-293" aria-hidden="true" tabindex="-1"></a>The two chunks above need the 460 MB <span class="in">`RGChannelSet`</span> in memory and peak around</span>
-<span id="cb21-294"><a href="#cb21-294" aria-hidden="true" tabindex="-1"></a>12.5 GB. If that is not practical, the published checkpoint holds exactly the</span>
-<span id="cb21-295"><a href="#cb21-295" aria-hidden="true" tabindex="-1"></a>pieces the figures below use — the three 20,000-probe β matrices and the two</span>
-<span id="cb21-296"><a href="#cb21-296" aria-hidden="true" tabindex="-1"></a>design lists — so you can fetch it and carry on:</span>
-<span id="cb21-297"><a href="#cb21-297" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-298"><a href="#cb21-298" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
-<span id="cb21-299"><a href="#cb21-299" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> C_normalized</span>
-<span id="cb21-300"><a href="#cb21-300" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-301"><a href="#cb21-301" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-302"><a href="#cb21-302" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb21-303"><a href="#cb21-303" aria-hidden="true" tabindex="-1"></a>np <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/02_norm_pieces.rds&quot;</span>)</span>
-<span id="cb21-304"><a href="#cb21-304" aria-hidden="true" tabindex="-1"></a>beta_raw  <span class="ot">&lt;-</span> np<span class="sc">$</span>beta_raw</span>
-<span id="cb21-305"><a href="#cb21-305" aria-hidden="true" tabindex="-1"></a>beta_noob <span class="ot">&lt;-</span> np<span class="sc">$</span>beta_noob</span>
-<span id="cb21-306"><a href="#cb21-306" aria-hidden="true" tabindex="-1"></a>beta_fun  <span class="ot">&lt;-</span> np<span class="sc">$</span>beta_fun</span>
-<span id="cb21-307"><a href="#cb21-307" aria-hidden="true" tabindex="-1"></a>typeI     <span class="ot">&lt;-</span> np<span class="sc">$</span>typeI</span>
-<span id="cb21-308"><a href="#cb21-308" aria-hidden="true" tabindex="-1"></a>typeII    <span class="ot">&lt;-</span> np<span class="sc">$</span>typeII</span>
-<span id="cb21-309"><a href="#cb21-309" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-310"><a href="#cb21-310" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-311"><a href="#cb21-311" aria-hidden="true" tabindex="-1"></a>Every figure and table in this chapter will then run. What you give up is</span>
-<span id="cb21-312"><a href="#cb21-312" aria-hidden="true" tabindex="-1"></a><span class="in">`grs_fun`</span> itself, which <span class="co">[</span><span class="ot">probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> reads — for</span>
-<span id="cb21-313"><a href="#cb21-313" aria-hidden="true" tabindex="-1"></a>that chapter, fetch <span class="in">`./get_data.sh D_filtered`</span> instead. You also give up</span>
-<span id="cb21-314"><a href="#cb21-314" aria-hidden="true" tabindex="-1"></a>watching the normalization run, so take this route because you have to, not to</span>
-<span id="cb21-315"><a href="#cb21-315" aria-hidden="true" tabindex="-1"></a>save two minutes.</span>
-<span id="cb21-316"><a href="#cb21-316" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb21-317"><a href="#cb21-317" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-318"><a href="#cb21-318" aria-hidden="true" tabindex="-1"></a>Then we can compare the distribution of signals across the three versions of the data and the probe types. </span>
-<span id="cb21-319"><a href="#cb21-319" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-322"><a href="#cb21-322" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb21-323"><a href="#cb21-323" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: density-compare</span></span>
-<span id="cb21-324"><a href="#cb21-324" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;β-value density by probe design, before and after normalization (20k-probe sample). Raw Type II (dashed) is visibly pulled toward the center; noob and funnorm restore a more bimodal shape and bring the two designs closer together.&quot;</span></span>
-<span id="cb21-325"><a href="#cb21-325" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 9</span></span>
-<span id="cb21-326"><a href="#cb21-326" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3.4</span></span>
-<span id="cb21-327"><a href="#cb21-327" aria-hidden="true" tabindex="-1"></a><span class="co"># Reshape one β matrix into the long form ggplot needs. 8,000 probes x 96 samples</span></span>
-<span id="cb21-328"><a href="#cb21-328" aria-hidden="true" tabindex="-1"></a><span class="co"># is already ~768,000 density points per method, which is plenty -- the extra</span></span>
-<span id="cb21-329"><a href="#cb21-329" aria-hidden="true" tabindex="-1"></a><span class="co"># thinning keeps the three panels quick to draw.</span></span>
-<span id="cb21-330"><a href="#cb21-330" aria-hidden="true" tabindex="-1"></a>mk_long <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, label, typeII) {</span>
-<span id="cb21-331"><a href="#cb21-331" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> beta[<span class="fu">sample</span>(<span class="fu">nrow</span>(beta), <span class="fu">min</span>(<span class="dv">8000</span>, <span class="fu">nrow</span>(beta))), ]</span>
-<span id="cb21-332"><a href="#cb21-332" aria-hidden="true" tabindex="-1"></a>  design <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">rownames</span>(b) <span class="sc">%in%</span> typeII, <span class="st">&quot;Type II&quot;</span>, <span class="st">&quot;Type I&quot;</span>)</span>
-<span id="cb21-333"><a href="#cb21-333" aria-hidden="true" tabindex="-1"></a>  <span class="co"># as.vector() unstacks a matrix column by column, so the probe labels repeat</span></span>
-<span id="cb21-334"><a href="#cb21-334" aria-hidden="true" tabindex="-1"></a>  <span class="co"># once per sample -- rep(..., times = ncol(b)) keeps them aligned to `beta`.</span></span>
-<span id="cb21-335"><a href="#cb21-335" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">beta =</span> <span class="fu">as.vector</span>(b),</span>
-<span id="cb21-336"><a href="#cb21-336" aria-hidden="true" tabindex="-1"></a>             <span class="at">design =</span> <span class="fu">rep</span>(design, <span class="at">times =</span> <span class="fu">ncol</span>(b)),</span>
-<span id="cb21-337"><a href="#cb21-337" aria-hidden="true" tabindex="-1"></a>             <span class="at">method =</span> label)</span>
-<span id="cb21-338"><a href="#cb21-338" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb21-339"><a href="#cb21-339" aria-hidden="true" tabindex="-1"></a>long <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb21-340"><a href="#cb21-340" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mk_long</span>(beta_raw,  <span class="st">&quot;raw&quot;</span>,     typeII),</span>
-<span id="cb21-341"><a href="#cb21-341" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mk_long</span>(beta_noob, <span class="st">&quot;noob&quot;</span>,    typeII),</span>
-<span id="cb21-342"><a href="#cb21-342" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mk_long</span>(beta_fun,  <span class="st">&quot;funnorm&quot;</span>, typeII)</span>
-<span id="cb21-343"><a href="#cb21-343" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-344"><a href="#cb21-344" aria-hidden="true" tabindex="-1"></a><span class="co"># Panels in processing order, not alphabetical: raw is the &quot;before&quot; picture.</span></span>
-<span id="cb21-345"><a href="#cb21-345" aria-hidden="true" tabindex="-1"></a>long<span class="sc">$</span>method <span class="ot">&lt;-</span> <span class="fu">factor</span>(long<span class="sc">$</span>method, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;raw&quot;</span>, <span class="st">&quot;noob&quot;</span>, <span class="st">&quot;funnorm&quot;</span>))</span>
-<span id="cb21-346"><a href="#cb21-346" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(long, <span class="fu">aes</span>(<span class="at">x =</span> beta, <span class="at">color =</span> design, <span class="at">linetype =</span> design)) <span class="sc">+</span></span>
-<span id="cb21-347"><a href="#cb21-347" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">na.rm =</span> <span class="cn">TRUE</span>, <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
-<span id="cb21-348"><a href="#cb21-348" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>method) <span class="sc">+</span></span>
-<span id="cb21-349"><a href="#cb21-349" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;Type I&quot;</span>  <span class="ot">=</span> <span class="st">&quot;#1A6B75&quot;</span>,     <span class="co"># teal</span></span>
-<span id="cb21-350"><a href="#cb21-350" aria-hidden="true" tabindex="-1"></a>                                <span class="st">&quot;Type II&quot;</span> <span class="ot">=</span> <span class="st">&quot;#8C3A4A&quot;</span>)) <span class="sc">+</span>  <span class="co"># plum</span></span>
-<span id="cb21-351"><a href="#cb21-351" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;β-value&quot;</span>, <span class="at">y =</span> <span class="st">&quot;density&quot;</span>,</span>
-<span id="cb21-352"><a href="#cb21-352" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Probe-design bias, before and after normalization&quot;</span>) <span class="sc">+</span></span>
-<span id="cb21-353"><a href="#cb21-353" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span>
-<span id="cb21-354"><a href="#cb21-354" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-355"><a href="#cb21-355" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-358"><a href="#cb21-358" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb21-359"><a href="#cb21-359" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: post-norm-table</span></span>
-<span id="cb21-360"><a href="#cb21-360" aria-hidden="true" tabindex="-1"></a><span class="co"># The same two-row summary as above, stacked across the three methods, so the</span></span>
-<span id="cb21-361"><a href="#cb21-361" aria-hidden="true" tabindex="-1"></a><span class="co"># Type I / Type II gap can be read down the column.</span></span>
-<span id="cb21-362"><a href="#cb21-362" aria-hidden="true" tabindex="-1"></a>tab <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb21-363"><a href="#cb21-363" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">method =</span> <span class="st">&quot;raw&quot;</span>,     <span class="fu">type_summ</span>(beta_raw,  typeI, typeII)),</span>
-<span id="cb21-364"><a href="#cb21-364" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">method =</span> <span class="st">&quot;noob&quot;</span>,    <span class="fu">type_summ</span>(beta_noob, typeI, typeII)),</span>
-<span id="cb21-365"><a href="#cb21-365" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">method =</span> <span class="st">&quot;funnorm&quot;</span>, <span class="fu">type_summ</span>(beta_fun,  typeI, typeII))</span>
-<span id="cb21-366"><a href="#cb21-366" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-367"><a href="#cb21-367" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(tab, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb21-368"><a href="#cb21-368" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Type I vs Type II β summaries across methods. The Type II spread widens toward the Type I spread after normalization. The medians do not converge, and are not expected to — see the text.&quot;</span>)</span>
-<span id="cb21-369"><a href="#cb21-369" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-370"><a href="#cb21-370" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-371"><a href="#cb21-371" aria-hidden="true" tabindex="-1"></a>Read the <span class="in">`spread_sd`</span> column, not the medians. Type II&#39;s spread rises from **0.286</span>
-<span id="cb21-372"><a href="#cb21-372" aria-hidden="true" tabindex="-1"></a>(raw)** to **0.313** after functional normalization, closing about a sixth of the</span>
-<span id="cb21-373"><a href="#cb21-373" aria-hidden="true" tabindex="-1"></a>gap to the Type I spread of 0.385. That expansion of the compressed Type II range</span>
-<span id="cb21-374"><a href="#cb21-374" aria-hidden="true" tabindex="-1"></a>is what design-bias correction does, and it is the same thing the density curves</span>
-<span id="cb21-375"><a href="#cb21-375" aria-hidden="true" tabindex="-1"></a>above show.</span>
-<span id="cb21-376"><a href="#cb21-376" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-377"><a href="#cb21-377" aria-hidden="true" tabindex="-1"></a>The medians move the other way: Type II sits at **0.745** raw and **0.790** after</span>
-<span id="cb21-378"><a href="#cb21-378" aria-hidden="true" tabindex="-1"></a>correction, so the median gap between the two designs widens slightly rather than</span>
-<span id="cb21-379"><a href="#cb21-379" aria-hidden="true" tabindex="-1"></a>closing. That is not a failure of the correction, and it is worth understanding why.</span>
-<span id="cb21-380"><a href="#cb21-380" aria-hidden="true" tabindex="-1"></a>Type I probes are enriched in CpG islands, which are predominantly unmethylated,</span>
-<span id="cb21-381"><a href="#cb21-381" aria-hidden="true" tabindex="-1"></a>while Type II probes cover proportionally more open sea. The two rows are therefore</span>
-<span id="cb21-382"><a href="#cb21-382" aria-hidden="true" tabindex="-1"></a>summarising different populations of CpGs, and the distance between their medians is</span>
-<span id="cb21-383"><a href="#cb21-383" aria-hidden="true" tabindex="-1"></a>a fact about where each design sits in the genome rather than a measure of design</span>
-<span id="cb21-384"><a href="#cb21-384" aria-hidden="true" tabindex="-1"></a>bias. A statistic that mixes the two cannot tell you whether normalization worked.</span>
-<span id="cb21-385"><a href="#cb21-385" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-386"><a href="#cb21-386" aria-hidden="true" tabindex="-1"></a>Functional</span>
-<span id="cb21-387"><a href="#cb21-387" aria-hidden="true" tabindex="-1"></a>normalization additionally removes between-array technical variance that these</span>
-<span id="cb21-388"><a href="#cb21-388" aria-hidden="true" tabindex="-1"></a>density plots do not show; its payoff appears later, in the <span class="co">[</span><span class="ot">batch-effects</span><span class="co">](05_batch_effects.qmd)</span></span>
-<span id="cb21-389"><a href="#cb21-389" aria-hidden="true" tabindex="-1"></a>notebook, as reduced technical structure in the principal components.</span>
-<span id="cb21-390"><a href="#cb21-390" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-391"><a href="#cb21-391" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. β-values vs M-values</span></span>
-<span id="cb21-392"><a href="#cb21-392" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-393"><a href="#cb21-393" aria-hidden="true" tabindex="-1"></a>Normalization outputs β-values (proportion methylated, bounded 0–1), which are</span>
-<span id="cb21-394"><a href="#cb21-394" aria-hidden="true" tabindex="-1"></a>interpretable but **heteroscedastic** — their variance is small near 0 and 1 and</span>
-<span id="cb21-395"><a href="#cb21-395" aria-hidden="true" tabindex="-1"></a>large near 0.5, which violates the constant-variance assumption of linear models.</span>
-<span id="cb21-396"><a href="#cb21-396" aria-hidden="true" tabindex="-1"></a>For statistical testing we use the **M-value**, the log₂ ratio of methylated to</span>
-<span id="cb21-397"><a href="#cb21-397" aria-hidden="true" tabindex="-1"></a>unmethylated signal <span class="co">[</span><span class="ot">@du2010comparison</span><span class="co">]</span>:</span>
-<span id="cb21-398"><a href="#cb21-398" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-399"><a href="#cb21-399" aria-hidden="true" tabindex="-1"></a>$$</span>
-<span id="cb21-400"><a href="#cb21-400" aria-hidden="true" tabindex="-1"></a>M = \log_2<span class="sc">\!</span>\left(\frac{\beta}{1-\beta}\right)</span>
-<span id="cb21-401"><a href="#cb21-401" aria-hidden="true" tabindex="-1"></a>$$</span>
-<span id="cb21-402"><a href="#cb21-402" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-403"><a href="#cb21-403" aria-hidden="true" tabindex="-1"></a>M-values are roughly homoscedastic and better behaved for the linear models used</span>
-<span id="cb21-404"><a href="#cb21-404" aria-hidden="true" tabindex="-1"></a>in an EWAS. The convention is to **test on M-values and report/interpret effect</span>
-<span id="cb21-405"><a href="#cb21-405" aria-hidden="true" tabindex="-1"></a>sizes on β-values** (a β difference of 0.05 is a &quot;5% methylation change,&quot; which is</span>
-<span id="cb21-406"><a href="#cb21-406" aria-hidden="true" tabindex="-1"></a>biologically legible; an M-value difference is not). It is becoming more common to </span>
-<span id="cb21-407"><a href="#cb21-407" aria-hidden="true" tabindex="-1"></a>report/interpret from M-values instead of beta values, so here we only show analysis</span>
-<span id="cb21-408"><a href="#cb21-408" aria-hidden="true" tabindex="-1"></a>and reporting from M-values, but to report effect sizes from Beta values you would</span>
-<span id="cb21-409"><a href="#cb21-409" aria-hidden="true" tabindex="-1"></a>follow the same steps, just with the Beta value matrix instead of the M-value matrix.</span>
-<span id="cb21-410"><a href="#cb21-410" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-413"><a href="#cb21-413" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb21-414"><a href="#cb21-414" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mvalue-demo</span></span>
-<span id="cb21-415"><a href="#cb21-415" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;The β→M transform. β is bounded and heteroscedastic; M is unbounded and closer to constant-variance.&quot;</span></span>
-<span id="cb21-416"><a href="#cb21-416" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 7</span></span>
-<span id="cb21-417"><a href="#cb21-417" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3</span></span>
-<span id="cb21-418"><a href="#cb21-418" aria-hidden="true" tabindex="-1"></a><span class="co"># The transform itself, drawn over the open interval: β = 0 and β = 1 map to</span></span>
-<span id="cb21-419"><a href="#cb21-419" aria-hidden="true" tabindex="-1"></a><span class="co"># -Inf and +Inf, which is the practical reason M-values need a bounded β.</span></span>
-<span id="cb21-420"><a href="#cb21-420" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.001</span>, <span class="fl">0.999</span>, <span class="at">length.out =</span> <span class="dv">500</span>)</span>
-<span id="cb21-421"><a href="#cb21-421" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">log2</span>(b <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> b))</span>
-<span id="cb21-422"><a href="#cb21-422" aria-hidden="true" tabindex="-1"></a>dfm <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">beta =</span> b, <span class="at">M =</span> m)</span>
-<span id="cb21-423"><a href="#cb21-423" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(dfm, <span class="fu">aes</span>(beta, M)) <span class="sc">+</span></span>
-<span id="cb21-424"><a href="#cb21-424" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">&quot;#1A6B75&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span>        <span class="co"># teal</span></span>
-<span id="cb21-425"><a href="#cb21-425" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
-<span id="cb21-426"><a href="#cb21-426" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
-<span id="cb21-427"><a href="#cb21-427" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;β-value&quot;</span>, <span class="at">y =</span> <span class="st">&quot;M-value&quot;</span>, <span class="at">title =</span> <span class="st">&quot;β → M-value transform&quot;</span>)</span>
-<span id="cb21-428"><a href="#cb21-428" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-429"><a href="#cb21-429" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-430"><a href="#cb21-430" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Normalizing from a processed matrix</span></span>
-<span id="cb21-431"><a href="#cb21-431" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-432"><a href="#cb21-432" aria-hidden="true" tabindex="-1"></a>Many GEO series do not deposit raw IDATs, but do provide a processed matrix: </span>
-<span id="cb21-433"><a href="#cb21-433" aria-hidden="true" tabindex="-1"></a>a table of β-values (or sometimes M-values) with CpGs in rows and samples in columns, often as a</span>
-<span id="cb21-434"><a href="#cb21-434" aria-hidden="true" tabindex="-1"></a><span class="in">`GSExxxxx_series_matrix.txt.gz`</span> or a supplementary file. You cannot run</span>
-<span id="cb21-435"><a href="#cb21-435" aria-hidden="true" tabindex="-1"></a><span class="in">`minfi`</span>&#39;s IDAT-based normalization on these, because the raw two-channel</span>
-<span id="cb21-436"><a href="#cb21-436" aria-hidden="true" tabindex="-1"></a>intensities are gone. Here is how to work with them.</span>
+<span id="cb21-293"><a href="#cb21-293" aria-hidden="true" tabindex="-1"></a>::: {.callout-note collapse=&quot;true&quot;}</span>
+<span id="cb21-294"><a href="#cb21-294" aria-hidden="true" tabindex="-1"></a><span class="fu">## If normalization does not fit on your machine</span></span>
+<span id="cb21-295"><a href="#cb21-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-296"><a href="#cb21-296" aria-hidden="true" tabindex="-1"></a>The two chunks above need the 460 MB <span class="in">`RGChannelSet`</span> in memory and peak around</span>
+<span id="cb21-297"><a href="#cb21-297" aria-hidden="true" tabindex="-1"></a>12.5 GB. If that is not practical, the published checkpoint holds exactly the</span>
+<span id="cb21-298"><a href="#cb21-298" aria-hidden="true" tabindex="-1"></a>pieces the figures below use — the three 20,000-probe β matrices and the two</span>
+<span id="cb21-299"><a href="#cb21-299" aria-hidden="true" tabindex="-1"></a>design lists — so you can fetch it and carry on:</span>
+<span id="cb21-300"><a href="#cb21-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-301"><a href="#cb21-301" aria-hidden="true" tabindex="-1"></a><span class="in">```{.bash filename=&quot;Terminal&quot;}</span></span>
+<span id="cb21-302"><a href="#cb21-302" aria-hidden="true" tabindex="-1"></a><span class="ex">./get_data.sh</span> C_normalized</span>
+<span id="cb21-303"><a href="#cb21-303" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-304"><a href="#cb21-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-305"><a href="#cb21-305" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
+<span id="cb21-306"><a href="#cb21-306" aria-hidden="true" tabindex="-1"></a>np <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/02_norm_pieces.rds&quot;</span>)</span>
+<span id="cb21-307"><a href="#cb21-307" aria-hidden="true" tabindex="-1"></a>beta_raw  <span class="ot">&lt;-</span> np<span class="sc">$</span>beta_raw</span>
+<span id="cb21-308"><a href="#cb21-308" aria-hidden="true" tabindex="-1"></a>beta_noob <span class="ot">&lt;-</span> np<span class="sc">$</span>beta_noob</span>
+<span id="cb21-309"><a href="#cb21-309" aria-hidden="true" tabindex="-1"></a>beta_fun  <span class="ot">&lt;-</span> np<span class="sc">$</span>beta_fun</span>
+<span id="cb21-310"><a href="#cb21-310" aria-hidden="true" tabindex="-1"></a>typeI     <span class="ot">&lt;-</span> np<span class="sc">$</span>typeI</span>
+<span id="cb21-311"><a href="#cb21-311" aria-hidden="true" tabindex="-1"></a>typeII    <span class="ot">&lt;-</span> np<span class="sc">$</span>typeII</span>
+<span id="cb21-312"><a href="#cb21-312" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-313"><a href="#cb21-313" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-314"><a href="#cb21-314" aria-hidden="true" tabindex="-1"></a>Every figure and table in this chapter will then run. What you give up is</span>
+<span id="cb21-315"><a href="#cb21-315" aria-hidden="true" tabindex="-1"></a><span class="in">`grs_fun`</span> itself, which <span class="co">[</span><span class="ot">probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> reads — for</span>
+<span id="cb21-316"><a href="#cb21-316" aria-hidden="true" tabindex="-1"></a>that chapter, fetch <span class="in">`./get_data.sh D_filtered`</span> instead. You also give up</span>
+<span id="cb21-317"><a href="#cb21-317" aria-hidden="true" tabindex="-1"></a>watching the normalization run, so take this route because you have to, not to</span>
+<span id="cb21-318"><a href="#cb21-318" aria-hidden="true" tabindex="-1"></a>save two minutes.</span>
+<span id="cb21-319"><a href="#cb21-319" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb21-320"><a href="#cb21-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-321"><a href="#cb21-321" aria-hidden="true" tabindex="-1"></a>Then we can compare the distribution of signals across the three versions of the data and the probe types. </span>
+<span id="cb21-322"><a href="#cb21-322" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-325"><a href="#cb21-325" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb21-326"><a href="#cb21-326" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: density-compare</span></span>
+<span id="cb21-327"><a href="#cb21-327" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;β-value density by probe design, before and after normalization (20k-probe sample). Raw Type II (dashed) is visibly pulled toward the center; noob and funnorm restore a more bimodal shape and bring the two designs closer together.&quot;</span></span>
+<span id="cb21-328"><a href="#cb21-328" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 9</span></span>
+<span id="cb21-329"><a href="#cb21-329" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3.4</span></span>
+<span id="cb21-330"><a href="#cb21-330" aria-hidden="true" tabindex="-1"></a><span class="co"># Reshape one β matrix into the long form ggplot needs. 8,000 probes x 96 samples</span></span>
+<span id="cb21-331"><a href="#cb21-331" aria-hidden="true" tabindex="-1"></a><span class="co"># is already ~768,000 density points per method, which is plenty -- the extra</span></span>
+<span id="cb21-332"><a href="#cb21-332" aria-hidden="true" tabindex="-1"></a><span class="co"># thinning keeps the three panels quick to draw.</span></span>
+<span id="cb21-333"><a href="#cb21-333" aria-hidden="true" tabindex="-1"></a>mk_long <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, label, typeII) {</span>
+<span id="cb21-334"><a href="#cb21-334" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> beta[<span class="fu">sample</span>(<span class="fu">nrow</span>(beta), <span class="fu">min</span>(<span class="dv">8000</span>, <span class="fu">nrow</span>(beta))), ]</span>
+<span id="cb21-335"><a href="#cb21-335" aria-hidden="true" tabindex="-1"></a>  design <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">rownames</span>(b) <span class="sc">%in%</span> typeII, <span class="st">&quot;Type II&quot;</span>, <span class="st">&quot;Type I&quot;</span>)</span>
+<span id="cb21-336"><a href="#cb21-336" aria-hidden="true" tabindex="-1"></a>  <span class="co"># as.vector() unstacks a matrix column by column, so the probe labels repeat</span></span>
+<span id="cb21-337"><a href="#cb21-337" aria-hidden="true" tabindex="-1"></a>  <span class="co"># once per sample -- rep(..., times = ncol(b)) keeps them aligned to `beta`.</span></span>
+<span id="cb21-338"><a href="#cb21-338" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">beta =</span> <span class="fu">as.vector</span>(b),</span>
+<span id="cb21-339"><a href="#cb21-339" aria-hidden="true" tabindex="-1"></a>             <span class="at">design =</span> <span class="fu">rep</span>(design, <span class="at">times =</span> <span class="fu">ncol</span>(b)),</span>
+<span id="cb21-340"><a href="#cb21-340" aria-hidden="true" tabindex="-1"></a>             <span class="at">method =</span> label)</span>
+<span id="cb21-341"><a href="#cb21-341" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-342"><a href="#cb21-342" aria-hidden="true" tabindex="-1"></a>long <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb21-343"><a href="#cb21-343" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mk_long</span>(beta_raw,  <span class="st">&quot;raw&quot;</span>,     typeII),</span>
+<span id="cb21-344"><a href="#cb21-344" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mk_long</span>(beta_noob, <span class="st">&quot;noob&quot;</span>,    typeII),</span>
+<span id="cb21-345"><a href="#cb21-345" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mk_long</span>(beta_fun,  <span class="st">&quot;funnorm&quot;</span>, typeII)</span>
+<span id="cb21-346"><a href="#cb21-346" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-347"><a href="#cb21-347" aria-hidden="true" tabindex="-1"></a><span class="co"># Panels in processing order, not alphabetical: raw is the &quot;before&quot; picture.</span></span>
+<span id="cb21-348"><a href="#cb21-348" aria-hidden="true" tabindex="-1"></a>long<span class="sc">$</span>method <span class="ot">&lt;-</span> <span class="fu">factor</span>(long<span class="sc">$</span>method, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;raw&quot;</span>, <span class="st">&quot;noob&quot;</span>, <span class="st">&quot;funnorm&quot;</span>))</span>
+<span id="cb21-349"><a href="#cb21-349" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(long, <span class="fu">aes</span>(<span class="at">x =</span> beta, <span class="at">color =</span> design, <span class="at">linetype =</span> design)) <span class="sc">+</span></span>
+<span id="cb21-350"><a href="#cb21-350" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">na.rm =</span> <span class="cn">TRUE</span>, <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb21-351"><a href="#cb21-351" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>method) <span class="sc">+</span></span>
+<span id="cb21-352"><a href="#cb21-352" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;Type I&quot;</span>  <span class="ot">=</span> <span class="st">&quot;#1A6B75&quot;</span>,     <span class="co"># teal</span></span>
+<span id="cb21-353"><a href="#cb21-353" aria-hidden="true" tabindex="-1"></a>                                <span class="st">&quot;Type II&quot;</span> <span class="ot">=</span> <span class="st">&quot;#8C3A4A&quot;</span>)) <span class="sc">+</span>  <span class="co"># plum</span></span>
+<span id="cb21-354"><a href="#cb21-354" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;β-value&quot;</span>, <span class="at">y =</span> <span class="st">&quot;density&quot;</span>,</span>
+<span id="cb21-355"><a href="#cb21-355" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Probe-design bias, before and after normalization&quot;</span>) <span class="sc">+</span></span>
+<span id="cb21-356"><a href="#cb21-356" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span>
+<span id="cb21-357"><a href="#cb21-357" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-358"><a href="#cb21-358" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-361"><a href="#cb21-361" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb21-362"><a href="#cb21-362" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: post-norm-table</span></span>
+<span id="cb21-363"><a href="#cb21-363" aria-hidden="true" tabindex="-1"></a><span class="co"># The same two-row summary as above, stacked across the three methods, so the</span></span>
+<span id="cb21-364"><a href="#cb21-364" aria-hidden="true" tabindex="-1"></a><span class="co"># Type I / Type II gap can be read down the column.</span></span>
+<span id="cb21-365"><a href="#cb21-365" aria-hidden="true" tabindex="-1"></a>tab <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb21-366"><a href="#cb21-366" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">method =</span> <span class="st">&quot;raw&quot;</span>,     <span class="fu">type_summ</span>(beta_raw,  typeI, typeII)),</span>
+<span id="cb21-367"><a href="#cb21-367" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">method =</span> <span class="st">&quot;noob&quot;</span>,    <span class="fu">type_summ</span>(beta_noob, typeI, typeII)),</span>
+<span id="cb21-368"><a href="#cb21-368" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">method =</span> <span class="st">&quot;funnorm&quot;</span>, <span class="fu">type_summ</span>(beta_fun,  typeI, typeII))</span>
+<span id="cb21-369"><a href="#cb21-369" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-370"><a href="#cb21-370" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(tab, <span class="at">row.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb21-371"><a href="#cb21-371" aria-hidden="true" tabindex="-1"></a>             <span class="at">caption =</span> <span class="st">&quot;Type I vs Type II β summaries across methods. The Type II spread widens toward the Type I spread after normalization. The medians do not converge, and are not expected to — see the text.&quot;</span>)</span>
+<span id="cb21-372"><a href="#cb21-372" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-373"><a href="#cb21-373" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-374"><a href="#cb21-374" aria-hidden="true" tabindex="-1"></a>Read the <span class="in">`spread_sd`</span> column, not the medians. Type II&#39;s spread rises from **0.286</span>
+<span id="cb21-375"><a href="#cb21-375" aria-hidden="true" tabindex="-1"></a>(raw)** to **0.313** after functional normalization, closing about a sixth of the</span>
+<span id="cb21-376"><a href="#cb21-376" aria-hidden="true" tabindex="-1"></a>gap to the Type I spread of 0.385. That expansion of the compressed Type II range</span>
+<span id="cb21-377"><a href="#cb21-377" aria-hidden="true" tabindex="-1"></a>is what design-bias correction does, and it is the same thing the density curves</span>
+<span id="cb21-378"><a href="#cb21-378" aria-hidden="true" tabindex="-1"></a>above show.</span>
+<span id="cb21-379"><a href="#cb21-379" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-380"><a href="#cb21-380" aria-hidden="true" tabindex="-1"></a>The medians move the other way: Type II sits at **0.745** raw and **0.790** after</span>
+<span id="cb21-381"><a href="#cb21-381" aria-hidden="true" tabindex="-1"></a>correction, so the median gap between the two designs widens slightly rather than</span>
+<span id="cb21-382"><a href="#cb21-382" aria-hidden="true" tabindex="-1"></a>closing. That is not a failure of the correction, and it is worth understanding why.</span>
+<span id="cb21-383"><a href="#cb21-383" aria-hidden="true" tabindex="-1"></a>Type I probes are enriched in CpG islands, which are predominantly unmethylated,</span>
+<span id="cb21-384"><a href="#cb21-384" aria-hidden="true" tabindex="-1"></a>while Type II probes cover proportionally more open sea. The two rows are therefore</span>
+<span id="cb21-385"><a href="#cb21-385" aria-hidden="true" tabindex="-1"></a>summarising different populations of CpGs, and the distance between their medians is</span>
+<span id="cb21-386"><a href="#cb21-386" aria-hidden="true" tabindex="-1"></a>a fact about where each design sits in the genome rather than a measure of design</span>
+<span id="cb21-387"><a href="#cb21-387" aria-hidden="true" tabindex="-1"></a>bias. A statistic that mixes the two cannot tell you whether normalization worked.</span>
+<span id="cb21-388"><a href="#cb21-388" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-389"><a href="#cb21-389" aria-hidden="true" tabindex="-1"></a>Functional</span>
+<span id="cb21-390"><a href="#cb21-390" aria-hidden="true" tabindex="-1"></a>normalization additionally removes between-array technical variance that these</span>
+<span id="cb21-391"><a href="#cb21-391" aria-hidden="true" tabindex="-1"></a>density plots do not show; its payoff appears later, in the <span class="co">[</span><span class="ot">batch-effects</span><span class="co">](05_batch_effects.qmd)</span></span>
+<span id="cb21-392"><a href="#cb21-392" aria-hidden="true" tabindex="-1"></a>notebook, as reduced technical structure in the principal components.</span>
+<span id="cb21-393"><a href="#cb21-393" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-394"><a href="#cb21-394" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. β-values vs M-values</span></span>
+<span id="cb21-395"><a href="#cb21-395" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-396"><a href="#cb21-396" aria-hidden="true" tabindex="-1"></a>Normalization outputs β-values (proportion methylated, bounded 0–1), which are</span>
+<span id="cb21-397"><a href="#cb21-397" aria-hidden="true" tabindex="-1"></a>interpretable but **heteroscedastic** — their variance is small near 0 and 1 and</span>
+<span id="cb21-398"><a href="#cb21-398" aria-hidden="true" tabindex="-1"></a>large near 0.5, which violates the constant-variance assumption of linear models.</span>
+<span id="cb21-399"><a href="#cb21-399" aria-hidden="true" tabindex="-1"></a>For statistical testing we use the **M-value**, the log₂ ratio of methylated to</span>
+<span id="cb21-400"><a href="#cb21-400" aria-hidden="true" tabindex="-1"></a>unmethylated signal <span class="co">[</span><span class="ot">@du2010comparison</span><span class="co">]</span>:</span>
+<span id="cb21-401"><a href="#cb21-401" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-402"><a href="#cb21-402" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb21-403"><a href="#cb21-403" aria-hidden="true" tabindex="-1"></a>M = \log_2<span class="sc">\!</span>\left(\frac{\beta}{1-\beta}\right)</span>
+<span id="cb21-404"><a href="#cb21-404" aria-hidden="true" tabindex="-1"></a>$$</span>
+<span id="cb21-405"><a href="#cb21-405" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-406"><a href="#cb21-406" aria-hidden="true" tabindex="-1"></a>M-values are roughly homoscedastic and better behaved for the linear models used</span>
+<span id="cb21-407"><a href="#cb21-407" aria-hidden="true" tabindex="-1"></a>in an EWAS. The convention is to **test on M-values and report/interpret effect</span>
+<span id="cb21-408"><a href="#cb21-408" aria-hidden="true" tabindex="-1"></a>sizes on β-values** (a β difference of 0.05 is a &quot;5% methylation change,&quot; which is</span>
+<span id="cb21-409"><a href="#cb21-409" aria-hidden="true" tabindex="-1"></a>biologically legible; an M-value difference is not). It is becoming more common to </span>
+<span id="cb21-410"><a href="#cb21-410" aria-hidden="true" tabindex="-1"></a>report/interpret from M-values instead of beta values, so here we only show analysis</span>
+<span id="cb21-411"><a href="#cb21-411" aria-hidden="true" tabindex="-1"></a>and reporting from M-values, but to report effect sizes from Beta values you would</span>
+<span id="cb21-412"><a href="#cb21-412" aria-hidden="true" tabindex="-1"></a>follow the same steps, just with the Beta value matrix instead of the M-value matrix.</span>
+<span id="cb21-413"><a href="#cb21-413" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-416"><a href="#cb21-416" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb21-417"><a href="#cb21-417" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: mvalue-demo</span></span>
+<span id="cb21-418"><a href="#cb21-418" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;The β→M transform. β is bounded and heteroscedastic; M is unbounded and closer to constant-variance.&quot;</span></span>
+<span id="cb21-419"><a href="#cb21-419" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 7</span></span>
+<span id="cb21-420"><a href="#cb21-420" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 3</span></span>
+<span id="cb21-421"><a href="#cb21-421" aria-hidden="true" tabindex="-1"></a><span class="co"># The transform itself, drawn over the open interval: β = 0 and β = 1 map to</span></span>
+<span id="cb21-422"><a href="#cb21-422" aria-hidden="true" tabindex="-1"></a><span class="co"># -Inf and +Inf, which is the practical reason M-values need a bounded β.</span></span>
+<span id="cb21-423"><a href="#cb21-423" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.001</span>, <span class="fl">0.999</span>, <span class="at">length.out =</span> <span class="dv">500</span>)</span>
+<span id="cb21-424"><a href="#cb21-424" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">log2</span>(b <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> b))</span>
+<span id="cb21-425"><a href="#cb21-425" aria-hidden="true" tabindex="-1"></a>dfm <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">beta =</span> b, <span class="at">M =</span> m)</span>
+<span id="cb21-426"><a href="#cb21-426" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(dfm, <span class="fu">aes</span>(beta, M)) <span class="sc">+</span></span>
+<span id="cb21-427"><a href="#cb21-427" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">&quot;#1A6B75&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span>        <span class="co"># teal</span></span>
+<span id="cb21-428"><a href="#cb21-428" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
+<span id="cb21-429"><a href="#cb21-429" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">&quot;gray70&quot;</span>) <span class="sc">+</span></span>
+<span id="cb21-430"><a href="#cb21-430" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;β-value&quot;</span>, <span class="at">y =</span> <span class="st">&quot;M-value&quot;</span>, <span class="at">title =</span> <span class="st">&quot;β → M-value transform&quot;</span>)</span>
+<span id="cb21-431"><a href="#cb21-431" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-432"><a href="#cb21-432" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-433"><a href="#cb21-433" aria-hidden="true" tabindex="-1"></a><span class="fu">## Save the normalized data</span></span>
+<span id="cb21-434"><a href="#cb21-434" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-435"><a href="#cb21-435" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">Probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> opens by reading <span class="in">`data/02_funnorm_grs.rds`</span>,</span>
+<span id="cb21-436"><a href="#cb21-436" aria-hidden="true" tabindex="-1"></a>so if you skip it that chapter fails on a missing file.</span>
 <span id="cb21-437"><a href="#cb21-437" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-438"><a href="#cb21-438" aria-hidden="true" tabindex="-1"></a>**Step 1 — get the matrix into R.** For a series matrix:</span>
-<span id="cb21-439"><a href="#cb21-439" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-440"><a href="#cb21-440" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;RStudio Console&quot;}</span></span>
-<span id="cb21-441"><a href="#cb21-441" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GEOquery)</span>
-<span id="cb21-442"><a href="#cb21-442" aria-hidden="true" tabindex="-1"></a>gse  <span class="ot">&lt;-</span> <span class="fu">getGEO</span>(<span class="st">&quot;GSExxxxxx&quot;</span>, <span class="at">GSEMatrix =</span> <span class="cn">TRUE</span>)      <span class="co"># returns a list of ExpressionSets</span></span>
-<span id="cb21-443"><a href="#cb21-443" aria-hidden="true" tabindex="-1"></a>eset <span class="ot">&lt;-</span> gse[[<span class="dv">1</span>]]</span>
-<span id="cb21-444"><a href="#cb21-444" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">exprs</span>(eset)                        <span class="co"># CpG x sample β matrix</span></span>
-<span id="cb21-445"><a href="#cb21-445" aria-hidden="true" tabindex="-1"></a>pheno <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">pData</span>(eset)                       <span class="co"># sample metadata</span></span>
-<span id="cb21-446"><a href="#cb21-446" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-447"><a href="#cb21-447" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-448"><a href="#cb21-448" aria-hidden="true" tabindex="-1"></a>For a supplementary flat file (<span class="in">`getGEOSuppFiles`</span> downloads it), read it with</span>
-<span id="cb21-449"><a href="#cb21-449" aria-hidden="true" tabindex="-1"></a><span class="in">`data.table::fread()`</span> and coerce to a matrix with CpG IDs as rownames.</span>
-<span id="cb21-450"><a href="#cb21-450" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-451"><a href="#cb21-451" aria-hidden="true" tabindex="-1"></a>**Step 2 — find out what was already done.** Read the series&#39; processing description (<span class="in">`experimentData()`</span> /</span>
-<span id="cb21-452"><a href="#cb21-452" aria-hidden="true" tabindex="-1"></a><span class="in">`pData(eset)$data_processing`</span>) to learn whether the matrix is already normalized,</span>
-<span id="cb21-453"><a href="#cb21-453" aria-hidden="true" tabindex="-1"></a>and how. Common cases:</span>
-<span id="cb21-454"><a href="#cb21-454" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-455"><a href="#cb21-455" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>*Already noob + BMIQ (or funnorm) normalized* — the most common. Do **not**</span>
-<span id="cb21-456"><a href="#cb21-456" aria-hidden="true" tabindex="-1"></a>  re-normalize; treat the matrix as analysis-ready β and proceed to probe filtering.</span>
-<span id="cb21-457"><a href="#cb21-457" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>*Raw/unnormalized β* — you can apply a **β-space** normalization such as BMIQ</span>
-<span id="cb21-458"><a href="#cb21-458" aria-hidden="true" tabindex="-1"></a>  (<span class="in">`wateRmelon::BMIQ()`</span>), which only needs β and probe design, not intensities.</span>
-<span id="cb21-459"><a href="#cb21-459" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>*Already batch-corrected (e.g. ComBat) or cell-composition-adjusted* — be</span>
-<span id="cb21-460"><a href="#cb21-460" aria-hidden="true" tabindex="-1"></a>  cautious: further correction can over-adjust, and you have lost the ability to</span>
-<span id="cb21-461"><a href="#cb21-461" aria-hidden="true" tabindex="-1"></a>  model those effects yourself. Note it as a limitation.</span>
+<span id="cb21-440"><a href="#cb21-440" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb21-441"><a href="#cb21-441" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-norm</span></span>
+<span id="cb21-442"><a href="#cb21-442" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +</span></span>
+<span id="cb21-443"><a href="#cb21-443" aria-hidden="true" tabindex="-1"></a><span class="co">#    functional normalized. This is what probe filtering (chapter 03) reads, and</span></span>
+<span id="cb21-444"><a href="#cb21-444" aria-hidden="true" tabindex="-1"></a><span class="co">#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.</span></span>
+<span id="cb21-445"><a href="#cb21-445" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(grs_fun, <span class="st">&quot;data/02_funnorm_grs.rds&quot;</span>)</span>
+<span id="cb21-446"><a href="#cb21-446" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-447"><a href="#cb21-447" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The pieces the figures above are drawn from: the three 20,000-probe β</span></span>
+<span id="cb21-448"><a href="#cb21-448" aria-hidden="true" tabindex="-1"></a><span class="co">#    matrices and the two design lists. Saving them means the resume callout in</span></span>
+<span id="cb21-449"><a href="#cb21-449" aria-hidden="true" tabindex="-1"></a><span class="co">#    section 3 restores exactly the objects this chapter computed, and that a</span></span>
+<span id="cb21-450"><a href="#cb21-450" aria-hidden="true" tabindex="-1"></a><span class="co">#    reader who cannot run normalization still gets every figure. Small next to</span></span>
+<span id="cb21-451"><a href="#cb21-451" aria-hidden="true" tabindex="-1"></a><span class="co">#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it</span></span>
+<span id="cb21-452"><a href="#cb21-452" aria-hidden="true" tabindex="-1"></a><span class="co">#    is three matrices and two character vectors, not one rectangle.</span></span>
+<span id="cb21-453"><a href="#cb21-453" aria-hidden="true" tabindex="-1"></a>norm_pieces <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb21-454"><a href="#cb21-454" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_raw  =</span> beta_raw,    <span class="co"># 20,000 x 96, no correction</span></span>
+<span id="cb21-455"><a href="#cb21-455" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_noob =</span> beta_noob,   <span class="co"># 20,000 x 96, noob only</span></span>
+<span id="cb21-456"><a href="#cb21-456" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_fun  =</span> beta_fun,    <span class="co"># 20,000 x 96, noob + functional normalization</span></span>
+<span id="cb21-457"><a href="#cb21-457" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeI     =</span> typeI,       <span class="co"># Type I probe IDs, whole array</span></span>
+<span id="cb21-458"><a href="#cb21-458" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeII    =</span> typeII       <span class="co"># Type II probe IDs, whole array</span></span>
+<span id="cb21-459"><a href="#cb21-459" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-460"><a href="#cb21-460" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(norm_pieces, <span class="st">&quot;data/02_norm_pieces.rds&quot;</span>)</span>
+<span id="cb21-461"><a href="#cb21-461" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb21-462"><a href="#cb21-462" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-463"><a href="#cb21-463" aria-hidden="true" tabindex="-1"></a>**Step 3 — QC on what you have.** Without intensities you lose detection</span>
-<span id="cb21-464"><a href="#cb21-464" aria-hidden="true" tabindex="-1"></a>p-values and the intensity/sex-signal checks from the <span class="co">[</span><span class="ot">QC</span><span class="co">](01_qc.qmd)</span> notebook.</span>
-<span id="cb21-465"><a href="#cb21-465" aria-hidden="true" tabindex="-1"></a>You can still:</span>
-<span id="cb21-466"><a href="#cb21-466" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-467"><a href="#cb21-467" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>check for **missing values** and impute or drop probes with excessive <span class="in">`NA`</span>;</span>
-<span id="cb21-468"><a href="#cb21-468" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>run **PCA/MDS** to spot outlier samples and technical structure;</span>
-<span id="cb21-469"><a href="#cb21-469" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**predict sex** from the X/Y-chromosome β distributions (or <span class="in">`wateRmelon`</span>&#39;s</span>
-<span id="cb21-470"><a href="#cb21-470" aria-hidden="true" tabindex="-1"></a>  <span class="in">`estimateSex`</span>) and compare to the reported sex, catching label swaps;</span>
-<span id="cb21-471"><a href="#cb21-471" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>verify the probe count and platform match what you expect (EPIC ≈ 865k).</span>
+<span id="cb21-463"><a href="#cb21-463" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. Normalizing from a processed matrix</span></span>
+<span id="cb21-464"><a href="#cb21-464" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-465"><a href="#cb21-465" aria-hidden="true" tabindex="-1"></a>Many GEO series do not deposit raw IDATs, but do provide a processed matrix: </span>
+<span id="cb21-466"><a href="#cb21-466" aria-hidden="true" tabindex="-1"></a>a table of β-values (or sometimes M-values) with CpGs in rows and samples in columns, often as a</span>
+<span id="cb21-467"><a href="#cb21-467" aria-hidden="true" tabindex="-1"></a><span class="in">`GSExxxxx_series_matrix.txt.gz`</span> or a supplementary file. You cannot run</span>
+<span id="cb21-468"><a href="#cb21-468" aria-hidden="true" tabindex="-1"></a><span class="in">`minfi`</span>&#39;s IDAT-based normalization on these, because the raw two-channel</span>
+<span id="cb21-469"><a href="#cb21-469" aria-hidden="true" tabindex="-1"></a>intensities are gone. Here is how to work with them.</span>
+<span id="cb21-470"><a href="#cb21-470" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-471"><a href="#cb21-471" aria-hidden="true" tabindex="-1"></a>**Step 1 — get the matrix into R.** For a series matrix:</span>
 <span id="cb21-472"><a href="#cb21-472" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-473"><a href="#cb21-473" aria-hidden="true" tabindex="-1"></a>**Step 4 — harmonize probe IDs.** Processed matrices vary: some are already</span>
-<span id="cb21-474"><a href="#cb21-474" aria-hidden="true" tabindex="-1"></a>masked/filtered, some use different ID conventions, some are 450K and some EPIC.</span>
-<span id="cb21-475"><a href="#cb21-475" aria-hidden="true" tabindex="-1"></a>Before combining or comparing series, intersect on common <span class="in">`cg`</span>/<span class="in">`ch`</span> probe IDs and</span>
-<span id="cb21-476"><a href="#cb21-476" aria-hidden="true" tabindex="-1"></a>apply the same probe-filtering (<span class="co">[</span><span class="ot">next notebook</span><span class="co">](03_probe_filtering.qmd)</span>) you would</span>
-<span id="cb21-477"><a href="#cb21-477" aria-hidden="true" tabindex="-1"></a>apply to IDAT-derived data.</span>
-<span id="cb21-478"><a href="#cb21-478" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-479"><a href="#cb21-479" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
-<span id="cb21-480"><a href="#cb21-480" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical rule</span></span>
-<span id="cb21-481"><a href="#cb21-481" aria-hidden="true" tabindex="-1"></a>From IDATs you control normalization; from a processed matrix you **inherit** it.</span>
-<span id="cb21-482"><a href="#cb21-482" aria-hidden="true" tabindex="-1"></a>The job shifts from &quot;normalize&quot; to &quot;audit what was done and decide whether it is</span>
-<span id="cb21-483"><a href="#cb21-483" aria-hidden="true" tabindex="-1"></a>adequate,&quot; then continue from probe filtering. Always record, in your methods, the</span>
-<span id="cb21-484"><a href="#cb21-484" aria-hidden="true" tabindex="-1"></a>processing state of every series you use — reviewers will ask.</span>
-<span id="cb21-485"><a href="#cb21-485" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb21-473"><a href="#cb21-473" aria-hidden="true" tabindex="-1"></a><span class="in">```{.r filename=&quot;Generic example, do not run&quot;}</span></span>
+<span id="cb21-474"><a href="#cb21-474" aria-hidden="true" tabindex="-1"></a><span class="co"># Schematic only, for your own data -- nothing in this tutorial needs it. The</span></span>
+<span id="cb21-475"><a href="#cb21-475" aria-hidden="true" tabindex="-1"></a><span class="co"># tutorial dataset ships as IDATs, which the chapters above normalize directly.</span></span>
+<span id="cb21-476"><a href="#cb21-476" aria-hidden="true" tabindex="-1"></a><span class="co"># &quot;GSExxxxxx&quot; is a placeholder: substitute the accession of the series you want.</span></span>
+<span id="cb21-477"><a href="#cb21-477" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GEOquery)</span>
+<span id="cb21-478"><a href="#cb21-478" aria-hidden="true" tabindex="-1"></a>gse   <span class="ot">&lt;-</span> <span class="fu">getGEO</span>(<span class="st">&quot;GSExxxxxx&quot;</span>, <span class="at">GSEMatrix =</span> <span class="cn">TRUE</span>)      <span class="co"># returns a list of ExpressionSets</span></span>
+<span id="cb21-479"><a href="#cb21-479" aria-hidden="true" tabindex="-1"></a>eset  <span class="ot">&lt;-</span> gse[[<span class="dv">1</span>]]</span>
+<span id="cb21-480"><a href="#cb21-480" aria-hidden="true" tabindex="-1"></a>beta  <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">exprs</span>(eset)                       <span class="co"># CpG x sample β matrix</span></span>
+<span id="cb21-481"><a href="#cb21-481" aria-hidden="true" tabindex="-1"></a>pheno <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">pData</span>(eset)                       <span class="co"># sample metadata</span></span>
+<span id="cb21-482"><a href="#cb21-482" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb21-483"><a href="#cb21-483" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-484"><a href="#cb21-484" aria-hidden="true" tabindex="-1"></a>For a supplementary flat file (<span class="in">`getGEOSuppFiles`</span> downloads it), read it with</span>
+<span id="cb21-485"><a href="#cb21-485" aria-hidden="true" tabindex="-1"></a><span class="in">`data.table::fread()`</span> and coerce to a matrix with CpG IDs as rownames.</span>
 <span id="cb21-486"><a href="#cb21-486" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-487"><a href="#cb21-487" aria-hidden="true" tabindex="-1"></a>We save the functional-normalized <span class="in">`GenomicRatioSet`</span> for the downstream steps:</span>
-<span id="cb21-488"><a href="#cb21-488" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-491"><a href="#cb21-491" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb21-492"><a href="#cb21-492" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-norm</span></span>
-<span id="cb21-493"><a href="#cb21-493" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +</span></span>
-<span id="cb21-494"><a href="#cb21-494" aria-hidden="true" tabindex="-1"></a><span class="co">#    functional normalized. This is what probe filtering (chapter 03) reads, and</span></span>
-<span id="cb21-495"><a href="#cb21-495" aria-hidden="true" tabindex="-1"></a><span class="co">#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.</span></span>
-<span id="cb21-496"><a href="#cb21-496" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(grs_fun, <span class="st">&quot;data/02_funnorm_grs.rds&quot;</span>)</span>
-<span id="cb21-497"><a href="#cb21-497" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-498"><a href="#cb21-498" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The pieces the figures above are drawn from: the three 20,000-probe β</span></span>
-<span id="cb21-499"><a href="#cb21-499" aria-hidden="true" tabindex="-1"></a><span class="co">#    matrices and the two design lists. Saving them means the resume callout in</span></span>
-<span id="cb21-500"><a href="#cb21-500" aria-hidden="true" tabindex="-1"></a><span class="co">#    section 3 restores exactly the objects this chapter computed, and that a</span></span>
-<span id="cb21-501"><a href="#cb21-501" aria-hidden="true" tabindex="-1"></a><span class="co">#    reader who cannot run normalization still gets every figure. Small next to</span></span>
-<span id="cb21-502"><a href="#cb21-502" aria-hidden="true" tabindex="-1"></a><span class="co">#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it</span></span>
-<span id="cb21-503"><a href="#cb21-503" aria-hidden="true" tabindex="-1"></a><span class="co">#    is three matrices and two character vectors, not one rectangle.</span></span>
-<span id="cb21-504"><a href="#cb21-504" aria-hidden="true" tabindex="-1"></a>norm_pieces <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb21-505"><a href="#cb21-505" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_raw  =</span> beta_raw,    <span class="co"># 20,000 x 96, no correction</span></span>
-<span id="cb21-506"><a href="#cb21-506" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_noob =</span> beta_noob,   <span class="co"># 20,000 x 96, noob only</span></span>
-<span id="cb21-507"><a href="#cb21-507" aria-hidden="true" tabindex="-1"></a>  <span class="at">beta_fun  =</span> beta_fun,    <span class="co"># 20,000 x 96, noob + functional normalization</span></span>
-<span id="cb21-508"><a href="#cb21-508" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeI     =</span> typeI,       <span class="co"># Type I probe IDs, whole array</span></span>
-<span id="cb21-509"><a href="#cb21-509" aria-hidden="true" tabindex="-1"></a>  <span class="at">typeII    =</span> typeII       <span class="co"># Type II probe IDs, whole array</span></span>
-<span id="cb21-510"><a href="#cb21-510" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-511"><a href="#cb21-511" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(norm_pieces, <span class="st">&quot;data/02_norm_pieces.rds&quot;</span>)</span>
-<span id="cb21-512"><a href="#cb21-512" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb21-513"><a href="#cb21-513" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-514"><a href="#cb21-514" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb21-515"><a href="#cb21-515" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-516"><a href="#cb21-516" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> — removing probes that are</span>
-<span id="cb21-517"><a href="#cb21-517" aria-hidden="true" tabindex="-1"></a>unreliable by design (cross-reactive, SNP-affected, sex-chromosome), using Zhou&#39;s</span>
-<span id="cb21-518"><a href="#cb21-518" aria-hidden="true" tabindex="-1"></a>curated masks with ancestry awareness.</span>
-<span id="cb21-519"><a href="#cb21-519" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-520"><a href="#cb21-520" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
-<span id="cb21-521"><a href="#cb21-521" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-522"><a href="#cb21-522" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb21-523"><a href="#cb21-523" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb21-487"><a href="#cb21-487" aria-hidden="true" tabindex="-1"></a>**Step 2 — find out what was already done.** Read the series&#39; processing description (<span class="in">`experimentData()`</span> /</span>
+<span id="cb21-488"><a href="#cb21-488" aria-hidden="true" tabindex="-1"></a><span class="in">`pData(eset)$data_processing`</span>) to learn whether the matrix is already normalized,</span>
+<span id="cb21-489"><a href="#cb21-489" aria-hidden="true" tabindex="-1"></a>and how. Common cases:</span>
+<span id="cb21-490"><a href="#cb21-490" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-491"><a href="#cb21-491" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>*Already noob + BMIQ (or funnorm) normalized* — the most common. Do **not**</span>
+<span id="cb21-492"><a href="#cb21-492" aria-hidden="true" tabindex="-1"></a>  re-normalize; treat the matrix as analysis-ready β and proceed to probe filtering.</span>
+<span id="cb21-493"><a href="#cb21-493" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>*Raw/unnormalized β* — you can apply a **β-space** normalization such as BMIQ</span>
+<span id="cb21-494"><a href="#cb21-494" aria-hidden="true" tabindex="-1"></a>  (<span class="in">`wateRmelon::BMIQ()`</span>), which only needs β and probe design, not intensities.</span>
+<span id="cb21-495"><a href="#cb21-495" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>*Already batch-corrected (e.g. ComBat) or cell-composition-adjusted* — be</span>
+<span id="cb21-496"><a href="#cb21-496" aria-hidden="true" tabindex="-1"></a>  cautious: further correction can over-adjust, and you have lost the ability to</span>
+<span id="cb21-497"><a href="#cb21-497" aria-hidden="true" tabindex="-1"></a>  model those effects yourself. Note it as a limitation.</span>
+<span id="cb21-498"><a href="#cb21-498" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-499"><a href="#cb21-499" aria-hidden="true" tabindex="-1"></a>**Step 3 — QC on what you have.** Without intensities you lose detection</span>
+<span id="cb21-500"><a href="#cb21-500" aria-hidden="true" tabindex="-1"></a>p-values and the intensity/sex-signal checks from the <span class="co">[</span><span class="ot">QC</span><span class="co">](01_qc.qmd)</span> notebook.</span>
+<span id="cb21-501"><a href="#cb21-501" aria-hidden="true" tabindex="-1"></a>You can still:</span>
+<span id="cb21-502"><a href="#cb21-502" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-503"><a href="#cb21-503" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>check for **missing values** and impute or drop probes with excessive <span class="in">`NA`</span>;</span>
+<span id="cb21-504"><a href="#cb21-504" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>run **PCA/MDS** to spot outlier samples and technical structure;</span>
+<span id="cb21-505"><a href="#cb21-505" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**predict sex** from the X/Y-chromosome β distributions (or <span class="in">`wateRmelon`</span>&#39;s</span>
+<span id="cb21-506"><a href="#cb21-506" aria-hidden="true" tabindex="-1"></a>  <span class="in">`estimateSex`</span>) and compare to the reported sex, catching label swaps;</span>
+<span id="cb21-507"><a href="#cb21-507" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>verify the probe count and platform match what you expect (EPIC ≈ 865k).</span>
+<span id="cb21-508"><a href="#cb21-508" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-509"><a href="#cb21-509" aria-hidden="true" tabindex="-1"></a>**Step 4 — harmonize probe IDs.** Processed matrices vary: some are already</span>
+<span id="cb21-510"><a href="#cb21-510" aria-hidden="true" tabindex="-1"></a>masked/filtered, some use different ID conventions, some are 450K and some EPIC.</span>
+<span id="cb21-511"><a href="#cb21-511" aria-hidden="true" tabindex="-1"></a>Before combining or comparing series, intersect on common <span class="in">`cg`</span>/<span class="in">`ch`</span> probe IDs and</span>
+<span id="cb21-512"><a href="#cb21-512" aria-hidden="true" tabindex="-1"></a>apply the same probe-filtering (<span class="co">[</span><span class="ot">next notebook</span><span class="co">](03_probe_filtering.qmd)</span>) you would</span>
+<span id="cb21-513"><a href="#cb21-513" aria-hidden="true" tabindex="-1"></a>apply to IDAT-derived data.</span>
+<span id="cb21-514"><a href="#cb21-514" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-515"><a href="#cb21-515" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb21-516"><a href="#cb21-516" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical rule</span></span>
+<span id="cb21-517"><a href="#cb21-517" aria-hidden="true" tabindex="-1"></a>From IDATs you control normalization; from a processed matrix you **inherit** it.</span>
+<span id="cb21-518"><a href="#cb21-518" aria-hidden="true" tabindex="-1"></a>The job shifts from &quot;normalize&quot; to &quot;audit what was done and decide whether it is</span>
+<span id="cb21-519"><a href="#cb21-519" aria-hidden="true" tabindex="-1"></a>adequate,&quot; then continue from probe filtering. Always record, in your methods, the</span>
+<span id="cb21-520"><a href="#cb21-520" aria-hidden="true" tabindex="-1"></a>processing state of every series you use — reviewers will ask.</span>
+<span id="cb21-521"><a href="#cb21-521" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb21-522"><a href="#cb21-522" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-523"><a href="#cb21-523" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb21-524"><a href="#cb21-524" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-525"><a href="#cb21-525" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> — removing probes that are</span>
+<span id="cb21-526"><a href="#cb21-526" aria-hidden="true" tabindex="-1"></a>unreliable by design (cross-reactive, SNP-affected, sex-chromosome), using Zhou&#39;s</span>
+<span id="cb21-527"><a href="#cb21-527" aria-hidden="true" tabindex="-1"></a>curated masks with ancestry awareness.</span>
+<span id="cb21-528"><a href="#cb21-528" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-529"><a href="#cb21-529" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb21-530"><a href="#cb21-530" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-531"><a href="#cb21-531" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb21-532"><a href="#cb21-532" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

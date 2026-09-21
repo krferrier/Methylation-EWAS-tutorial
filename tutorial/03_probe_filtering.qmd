@@ -20,7 +20,7 @@ masks [@zhou2017comprehensive] for Illumina methylation arrays.
 
 ::: {.callout-note}
 ## What this chapter needs
-This chapter starts from `data/02_funnorm_grs.rds`, written at the end of
+This chapter starts from `data/02_funnorm_grs.rds`, written by the save step in
 [normalization](02_normalization.qmd). If you did not run that chapter, fetch the
 published checkpoint instead — note it is a 1.25 GB download:
 
@@ -34,7 +34,7 @@ published checkpoint instead — note it is a 1.25 GB download:
 library(minfi)       # getAnnotation() for probe coordinates, detectionP() for the p-value matrix
 library(data.table)  # fread() for the mask tables
 
-# The functional-normalized GenomicRatioSet written at the end of
+# The functional-normalized GenomicRatioSet saved by
 # [normalization](02_normalization.qmd): 96 samples, beta and M-values for every
 # probe that survived normalization. Nothing is filtered yet -- that is this
 # chapter's job.
@@ -432,8 +432,10 @@ The legacy equivalent of the eight v8.1 codes is `MASK_general_AFR` — problema
 so the general terms are not counted twice. The archived manifest is 14 MB, so the
 tutorial ships only its flagged probe IDs:
 
-```{.r filename="RStudio Console"}
-# How data/03_legacy_pop_mask.tsv.gz was built from the archived manifest.
+```{.r filename="Provenance, do not run"}
+# This is how data/03_legacy_pop_mask.tsv.gz was built
+# from the archived manifest. That manifest is not in the repository -- the
+# shipped file is its output, and the chunk below reads it.
 library(data.table)
 pop  <- fread("EPIC.hg38.manifest.pop.tsv.gz",
               select = c("probeID", "MASK_general_AFR", "MASK_snp5_EUR"))

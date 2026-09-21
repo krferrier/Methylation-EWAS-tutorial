@@ -646,8 +646,8 @@ above, which is what [chapter 07](07_pipeline.qmd)'s pipeline invokes.
 
 If you are using DMRcate, it operates on the M-value matrix directly:
 
-```{.r filename="RStudio Console"}
-# Shown, not run: `M` and `design` are yours to supply. This chapter never
+```{.r filename="Generic example, do not run"}
+# Schematic only: `M` and `design` are yours to supply. This chapter never
 # builds them, because our EWAS was run stratified (see the callout above),
 # so there is no single design matrix to hand DMRcate.
 library(DMRcate)

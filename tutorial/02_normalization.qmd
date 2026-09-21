@@ -198,10 +198,13 @@ invisible(gc())
 
 ```{r}
 #| label: normalize-funnorm
-# This is the expensive step in the chapter: about 2 minutes and a peak of
-# ~12.5 GB at 96 arrays, because funnorm runs noob first and then fits the
-# control-probe PCA across the full 865,859-probe matrix. If your machine cannot
-# hold that, take the resume path in the callout below.
+# This is the expensive step in the chapter, and the one long silent wait in it:
+# about 2 minutes and a peak of ~12.5 GB at 96 arrays, because funnorm runs noob
+# first and then fits the control-probe PCA across the full 865,859-probe matrix.
+# It prints nothing while it works. The 2 minutes assume the peak fits in RAM; on
+# a machine with less than that it swaps and can take five to ten times longer,
+# which is the usual explanation for this chunk seeming to hang. If your machine
+# cannot hold it, take the resume path in the callout below.
 grs_fun <- preprocessFunnorm(rg)
 
 # `grs_fun` is the handoff object for the rest of the tutorial -- keep it whole.
@@ -216,7 +219,7 @@ stopifnot(identical(rownames(beta_raw), rownames(beta_noob)),
 grs_fun
 ```
 
-::::: {.callout-important}
+::::: {.callout-important collapse="true"}
 ## If `preprocessFunnorm` stops with `pthread_create() is 22`
 
 If you see this error:
@@ -409,6 +412,34 @@ ggplot(dfm, aes(beta, M)) +
   labs(x = "β-value", y = "M-value", title = "β → M-value transform")
 ```
 
+## Save the normalized data
+
+[Probe filtering](03_probe_filtering.qmd) opens by reading `data/02_funnorm_grs.rds`,
+so if you skip it that chapter fails on a missing file.
+
+```{r}
+#| label: save-norm
+# 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +
+#    functional normalized. This is what probe filtering (chapter 03) reads, and
+#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.
+saveRDS(grs_fun, "data/02_funnorm_grs.rds")
+
+# 2. The pieces the figures above are drawn from: the three 20,000-probe β
+#    matrices and the two design lists. Saving them means the resume callout in
+#    section 3 restores exactly the objects this chapter computed, and that a
+#    reader who cannot run normalization still gets every figure. Small next to
+#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it
+#    is three matrices and two character vectors, not one rectangle.
+norm_pieces <- list(
+  beta_raw  = beta_raw,    # 20,000 x 96, no correction
+  beta_noob = beta_noob,   # 20,000 x 96, noob only
+  beta_fun  = beta_fun,    # 20,000 x 96, noob + functional normalization
+  typeI     = typeI,       # Type I probe IDs, whole array
+  typeII    = typeII       # Type II probe IDs, whole array
+)
+saveRDS(norm_pieces, "data/02_norm_pieces.rds")
+```
+
 ## 5. Normalizing from a processed matrix
 
 Many GEO series do not deposit raw IDATs, but do provide a processed matrix: 
@@ -419,11 +450,14 @@ intensities are gone. Here is how to work with them.
 
 **Step 1 — get the matrix into R.** For a series matrix:
 
-```{.r filename="RStudio Console"}
+```{.r filename="Generic example, do not run"}
+# Schematic only, for your own data -- nothing in this tutorial needs it. The
+# tutorial dataset ships as IDATs, which the chapters above normalize directly.
+# "GSExxxxxx" is a placeholder: substitute the accession of the series you want.
 library(GEOquery)
-gse  <- getGEO("GSExxxxxx", GSEMatrix = TRUE)      # returns a list of ExpressionSets
-eset <- gse[[1]]
-beta <- Biobase::exprs(eset)                        # CpG x sample β matrix
+gse   <- getGEO("GSExxxxxx", GSEMatrix = TRUE)      # returns a list of ExpressionSets
+eset  <- gse[[1]]
+beta  <- Biobase::exprs(eset)                       # CpG x sample β matrix
 pheno <- Biobase::pData(eset)                       # sample metadata
 ```
 
@@ -465,31 +499,6 @@ The job shifts from "normalize" to "audit what was done and decide whether it is
 adequate," then continue from probe filtering. Always record, in your methods, the
 processing state of every series you use — reviewers will ask.
 :::
-
-We save the functional-normalized `GenomicRatioSet` for the downstream steps:
-
-```{r}
-#| label: save-norm
-# 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +
-#    functional normalized. This is what probe filtering (chapter 03) reads, and
-#    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.
-saveRDS(grs_fun, "data/02_funnorm_grs.rds")
-
-# 2. The pieces the figures above are drawn from: the three 20,000-probe β
-#    matrices and the two design lists. Saving them means the resume callout in
-#    section 3 restores exactly the objects this chapter computed, and that a
-#    reader who cannot run normalization still gets every figure. Small next to
-#    the GenomicRatioSet (~46 MB), and an RDS rather than a flat file because it
-#    is three matrices and two character vectors, not one rectangle.
-norm_pieces <- list(
-  beta_raw  = beta_raw,    # 20,000 x 96, no correction
-  beta_noob = beta_noob,   # 20,000 x 96, noob only
-  beta_fun  = beta_fun,    # 20,000 x 96, noob + functional normalization
-  typeI     = typeI,       # Type I probe IDs, whole array
-  typeII    = typeII       # Type II probe IDs, whole array
-)
-saveRDS(norm_pieces, "data/02_norm_pieces.rds")
-```
 
 ---
 
