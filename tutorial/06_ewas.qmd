@@ -520,81 +520,53 @@ The workflow is three steps:
    the underlying effects to differ — and it gives you a **heterogeneity test**
    (Cochran's *Q*, *I²*) that formally asks whether the sexes differ at each CpG.
 
-Inverse-variance meta-analysis of a single CpG is short enough to show by hand:
+Inverse-variance meta-analysis is short enough to show in full. Every line below is
+vectorized, so this is the whole genome-wide meta-analysis, not a one-CpG illustration:
 
 ```{.r filename="Generic example, do not run"}
 # Schematic only -- the arithmetic, with the inputs named rather than built.
-# per-CpG effect + SE from each stratum's BACON-adjusted results
-# (bF, seF) from females; (bM, seM) from males
+# resF and resM: each stratum's BACON-adjusted results, one row per CpG, with
+# columns probe, effect and se. Align them on the CpGs tested in both strata;
+# everything after this line is vectorized over all of them at once.
+m   <- merge(resF, resM, by = "probe", suffixes = c("F", "M"))
+bF  <- m$effectF;  seF <- m$seF          # female effect and SE, one per CpG
+bM  <- m$effectM;  seM <- m$seM          # male effect and SE
+
 wF <- 1 / seF^2                       # inverse-variance weights
 wM <- 1 / seM^2
 beta_meta <- (wF*bF + wM*bM) / (wF + wM)      # combined effect
 se_meta   <- sqrt(1 / (wF + wM))              # combined standard error
-z_meta     <- beta_meta / se_meta
-p_meta     <- 2 * pnorm(-abs(z_meta))
+z_meta    <- beta_meta / se_meta
+p_meta    <- 2 * pnorm(-abs(z_meta))
 
 # heterogeneity: does the effect differ between the sexes?
-Q  <- wF*(bF - beta_meta)^2 + wM*(bM - beta_meta)^2   # Cochran's Q, 1 df
+Q     <- wF*(bF - beta_meta)^2 + wM*(bM - beta_meta)^2   # Cochran's Q, 1 df
 p_het <- pchisq(Q, df = 1, lower.tail = FALSE)
+I2    <- pmax(0, (Q - 1) / Q) * 100           # % of between-stratum variance
+
+# direction string, the way METAL reports it: one sign per stratum
+direction <- paste0(ifelse(bF > 0, "+", "-"), ifelse(bM > 0, "+", "-"))
+
+meta <- data.frame(probe = m$probe, beta_meta, se_meta, p_meta, p_het, I2, direction)
+meta <- meta[order(meta$p_meta), ]
 ```
 
-In practice you run this across all CpGs at once. The standard tool for it is **METAL**
-[@willer2010metal] — the same command-line meta-analyzer used for GWAS. It reads each
+The direction and heterogeneity columns are interpretive rather than a quality filter.
+Concordance strengthens a combined estimate; discordance can point to a genuine
+stratum-specific effect (in this case discordance could indicate sex-specific effects),
+which is part of why you stratified. In a multi-cohort meta-analysis, where the strata
+are meant to be replicates, the discordance would indicate lower credibility.
+
+The standard tool for performing meta analysis in genomics is **METAL**
+[@willer2010metal] and can also be used for epigenomics.  It reads each
 stratum's results file, matches CpGs by ID, does the inverse-variance weighting and the
-heterogeneity test genome-wide, and writes a combined table. A concordant hit (same
-direction in both sexes, low heterogeneity) is far more credible than a hit seen in only
-one stratum. [Chapter 07](07_pipeline.qmd) runs the stratified EWAS and METAL as a
-managed workflow.
-
-### You do not need METAL for this
-
-METAL's `SCHEME STDERR` *is* inverse-variance-weighted fixed-effects meta-analysis. The
-single-CpG code above vectorizes directly, so the whole genome-wide meta-analysis is a
-dozen lines of R over the two strata's BACON-adjusted result tables:
-
-```{.r filename="RStudio Console"}
-library(data.table)
-
-# each stratum's BACON-adjusted results: one row per CpG
-# Written by the stratified pipeline run in chapter 07; paths are relative to
-# the tutorial folder. If you have not run the pipeline, `./get_data.sh
-# G_pipeline_run` fetches the published run these two files come from.
-mF <- fread("../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz")[
-        , .(probe = cpgid, bF = bacon.es, seF = bacon.se)]
-mM <- fread("../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz")[
-        , .(probe = cpgid, bM = bacon.es, seM = bacon.se)]
-mt <- merge(mF, mM, by = "probe")          # CpGs tested in both strata
-
-mt[, wF := 1 / seF^2][, wM := 1 / seM^2]                      # precision weights
-mt[, beta_meta := (wF * bF + wM * bM) / (wF + wM)]            # combined effect
-mt[, se_meta   := sqrt(1 / (wF + wM))]                        # combined SE
-mt[, z_meta    := beta_meta / se_meta]
-mt[, p_meta    := 2 * pnorm(-abs(z_meta))]
-
-# heterogeneity, per CpG
-mt[, Q     := wF * (bF - beta_meta)^2 + wM * (bM - beta_meta)^2]   # Cochran's Q, 1 df
-mt[, p_het := pchisq(Q, df = 1, lower.tail = FALSE)]
-mt[, I2    := pmax(0, (Q - 1) / Q) * 100]
-
-# direction string, the way METAL reports it
-mt[, direction := paste0(ifelse(bF > 0, "+", "-"), ifelse(bM > 0, "+", "-"))]
-
-setorder(mt, p_meta)
-```
-
-This is not an approximation. Run against the same two strata this tutorial
-meta-analyzes with METAL, across all 756,251 CpGs tested in both, it returns the
-**identical** answer: the same top hit (`cg22671410`, *p* = 2.027 × 10⁻¹³, direction
-`+-`, *I²* = 0), the same **9** CpGs below the Bonferroni threshold of 6.61 × 10⁻⁸, the
-same 50 at FDR < 0.05, and a rank correlation of 1 between the two sets of p-values.
-METAL writes its effect and standard error columns rounded to four decimal places, and
-once you round the R result the same way, the largest disagreement across all 756,251
-CpGs is **exactly zero**.
+heterogeneity test genome-wide, and writes a combined table. [Chapter 07](07_pipeline.qmd) runs the stratified EWAS and METAL as a
+managed workflow. METAL's `SCHEME STDERR` *is* an inverse-variance-weighted fixed-effects meta-analysis, so the above R code and METAL produce exactly the same results.
 
 ::: {.callout-tip}
-## So when is METAL worth it?
-Not for the arithmetic — for the bookkeeping. METAL handles allele/strand alignment
-(irrelevant for methylation, central for GWAS), reads many cohort files with
+## Why use METAL?
+METAL is the commonly used tool for meta-analysis of genome-wide association studies. METAL handles allele/strand alignment
+(irrelevant for methylation), reads many cohort files with
 inconsistent column names, tracks sample sizes per marker, and applies genomic-control
 correction on request. For a two-stratum methylation meta-analysis where you control
 both input files, the R above is easier to audit and keeps everything in one language.
