@@ -119,6 +119,20 @@ from [normalization](02_normalization.qmd), because it must normalize the sample
 *and* reference. This is one of the few steps that reaches back
 to the raw IDATs. The reference dataset itself is downloaded once from Bioconductor's
 ExperimentHub and cached.
+
+The first time you run this on a machine the cache does not exist yet, and R asks:
+
+```
+/home/you/.cache/R/ExperimentHub does not exist, create directory? (yes/no):
+```
+
+Answer `yes` — it is the standard per-user cache location, and you are asked once per
+machine. The question only appears in an interactive session (like an RStudio or
+PyCharm console). To put the cache somewhere else, set it before the call:
+
+```r
+ExperimentHub::setExperimentHubOption("CACHE", "/path/of/your/choosing")
+```
 :::
 
 ::: {.callout-note collapse="true"}
