@@ -5,9 +5,10 @@
 ##     Rscript install_packages.R
 ## or paste it into an R console.
 ##
-## Requires R 4.3 or newer -- install the current release. BiocManager picks the
+## Requires R 4.4 or newer -- install the current release. BiocManager picks the
 ## Bioconductor release that matches your R (R 4.6 -> 3.23, R 4.5 -> 3.22), and
-## all 22 package names resolve in every release from 3.18 on. Nothing here
+## all 28 package names resolve in every release from 3.19 on (knowYourCG first
+## appears in 3.19, which is why R 4.3 and Bioconductor 3.18 are not enough). Nothing here
 ## needs a version pin: install the current matrixStats like everything else.
 ##
 ## The published numbers and the Zenodo checkpoints came from R 4.2.3 /
@@ -24,11 +25,12 @@ options(Ncpus = max(1L, parallel::detectCores() - 1L))   # parallel compiles
 
 ## --- 0. check the R version -------------------------------------------------
 rv <- getRversion()
-if (rv < "4.3") {
-  stop("This tutorial needs R 4.3 or newer; you are on ", rv, ".\n",
-       "R 4.2 selects Bioconductor 3.16, where MatrixGenerics passes\n",
-       "`useNames = NA` -- an argument matrixStats made defunct in 1.2.0 -- so\n",
-       "chapters 01-02 fail against a current matrixStats. Install the current\n",
+if (rv < "4.4") {
+  stop("This tutorial needs R 4.4 or newer; you are on ", rv, ".\n",
+       "knowYourCG, used in chapter 08, first appears in Bioconductor 3.19,\n",
+       "which needs R 4.4. (Older still, R 4.2 selects Bioconductor 3.16, where\n",
+       "MatrixGenerics passes `useNames = NA` -- an argument matrixStats made\n",
+       "defunct in 1.2.0 -- so chapters 01-02 fail.) Install the current\n",
        "R from https://cran.r-project.org/ and re-run this script.",
        call. = FALSE)
 }
@@ -42,15 +44,18 @@ cat("R", as.character(rv), "-> Bioconductor", as.character(bioc_ver), "\n\n")
 
 ## MatrixGenerics 1.13.1 switched every `useNames` default from NA to TRUE,
 ## which shipped in Bioconductor 3.18. Below that release, a current
-## matrixStats breaks detectionP() and preprocessFunnorm().
-if (bioc_ver < "3.18") {
-  stop("BiocManager selected Bioconductor ", bioc_ver, ", which predates the\n",
-       "MatrixGenerics fix for `useNames = NA`. Update BiocManager with\n",
+## matrixStats breaks detectionP() and preprocessFunnorm(). knowYourCG needs
+## 3.19 or later.
+if (bioc_ver < "3.19") {
+  stop("BiocManager selected Bioconductor ", bioc_ver, ", which predates\n",
+       "knowYourCG (first released in 3.19). Update BiocManager with\n",
        "install.packages(\"BiocManager\"), or move to a newer R.", call. = FALSE)
 }
 
 ## --- 2. the packages --------------------------------------------------------
-cran <- c("data.table", "ggplot2", "knitr", "DT")
+cran <- c("data.table", "ggplot2", "knitr", "DT",
+          "ggrepel", "ggtext",   # figure labels (chapters 06 and 08)
+          "fst", "jsonlite")     # pipeline input file (07); UCSC API query (08)
 
 bioc <- c(
   # array I/O and preprocessing
@@ -63,7 +68,7 @@ bioc <- c(
   "sva", "limma", "bacon",
   # annotation and enrichment
   "sesame", "sesameData", "GenomicRanges", "rtracklayer",
-  "missMethyl", "methylGSA"
+  "missMethyl", "methylGSA", "knowYourCG", "ENmix"
 )
 
 ## `upgrade = "never"` keeps this from rebuilding packages you already have

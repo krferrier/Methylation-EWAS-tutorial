@@ -14,11 +14,12 @@ root installs the 4 CRAN and 18 Bioconductor packages the chapters use:
 Rscript install_packages.R
 ```
 
-It requires **R 4.3 or newer** and relies on `BiocManager`, which selects the
-Bioconductor release matching your R (R 4.6 → 3.23, R 4.5 → 3.22). All 22 package names
-resolve in every release from 3.18 on, and nothing needs a version pin.
+It requires **R 4.4 or newer** and relies on `BiocManager`, which selects the
+Bioconductor release matching your R (R 4.6 → 3.23, R 4.5 → 3.22). All 28 package names
+resolve in every release from 3.19 on, and nothing needs a version pin. The floor is R 4.4
+because `knowYourCG`, used in chapter 08, first appears in Bioconductor 3.19.
 
-The R 4.3 floor is not cosmetic. `matrixStats` made `useNames = NA` defunct in 1.2.0,
+Below that, the older R 4.3 floor was not cosmetic either. `matrixStats` made `useNames = NA` defunct in 1.2.0,
 while `MatrixGenerics` still passed `NA` as its own default — so on Bioconductor 3.16 and
 3.17 a current `matrixStats` breaks `detectionP()` and `preprocessFunnorm()` with
 `useNames = NA is defunct`. `minfi` was never at fault; none of its own functions pass

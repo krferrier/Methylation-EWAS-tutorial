@@ -72,6 +72,9 @@ dependencies:
   - r-data.table
   - r-r.utils          # fread() needs it to decompress .gz; otherwise only arrives via GEOquery
   - r-jsonlite         # chapter 08 queries the UCSC API for the HGNC track
+  - r-ggrepel          # figure labels, chapters 06 and 08
+  - r-ggtext           # coloured axis labels, chapter 08 KYCG figure
+  - r-fst              # the pipeline's .fst M-value input, chapter 07
   - r-ggplot2
   - r-knitr
   - r-dt

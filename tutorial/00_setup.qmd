@@ -60,7 +60,7 @@ preprocessing, QC, cell composition, batch effects, the EWAS itself, and annotat
 
 ### R only (recommended if you are getting started)
 
-You need **R 4.3 or newer** ([download from CRAN](https://cran.r-project.org/)) — install
+You need **R 4.4 or newer** ([download from CRAN](https://cran.r-project.org/)) — install
 the current release — and, if you want,
 [RStudio](https://posit.co/download/rstudio-desktop/). Everything below is typed
 into the **Console** pane — the one with the `>` prompt.
@@ -70,7 +70,7 @@ R 4.2.3 (Bioconductor 3.16), so a value may differ in its last digits on a newer
 The code itself is unchanged. See
 [`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
 
-You need four CRAN and eighteen Bioconductor packages. The whole installation is short
+You need eight CRAN and twenty Bioconductor packages. The whole installation is short
 enough to read, so **option 1 is to select the block below, copy it, and paste it into the
 Console.** Nothing to download first, nothing to configure, and you can see exactly what
 it does before you run it. Press Enter and wait.
@@ -80,14 +80,14 @@ repos <- "https://cloud.r-project.org"
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager", repos = repos)
 
 BiocManager::install(c(
-  "data.table", "ggplot2", "knitr", "DT",
+  "data.table", "ggplot2", "knitr", "DT", "ggrepel", "ggtext", "fst", "jsonlite",
   "minfi", "illuminaio", "wateRmelon", "GEOquery", "Biobase",
   "IlluminaHumanMethylationEPICmanifest",
   "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
   "FlowSorted.Blood.EPIC", "genefilter",
   "sva", "limma", "bacon",
   "sesame", "sesameData", "GenomicRanges", "rtracklayer",
-  "missMethyl", "methylGSA"
+  "missMethyl", "methylGSA", "knowYourCG", "ENmix"
 ), ask = FALSE, update = FALSE, upgrade = "never")
 ```
 

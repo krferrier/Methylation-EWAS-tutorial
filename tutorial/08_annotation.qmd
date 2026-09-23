@@ -973,8 +973,7 @@ sig.cpg <- tt[order(bacon.p)][1:1000]$probe  # your significant set
 # GO enrichment, corrected for probes-per-gene. array.type matches your array.
 # anno = zhou_anno: genes from Zhou's hg38 GENCODE v41, not Illumina's hg19 default
 go <- gometh(sig.cpg = sig.cpg, all.cpg = all.cpg,
-             collection = "GO", array.type = "EPIC", anno = zhou_anno,
-             plot.bias = TRUE)
+             collection = "GO", array.type = "EPIC", anno = zhou_anno)
 go <- go[order(go$P.DE), ]
 
 # KEGG is a one-word change
@@ -991,29 +990,55 @@ saveRDS(list(go = go, kegg = kegg), "data/08_annotation/08_gometh.rds")
 Two arguments carry all the weight. `all.cpg` is the **full tested set** — it must be
 every CpG that survived *your* QC and filtering, not the whole array manifest,
 or the test is biased toward whatever your pipeline happened to remove.
-`plot.bias = TRUE` draws the probe-number bias curve; glance at it once to
-confirm the correction is actually engaging. Defining "significant" by a fixed
-top-*N* (here 1,000) is a teaching compromise, as noted above.
+Defining "significant" (`sig.cpg`) by a fixed top-*N* (here 1,000) is a teaching
+compromise, as noted above.
 
 Run on our teaching subset, the corrected results are:
 
 ```{r}
 #| label: fig-gometh
-#| fig-width: 9
-#| fig-height: 6
-#| fig-cap: "GO and KEGG enrichment of the top 1,000 CpGs by BACON *p*, computed with `gometh` on Zhou's hg38 gene assignments (probe-number–corrected hypergeometric test). Bars show nominal $-\\log_{10} P_{DE}$ for the ten leading terms in each collection; labels are DE genes / gene-set size. **Nothing survives FDR at n = 86**, the expected outcome when no CpG reaches epigenome-wide significance."
+#| fig-width: 9.5
+#| fig-height: 8
+#| fig-cap: "GO and KEGG enrichment of the top 1,000 CpGs by BACON *p*, computed with `gometh` on Zhou's hg38 gene assignments (probe-number–corrected hypergeometric test). The ten leading terms by nominal *P* in each collection, each collection corrected within itself and on its own x axis. Point size and shade show how many genes from the top set fall in the term; solid points pass FDR < 0.05 (dashed line) and hollow points do not. **Nothing survives FDR at n = 86**, the expected outcome when no CpG reaches epigenome-wide significance."
+# Drawn the same way as the EWAS pipeline's pathway plot (scripts/plot_enrichment.R
+# in github.com/krferrier/EWAS), so this figure and the pipeline's look alike.
+library(ggplot2)
+library(data.table)
+
+fdr_threshold <- 0.05
+# The ten leading terms by nominal p within each collection: GO and KEGG are
+# corrected separately, so a pooled top ten would be all GO.
 top_terms <- rbind(
-  data.table(collection = "GO",   term = head(go$TERM, 10),          DE = head(go$DE, 10),
-             N = head(go$N, 10),   p = head(go$P.DE, 10)),
-  data.table(collection = "KEGG", term = head(kegg$Description, 10), DE = head(kegg$DE, 10),
-             N = head(kegg$N, 10), p = head(kegg$P.DE, 10)))
-top_terms[, term := factor(term, levels = rev(unique(term)))]
-ggplot(top_terms, aes(x = -log10(p), y = term)) +
-  geom_col(fill = "#1A6B75") +
-  geom_text(aes(label = paste0(DE, "/", N)), hjust = -0.15, size = 3) +
-  facet_wrap(~ collection, ncol = 1, scales = "free_y") +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
-  labs(x = expression(-log[10]~italic(P)[DE]~"(nominal)"), y = NULL)
+  as.data.table(go)[order(P.DE)][1:10, .(collection = "GO", term = TERM, DE, FDR)],
+  as.data.table(kegg)[order(P.DE)][1:10, .(collection = "KEGG", term = Description, DE, FDR)])
+top_terms[, neg_log10_fdr := -log10(FDR)]
+top_terms[, signif := factor(FDR < fdr_threshold, levels = c(TRUE, FALSE))]
+# Order each panel by -log10(FDR), then nominal p for ties, so the leading term is on top
+top_terms[, term := make.unique(as.character(term), sep = " ")]
+top_terms[, term := factor(term, levels = rev(term))]
+
+# An invisible point carrying both significance levels, so the legend always
+# explains solid against hollow even when every point falls on one side.
+key <- data.table(neg_log10_fdr = top_terms$neg_log10_fdr[1], term = top_terms$term[1],
+                  collection = top_terms$collection[1],
+                  signif = factor(c(TRUE, FALSE), levels = c(TRUE, FALSE)))
+
+ggplot(top_terms, aes(x = neg_log10_fdr, y = term, size = DE, alpha = DE)) +
+  geom_vline(xintercept = -log10(fdr_threshold), linetype = "dashed",
+             colour = "grey55", linewidth = 0.3) +
+  geom_point(aes(shape = signif), colour = "#1A6B75", stroke = 0.9) +
+  geom_point(data = key, aes(x = neg_log10_fdr, y = term, shape = signif),
+             size = 0, alpha = 0, inherit.aes = FALSE) +
+  scale_shape_manual(values = c(`TRUE` = 19, `FALSE` = 1), limits = c("TRUE", "FALSE"),
+                     labels = c(sprintf("FDR < %g", fdr_threshold),
+                                sprintf("FDR >= %g", fdr_threshold)),
+                     drop = FALSE, name = NULL) +
+  scale_alpha(range = c(0.65, 1), guide = "none") +
+  scale_size(range = c(1.5, 6), name = "Number of genes") +
+  guides(shape = guide_legend(override.aes = list(size = 2.5, alpha = 1, colour = "#1A6B75"))) +
+  # Each collection gets its own x axis, because they are corrected separately
+  facet_wrap(~ collection, ncol = 1, scales = "free") +
+  labs(x = expression(-log[10] ~ "(FDR)"), y = "Term")
 ```
 
 The top nominal terms here are zonula adherens (GO:0005915, *P* = 1.6 × 10⁻³), the
@@ -1280,17 +1305,81 @@ those 5 features do and do not show.
 
 ```{r}
 #| label: fig-kycg
-#| fig-width: 8
-#| fig-height: 5
-#| fig-cap: "The twelve most significant KYCG features for the top 1,000 CpGs, colored by knowledgebase. Bars are log2 odds ratio; the first five bars clear FDR < 0.05 (corrected within its knowledgebase) and the other seven do not. Every significant enrichment is positive and modest."
-top12 <- head(as.data.table(res)[order(FDR, p.value)], 12)
-top12[, kb := sub("^KYCG[.]EPIC[.]", "", sub("[.][0-9]+$", "", group))]
-top12[, dbname := factor(dbname, levels = rev(dbname))]
-ggplot(top12, aes(x = estimate, y = dbname, fill = kb)) +
-  geom_col() +
-  scale_fill_manual(values = c(CGI = "#8C3A4A", chromHMM = "#B8883E",
-                               HMconsensus = "#5B7F95", TFBSconsensus = "#1A6B75")) +
-  labs(x = "log2 odds ratio", y = NULL, fill = "knowledgebase")
+#| fig-width: 9.5
+#| fig-height: 6.6
+#| fig-cap: "KYCG enrichment of the top 1,000 CpGs. Each knowledgebase gets its own block along the x axis (number of features tested in brackets), because FDR is corrected within each knowledgebase, not across them. Every over-represented feature (log₂ odds ratio > 0) is drawn, sized by its log₂ odds ratio: solid points pass FDR < 0.05, hollow points do not. The strongest significant feature in each knowledgebase is labelled."
+# Drawn the same way as the EWAS pipeline's feature plot (scripts/plot_enrichment.R
+# in github.com/krferrier/EWAS), which follows knowYourCG's KYCG_plotEnrichAll.
+library(ggplot2)
+library(ggrepel)   # geom_text_repel(), labels that avoid the points
+library(ggtext)    # element_markdown(), axis labels coloured to match their block
+library(data.table)
+
+fdr_threshold <- 0.05
+kd <- as.data.table(res)
+kd[, kb := sub("^KYCG[.]EPIC[.]", "", sub("[.][0-9]+$", "", group))]
+kd <- kd[!is.na(FDR) & is.finite(estimate)]
+
+# Blocks in the pipeline's order: chromatin states and histone marks together,
+# then protein binding, then gene context. Alternate groups are shaded.
+kb_order <- c("chromHMM", "HMconsensus", "TFBSconsensus", "CGI")
+kb_group <- c(chromHMM = 1, HMconsensus = 1, TFBSconsensus = 2, CGI = 3)
+kb_cols  <- c(chromHMM = "#B8883E", HMconsensus = "#5B7F95",
+              TFBSconsensus = "#1A6B75", CGI = "#8C3A4A")
+kd[, kb := factor(kb, levels = kb_order)]
+setorder(kd, kb, dbname)
+
+# Each block's width grows with log(number of features), so the 783 TF binding
+# sites do not swallow the axis and the 5 CpG-island features stay findable.
+n_tested <- table(kd$kb)
+kd[, inc := as.numeric((log(2 + n_tested) / n_tested)[as.character(kb)])]
+kd[, step := c(0, as.numeric(head(as.character(kb), -1) != tail(as.character(kb), -1)))]
+kd[, xpos := cumsum(inc + step)]
+
+blocks <- kd[, .(middle = mean(xpos), beg = min(xpos), end = max(xpos), n = .N), by = kb]
+min_w <- 0.006 * diff(range(kd$xpos))
+blocks[, half := pmax((end - beg) / 2, min_w)]
+pad <- min(diff(blocks$middle)) * 0.12
+blocks[, `:=`(rmin = middle - half - pad, rmax = middle + half + pad,
+              grp = kb_group[as.character(kb)])]
+blocks[, lab := sprintf("<span style='color:%s'>%s (%d)</span>",
+                        kb_cols[as.character(kb)], kb, n)]
+bands <- blocks[, .(rmin = min(rmin), rmax = max(rmax)), by = grp]
+bands[, shade := grp %% 2 == 0]
+
+# Only over-represented features are drawn: the test is one-sided, so a
+# depleted feature carries no evidence either way.
+pts <- kd[estimate > 0]
+pts[, y := -log10(FDR)]
+pts[, signif := factor(FDR < fdr_threshold, levels = c(TRUE, FALSE))]
+# The strongest significant feature in each knowledgebase gets a label
+labs_dt <- pts[signif == "TRUE"][order(-y), head(.SD, 1), by = kb]
+y_top <- max(3, max(pts$y) * 1.18)
+key <- data.table(xpos = pts$xpos[1], y = pts$y[1],
+                  signif = factor(c(TRUE, FALSE), levels = c(TRUE, FALSE)))
+
+ggplot(pts, aes(xpos, y)) +
+  geom_rect(data = bands[shade == TRUE], aes(xmin = rmin, xmax = rmax, ymin = -Inf, ymax = Inf),
+            fill = "grey92", colour = NA, alpha = 0.55, inherit.aes = FALSE) +
+  geom_point(aes(size = estimate, colour = kb, shape = signif), alpha = 0.65) +
+  geom_point(data = key, aes(xpos, y, shape = signif), size = 0, alpha = 0, inherit.aes = FALSE) +
+  geom_text_repel(data = labs_dt, aes(label = dbname, colour = kb), size = 2.9,
+                  direction = "y", nudge_y = 0.04 * y_top, point.padding = 0.6,
+                  box.padding = 0.35, min.segment.length = 0, force = 4, force_pull = 0.3,
+                  max.overlaps = Inf, seed = 1, segment.colour = "grey60",
+                  segment.size = 0.2, show.legend = FALSE) +
+  scale_colour_manual(values = kb_cols, guide = "none") +
+  scale_shape_manual(values = c(`TRUE` = 19, `FALSE` = 1), limits = c("TRUE", "FALSE"),
+                     labels = c(sprintf("FDR < %g", fdr_threshold),
+                                sprintf("FDR >= %g", fdr_threshold)),
+                     drop = FALSE, name = NULL) +
+  scale_size_continuous(range = c(1.5, 6), name = expression(log[2] ~ "(odds ratio)")) +
+  guides(shape = guide_legend(override.aes = list(size = 2.5, alpha = 1, colour = "grey25"))) +
+  scale_x_continuous(breaks = blocks$middle, labels = blocks$lab) +
+  coord_cartesian(xlim = c(min(bands$rmin), max(bands$rmax)), ylim = c(0, y_top)) +
+  labs(x = "Knowledgebase (features tested)", y = expression(-log[10] ~ "(FDR)")) +
+  theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(),
+        axis.text.x = element_markdown(angle = 40, hjust = 1, vjust = 1))
 ```
 
 ```{r}

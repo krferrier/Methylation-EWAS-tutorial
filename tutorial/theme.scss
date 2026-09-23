@@ -283,7 +283,13 @@ caption, .figure-caption, figcaption {
 .sidebar-navigation {
   border-right: 1px solid $gray-200;
 
-  .sidebar-item-text {
+  // Every entry at one size. Quarto's own `.sidebar-navigation .sidebar-item a
+  // { font-size: 1rem }` outranks a plain `.sidebar-item-text` rule, which left
+  // chapters WITHOUT sub-navigation at 1rem and chapters WITH it at 0.925rem
+  // (the override below). The `.sidebar-item a` form matches Quarto's
+  // specificity plus one class, so it wins without !important.
+  .sidebar-item-text,
+  .sidebar-item a.sidebar-item-text {
     font-size: 0.925rem;
   }
 
