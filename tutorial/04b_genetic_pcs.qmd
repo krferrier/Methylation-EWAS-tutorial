@@ -242,8 +242,8 @@ sheet <- ss[match(colnames(beta), ss$sample_id), ]
 epistructure <- function(beta, covariates, n_pcs = 3) {
   res <- t(lm.fit(covariates, t(beta))$residuals)
   pca <- prcomp(t(res), center = TRUE, scale. = TRUE)
-  # Orient each component so its largest loading is positive. Without this, the
-  # linear-algebra library R uses decides the sign, and it differs between machines.
+  # Orient each component so its largest loading is positive, so every run gives
+  # the same sign.
   k <- seq_len(n_pcs)
   s <- sign(apply(pca$rotation[, k], 2, function(r) r[which.max(abs(r))]))
   sweep(pca$x[, k], 2, s, "*")
