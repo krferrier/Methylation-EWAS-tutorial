@@ -206,8 +206,8 @@ effect of cell composition from those sites and takes principal components of wh
 left. GLINT, the toolset that implements it, is written for Python 2.7
 [@rahmani2017glint], so the steps are written out in R below. Run on this dataset,
 GLINT's own `--epi` gives the same three components as this code: they correlate at
-r = −1 (the sign of a PC is arbitrary) and differ in scale only because scikit-learn
-standardizes with *n* rather than *n* − 1.
+r = 1, −1 and −1 (the two implementations orient the components differently) and differ
+in scale only because scikit-learn standardizes with *n* rather than *n* − 1.
 
 Two things about the input matter. First, the reference CpGs are exactly the kind of
 SNP-influenced sites [probe filtering](03_probe_filtering.qmd) removes, so EPISTRUCTURE
@@ -241,7 +241,12 @@ sheet <- ss[match(colnames(beta), ss$sample_id), ]
 # standardize each site, and take principal components across samples.
 epistructure <- function(beta, covariates, n_pcs = 3) {
   res <- t(lm.fit(covariates, t(beta))$residuals)
-  prcomp(t(res), center = TRUE, scale. = TRUE)$x[, seq_len(n_pcs)]
+  pca <- prcomp(t(res), center = TRUE, scale. = TRUE)
+  # Orient each component so its largest loading is positive. Without this, the
+  # linear-algebra library R uses decides the sign, and it differs between machines.
+  k <- seq_len(n_pcs)
+  s <- sign(apply(pca$rotation[, k], 2, function(r) r[which.max(abs(r))]))
+  sweep(pca$x[, k], 2, s, "*")
 }
 
 # GLINT's documented usage regresses out cell composition only. On these arrays the
@@ -274,7 +279,7 @@ round(cbind(epi_cor, R2_from_EPI1_3 = epi_r2), 2)
 #| label: fig-epistructure
 #| fig-width: 6.4
 #| fig-height: 4.6
-#| fig-cap: "The first EPISTRUCTURE component against the deposited genetic PC1, for the 95 samples with deposited PCs, coloured by self-reported race. The sign of a principal component is arbitrary, so a negative correlation is as good as a positive one."
+#| fig-cap: "The first EPISTRUCTURE component against the deposited genetic PC1, for the 95 samples with deposited PCs, coloured by self-reported race."
 cmp <- data.frame(pc1 = sheet$pc1[has_pcs], EPI1 = epi[has_pcs, 1],
                   race = ifelse(is.na(sheet$race[has_pcs]) | sheet$race[has_pcs] == "",
                                 "not recorded", sheet$race[has_pcs]))
