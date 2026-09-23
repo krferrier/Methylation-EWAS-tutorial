@@ -36,7 +36,27 @@ For functional annotation of the EWAS results we use Wanding Zhou's hg38 EPIC an
 released new versions of his resources (v8.1). This tutorial implements some of the newest version of Zhou's 
 files in addition to some 'legacy' files. The Snakemake pipeline uses entirely legacy files at the moment, 
 but will be updated to use the latest versions in the next release. 
-We only use hg38 annotations in this tutorial, but hg19 resources are available if necessary. 
+Most of the annotation in this chapter is hg38, but not all of it. The enrichment tools
+`goregion`, `gometh` and `methylGSA` default to Illumina's hg19 annotation package; here
+we pass each of them Zhou's hg38 annotation instead, but the knowYourCG knowledgebases
+and the web tools still rest partly or wholly on hg19. The table below lists the build and source behind each section. It matters
+most where the chapter compares tools, because two tools built on different annotations
+are not a like-for-like comparison. For tools that take probe IDs rather than
+coordinates, the build shows up in *which genes or features each probe was assigned
+to*, not in any coordinate you see.
+
+| Section | Tool | Genome build | Annotation source |
+|---|---|---|---|
+| Part 1: gene and CpG-island context | Zhou manifests | hg38 | Zhou, GENCODE v41 and v36 |
+| Part 1: eQTM layer | BIOS cis-eQTM catalog | hg19 (original mapping; joined by probe ID) | BIOS consortium, gene symbols re-mapped to current HGNC |
+| Part 2: region calling | comb-p, `ENmix::combp` | hg38 | Zhou coordinates |
+| Part 2: annotating the DMR | overlap with UCSC tables | hg38 | UCSC refGene, cpgIslandExt, HGNC |
+| Part 2: region enrichment | `missMethyl::goregion` | hg38 | Zhou, GENCODE v41 (passed with `anno =`) |
+| Part 3: gene-set enrichment | `missMethyl::gometh` | hg38 | Zhou, GENCODE v41 (passed with `anno =`) |
+| Part 3: gene-set enrichment | `methylGSA` | hg38 | Zhou, GENCODE v41 (passed with `FullAnnot =`) |
+| Part 3: regulatory-feature enrichment | knowYourCG | hg38, except chromatin states (hg19) | Zhou knowledgebases (Cistrome, Roadmap) |
+| Part 3: web tools | EWAS Toolkit, eFORGE | hg19 | Illumina; Roadmap/ENCODE |
+
 The three tables used for annotation, all downloadable from the
 [zhou-lab GitHub](https://github.com/zhou-lab/InfiniumAnnotationData) are:
 
@@ -63,9 +83,10 @@ from a reviewer for the information.
 ## This notebook and the Snakemake pipeline
 
 The [krferrier/EWAS](https://github.com/krferrier/EWAS) pipeline automates
-everything here — its `annotate.smk` and `dmr.smk` rules run the same
+part of this chapter — its `annotate.smk` and `dmr.smk` rules run the same
 annotation join and the same `comb-p` region detection we walk through
-manually. We reproduce the steps by hand so the logic is clearly layed out.
+manually. It does not yet run pathway enrichment (Part 3); that is planned for the
+next update. We reproduce the steps by hand so the logic is clearly layed out.
 :::
 
 ```{r}
@@ -100,8 +121,8 @@ probe (one per transcript); we keep the nearest, which is what defines the
 promoter call below.
 
 ::: {.callout-note}
-## What this chapter needs
-This chapter starts from `data/06_ewas_bacon_toptable.csv.gz`, written by [chapter 06](06_ewas.qmd). If you
+## What this section needs
+This section starts from `data/06_ewas_bacon_toptable.csv.gz`, written by [chapter 06](06_ewas.qmd). If you
 did not run that chapter, fetch the published checkpoint instead:
 
 ```{.bash filename="Terminal"}
@@ -111,17 +132,15 @@ did not run that chapter, fetch the published checkpoint instead:
 
 ```{r}
 #| label: annotate
-# The two Zhou gencode manifests joined here are tens of MB each and are not
-# tracked in the repository: they come from the zhou-lab release linked above,
-# and `./get_data.sh H_annotation` puts them under ../masks/. Everything in
-# Part 1 rendered below reads a table this chunk, or the eQTM chunk after it,
-# writes.
+# The two Zhou gencode manifests are read straight from the zhou-lab repository.
+zhou_epic <- paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotationData/",
+                    "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/")
 
 # 1. EWAS results: the BACON-adjusted toptable from chapter 06
 tt <- fread("data/06_ewas_bacon_toptable.csv.gz")
 
 # 2. Zhou gencode v41 gene model: gene names, biotypes, signed distance to TSS
-v41 <- fread(cmd = "zcat ../masks/EPIC.hg38.manifest.gencode.v41.tsv.gz")
+v41 <- fread(paste0(zhou_epic, "EPIC.hg38.manifest.gencode.v41.tsv.gz"))
 # a probe with several transcripts has several distToTSS values (';'-joined);
 # keep the one nearest the TSS — this is what the promoter definition uses
 nearest_tss <- function(x) {
@@ -133,15 +152,11 @@ nearest_tss <- function(x) {
 v41[, distTSS := vapply(distToTSS, nearest_tss, numeric(1))]
 
 # 3. CpG-island relation — only the v36 gene table carries CGIposition
-v36 <- fread(cmd = "zcat ../masks/EPIC.hg38.manifest.gencode.v36.tsv.gz",
+v36 <- fread(paste0(zhou_epic, "EPIC.hg38.manifest.gencode.v36.tsv.gz"),
              select = c("probeID","CGIposition"))
 v36[, island := fifelse(is.na(CGIposition) | CGIposition == "", "OpenSea", CGIposition)]
 
-# 4. Join everything on probe ID. The v41 manifest already carries the hg38
-#    coordinates (CpG_chrm/CpG_beg/CpG_end), so it serves as both the coordinate
-#    and the gene-model source. Note that the separate `EPIC.hg38.coord.tsv.gz`
-#    table is keyed by position only — it has no probeID column — so it cannot be
-#    joined to results by probe and is not used here.
+# 4. Join everything on probe ID.
 #    all.x = TRUE: every tested CpG stays in the table, annotated or not.
 annotated <- tt |>
   merge(v41[, .(probe = probeID, CpG_chrm, CpG_beg, CpG_end,
@@ -153,8 +168,7 @@ annotated <- tt |>
 #    promoter-associated; genic but beyond that is gene body; no gene is intergenic.
 annotated[, feature := fifelse(is.na(genesUniq) | genesUniq %in% c("", "NA"), "Intergenic",
                         fifelse(!is.na(distTSS) & abs(distTSS) <= 1500, "Promoter", "Gene body"))]
-# rank by the BACON p-value once, here: every display table below takes its rows
-# off the top of this object, and the merges above do not preserve order
+# rank by the BACON p-value
 setorder(annotated, bacon.p)
 
 # The deposited table is written a few sections down, after the eQTM columns are
@@ -170,8 +184,6 @@ array deliberately targets enhancers and open sea away from genes.
 
 ```{r}
 #| label: top10-derive
-# The ten rows rendered below, derived from `annotated` rather than typed out so
-# that the rounding, the column names and the ranking all come from the join.
 t10 <- head(annotated, 10)[, .(
   probe, chr = CpG_chrm, pos = CpG_beg,
   # an intergenic probe has no symbol; print a dash rather than NA
@@ -194,16 +206,16 @@ t10 <- fread("data/08_annotation/top10_display.csv")
 knitr::kable(t10, caption = "Top 10 CpGs by BACON-adjusted p-value, with hg38 coordinates and gene/island context.")
 ```
 
-Now the list has biological context. The top hit **cg15434749** is intergenic
+Now the list has biological context. The top-ranked CpG **cg15434749** is intergenic
 open sea on chr8 with no nearby gencode v41 gene. 
 **cg25717994** sits essentially on the `EDNRB` TSS (distToTSS = −12 bp, so
 **promoter** by Zhou's ±1.5 kb rule); **cg18321729** tags the `PKM` promoter
-(−168 bp); **cg16340178** is in a CpG-island shore (`S_Shore`) just upstream of
-the `GPS2`/`NEURL4` TSS (−137 bp). Four of the top ten fall within 1.5 kb of a
-TSS. The trend of significant CpGs being in a promotor region is mild in this analysis, but would likely 
-be stronger in a full scale, well-powered EWAS. 
-Only the top CpG clears the Bonferroni significance threshold (BACON p ≈ 3.0 × 10⁻⁸ against
-a threshold of ≈ 6.6 × 10⁻⁸); two pass FDR < 0.05. Read the rest of this table as
+(−168 bp); **cg26747885** is in a CpG island (`Island`) at the `SOCS3` TSS
+(distToTSS = 455 bp). Four of the top ten fall within 1.5 kb of a
+TSS. The trend of top-ranked CpGs being in a promotor region is not seen in this analysis, but may 
+appear in a full scale, well-powered EWAS. 
+No CpG clears the Bonferroni significance threshold (the top CpG has BACON p ≈ 2.0 × 10⁻⁷ against
+a threshold of ≈ 6.6 × 10⁻⁸), and none passes FDR < 0.05 (lowest BACON FDR 0.090). Read this table as
 'nominally significant' rather than 'statistically significant'.
 
 In a real study this table is the hand-off point to the enrichment
@@ -258,12 +270,12 @@ ggsave("data/08_annotation/08_island_distribution.png",
        width = 7, height = 3.2, dpi = 300)
 ```
 
-![Gene-feature context of the top 1,000 CpGs versus all 756,251 tested, using Zhou's promoter (±1.5 kb of TSS) / gene-body / intergenic scheme. The top set leans slightly toward promoters (54.2% vs 52.2%) and away from gene bodies (31.7% vs 33.4%), with intergenic essentially unchanged (14.1% vs 14.4%) — the direction a real signal moves, but a small effect at this sample size.](data/08_annotation/08_feature_distribution.png){#fig-feature width=95%}
+![Gene-feature context of the top 1,000 CpGs versus all 756,251 tested, using Zhou's promoter (±1.5 kb of TSS) / gene-body / intergenic scheme. The top set leans slightly away from promoters (51.0% vs 52.2%) and toward gene bodies (34.7% vs 33.4%), with intergenic essentially unchanged (14.3% vs 14.4%) — not the direction a real signal usually moves, and a small effect at this sample size.](data/08_annotation/08_feature_distribution.png){#fig-feature width=95%}
 
-![CpG-island context, same comparison, using the Zhou CGI relation. A visible lean toward islands in the top set (22.3% vs 19.2%) and away from open sea (51.4% vs 55.6%). Hold this impression loosely: the formal test in Part 3 (Know Your CpG, another Zhou resource) does *not* find it significant.](data/08_annotation/08_island_distribution.png){#fig-island width=95%}
+![CpG-island context, same comparison, using the Zhou CGI relation. A slight lean toward islands in the top set (19.9% vs 19.2%) and away from open sea (53.7% vs 55.6%). Hold this impression loosely: the formal test in Part 3 (Know Your CpG, another Zhou resource) does *not* find it significant.](data/08_annotation/08_island_distribution.png){#fig-island width=95%}
 
 The distributions move only modestly between the top 1,000 and the background
-(@fig-feature, @fig-island). The top-set leans toward promoters and islands, but 
+(@fig-feature, @fig-island). The top-set leans slightly toward islands but not toward promoters, and 
 it's not clear if that pattern is more than chance. The bar chart above 
 is a useful visual indicator, but not a formal enrichment test, which is covered in [Part 3](#part-3) of 
 this chapter.
@@ -290,20 +302,18 @@ the snakemake pipeline and how to merge it in will not be covered in this tutori
 data from hg19 to hg38 and only represents meQTLs for CpGs from the 450k array. If you have both methylation and genetic 
 data for your sample, which is often the case, you can perform cis- and trans-meQTL testing yourself. The eQTM relationships 
 require having gene expression and methylation data, which is less common and why the effort was made to liftover and update 
-the meQTL data from the BIOS consortium. 
+the eQTM data from the BIOS consortium. 
 :::
 
 The catalogs are keyed on Ensembl gene IDs; the pipeline's
 `prepare_bios_eqtm_annotation.R` helper re-maps those to current HGNC symbols for eQTM data. 
 
 ::: {.callout-note}
-## What this chapter needs
-This section reads `data/08_annotation/bios_eqtm_hgnc_annotated.tsv`, written by the pipeline helper shown in
-the chunk below. If you do not want to run the helper, fetch the published copy instead:
-
-```{.bash filename="Terminal"}
-./get_data.sh H_annotation
-```
+## What this section needs
+This section reads `data/08_annotation/bios_eqtm_hgnc_annotated.tsv.gz`, which is committed
+to the repository, so there is nothing to fetch. It is the output of a script from the EWAS snakemake pipeline,
+`prepare_bios_eqtm_annotation.R`. Please refer to the source code in the
+[EWAS repo](https://github.com/krferrier/EWAS) if you'd like to rebuild this file yourself.
 :::
 
 ```{r}
@@ -311,12 +321,7 @@ the chunk below. If you do not want to run the helper, fetch the published copy 
 # Extends `annotated` from the join above. The two files it writes at the end
 # are the ones every later section of this chapter reads.
 
-# One-time prep: Ensembl -> current HGNC symbol (pipeline helper)
-#   Rscript prepare_bios_eqtm_annotation.R \
-#     --bios-eqtm 2015_09_02_cis_eQTMsFDR0.05-CpGLevel.txt \
-#     --hgnc-complete-set hgnc_complete_set.txt \
-#     --output bios_eqtm_hgnc_annotated.tsv
-eqtm <- fread("data/08_annotation/bios_eqtm_hgnc_annotated.tsv")
+eqtm <- fread("data/08_annotation/bios_eqtm_hgnc_annotated.tsv.gz")
 
 # collapse to one row per CpG: effector gene(s) + strongest eQTM FDR
 eq <- eqtm[HGNCName_GRCh38 != "" & !is.na(HGNCName_GRCh38),
@@ -328,10 +333,7 @@ annotated <- merge(annotated, eq, by = "probe", all.x = TRUE)
 setorder(annotated, bacon.p)      # merge() re-sorts by the join key; rank it again
 
 # --- what Part 1 hands on -------------------------------------------------
-# The CSV is the deposited annotation table (Zenodo tier H_annotation); the RDS
-# is the same object, read back by the DMR per-CpG table in Part 2. Both are
-# written here, after the eQTM merge, so neither can be missing a column the
-# other has.
+# Export the annotation data as a .csv (as is found in the Zenodo tier H_annotation) and an RDS.
 fwrite(annotated, "data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz")
 saveRDS(annotated, "data/08_annotation/annotated.rds")
 ```
@@ -375,8 +377,8 @@ knitr::kable(fread("data/08_annotation/eqtm_display.csv"),
   caption = "Top EWAS hits (by BACON p) that carry a BIOS cis-eQTM. The 'nearest?' column flags where the expression-linked effector gene is not the nearest gene by distance.")
 ```
 
-For **cg06083200** the nearest gene is `PPP1R11`, but the
-CpG's methylation tracks the expression of **`TRIM26`**. For **cg26713179** the nearest gene is
+For **cg12218747** the nearest genes are `CBR1-AS1`/`SETD4`, but the
+CpG's methylation tracks the expression of **`CBR1`**. For **cg26713179** the nearest gene is
 `ZNF766` while the eQTM points at the neighboring **`ZNF528`/`ZNF880`** cluster.
 Four of these twelve hits show an effector that differs from the nearest gene.
 When reporting results, the effector gene is usually the one people want to know about if the 
@@ -426,11 +428,11 @@ autocorrelation-adjusted regional p-values (the Stouffer–Liptak–Kechris
 correction), FDR-correct those, and finally stitch adjacent low-p CpGs into
 regions. First we write the BED (this is the pipeline's `make_bed.R`). The
 p-values come straight from the chapter 06 BACON fit; the coordinates come from
-the same Zhou v8.1 release the chapter 03 mask came from, so the BED and the
+the same Zhou v8.1 hg38 release the chapter 03 mask came from, so the BED and the
 mask cannot drift apart:
 
 ::: {.callout-note}
-## What this chapter needs
+## What this section needs
 This section starts from `data/06_ewas.rds`, written by [chapter 06](06_ewas.qmd). If you
 did not run that chapter, fetch the published checkpoint instead:
 
@@ -438,25 +440,26 @@ did not run that chapter, fetch the published checkpoint instead:
 ./get_data.sh F_ewas_results
 ```
 
-It also reads `../masks/EPIC.ordering.tsv.gz` and `../masks/EPIC.hg38.coord.tsv.gz`, the probe-order
-and hg38 coordinate tables from the same Zhou v8.1 release [chapter 03](03_probe_filtering.qmd) used.
-If you do not have those two files, the same command fetches them:
-
-```{.bash filename="Terminal"}
-./get_data.sh H_annotation
-```
+It also needs the probe-order and hg38 coordinate tables from the same Zhou v8.1
+release [chapter 03](03_probe_filtering.qmd) used. You do not need to fetch either: the
+probe ordering is the copy chapter 03 already committed under `data/`, and the coordinate
+table is read directly from the Zhou lab's repository in the chunk below.
 :::
 
 ```{r}
 #| label: make-bed
-# This chunk executes: it writes the file comb-p consumes, so rendering the
-# chapter regenerates the BED from exactly the p-values discussed above.
+# This chunk writes the file comb-p needs for input.
 tt  <- as.data.table(readRDS("data/06_ewas.rds")$tt)
 # The YAME probe order and the coordinate table are two halves of one file pair:
 # row i of the coordinate table is the probe named on row i of the ordering
 # file, which is why they are assembled side by side and not merged.
-ord <- fread("../masks/EPIC.ordering.tsv.gz", select = "Probe_ID")  # YAME probe order
-crd <- fread("../masks/EPIC.hg38.coord.tsv.gz")                     # same order, one row per probe
+# The ordering is the same committed file chapter 03 reads. The coordinate table
+# (5 MB) is downloaded from the zhou-lab/InfiniumAnnotation repository, pinned to a
+# commit so it cannot change underneath the ordering it has to line up with.
+ord <- fread("data/EPIC.ordering.tsv.gz", select = "Probe_ID")    # YAME probe order
+crd <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotation/",
+                    "e91f9e992cc60f2f52f15c564e359ac6718d4cfd/EPIC/EPIC.hg38.coord.tsv.gz"))
+                                                                   # same order, one row per probe
 map <- data.table(probe = ord$Probe_ID,
                   CpG_chrm = crd$CpG_chrm, CpG_beg = crd$CpG_beg)
 
@@ -481,10 +484,18 @@ Then the region detection, with the pipeline's default parameters
 (`config.yml`: `min_pvalue = 1e-4`, `window_size = 200`,
 `region_filter = 0.05`):
 
-```bash
+comb-p is a Python tool with its own environment
+(`conda env create -f envs/combp.yml`); run the command below in a terminal from the
+`tutorial/` folder. Its seven output files are committed under
+`data/08_annotation/dmr/`, so the R chunks that follow run whether or not you run it.
+`--seed` is the p-value a CpG must reach to start a region, and `--dist` is how far
+apart (in bp) neighbouring CpGs can be and still extend it:
+
+```{.bash filename="Terminal"}
+mkdir -p data/08_annotation/dmr
 comb-p pipeline \
-    --seed 1e-4 \         # a CpG must reach this p to seed a region
-    --dist 200 \          # CpGs within 200 bp can extend a region
+    --seed 1e-4 \
+    --dist 200 \
     --region-filter-p 0.05 \
     -p data/08_annotation/dmr/PTSD_dmr \
     data/08_annotation/PTSD_ewas_annotated_results.bed
@@ -510,33 +521,32 @@ endpoint for a pipeline. In this run the two files carry identical columns
 because our input BED has no effect-size column for comb-p to carry through.
 
 The ACF step reports short-range autocorrelation in our p-values (correlation
-≈ 0.054 out to ~71 bp, p ≈ 1.3 × 10⁻¹²⁹ over 202,078 CpG pairs). Methylation
+≈ 0.054 out to ~71 bp, p ≈ 2.0 × 10⁻¹²⁸ over 202,078 CpG pairs). Methylation
 *is* spatially structured here, as expected. The SLK/FDR steps then propose
-three candidate regions, and one of them survives the Šidák correction for the
+two candidate regions, and one of them survives the Šidák correction for the
 number of regions tested:
 
 | region (hg38) | n CpGs | `min_p` | `z_sidak_p` |
 |---|---|---|---|
-| chr6:28,633,493–28,633,701 | 11 | 2.3 × 10⁻¹³ | **2.6 × 10⁻¹⁶** |
-| chr3:138,608,544–138,608,573 | 2 | 7.8 × 10⁻⁵ | 0.45 |
-| chr20:32,018,064–32,018,066 | 1 | 2.1 × 10⁻⁵ | 1.00 |
+| chr6:28,633,493–28,633,701 | 11 | 8.3 × 10⁻¹⁴ | **2.4 × 10⁻¹⁶** |
+| chr3:138,608,544–138,608,573 | 2 | 9.3 × 10⁻⁵ | 0.53 |
 
 Those are five of the seven columns in `regions-p.bed.gz` — the three
 coordinate columns are collapsed into one here, and `z_p` is omitted (it is the
-Šidák-uncorrected region p, 3.6 × 10⁻²⁰ for the chr6 region). The surviving
+Šidák-uncorrected region p, 3.3 × 10⁻²⁰ for the chr6 region). The surviving
 region sits at **chr6:28.63 Mb, inside the MHC/HLA region**.
 
 ::: {.callout-warning}
 ## `min_p` in the comb-p output is *not* a raw probe p-value
 The region above is reported with
-`min_p = 2.3 × 10⁻¹³` and `z_sidak_p = 2.6 × 10⁻¹⁶`. Despite the column name,
+`min_p = 8.3 × 10⁻¹⁴` and `z_sidak_p = 2.4 × 10⁻¹⁶`. Despite the column name,
 that `min_p` is not the smallest input p-value in the region: it is the smallest
 **Stouffer–Liptak–Kechris–smoothed, FDR-corrected** regional q among the
-region's CpGs (the raw SLK p at those same CpGs goes down to 6.0 × 10⁻¹⁹).
+region's CpGs (the raw SLK p at those same CpGs goes down to 2.2 × 10⁻¹⁹).
 Smoothing pools each CpG with its neighbors, so these values are orders of
 magnitude below anything in the input: the smallest raw BACON p among the eleven
-CpGs is 1.7 × 10⁻⁵, and the smallest anywhere in the BED is
-3.0 × 10⁻⁸. Smoothed regional statistics and probe-level statistics are not on
+CpGs is 1.1 × 10⁻⁵, and the smallest anywhere in the BED is
+2.0 × 10⁻⁷. Smoothed regional statistics and probe-level statistics are not on
 the same scale, and comparing them directly will make a region look far stronger
 than the data supporting it.
 :::
@@ -558,8 +568,9 @@ p-value you do use!
 ## The MHC is a blood-EWAS landmark
 
 That the strongest regional signal falls in the MHC on chromosome 6. The MHC is
-the most gene-dense, most polymorphic, and most methylation-variable region in
-the genome, and it surfaces in a large fraction of blood EWAS. It is
+one of the most gene-dense and polymorphic regions of the human genome, and it is
+associated with more diseases than any other region [@horton2004mhc]. It also surfaces
+in many blood EWAS. It is
 simultaneously the region where you should be *most* cautious about SNP-driven
 artifacts. We already removed common-SNP-affected sites, but it is possible
 that rare variants, structural variants, or undocumented genetic variation is
@@ -567,7 +578,37 @@ driving this signal. Further causal inference testing with genetic or gene
 expression data can help clarify why we are seeing this signal in the MHC.
 :::
 
-![The detected DMR at chr6:28.63 Mb. Each stem is one CpG; the eleven inside the shaded window (blue) are the region comb-p reports. Every one sits far below the single-CpG genome-wide threshold (−log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.6 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis.](data/08_annotation/08_dmr_locus.png){#fig-dmr width=95%}
+```{r}
+#| label: fig-dmr
+#| code-fold: true
+#| code-summary: "Show the code for the DMR locus plot"
+#| fig-width: 8
+#| fig-height: 3.6
+#| fig-cap: "The detected DMR at chr6:28.63 Mb (hg38, Zhou coordinates). Each stem is one CpG within 2.5 kb of the region; the eleven inside the shaded window (teal) are the region comb-p reports, and all eleven are less methylated in cases. Every one sits far below the single-CpG genome-wide threshold (plum line, −log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.4 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis."
+library(data.table)
+library(ggplot2)
+
+# The strongest comb-p region, by Sidak-corrected p, from the file the command above wrote
+lead <- fread("data/08_annotation/dmr/PTSD_dmr.regions-p.bed.gz")[order(z_sidak_p)][1]
+lead_chr <- lead[[1]]; lead_start <- lead$start; lead_end <- lead$end
+
+# Every tested CpG within 2.5 kb of the region, with its BACON p-value and hg38 position
+ann_loc <- as.data.table(readRDS("data/08_annotation/annotated.rds"))
+bonf_line <- -log10(0.05 / nrow(ann_loc))
+loc <- ann_loc[CpG_chrm == lead_chr &
+               CpG_beg >= lead_start - 2500 & CpG_beg <= lead_end + 2500]
+loc[, in_region := CpG_beg >= lead_start & CpG_beg <= lead_end]
+
+ggplot(loc, aes(CpG_beg / 1e6, -log10(bacon.p), colour = in_region)) +
+  annotate("rect", xmin = lead_start / 1e6, xmax = lead_end / 1e6,
+           ymin = -Inf, ymax = Inf, fill = "#1A6B75", alpha = 0.12) +
+  geom_segment(aes(xend = CpG_beg / 1e6, y = 0, yend = -log10(bacon.p))) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = bonf_line, colour = "#8C3A4A") +
+  scale_colour_manual(values = c(`TRUE` = "#1A6B75", `FALSE` = "gray60"), guide = "none") +
+  labs(x = paste0(lead_chr, " position (Mb, hg38)"),
+       y = expression(-log[10]~italic(p)[BACON]))
+```
 
 ### `ENmix::combp`: the same method, but with R
 
@@ -578,7 +619,7 @@ BED we just built with only a column rename. (The same package also offers `ipdm
 [@xu2020ipdmr], the authors' interval-p-value variant.)
 
 ::: {.callout-note}
-## What this chapter needs
+## What this section needs
 This section starts from `data/08_annotation/PTSD_ewas_annotated_results.bed`, written by the
 `make-bed` chunk above. If you did not run that chunk, fetch the published copy instead:
 
@@ -589,15 +630,8 @@ This section starts from `data/08_annotation/PTSD_ewas_annotated_results.bed`, w
 
 ```{r}
 #| label: enmix-combp
-#| eval: false
-# ENmix IS in `envs/methyl.yml` as of the R 4.5 generation, so this runs -- but it
-# is shown rather than executed at render for three practical reasons: its input
-# BED is an H-tier file that is not tracked in this repository, combp() writes
-# resu_combp.csv into the working directory rather than under data/, and nothing
-# downstream reads its output (the comparison table below is committed). The
-# region it finds is the one quoted in the text. Note this is ENmix's R
-# implementation of the comb-p algorithm; the Python comb-p it is compared
-# against lives in `envs/combp.yml`.
+# ENmix's R implementation of the comb-p algorithm. The Python comb-p it is
+# compared against below lives in `envs/combp.yml`.
 library(ENmix)
 
 bed <- data.table::fread("data/08_annotation/PTSD_ewas_annotated_results.bed")
@@ -612,7 +646,13 @@ combp(data = bed,
       seed        = 1e-4,          # FDR threshold for seeding a region
       nCores      = 4,
       region_plot = FALSE, mht_plot = FALSE)
-# → resu_combp.csv  (chr, start, end, p, fdr, sidak, nprobe, probe)
+
+# combp() always writes resu_combp.csv into the working directory; move it
+# alongside the other chapter 08 outputs
+file.rename("resu_combp.csv", "data/08_annotation/08_enmix_combp.csv")
+enmix <- data.table::fread("data/08_annotation/08_enmix_combp.csv")
+cat("ENmix regions:", nrow(enmix), "| Sidak < 0.05:", sum(enmix$sidak < 0.05), "\n")
+enmix[which.min(enmix$sidak), .(chr, start, end, nprobe, sidak)]
 ```
 
 It runs in about a minute on our 756,234-row BED and finds the same lead region: a
@@ -629,8 +669,8 @@ command-line settings (`--dist 200` with the default `bin.size = 310`) fails wit
 = 750` above is chosen to exceed the default bin width.
 
 **The two implementations do not return the same region count.** With the settings above
-ENmix reports **8** candidate regions of which **7** clear Šidák < 0.05, where
-command-line comb-p at `--dist 200 --seed 1e-4` reports **3** candidates of which
+ENmix reports **9** candidate regions of which **7** clear Šidák < 0.05, where
+command-line comb-p at `--dist 200 --seed 1e-4` reports **2** candidates of which
 **1** clears Šidák. Both single out the same chr6 locus as by far the strongest —
 ENmix calls 12 CpGs there against comb-p's 11 — but ENmix is much more permissive
 about everything else. Some of that is the wider `dist.cutoff`, and some is that ENmix
@@ -647,16 +687,17 @@ above, which is what [chapter 07](07_pipeline.qmd)'s pipeline invokes.
 If you are using DMRcate, it operates on the M-value matrix directly:
 
 ```{.r filename="Generic example, do not run"}
-# Schematic only: `M` and `design` are yours to supply. This chapter never
-# builds them, because our EWAS was run stratified (see the callout above),
-# so there is no single design matrix to hand DMRcate.
+# Schematic only: `M` and `design` are yours to supply. This chapter does not run
+# DMRcate: it needs the full M-value matrix and the chapter 06 design in memory,
+# and the pipeline's stratified route has no single design matrix to hand it.
 library(DMRcate)
 # M = CpG x sample matrix; design = model.matrix(~ PTSD + sex + age + cellcounts + SVs)
 myannotation <- cpg.annotate("array", M, arraytype = "EPICv1",
                              analysis.type = "differential",
                              design = design, coef = "PTSD")
 dmrs <- dmrcate(myannotation, lambda = 1000, C = 2)   # Gaussian-kernel smoothing
-results.ranges <- extractRanges(dmrs, genome = "hg38")
+results.ranges <- extractRanges(dmrs, genome = "hg19")  # EPICv1 annotation is hg19,
+                                                          # unlike this chapter's hg38 regions
 ```
 
 Note what it requires that comb-p does not: the full `M` matrix in memory and a
@@ -666,31 +707,62 @@ cannot express it as one `coef` here.
 ### Annotating the DMRs
 
 Once regions exist, the pipeline's `dmr_annotation.R` maps each DMR back to
-genes and islands by overlapping its coordinates against UCSC **refGene**,
-**cpgIslandExt**, and the **HGNC** BigBed (fetched by the `annotate.smk` cache
-rule from `hgdownload.soe.ucsc.edu`, all hg38). The DMR's constituent CpGs are
-looked up in the EWAS BED so each region carries its probe list and direction of
-effect. The overlap is a coordinate join — `bedtools intersect` in the pipeline,
+genes and islands by overlapping its coordinates against three UCSC **hg38** tables:
+**refGene**, **cpgIslandExt**, and the **HGNC** gene track. The chunk below downloads
+the same three from UCSC. The DMR's constituent CpGs are
+looked up by coordinate in the Part 1 annotation table (`annotated.rds`), so each region
+carries its probe list and direction of effect. The overlap is a coordinate join — `bedtools intersect` in the pipeline,
 or `GenomicRanges::findOverlaps()` if you are staying in R — with no modeling
 involved. We run it here for our one region, the eleven CpGs of the
 comb-p MHC region at **chr6:28,633,493–28,633,701**:
 
 ```{r}
 #| label: dmr-annot
-#| eval: false
-# eval: false because the two UCSC BEDs it reads are the `annotate.smk` cache
-# downloads, which are not tracked in this repository.
-library(GenomicRanges)   # GRanges(), IRanges(), overlapsAny()
-library(rtracklayer)     # import(), for the cached UCSC BED files
-# DMR CpGs (from the comb-p region) as a GRanges
-dmr <- GRanges("chr6", IRanges(28633493, 28633701))
+library(GenomicRanges)   # GRanges(), IRanges(), overlapsAny(), nearest()
+library(jsonlite)        # fromJSON(), for the UCSC API query below
 
-# refGene / HGNC / cpgIslandExt hg38 BEDs (annotate.smk cache; here read locally)
-refGene <- import("refGene.bed.gz")          # rtracklayer::import
-hgnc    <- import("hgnc.bed.gz")
-# genes whose body/±5 kb overlaps the DMR
-refGene[overlapsAny(refGene, dmr + 5000)]    # -> character(0)
-hgnc[overlapsAny(hgnc, dmr)]                  # -> COX8CP1 (pseudogene)
+# The comb-p DMR, in hg38: the region with the smallest Sidak-corrected p in the
+# regions-p file the comb-p command above wrote
+top_dmr <- fread("data/08_annotation/dmr/PTSD_dmr.regions-p.bed.gz")[order(z_sidak_p)][1]
+dmr <- GRanges(top_dmr[[1]], IRanges(top_dmr$start, top_dmr$end))
+
+# The same three UCSC hg38 tables the pipeline's fetch_dmr_annotation_cache rule
+# downloads. refGene and cpgIslandExt are plain gzipped tables, so fread() reads
+# them straight from the UCSC download server.
+ucsc <- "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/"
+
+# refGene: columns 3-6 are chrom, strand, txStart, txEnd; column 13 is the gene symbol
+rg <- fread(paste0(ucsc, "refGene.txt.gz"), header = FALSE, select = c(3, 4, 5, 6, 13),
+            col.names = c("chrom", "strand", "txStart", "txEnd", "gene"))
+refGene <- GRanges(rg$chrom, IRanges(rg$txStart + 1L, rg$txEnd),   # UCSC starts are 0-based
+                   strand = rg$strand, gene = rg$gene)
+
+# cpgIslandExt: columns 2-4 are chrom, chromStart, chromEnd
+cgi <- fread(paste0(ucsc, "cpgIslandExt.txt.gz"), header = FALSE, select = 2:4,
+             col.names = c("chrom", "chromStart", "chromEnd"))
+cpgIslands <- GRanges(cgi$chrom, IRanges(cgi$chromStart + 1L, cgi$chromEnd))
+
+# The HGNC track is a bigBed (the pipeline converts it with bigBedToBed). R's
+# bigBed reader cannot parse this file's colour column, so ask the UCSC API for
+# the records overlapping the DMR instead (API coordinates are 0-based).
+hgnc <- fromJSON(paste0("https://api.genome.ucsc.edu/getData/track?genome=hg38;track=hgnc;",
+                        sprintf("chrom=%s;start=%d;end=%d", as.character(seqnames(dmr)),
+                                start(dmr) - 1L, end(dmr))))$hgnc
+
+# genes whose transcript lies within 5 kb of the DMR, and the nearest one on each side
+near_ref <- refGene[overlapsAny(refGene, dmr + 5000)]
+lower    <- refGene[follow(dmr, refGene, ignore.strand = TRUE)]
+higher   <- refGene[precede(dmr, refGene, ignore.strand = TRUE)]
+length(near_ref)
+data.frame(side = c("lower coordinate", "higher coordinate"),
+           gene = c(lower$gene, higher$gene),
+           distance_bp = c(distance(dmr, lower), distance(dmr, higher)))
+
+hgnc[, c("symbol", "geneName", "locus_type")]
+
+# nearest CpG island: within 2 kb counts as a shore
+isl <- cpgIslands[nearest(dmr, cpgIslands)]
+distance(dmr, isl)
 ```
 
 This is a prime example region because **the three annotation sources disagree**, and the
@@ -699,19 +771,16 @@ agree, it is not uncommon for annotation disagreements to occur:
 
 ```{r}
 #| label: dmr-sources-derive
-# The comparison rendered below. The third row is computed from our own
-# probe-level annotation; the first two are one-line readings of the two overlap
-# queries in the chunk above, which is why they are written out as text — an
-# empty overlap has no gene symbol to print.
-# It needs annotated.rds, written in Part 1. The two UCSC overlap queries in
-# the chunk above are not re-run here -- their one-line outcomes are the text in
-# rows one and two.
+# One row per annotation source: what each names for the DMR. Rows one and two
+# come from the UCSC queries in the chunk above; row three from the GENCODE v41
+# annotation built in Part 1 (annotated.rds).
 ann <- as.data.table(readRDS("data/08_annotation/annotated.rds"))
 # the region's CpGs by coordinate, not by a pasted probe list, so the region
 # definition lives in one place
-reg <- ann[CpG_chrm == "chr6" & CpG_beg >= 28633493 & CpG_beg <= 28633701]
+reg <- ann[CpG_chrm == as.character(seqnames(dmr)) &
+           CpG_beg >= start(dmr) & CpG_beg <= end(dmr)]
 setorder(reg, CpG_beg)
-stopifnot(nrow(reg) == 11L)     # the eleven comb-p reported; fail loudly if the map changed
+stopifnot(nrow(reg) == top_dmr$n_probes)   # the count comb-p reported; fail loudly if the map changed
 
 # every gencode v41 gene the eleven probes are assigned to, de-duplicated
 gencode_genes <- paste(sort(unique(unlist(strsplit(reg$genesUniq, ";")))),
@@ -719,14 +788,20 @@ gencode_genes <- paste(sort(unique(unlist(strsplit(reg$genesUniq, ";")))),
 
 dmr_src <- data.table(
   `Annotation source` = c("UCSC refGene (pipeline default gene table)",
-                          "UCSC HGNC BigBed (annotate.smk cache)",
+                          "UCSC HGNC track",
                           "Zhou GENCODE v41 (our probe-level annotation)"),
-  `What it names for chr6:28,633,493–28,633,701` = c(
-    # refGene[overlapsAny(refGene, dmr + 5000)] returned nothing at all
-    "nothing within \u00b15 kb (nearest ZBED9 ~17 kb up, LINC00533 ~15 kb down)",
-    # hgnc[overlapsAny(hgnc, dmr)] returned the pseudogene
-    "COX8CP1 (COX8C pseudogene, directly overlapping)",
+  names = c(
+    if (length(near_ref) == 0)
+      sprintf("nothing within \u00b15 kb (nearest %s ~%.0f kb, %s ~%.0f kb)",
+              lower$gene, distance(dmr, lower) / 1000, higher$gene, distance(dmr, higher) / 1000)
+    else paste(unique(near_ref$gene), collapse = ", "),
+    paste0(hgnc$symbol, " (", hgnc$geneName, ", directly overlapping)"),
     paste0(gencode_genes, " (promoter-associated, non-coding)")))
+# the second column is labelled with the region's own hg38 coordinates
+setnames(dmr_src, "names",
+         sprintf("What it names for %s:%s\u2013%s", as.character(seqnames(dmr)),
+                 formatC(start(dmr), big.mark = ",", format = "d"),
+                 formatC(end(dmr),   big.mark = ",", format = "d")))
 fwrite(dmr_src, "data/08_annotation/dmr_source_comparison.csv")
 ```
 
@@ -740,7 +815,7 @@ knitr::kable(fread("data/08_annotation/dmr_source_comparison.csv"),
 
 refGene is a curated set of well-supported transcripts, so a DMR sitting in a
 gene-poor stretch of the MHC returns nothing within 5 kb — the nearest curated
-genes (ZBED9, LINC00533) are >15 kb away. The HGNC BigBed, which includes
+genes (ZBED9, LINC00533) are >14 kb away. The HGNC BigBed, which includes
 pseudogenes and genes from difficult to map regions, overlaps **COX8CP1** directly, 
 and our probe-level GENCODE v41 annotation assigns the CpGs to two non-coding transcripts 
 as **promoter** hits.
@@ -782,7 +857,7 @@ fwrite(full, "data/08_annotation/dmr_cpg_annotation.csv")
 #| message: false
 # written by the `dmr-cpgs-derive` chunk above
 knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv"),
-  caption = "The eleven CpGs of the DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases — Δβ between −2.2 and −5.6 percentage points, every one in the same direction. That coherence is what makes a region call meaningful; none of the eleven individual BACON p-values comes close to genome-wide significance.")
+  caption = "The eleven CpGs of the DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases — Δβ between −2.2 and −5.8 percentage points, every one in the same direction. That coherence is what makes a region call meaningful; none of the eleven individual BACON p-values comes close to genome-wide significance.")
 ```
 
 ### From regions to pathways: `goregion`
@@ -794,35 +869,54 @@ each region to the CpGs it contains, collapses those to genes, and runs the same
 probe-number-bias-corrected GO/KEGG test. It is the natural way to ask "are my
 comb-p regions collectively enriched for a biological process?"
 
+By default `goregion` (like `gometh` in Part 3) uses **Illumina's hg19** annotation
+package to decide which CpGs fall in a region and which genes they belong to, whereas
+the rest of this chapter, including the comb-p region itself, uses Wanding Zhou's
+**hg38** resources. Both functions accept an annotation of your own through their
+`anno` argument, so we build one from the Zhou GENCODE v41 manifest read in Part 1.
+missMethyl expects the column names of Illumina's package, so the Zhou columns are
+renamed to match:
+
+```{r}
+#| label: zhou-anno
+# One row per CpG probe with hg38 coordinates. `v41` is the Zhou manifest read in Part 1.
+z <- v41[grepl("^cg", probeID) & !is.na(CpG_beg)]
+genes <- fifelse(is.na(z$genesUniq), "", z$genesUniq)     # ';'-separated gene names
+zhou_anno <- S4Vectors::DataFrame(
+  Name   = z$probeID,
+  chr    = z$CpG_chrm,
+  pos    = z$CpG_beg + 1L,                                # Zhou's starts are 0-based
+  strand = fifelse(is.na(z$probe_strand), "*", z$probe_strand),
+  UCSC_RefGene_Name = genes,
+  # missMethyl wants one gene-region label per gene. It only uses them when you
+  # restrict the test to particular regions (genomic.features), which we do not,
+  # so a placeholder label is enough.
+  UCSC_RefGene_Group = vapply(strsplit(genes, ";"),
+                              function(g) paste(rep("gene", length(g)), collapse = ";"), ""),
+  row.names = z$probeID)
+nrow(zhou_anno)
+```
+
 ```{r}
 #| label: goregion
 #| error: true
-# error: true, not eval: false -- this call stops with an error on purpose, and
-# the point of the section is to show that error, so we let it run and let
-# Quarto print what R says. Needs the missMethyl stack and the hg19 EPIC
-# annotation package.
 library(missMethyl)
-# goregion works in the array's native annotation build (hg19 for EPIC),
-# so lift the hg38 DMR coordinates back with the EPIC manifest's own map.
-anno <- minfi::getAnnotation("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
-# the eleven probes the region table above derived, spelled out so this chunk
-# stands on its own
-dmr_cpgs <- c("cg07017437","cg25653641","cg22572476","cg19488431",
-              "cg27535677","cg22497095","cg26865747","cg03759229",
-              "cg13565129","cg14654363","cg00990380")
-reg <- GenomicRanges::reduce(GenomicRanges::GRanges(
-  anno[dmr_cpgs, "chr"],
-  IRanges::IRanges(anno[dmr_cpgs, "pos"], width = 2)))
+# The DMR from its eleven CpGs' hg38 positions. `reg` is the region's rows of the
+# Part 1 annotation, built in the dmr-sources-derive chunk above.
+dmr_gr <- GenomicRanges::reduce(GenomicRanges::GRanges(
+  reg$CpG_chrm, IRanges::IRanges(reg$CpG_beg + 1L, width = 2)))
 
-# all.cpg is the tested universe: `tt` here is the chapter 06 top-table read in
-# by the make-bed chunk above
-gr_go <- goregion(reg, all.cpg = tt$probe, collection = "GO",
-                  array.type = "EPIC")
+# all.cpg is the tested universe: `tt` is the chapter 06 top-table read in by the
+# make-bed chunk above
+gr_go <- goregion(dmr_gr, all.cpg = tt$probe, collection = "GO",
+                  array.type = "EPIC", anno = zhou_anno)
 ```
 
 Run on our single MHC DMR, `goregion` **returns an error**: *"There are no genes
-annotated to the significant CpGs."*. The region sits over a pseudogene (COX8CP1) with no protein-coding gene
-in the EPIC annotation, so there is nothing to map to a GO term. Two lessons
+annotated to the significant CpGs."*. In Zhou's GENCODE v41 annotation the region's CpGs
+are assigned only to two unnamed non-coding genes, which have Ensembl IDs but no gene
+symbol. missMethyl can only test genes it can match to an Entrez ID, so there is nothing
+to map to a GO term. (Illumina's hg19 annotation gives the same error for this region.) Two lessons
 fall out of this:
 
 1. **Enrichment inherits the annotation's gene assignments.** If the annotation
@@ -855,27 +949,38 @@ from the gene-expression version you may know:
 `missMethyl::gometh()` (and its generic `gsameth()` for custom gene sets) is the
 field-standard R implementation. It maps your significant CpGs to genes, models
 the per-gene probe count as the bias covariate, and runs a corrected
-hypergeometric test against GO or KEGG [@phipson2016missmethyl]. Enrichment has not 
+hypergeometric test against GO or KEGG [@phipson2016missmethyl]. By default it assigns
+CpGs to genes with Illumina's **hg19** EPIC annotation package; passing
+`anno = zhou_anno` makes it use the same Zhou **hg38** GENCODE v41 genes as the rest of
+this chapter. Enrichment has not 
 yet been added to the Snakemake pipeline, but will in a future release.
+
+Normally you would run GO/KEGG enrichment only on the CpGs that reach
+epigenome-wide significance. The EWAS of this subset identified none, which leaves nothing
+to test, so here we use the top 1,000 CpGs by BACON *p*-value as our "significant
+set".
 
 ```{r}
 #| label: gometh
-# The Wallenius test runs over every GO term, so this is slow, and it needs the
-# missMethyl stack plus the hg19 EPIC annotation package. The RDS written at the
-# end is what the comparison table further down reads.
+# The Wallenius test runs over every GO term, so this takes about a minute. The
+# RDS written at the end is what the comparison table further down reads.
+# `zhou_anno` is the hg38 annotation built in Part 2's zhou-anno chunk.
 library(missMethyl)
 tt     <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
 all.cpg <- tt$probe                          # tested universe = every CpG you analyzed
 sig.cpg <- tt[order(bacon.p)][1:1000]$probe  # your significant set
 
 # GO enrichment, corrected for probes-per-gene. array.type matches your array.
+# anno = zhou_anno: genes from Zhou's hg38 GENCODE v41, not Illumina's hg19 default
 go <- gometh(sig.cpg = sig.cpg, all.cpg = all.cpg,
-             collection = "GO", array.type = "EPIC", plot.bias = TRUE)
+             collection = "GO", array.type = "EPIC", anno = zhou_anno,
+             plot.bias = TRUE)
 go <- go[order(go$P.DE), ]
 
 # KEGG is a one-word change
 kegg <- gometh(sig.cpg = sig.cpg, all.cpg = all.cpg,
-               collection = "KEGG", array.type = "EPIC")
+               collection = "KEGG", array.type = "EPIC", anno = zhou_anno)
+kegg <- kegg[order(kegg$P.DE), ]
 
 # Both collections in one object. The method comparison below reads `kegg` back
 # out of it, and keeping `go` alongside means the GO panel of the figure can be
@@ -888,34 +993,47 @@ every CpG that survived *your* QC and filtering, not the whole array manifest,
 or the test is biased toward whatever your pipeline happened to remove.
 `plot.bias = TRUE` draws the probe-number bias curve; glance at it once to
 confirm the correction is actually engaging. Defining "significant" by a fixed
-top-*N* (here 1,000) is a pragmatic choice when nothing clears FDR; with real
-signal you would instead pass the CpGs at your chosen significance threshold.
+top-*N* (here 1,000) is a teaching compromise, as noted above.
 
 Run on our teaching subset, the corrected results are:
 
-![GO and KEGG enrichment of the top 1,000 CpGs by BACON *p*, computed with
-`gometh` (probe-number–corrected hypergeometric test). Bars show nominal
-$-\log_{10} P_{DE}$; labels are DE-genes / gene-set size. **Nothing survives FDR
-at n = 87** — the expected outcome when no CpG reaches epigenome-wide
-significance. On a real study these panels are where mechanism appears.](data/08_annotation/08_gometh_enrichment.png){#fig-gometh width=85%}
+```{r}
+#| label: fig-gometh
+#| fig-width: 9
+#| fig-height: 6
+#| fig-cap: "GO and KEGG enrichment of the top 1,000 CpGs by BACON *p*, computed with `gometh` on Zhou's hg38 gene assignments (probe-number–corrected hypergeometric test). Bars show nominal $-\\log_{10} P_{DE}$ for the ten leading terms in each collection; labels are DE genes / gene-set size. **Nothing survives FDR at n = 86**, the expected outcome when no CpG reaches epigenome-wide significance."
+top_terms <- rbind(
+  data.table(collection = "GO",   term = head(go$TERM, 10),          DE = head(go$DE, 10),
+             N = head(go$N, 10),   p = head(go$P.DE, 10)),
+  data.table(collection = "KEGG", term = head(kegg$Description, 10), DE = head(kegg$DE, 10),
+             N = head(kegg$N, 10), p = head(kegg$P.DE, 10)))
+top_terms[, term := factor(term, levels = rev(unique(term)))]
+ggplot(top_terms, aes(x = -log10(p), y = term)) +
+  geom_col(fill = "#1A6B75") +
+  geom_text(aes(label = paste0(DE, "/", N)), hjust = -0.15, size = 3) +
+  facet_wrap(~ collection, ncol = 1, scales = "free_y") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
+  labs(x = expression(-log[10]~italic(P)[DE]~"(nominal)"), y = NULL)
+```
 
-The top nominal terms here are a grab-bag — basement membrane assembly
-(GO:0070831, *P* = 1.8 × 10⁻⁵), extracellular matrix assembly, viral
-translational termination-reinitiation, regulatory T cell differentiation — with
-no coherent theme and **no term at FDR < 0.05** in either collection. The
-smallest GO FDR is 0.41 and the smallest KEGG FDR is 0.38 (Basal cell carcinoma,
-nominal *P* = 0.0010). This is exactly what enrichment of a **null** gene list
-should look like. Reading *this* result as "PTSD methylation remodels the
-extracellular matrix" would be false: with 1,000 arbitrarily-chosen CpGs, a
-handful of small gene sets always reach nominal *p* < 0.01 by chance — note that
-the leading GO term has only 15 genes in it, 7 of which the top set touched.
-**The FDR column, not the nominal *p*, is the result.**
+The top nominal terms here are zonula adherens (GO:0005915, *P* = 1.6 × 10⁻³), the
+catenin-TCF7L2 complex, regulation of syncytium formation by plasma membrane fusion, and
+cell-cell adhesion. It is easy to read a cell-adhesion theme into that list, but there is
+**no term at FDR < 0.05** in either collection. The smallest FDR in both GO and KEGG is 1 (the top KEGG pathway is Adherens
+junction, nominal *P* = 0.0032). This is exactly what enrichment of a **null**
+gene list should look like. Reading *this* result as "PTSD methylation remodels
+adherens junctions" would be false: with 1,000 arbitrarily-chosen CpGs, a handful of
+small gene sets always reach nominal *p* < 0.01 by chance — note that the leading GO
+term has only 8 genes in it, 4 of which the top set touched.
 
 ### `methylGSA`: the same question, a different bias model
 
 `gometh` is not the only way to correct for the probe-number bias, and the
 choice of correction can change the outcome. **`methylGSA`** [@ren2019methylgsa]
-offers two alternatives to `gometh`'s Wallenius hypergeometric test:
+offers two alternatives to `gometh`'s Wallenius hypergeometric test. By default it uses
+Illumina's **hg19** annotation package; its `FullAnnot` argument takes a CpG-to-gene table
+of your own, so we give it the same Zhou **hg38** GENCODE v41 genes `gometh` used. The
+three methods below then differ in their statistics, not their gene assignments:
 
 - **`methylglm`** models each gene set with a **logistic regression** in which
   the per-gene number of probes enters as a covariate — a continuous adjustment
@@ -931,38 +1049,55 @@ On the R-only route, `BiocManager` installs `methylGSA` alongside everything els
 there is nothing to do. Conda users need `envs/methylgsa.yml`
 (`conda env create -f envs/methylgsa.yml`) because bioconda's newest `methylGSA` build is
 for an older R than the rest of the stack. Nothing is shared at run time: the only input
-below is the BACON top-table CSV written by chapter 06.
+below is the BACON top-table CSV written by chapter 06. Copy the chunk into a script and
+run it from the `tutorial/` folder with `conda run -n methylgsa Rscript <script>`; it
+writes the three files the comparison chunks below read. Those three files are also
+committed to the repository, so the rest of the section runs without this step.
 :::
 
 ```{r}
 #| label: methylgsa
 #| eval: false
-# This chunk needs `envs/methylgsa.yml`, a separate R 4.2 environment -- bioconda
-# has no r45 build of methylGSA, and pinning the whole tutorial back to R 4.2 for
-# one section is the trade this project deliberately refuses. So it cannot run in
-# the render environment and is shown instead; its two output tables are
-# committed and read below.
 library(methylGSA)
-library(data.table)   # fwrite(), for the two top-tables written at the end
-# methylGSA needs the array annotation LOADED, not merely installed --
-# methylglm/methylRRA stop with an error if it is missing from the search path.
-library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+library(data.table)   # fread()/fwrite()
+
+# This chunk runs in its own R session, so it reads the Zhou v41 manifest itself.
+# prepareAnnot() wants one row per CpG: the probe ID and its ';'-separated genes.
+v41 <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotationData/",
+                    "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/",
+                    "EPIC.hg38.manifest.gencode.v41.tsv.gz"))
+cpg2gene  <- v41[grepl("^cg", probeID) & !is.na(genesUniq) & genesUniq != "",
+                 .(CpG = probeID, gene = genesUniq)]
+FullAnnot <- prepareAnnot(as.data.frame(cpg2gene))
 
 tt <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
 pv <- setNames(tt$bacon.p, tt$probe)          # NAMED vector: names = CpG IDs
 
 # logistic-regression enrichment (bias covariate = probes per gene)
-mglm <- methylglm(cpg.pval = pv, array.type = "EPIC",
+mglm <- methylglm(cpg.pval = pv, FullAnnot = FullAnnot,
                   GS.type = "KEGG", minsize = 10, maxsize = 500)
 
-# GSEA on rank-aggregated per-gene scores
-mrra <- methylRRA(cpg.pval = pv, array.type = "EPIC", method = "GSEA",
+# GSEA on rank-aggregated per-gene scores. Its p-values come from random
+# permutations, so fix the seed to get the same table on every run.
+set.seed(20260922)
+mrra <- methylRRA(cpg.pval = pv, FullAnnot = FullAnnot, method = "GSEA",
                   GS.type = "KEGG", minsize = 10, maxsize = 500)
 
-# --- what leaves this environment ----------------------------------------
-# Both fits in one object, plus the two flat top-tables the comparison below
-# reads. `Method` is carried in each file so the three tools' tables can be
-# row-bound, and the KEGG id keeps its leading zeros by staying a string.
+# methylGSA looks pathway names up through clusterProfiler, whose older releases
+# no longer get human pathway IDs back from KEGG, leaving Description empty. Fill
+# any gaps from KEGG's own list of human pathways.
+kegg_names <- fread("https://rest.kegg.jp/list/pathway/hsa", header = FALSE,
+                    col.names = c("id", "name"))
+kegg_names[, `:=`(id = sub("^hsa", "", id), name = sub(" - Homo sapiens \\(human\\)$", "", name))]
+fill_names <- function(res) {
+  miss <- is.na(res$Description)
+  res$Description[miss] <- kegg_names$name[match(res$ID[miss], kegg_names$id)]
+  res
+}
+mglm <- fill_names(mglm)
+mrra <- fill_names(mrra)
+
+# Export results
 saveRDS(list(methylglm = mglm, methylRRA = mrra),
         "data/08_annotation/08_methylgsa.rds")
 glm_top <- head(as.data.table(mglm)[order(pvalue)], 10)[
@@ -983,16 +1118,16 @@ FDR < 0.05 and what each one puts at the top:
 # The comparison table rendered below, rebuilt from the three result files the
 # two chunks above write rather than typed out by hand.
 g  <- readRDS("data/08_annotation/08_gometh.rds")
-# gometh returns the KEGG id in the row names, which fread() cannot see later
 kg <- as.data.table(g$kegg, keep.rownames = "ID")[order(P.DE)]
-# KEGG ids are zero-padded ("04140"), so they must not be read as integers. Note
-# the two files disagree on what they call things: methylglm writes ID and
-# Description, methylRRA-GSEA writes KEGG and Pathway. Reading the wrong name
-# gives NULL, which c() silently drops -- and a three-row table built from a
-# two-element vector recycles, pairing each method with another method's pathway
-# while the p-values stay correctly aligned. Name the columns each file uses.
-gl <- fread("data/08_annotation/08_methylgsa_glm_top.csv", colClasses = c(ID = "character"))
+# KEGG ids are zero-padded ("04140"), so they must not be read as integers.
+gl <- fread("data/08_annotation/08_methylgsa_glm_top.csv", colClasses = c(KEGG = "character"))
 rr <- fread("data/08_annotation/08_methylgsa_rra_top.csv", colClasses = c(KEGG = "character"))
+mg <- readRDS("data/08_annotation/08_methylgsa.rds")   # full methylglm and methylRRA tables
+
+# A misspelled column name returns NULL, which c() drops without warning; the
+# two remaining names would then be recycled down three rows. Check first.
+leaders <- c(kg$Description[1], gl$Pathway[1], rr$Pathway[1])
+stopifnot(length(leaders) == 3L)
 
 cmp <- data.table(
   Method = c("gometh (Wallenius hypergeometric)",
@@ -1004,10 +1139,12 @@ cmp <- data.table(
   `Bias model` = c("probes per gene (Wallenius)",
                    "probe count as covariate",
                    "gene-level RRA score"),
-  # the two methylGSA files hold their own top rows ordered by p, so a zero here
-  # is a zero over the whole collection: the smallest FDR is in the first row
-  `KEGG FDR<0.05` = c(sum(kg$FDR < 0.05), sum(gl$padj < 0.05), sum(rr$padj < 0.05)),
-  `Top KEGG pathway` = c(kg$Description[1], gl$Description[1], rr$Pathway[1]),
+  # The two methylGSA top files hold only their top rows, so the significant
+  # counts are taken from the full result tables in 08_methylgsa.rds.
+  `KEGG FDR<0.05` = c(sum(kg$FDR < 0.05),
+                      sum(mg$methylglm$padj < 0.05, na.rm = TRUE),
+                      sum(mg$methylRRA$padj < 0.05, na.rm = TRUE)),
+  `Top KEGG pathway` = leaders,
   `Its nominal p` = signif(c(kg$P.DE[1], gl$pvalue[1], rr$pvalue[1]), 3),
   `Its FDR`       = signif(c(kg$FDR[1],  gl$padj[1],   rr$padj[1]),   3)
 )
@@ -1019,32 +1156,36 @@ fwrite(cmp, "data/08_annotation/08_gsa_method_comparison.csv")
 #| message: false
 # written by the `gsa-compare-derive` chunk above
 knitr::kable(fread("data/08_annotation/08_gsa_method_comparison.csv"),
-  caption = "Three probe-bias corrections, one dataset (top: gometh from the section above; methylGSA's two models below). All three return zero KEGG pathways at FDR < 0.05, but each nominates a different pathway as its leader — the ranking, not just the count, depends on the bias model and the input convention.")
+  caption = "Three probe-bias corrections, one dataset, one gene annotation (Zhou hg38 GENCODE v41). gometh and methylglm return no KEGG pathway at FDR < 0.05; methylRRA-GSEA returns eight. Each nominates a different pathway as its leader — the ranking, not just the count, depends on the bias model and the input convention.")
 ```
 
-On this dataset the three agree on the *count* — **zero** KEGG pathways at
-FDR < 0.05 from all three — and disagree on everything else. Each nominates a
-different leader (Basal cell carcinoma, Phosphatidylinositol signaling,
-Hedgehog signaling), and the smallest FDR any of them reaches spans an order of
-magnitude: 0.38 for `gometh`, 0.45 for `methylglm`, **0.098** for
-`methylRRA`-GSEA. That last number is the informative one. `methylRRA`'s GSEA
-mode uses the full ranking and no cutoff, so it is the most sensitive *and* the
-most prone to calling pathways in a null dataset — it comes within a factor of
-two of significance here, on data where nothing is there to find. Had our
-nominal *p* been a little smaller, or the gene set a little larger, it alone
-would have produced a "significant pathway" to write up.
+The three tools use the same genes and the same pathways, and still disagree.
+`gometh` and `methylglm` find nothing at FDR < 0.05, with smallest FDRs of 1 and 0.63,
+while `methylRRA`-GSEA reports **eight significant pathways**, led by Non-small cell lung
+cancer and Pyruvate metabolism (both FDR = 0.026). Each also nominates a
+different leader (Adherens junction, Amoebiasis, Non-small cell lung cancer).
+
+Treat those eight pathways methylRRA identifies with caution. `methylRRA`'s GSEA mode uses the full ranking and
+no cutoff, so it is the most sensitive of the three *and* the most prone to calling
+pathways in a dataset where no single CpG reaches epigenome-wide significance. Its
+p-values also come from random permutations: the chunk above fixes the seed so the table
+is the same on every render, but without the seed, two otherwise identical runs called
+eleven and nine pathways significant. A result that changes with the random seed is not
+one to write up on its own; it would need to be confirmed with a different method or in
+another cohort.
 
 ```{r}
 #| label: gsa-rra
 #| message: false
 # written by the `methylgsa` chunk above
-rra <- fread("data/08_annotation/08_methylgsa_rra_top.csv")
+# KEGG ids are zero-padded ("05223"), so read them as text
+rra <- fread("data/08_annotation/08_methylgsa_rra_top.csv", colClasses = c(KEGG = "character"))
 # NES is only present when the file came from a GSEA run, so take the columns
 # that are there instead of failing the render on a missing one
 rra_cols <- intersect(c("KEGG", "Pathway", "Size", "NES", "pvalue", "padj"), names(rra))
 knitr::kable(rra[, ..rra_cols],
   digits = 4,
-  caption = "The five top-ranked methylRRA-GSEA KEGG pathways. None survives FDR < 0.05, but Hedgehog signaling reaches FDR = 0.098 on a dataset with no epigenome-wide signal — the sensitivity/specificity trade-off of a cutoff-free rank test, made concrete.")
+  caption = "The five top-ranked methylRRA-GSEA KEGG pathways. All five pass FDR < 0.05 (eight pathways do in total) on a dataset with no epigenome-wide signal, which is the sensitivity/specificity trade-off of a cutoff-free rank test made concrete.")
 ```
 
 ::: {.callout-important}
@@ -1067,29 +1208,25 @@ collapsing to genes throws that resolution away. **KnowYourCG** (KYCG), part of
 Zhou's `sesame`/`knowYourCG` ecosystem [@goldberg2025knowyourcg], keeps the CpG
 as the unit of analysis and tests your hit set directly against curated
 databases of these elements. It is the CpG-centric complement to `gometh`, not a
-replacement, and it comes from the same lab as the annotation we used in [Part 1](#part-1),
-so the coordinates and databases are build-consistent by construction.
+replacement, and it comes from the same lab as the annotation we used in [Part 1](#part-1).
+
+The knowledgebases are keyed by probe ID, so there are no coordinates to line up, but
+they were not all built on the same genome. The CpG-island knowledgebase is derived
+from the hg38 manifest's `CGIposition` column (the same source as Part 1's island
+context), while the chromatin-state knowledgebase comes from Roadmap chromHMM states
+annotated on hg19. The transcription-factor and histone-mark
+knowledgebases are hg38: they were built by intersecting ChIP-seq peaks from the
+Cistrome Data Browser with the array's CpG coordinates [@goldberg2025knowyourcg], and
+Cistrome maps all human data to hg38 [@zheng2019cistrome].
 
 ```{r}
 #| label: kycg
-#| eval: false
-# knowYourCG IS in `envs/methyl.yml` as of the R 4.5 generation, so you can run
-# this. It is shown rather than executed at render for a different reason: the
-# knowledgebases are versioned, and knowYourCG 1.6.3 under Bioconductor 3.22
-# returns a slightly different result from the run that produced the committed
-# table -- 42 features at FDR < 0.05 where that run found 41, and a wider column
-# set. Re-running it at every render would keep moving the numbers the text
-# quotes. The committed data/08_annotation/08_kycg_results.csv is the output of
-# exactly this code, and the next three chunks derive everything below from it.
-#
-# The knowledgebases are downloaded on first use, and testEnrichment() will stop
-# with 'either not found or needs to be cached' until they are. Cache them once:
-#   kycgDataCache()   # all of them, or name the four used below
 library(knowYourCG)
 library(sesameData)
 
-# One-time download of the EPIC knowledgebases into the ExperimentHub cache.
-# Skip it on later runs; it is a no-op once they are cached.
+# Download the EPIC knowledgebases into the ExperimentHub cache. testEnrichment()
+# stops with 'either not found or needs to be cached' until this has run once;
+# after that it is a no-op.
 kycgDataCache()
 tt      <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
 all.cpg <- tt$probe                              # universe = every CpG you tested
@@ -1119,17 +1256,42 @@ using **your** tested set as the universe (the same universe discipline that
 matters for `gometh`). The databases are versioned knowledgebases pulled from
 ExperimentHub, so the run is reproducible.
 
-The run confirms the universe it is testing against and how many features it
-tested: `universe: 756251 | query: 1000`, **863 features** across the four
-knowledgebases. That number matters for the interpretation below — the four
+The universe is all 756,251 tested CpGs and the query is the same top 1,000 used for
+`gometh`, tested against **`r nrow(res)` features** across the four knowledgebases. That number matters for the interpretation below — the four
 databases are wildly different sizes.
 
-On our teaching subset KYCG returns **41 features at FDR < 0.05** where `gometh`
-returned nothing. That looks like a decisive win for the CpG-centric lens. It is
-partly real and partly an artifact of the test's shape, and separating the two is
-the lesson of this section.
+knowYourCG applies the Benjamini–Hochberg correction **within each knowledgebase**, not
+across all 863 features at once. That is a choice with consequences: a feature in the
+five-row CpG-island knowledgebase is corrected against four others, while a
+transcription-factor feature is corrected against 782. Earlier releases of knowYourCG
+corrected across all 863; with that correction the same p-values give 2 significant
+features rather than 5, and the difference is the `H1.4`, `H3K9me2` and `8_ZNF/Rpts`
+results discussed below. Check which correction your version applies before you report a count.
 
-![The twelve most significant KYCG features for the top 1,000 CpGs. Four EPIC knowledgebases were tested; only three are represented here, and the CGI knowledgebase contributes no significant feature at all. Bars are $\log_2$ odds ratio; every bar shown clears FDR < 0.05. Note what is *absent*: no CpG-island-relation feature appears, and every significant enrichment is positive and modest (log₂OR 0.36–1.28).](data/08_annotation/08_kycg_enrichment.png){#fig-kycg width=90%}
+On our teaching subset KYCG returns **5 features at FDR < 0.05** where `gometh`
+returned nothing. The two results are not directly comparable. They ask different
+questions: `gometh` collapses CpGs to genes and tests pathways, while KYCG keeps the
+CpG as the unit and tests which regulatory elements the CpGs fall in. Their annotations
+also differ: `gometh`'s gene assignments here come from Zhou's hg38 GENCODE v41
+manifest, whereas KYCG's features come from Zhou's knowledgebases, which are hg38
+except for the hg19 chromatin states. The count of 5 also needs care, because KYCG's
+feature sets are large and overlap heavily; the callout below works through what
+those 5 features do and do not show.
+
+```{r}
+#| label: fig-kycg
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "The twelve most significant KYCG features for the top 1,000 CpGs, colored by knowledgebase. Bars are log2 odds ratio; the first five bars clear FDR < 0.05 (corrected within its knowledgebase) and the other seven do not. Every significant enrichment is positive and modest."
+top12 <- head(as.data.table(res)[order(FDR, p.value)], 12)
+top12[, kb := sub("^KYCG[.]EPIC[.]", "", sub("[.][0-9]+$", "", group))]
+top12[, dbname := factor(dbname, levels = rev(dbname))]
+ggplot(top12, aes(x = estimate, y = dbname, fill = kb)) +
+  geom_col() +
+  scale_fill_manual(values = c(CGI = "#8C3A4A", chromHMM = "#B8883E",
+                               HMconsensus = "#5B7F95", TFBSconsensus = "#1A6B75")) +
+  labs(x = "log2 odds ratio", y = NULL, fill = "knowledgebase")
+```
 
 ```{r}
 #| label: kycg-derive
@@ -1175,72 +1337,83 @@ fwrite(kcgi, "data/08_annotation/08_kycg_cgi.csv")
 #| message: false
 # written by the `kycg-derive` chunk above
 knitr::kable(fread("data/08_annotation/08_kycg_db_summary.csv"),
-  caption = "KYCG results per knowledgebase. The four databases differ in size by two orders of magnitude, and almost all of the significant hits come from the largest one.")
+  caption = "KYCG results per knowledgebase. The four databases differ in size by two orders of magnitude, and the largest one contributes only one of the significant hits.")
 ```
 
 Read that table before reading the hits. Three things fall out of it:
 
-- **The 41 hits are not spread evenly** — **35 of 41** come from
-  `TFBSconsensus` alone, which contributes 783 of the 863 features tested. Five
-  come from histone marks, one from chromatin state.
-- **`1_TssA` (active TSS) is the single chromatin-state hit**
-  (log₂OR = 0.49, FDR = 0.0033) — consistent with the mild promoter lean
-  @fig-feature showed descriptively, and the one result here that lines up with
-  an independent observation elsewhere in the chapter.
-- **CpG-island relation returns nothing at FDR < 0.05.** Islands are enriched in
-  the expected direction (log₂OR = 0.27, nominal *p* = 0.0078) but land at
-  **FDR = 0.084**. The visual island lean in @fig-island (22.3% vs 19.2%) is
-  therefore *not* corroborated by the formal test — the descriptive impression
-  survives, the inference does not.
+- **The 5 hits are not spread evenly** — **1 of 5** comes from
+  `TFBSconsensus`, which contributes 783 of the 863 features tested. Three
+  come from histone marks, one from chromatin state, and none from CpG-island relation.
+- **`8_ZNF/Rpts` (ZNF genes and repeats) is the single chromatin-state hit**
+  (log₂OR = 1.96, FDR = 0.039), from only 7 of the 1,000 query CpGs; `1_TssA`
+  (active TSS) is not significant (log₂OR = 0.27, FDR = 0.077), consistent with
+  the absence of a promoter lean in @fig-feature.
+- **The CpG-island knowledgebase has no hit.** Islands are barely enriched
+  (log₂OR = 0.06, nominal *p* = 0.30, **FDR = 0.50**) when corrected against the
+  other four island categories. The visual island lean in
+  @fig-island (19.9% vs 19.2%) is therefore not supported by the formal test.
+
+```{r}
+#| label: kycg-cgi
+knitr::kable(kcgi, caption = "The CpG-island knowledgebase in full: all five island-relation features, significant or not.")
+```
 
 ```{r}
 #| label: kycg-top
 #| message: false
 # written by the `kycg-derive` chunk above
 knitr::kable(head(fread("data/08_annotation/08_kycg_top.csv"), 15),
-  caption = "The 15 most significant of KYCG's 41 features at FDR < 0.05. `Query CpGs` is how many of the 1,000 fell in that feature; `DB size` is how many of the 756,251 tested CpGs the feature covers.")
+  caption = "All 5 of KYCG's features at FDR < 0.05. `Query CpGs` is how many of the 1,000 fell in that feature; `DB size` is how many of the 756,251 tested CpGs the feature covers.")
 ```
 
 ::: {.callout-warning}
-## 41 significant features is not 41 findings
+## 5 significant features is not 5 findings
 Before you write these up, check three things that the FDR column alone will not
 tell you.
 
-**1. Count the nominal hits.** 226 of 863 features reach nominal *p* < 0.05,
+**1. Count the nominal hits.** 122 of 863 features reach nominal *p* < 0.05,
 against ~43 expected under the null. That excess is real — the top-1,000 set is
 genuinely non-random with respect to regulatory annotation — but it is
 distributed across hundreds of overlapping features, not concentrated in a few.
 
 **2. The features are not independent.** The `TFBSconsensus` databases are
 consensus binding sites derived from ChIP-seq, and they overlap each other
-heavily: the median significant feature covers **7.4%** of the tested universe
-(56,061 of 756,251 CpGs), and the largest covers 17%. `ING2`, `RBL1`, `ING5`,
-`RAG2`, and `ZNF335` each overlap 90,000–120,000 CpGs. Benjamini–Hochberg
+heavily: the median significant feature covers **1.8%** of the tested universe
+(13,338 of 756,251 CpGs). `ZNF335`, `RAG2`, `RBL1`, `L3MBTL2`, and `ING5` each overlap
+100,000–117,000 CpGs. Benjamini–Hochberg
 assumes independence (or positive dependence); with sets this large and this
-correlated, "41 significant" is closer to a handful of distinct signals counted
-repeatedly. The more honest description is *one broad enrichment in open,
-promoter-proximal, TF-bound chromatin*, not 41 transcription factors.
+correlated, "5 significant" is closer to a handful of distinct signals counted
+repeatedly. The more honest description is *one modest enrichment spread over a few
+overlapping histone-mark and chromatin-state features*, not 5 separate findings.
 
-**3. Big databases win by construction.** Every significant feature here has a
-positive log₂OR between 0.36 and 1.28 — small effects that only clear FDR because
-the overlap counts are large enough to make the Fisher test precise. A feature
-covering 5,000 CpGs needs a much bigger odds ratio to reach the same *p*. That is
-why `TFBSconsensus`, with the most and largest sets, supplies 85% of the hits,
-and why a database of five island categories supplies none.
+**3. Where a feature is tested decides whether it survives.** knowYourCG corrects
+within each knowledgebase, so a feature competes only with the others in its own
+database. `TFBSconsensus` supplies 111 of the 122 nominal hits (14% of its 783 features,
+against 5% expected under the null), yet only one survives, because it is corrected over
+783 tests; `HMconsensus` has 8 nominal hits among 60 features and keeps three. Set size
+matters too: a larger set needs a smaller effect to reach the same *p*. `H1.4` covers
+35,991 CpGs, the largest significant feature, and has the smallest log₂OR (0.61), while
+`8_ZNF/Rpts` covers 1,372 and needs a log₂OR of 1.96.
 :::
 
-Both tests see the same underlying fact — the top CpGs lean toward
-open, promoter-proximal chromatin — but they differ in what they can resolve.
+Both tests see the same underlying fact — the top CpGs lean only weakly toward
+any annotation — but they differ in what they can resolve.
 `gometh` has to collapse CpGs to genes and then test gene sets of a few dozen to
 a few hundred members, which at this sample size leaves it no power at all. KYCG
 keeps the CpG as the unit and tests sets of tens of thousands, so the same weak
-lean becomes formally detectable. The price is resolution: KYCG tells you *which
-kind of chromatin*, not *which pathway*, and its overlapping sets make the hit
-count a poor guide to how many independent things you have found.
+lean becomes formally detectable. They also tell you different things: KYCG tells you more about the epigenetic context of
+the CpG, while GO/KEGG tells you more about which biological pathways the methylation
+changes might affect. KYCG's overlapping sets also make its hit count a poor guide to how
+many independent things you have found.
 
-Run both. Report `gometh`'s null as a null, and report KYCG's 41 features as what
-they are — a single, modest, broadly-distributed enrichment in regulatory
-chromatin, at a sample size where no individual CpG is convincing.
+Run both. Report `gometh`'s null as a null, and report KYCG's 5 features as what
+they are — a single, modest enrichment over a few overlapping histone-mark and
+chromatin-state features, at a sample size where no individual CpG is convincing.
+Most of those features describe repressed or heterochromatic DNA rather than active
+promoters: H3K9me2 and the `8_ZNF/Rpts` state (zinc-finger genes and repeats) mark
+heterochromatin, and H3K36me2 marks broad intergenic and gene-body domains. That fits the
+top set's slight lean away from promoters in @fig-feature.
 
 ### EWAS Atlas / EWAS Open Platform Toolkit: the copy-paste web route
 
@@ -1345,7 +1518,7 @@ landscape, roughly in the order you'd reach for them:
 | Question | Tool | Notes |
 |---|---|---|
 | GO / KEGG, bias-corrected, reproducible | `missMethyl::gometh` / `gsameth` | Default gene-set test. `gsameth` takes any custom gene-set list (e.g. MSigDB Hallmark). |
-| CpG-centric enrichment on regulatory elements | `knowYourCG::testEnrichment` | CGI, TFBS, chromatin state, histone marks — tests CpGs directly, no gene collapse. Build-consistent with the Zhou annotation. |
+| CpG-centric enrichment on regulatory elements | `knowYourCG::testEnrichment` | CGI, TFBS, chromatin state, histone marks — tests CpGs directly, no gene collapse. From the same lab as the Zhou annotation; hg38 except the chromHMM knowledgebase (hg19). |
 | Region-level GO enrichment from DMRs | `missMethyl::goregion` | Feeds comb-p/DMRcate regions in directly, correcting for probes-per-region. |
 | "Has this CpG been linked to a trait before?" | EWAS Toolkit / EWAS Catalog / MRC-IEU EWAS Catalog | Curated look-ups; the fastest external validation. |
 | Broad gene-set / pathway diagrams, no bias model | ShinyGO, g:Profiler, Enrichr, GREAT | Built for gene lists generally; **do not** correct for methylation probe bias, so feed them a gene list you already trust, not raw CpG hits. |
@@ -1391,8 +1564,8 @@ Snakemake pipeline is not currently set up to do (notebook
 [07](07_pipeline.qmd)). Treat stratum-specific hits as provisional for this
 reason alone.
 
-**Per-stratum power is very low.** The stratified arms spend the same 24 design
-columns on 45 and 42 samples, leaving roughly 22 and 19 residual degrees of
+**Per-stratum power is very low.** The stratified arms fit 26 design columns (the
+full model without sex) to 44 and 42 samples, leaving 18 and 16 residual degrees of
 freedom. That is enough to fit the model and not enough to estimate small effects
 precisely.
 :::
@@ -1405,7 +1578,7 @@ precisely.
   annotation for likely effector genes, which can differ from the nearest gene. 
 - **Region analysis recovers signal that single-CpG testing misses** by
   leveraging the spatial correlation of methylation. On our subset an
-  11-CpG MHC cluster reaches Šidák p = 2.6 × 10⁻¹⁶ while none of its CpGs comes
+  11-CpG MHC cluster reaches Šidák p = 2.4 × 10⁻¹⁶ while none of its CpGs comes
   close to the single-CpG EWAS significance threshold.
 - **Match the DMR tool to your upstream model.** `comb-p` runs on summary
   statistics and therefore works after stratified meta-analysis. `DMRcate` needs line-level data and one design formula, so it
@@ -1415,17 +1588,18 @@ precisely.
   `knowYourCG::testEnrichment` for **CpG-centric** tests against regulatory-element
   databases (CGI, TFBS, chromatin state); and the EWAS Toolkit for the **trait**
   catalog you can't reproduce locally. Read the **FDR** column, not the nominal
-  *p*, and always feed the tool your real tested CpG-set. On this subset all
-  three gene-set tools (`gometh`, `methylglm`, `methylRRA`) return **nothing** at
-  FDR < 0.05, while KYCG returns **41 of 863** regulatory features — a difference
-  driven as much by set size as by biology, and one whose honest reading is a
-  single broad enrichment in promoter-proximal, TF-bound chromatin rather than 41
-  discoveries.
+  *p*, and always feed the tool your real tested CpG-set. On this subset, with
+  all three gene-set tools given the same Zhou hg38 genes, `gometh` and `methylglm`
+  return **nothing** at FDR < 0.05 and `methylRRA`-GSEA returns eight pathways whose
+  count changes with the permutation seed. KYCG returns **5 of 863** regulatory
+  features — a difference driven as much by set size and how the tests are corrected as by biology, and one whose
+  honest reading is a single modest enrichment over a few overlapping histone-mark
+  and chromatin-state features rather than 5 discoveries.
 - Real outputs from this notebook —
   `PTSD_ewas_annotated_zhou.csv.gz` (full Zhou-annotated table), the KYCG results
   table, and the comb-p DMR files — are the biological deliverables of the whole
   tutorial. The single-CpG hits don't survive correction on this teaching subset,
-  which is the expected result at n = 87.
+  which is the expected result at n = 86.
 
 ::: {.callout-note}
 ## Other arrays

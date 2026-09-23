@@ -319,8 +319,10 @@ sx  <- data.frame(sample = qc_metrics$sample, xMed = qc_metrics$xMed,
 sx$mismatch <- sx$predicted != sx$reported
 ```
 
-Everything except the SNP-fingerprint heatmap will then run, because that one needs the
-59 x 96 genotype matrix rather than a per-sample summary. What this route does *not* give
+The detection-*p*, intensity and sex-check figures and tables will then run. The SNP
+heatmap and duplicate check need the 59 x 96 genotype matrix rather than a per-sample
+summary, and the verdict, save and phenotype-missingness chunks need the `RGChannelSet`
+itself, so skip those. What this route does *not* give
 you is the experience of watching the checks run — so use it because you have to, not to
 save a minute.
 :::
@@ -343,7 +345,7 @@ Tabulate missingness for every term in the planned model, before you normalize:
 
 ```{r}
 #| label: pheno-missing
-model_vars <- c("ptsd", "sex", "age", "childhood_abuse",
+model_vars <- c("ptsd", "sex", "age", "pc1", "pc2", "pc3", "childhood_abuse",
                 "mergedcapsandpsswinthin30days")
 miss <- data.frame(
   variable = model_vars,
@@ -354,36 +356,39 @@ knitr::kable(miss, caption = "Missing values per candidate model variable, acros
 ```
 
 PTSD status — the exposure — is missing for
-`r sum(is.na(ss$ptsd) | ss$ptsd == "")` of the 96 samples. The continuous CAPS/PSS
-severity score is missing for the same samples, so there is no alternative outcome
-to fall back on for them.
+`r sum(is.na(ss$ptsd) | ss$ptsd == "")` of the 96 samples. The raw CAPS/PSS indicator
+(`mergedcapsandpsswinthin30days`), which `ptsd` is derived from, is missing for the same
+samples, as expected. The three genetic ancestry PCs are missing for one further sample.
 
 ::: {.callout-important}
-## These nine samples are dropped later, and it is not a QC failure
+## These ten samples are dropped later, and it is not a QC failure
 
 Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so
 `lm` / `limma` will drop any sample with no PTSD status — the analysis in
 [chapter 06](06_ewas.qmd) and the pipeline run in
-[chapter 07](07_pipeline.qmd) therefore fit **n = 87**, not 96.
+[chapter 07](07_pipeline.qmd) therefore fit **n = 86**, not 96: nine samples
+have no PTSD status, and one more has no genetic ancestry PCs
+([Genetic ancestry PCs](04b_genetic_pcs.qmd)).
 
 This tutorial keeps all 96 samples through normalization
 ([chapter 02](02_normalization.qmd)), probe filtering
-([chapter 03](03_probe_filtering.qmd)), cell-composition estimation
-([chapter 04](04_cell_composition.qmd)), and batch diagnosis
-([chapter 05](05_batch_effects.qmd)) on purpose. None of those steps uses PTSD
-status: deconvolution and PCA describe the arrays, not the association model, so
-there is no reason to discard usable arrays before the step that actually needs the
-exposure. The count changes exactly once, at the point the exposure enters.
+([chapter 03](03_probe_filtering.qmd)), and cell-composition estimation
+([chapter 04](04_cell_composition.qmd)) on purpose. None of those steps uses PTSD
+status: they describe the arrays, not the association model, so there is no reason to
+discard usable arrays before the step that actually needs the exposure. The count
+changes once, in [batch effects](05_batch_effects.qmd), because the batch correction
+and surrogate variables there are estimated with the exposure and the genetic PCs in
+the model.
 
 The distinction worth internalising: **samples dropped for quality** are samples you
 do not trust, and **samples dropped for missing phenotype** are samples you trust
-but cannot model. Report them separately. Collapsing them into one "n = 87 after QC"
-sentence — the most common way this gets written up — hides the fact that nine
+but cannot model. Report them separately. Collapsing them into one "n = 86 after QC"
+sentence — the most common way this gets written up — hides the fact that ten
 usable arrays were lost to an incomplete metadata table, which is a very different
-problem from nine failed arrays.
+problem from ten failed arrays.
 :::
 
-Because the nine are a loss from missingness rather than quality, it is worth a
+Because the nine without PTSD status are a loss from missingness rather than quality, it is worth a
 moment to ask whether they are **missing at random** or missing in a way that
 correlates with something. If the samples without PTSD status were, say, all male or
 all from one chip, dropping them would distort the design:
@@ -413,8 +418,8 @@ in every model you fit. The Grady deposit gives PTSD, age, sex, race, and childh
 trauma — but no smoking variable, which is common in public deposits rather than
 unusual.
 
-That absence is worth noting here because it shapes decisions in the next two
-chapters. The full set of options, and the one this tutorial
+That absence is worth noting here because it shapes decisions in chapters 05 and 06:
+[batch effects](05_batch_effects.qmd) builds a methylation-based smoking proxy. The full set of options, and the one this tutorial
 takes, is laid out in [the EWAS chapter](06_ewas.qmd).
 
 ::: {.callout-tip}

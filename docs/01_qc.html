@@ -5465,20 +5465,20 @@ window.onload = function() {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./03_probe_filtering.html#sec-categories" class="sidebar-item-text sidebar-link">
- <span class="menu-text">2. The categories, quantified</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-ancestry" class="sidebar-item-text sidebar-link">
- <span class="menu-text">3. Ancestry matters</span></a>
+ <span class="menu-text">2. Ancestry matters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-detp-sex" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Detection-p and sex chromosomes</span></a>
+ <span class="menu-text">3. Detection-p and sex chromosomes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-apply" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Applying the filters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5493,6 +5493,12 @@ window.onload = function() {
   <div class="sidebar-item-container"> 
   <a href="./04_cell_composition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Cell composition: Whole Blood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04b_genetic_pcs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Genetic ancestry principal components</span></a>
   </div>
 </li>
           <li class="sidebar-item sidebar-item-section">
@@ -5647,44 +5653,38 @@ window.onload = function() {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./07_pipeline.html#sec-metal-build" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Building METAL</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-run" class="sidebar-item-text sidebar-link">
- <span class="menu-text">5. Running a non-stratified EWAS</span></a>
+ <span class="menu-text">4. Running a non-stratified EWAS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-strata" class="sidebar-item-text sidebar-link">
- <span class="menu-text">6. Stratifying by sex</span></a>
+ <span class="menu-text">5. Stratifying by sex</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-bacon" class="sidebar-item-text sidebar-link">
- <span class="menu-text">7. BACON</span></a>
+ <span class="menu-text">6. What BACON did to each arm</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-meta" class="sidebar-item-text sidebar-link">
- <span class="menu-text">8. Meta-analyzing with METAL</span></a>
+ <span class="menu-text">7. Meta-analyzing with METAL</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-reading" class="sidebar-item-text sidebar-link">
- <span class="menu-text">9. Reading the run as a whole</span></a>
+ <span class="menu-text">8. Reading the run as a whole</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-scaling" class="sidebar-item-text sidebar-link">
- <span class="menu-text">10. Scaling up</span></a>
+ <span class="menu-text">9. Scaling up</span></a>
   </div>
 </li>
       </ul>
@@ -5794,7 +5794,7 @@ assays(2): Green Red
 rownames(1051943): 1600101 1600111 ... 99810990 99810992
 rowData names(0):
 colnames(96): GSM3853168 GSM3853169 ... GSM3853880 GSM3853881
-colData names(15): sample_id series ... childhood_abuse sex
+colData names(18): sample_id series ... pc2 pc3
 Annotation
   array: IlluminaHumanMethylationEPIC
   annotation: ilm10b4.hg19</code></pre>
@@ -6229,7 +6229,7 @@ Annotation
 <span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>                  <span class="at">reported =</span> qc_metrics<span class="sc">$</span>reported_sex)</span>
 <span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>sx<span class="sc">$</span>mismatch <span class="ot">&lt;-</span> sx<span class="sc">$</span>predicted <span class="sc">!=</span> sx<span class="sc">$</span>reported</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Everything except the SNP-fingerprint heatmap will then run, because that one needs the 59 x 96 genotype matrix rather than a per-sample summary. What this route does <em>not</em> give you is the experience of watching the checks run — so use it because you have to, not to save a minute.</p>
+<p>The detection-<em>p</em>, intensity and sex-check figures and tables will then run. The SNP heatmap and duplicate check need the 59 x 96 genotype matrix rather than a per-sample summary, and the verdict, save and phenotype-missingness chunks need the <code>RGChannelSet</code> itself, so skip those. What this route does <em>not</em> give you is the experience of watching the checks run — so use it because you have to, not to save a minute.</p>
 </div>
 </div>
 </div>
@@ -6244,7 +6244,7 @@ Annotation
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>model_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ptsd&quot;</span>, <span class="st">&quot;sex&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;childhood_abuse&quot;</span>,</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>model_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ptsd&quot;</span>, <span class="st">&quot;sex&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;pc1&quot;</span>, <span class="st">&quot;pc2&quot;</span>, <span class="st">&quot;pc3&quot;</span>, <span class="st">&quot;childhood_abuse&quot;</span>,</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;mergedcapsandpsswinthin30days&quot;</span>)</span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>miss <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variable =</span> model_vars,</span>
@@ -6276,10 +6276,22 @@ Annotation
 <td style="text-align: right;">0</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">pc1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">pc2</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">pc3</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">childhood_abuse</td>
 <td style="text-align: right;">2</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">mergedcapsandpsswinthin30days</td>
 <td style="text-align: right;">9</td>
 </tr>
@@ -6287,23 +6299,23 @@ Annotation
 </table>
 </div>
 </div>
-<p>PTSD status — the exposure — is missing for 9 of the 96 samples. The continuous CAPS/PSS severity score is missing for the same samples, so there is no alternative outcome to fall back on for them.</p>
+<p>PTSD status — the exposure — is missing for 9 of the 96 samples. The raw CAPS/PSS indicator (<code>mergedcapsandpsswinthin30days</code>), which <code>ptsd</code> is derived from, is missing for the same samples, as expected. The three genetic ancestry PCs are missing for one further sample.</p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>These nine samples are dropped later, and it is not a QC failure
+<span class="screen-reader-only">Important</span>These ten samples are dropped later, and it is not a QC failure
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so <code>lm</code> / <code>limma</code> will drop any sample with no PTSD status — the analysis in <a href="./06_ewas.html">chapter 06</a> and the pipeline run in <a href="./07_pipeline.html">chapter 07</a> therefore fit <strong>n = 87</strong>, not 96.</p>
-<p>This tutorial keeps all 96 samples through normalization (<a href="./02_normalization.html">chapter 02</a>), probe filtering (<a href="./03_probe_filtering.html">chapter 03</a>), cell-composition estimation (<a href="./04_cell_composition.html">chapter 04</a>), and batch diagnosis (<a href="./05_batch_effects.html">chapter 05</a>) on purpose. None of those steps uses PTSD status: deconvolution and PCA describe the arrays, not the association model, so there is no reason to discard usable arrays before the step that actually needs the exposure. The count changes exactly once, at the point the exposure enters.</p>
-<p>The distinction worth internalising: <strong>samples dropped for quality</strong> are samples you do not trust, and <strong>samples dropped for missing phenotype</strong> are samples you trust but cannot model. Report them separately. Collapsing them into one “n = 87 after QC” sentence — the most common way this gets written up — hides the fact that nine usable arrays were lost to an incomplete metadata table, which is a very different problem from nine failed arrays.</p>
+<p>Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so <code>lm</code> / <code>limma</code> will drop any sample with no PTSD status — the analysis in <a href="./06_ewas.html">chapter 06</a> and the pipeline run in <a href="./07_pipeline.html">chapter 07</a> therefore fit <strong>n = 86</strong>, not 96: nine samples have no PTSD status, and one more has no genetic ancestry PCs (<a href="./04b_genetic_pcs.html">Genetic ancestry PCs</a>).</p>
+<p>This tutorial keeps all 96 samples through normalization (<a href="./02_normalization.html">chapter 02</a>), probe filtering (<a href="./03_probe_filtering.html">chapter 03</a>), and cell-composition estimation (<a href="./04_cell_composition.html">chapter 04</a>) on purpose. None of those steps uses PTSD status: they describe the arrays, not the association model, so there is no reason to discard usable arrays before the step that actually needs the exposure. The count changes once, in <a href="./05_batch_effects.html">batch effects</a>, because the batch correction and surrogate variables there are estimated with the exposure and the genetic PCs in the model.</p>
+<p>The distinction worth internalising: <strong>samples dropped for quality</strong> are samples you do not trust, and <strong>samples dropped for missing phenotype</strong> are samples you trust but cannot model. Report them separately. Collapsing them into one “n = 86 after QC” sentence — the most common way this gets written up — hides the fact that ten usable arrays were lost to an incomplete metadata table, which is a very different problem from ten failed arrays.</p>
 </div>
 </div>
-<p>Because the nine are a loss from missingness rather than quality, it is worth a moment to ask whether they are <strong>missing at random</strong> or missing in a way that correlates with something. If the samples without PTSD status were, say, all male or all from one chip, dropping them would distort the design:</p>
+<p>Because the nine without PTSD status are a loss from missingness rather than quality, it is worth a moment to ask whether they are <strong>missing at random</strong> or missing in a way that correlates with something. If the samples without PTSD status were, say, all male or all from one chip, dropping them would distort the design:</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
@@ -6342,7 +6354,7 @@ Annotation
 <section id="variables-absent-for-every-sample" class="level3">
 <h3 class="anchored" data-anchor-id="variables-absent-for-every-sample">Variables absent for every sample</h3>
 <p>For blood methylation the most consequential gap is usually <strong>smoking</strong>. Smoking produces some of the largest and most reproducible methylation signals in blood <span class="citation" data-cites="joehanes2016smoking">(<a href="#ref-joehanes2016smoking" role="doc-biblioref"><span class="nocase">Joehanes et al.</span> 2016</a>)</span>, so an unmeasured smoking variable is unmeasured confounding in every model you fit. The Grady deposit gives PTSD, age, sex, race, and childhood trauma — but no smoking variable, which is common in public deposits rather than unusual.</p>
-<p>That absence is worth noting here because it shapes decisions in the next two chapters. The full set of options, and the one this tutorial takes, is laid out in <a href="./06_ewas.html">the EWAS chapter</a>.</p>
+<p>That absence is worth noting here because it shapes decisions in chapters 05 and 06: <a href="./05_batch_effects.html">batch effects</a> builds a methylation-based smoking proxy. The full set of options, and the one this tutorial takes, is laid out in <a href="./06_ewas.html">the EWAS chapter</a>.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -7147,117 +7159,122 @@ Aryee, Martin J, Andrew E Jaffe, Hector Corrada-Bravo, et al. 2014. <span>“Min
 <span id="cb48-349"><a href="#cb48-349" aria-hidden="true" tabindex="-1"></a>sx<span class="sc">$</span>mismatch <span class="ot">&lt;-</span> sx<span class="sc">$</span>predicted <span class="sc">!=</span> sx<span class="sc">$</span>reported</span>
 <span id="cb48-350"><a href="#cb48-350" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb48-351"><a href="#cb48-351" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-352"><a href="#cb48-352" aria-hidden="true" tabindex="-1"></a>Everything except the SNP-fingerprint heatmap will then run, because that one needs the</span>
-<span id="cb48-353"><a href="#cb48-353" aria-hidden="true" tabindex="-1"></a>59 x 96 genotype matrix rather than a per-sample summary. What this route does *not* give</span>
-<span id="cb48-354"><a href="#cb48-354" aria-hidden="true" tabindex="-1"></a>you is the experience of watching the checks run — so use it because you have to, not to</span>
-<span id="cb48-355"><a href="#cb48-355" aria-hidden="true" tabindex="-1"></a>save a minute.</span>
-<span id="cb48-356"><a href="#cb48-356" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb48-357"><a href="#cb48-357" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-358"><a href="#cb48-358" aria-hidden="true" tabindex="-1"></a><span class="fu">## What the phenotype file is missing</span></span>
+<span id="cb48-352"><a href="#cb48-352" aria-hidden="true" tabindex="-1"></a>The detection-*p*, intensity and sex-check figures and tables will then run. The SNP</span>
+<span id="cb48-353"><a href="#cb48-353" aria-hidden="true" tabindex="-1"></a>heatmap and duplicate check need the 59 x 96 genotype matrix rather than a per-sample</span>
+<span id="cb48-354"><a href="#cb48-354" aria-hidden="true" tabindex="-1"></a>summary, and the verdict, save and phenotype-missingness chunks need the <span class="in">`RGChannelSet`</span></span>
+<span id="cb48-355"><a href="#cb48-355" aria-hidden="true" tabindex="-1"></a>itself, so skip those. What this route does *not* give</span>
+<span id="cb48-356"><a href="#cb48-356" aria-hidden="true" tabindex="-1"></a>you is the experience of watching the checks run — so use it because you have to, not to</span>
+<span id="cb48-357"><a href="#cb48-357" aria-hidden="true" tabindex="-1"></a>save a minute.</span>
+<span id="cb48-358"><a href="#cb48-358" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb48-359"><a href="#cb48-359" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-360"><a href="#cb48-360" aria-hidden="true" tabindex="-1"></a>QC checks whether the *arrays* worked. It is also the right moment to check whether</span>
-<span id="cb48-361"><a href="#cb48-361" aria-hidden="true" tabindex="-1"></a>the **phenotype data** you will eventually model is complete, because a covariate you</span>
-<span id="cb48-362"><a href="#cb48-362" aria-hidden="true" tabindex="-1"></a>discover is absent at modeling time is far more expensive than one you plan around</span>
-<span id="cb48-363"><a href="#cb48-363" aria-hidden="true" tabindex="-1"></a>now.</span>
-<span id="cb48-364"><a href="#cb48-364" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-365"><a href="#cb48-365" aria-hidden="true" tabindex="-1"></a>There are two distinct kinds of gap, and they have different consequences. A variable</span>
-<span id="cb48-366"><a href="#cb48-366" aria-hidden="true" tabindex="-1"></a>that is **absent for every sample** is unmeasured confounding — you cannot adjust for</span>
-<span id="cb48-367"><a href="#cb48-367" aria-hidden="true" tabindex="-1"></a>it. A variable that is **present but incomplete** costs you samples, because any model</span>
-<span id="cb48-368"><a href="#cb48-368" aria-hidden="true" tabindex="-1"></a>containing that term silently drops the rows where it is missing. Check for both.</span>
-<span id="cb48-369"><a href="#cb48-369" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-370"><a href="#cb48-370" aria-hidden="true" tabindex="-1"></a><span class="fu">### Missing values in the variables we intend to model</span></span>
+<span id="cb48-360"><a href="#cb48-360" aria-hidden="true" tabindex="-1"></a><span class="fu">## What the phenotype file is missing</span></span>
+<span id="cb48-361"><a href="#cb48-361" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-362"><a href="#cb48-362" aria-hidden="true" tabindex="-1"></a>QC checks whether the *arrays* worked. It is also the right moment to check whether</span>
+<span id="cb48-363"><a href="#cb48-363" aria-hidden="true" tabindex="-1"></a>the **phenotype data** you will eventually model is complete, because a covariate you</span>
+<span id="cb48-364"><a href="#cb48-364" aria-hidden="true" tabindex="-1"></a>discover is absent at modeling time is far more expensive than one you plan around</span>
+<span id="cb48-365"><a href="#cb48-365" aria-hidden="true" tabindex="-1"></a>now.</span>
+<span id="cb48-366"><a href="#cb48-366" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-367"><a href="#cb48-367" aria-hidden="true" tabindex="-1"></a>There are two distinct kinds of gap, and they have different consequences. A variable</span>
+<span id="cb48-368"><a href="#cb48-368" aria-hidden="true" tabindex="-1"></a>that is **absent for every sample** is unmeasured confounding — you cannot adjust for</span>
+<span id="cb48-369"><a href="#cb48-369" aria-hidden="true" tabindex="-1"></a>it. A variable that is **present but incomplete** costs you samples, because any model</span>
+<span id="cb48-370"><a href="#cb48-370" aria-hidden="true" tabindex="-1"></a>containing that term silently drops the rows where it is missing. Check for both.</span>
 <span id="cb48-371"><a href="#cb48-371" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-372"><a href="#cb48-372" aria-hidden="true" tabindex="-1"></a>Tabulate missingness for every term in the planned model, before you normalize:</span>
+<span id="cb48-372"><a href="#cb48-372" aria-hidden="true" tabindex="-1"></a><span class="fu">### Missing values in the variables we intend to model</span></span>
 <span id="cb48-373"><a href="#cb48-373" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-376"><a href="#cb48-376" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb48-377"><a href="#cb48-377" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: pheno-missing</span></span>
-<span id="cb48-378"><a href="#cb48-378" aria-hidden="true" tabindex="-1"></a>model_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ptsd&quot;</span>, <span class="st">&quot;sex&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;childhood_abuse&quot;</span>,</span>
-<span id="cb48-379"><a href="#cb48-379" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;mergedcapsandpsswinthin30days&quot;</span>)</span>
-<span id="cb48-380"><a href="#cb48-380" aria-hidden="true" tabindex="-1"></a>miss <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb48-381"><a href="#cb48-381" aria-hidden="true" tabindex="-1"></a>  <span class="at">variable =</span> model_vars,</span>
-<span id="cb48-382"><a href="#cb48-382" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_missing =</span> <span class="fu">sapply</span>(model_vars, <span class="cf">function</span>(v)</span>
-<span id="cb48-383"><a href="#cb48-383" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(<span class="fu">is.na</span>(ss[[v]]) <span class="sc">|</span> ss[[v]] <span class="sc">==</span> <span class="st">&quot;&quot;</span>)),</span>
-<span id="cb48-384"><a href="#cb48-384" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span>)</span>
-<span id="cb48-385"><a href="#cb48-385" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(miss, <span class="at">caption =</span> <span class="st">&quot;Missing values per candidate model variable, across all 96 QC-passing arrays.&quot;</span>)</span>
-<span id="cb48-386"><a href="#cb48-386" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb48-387"><a href="#cb48-387" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-388"><a href="#cb48-388" aria-hidden="true" tabindex="-1"></a>PTSD status — the exposure — is missing for</span>
-<span id="cb48-389"><a href="#cb48-389" aria-hidden="true" tabindex="-1"></a><span class="in">`r sum(is.na(ss$ptsd) | ss$ptsd == &quot;&quot;)`</span> of the 96 samples. The continuous CAPS/PSS</span>
-<span id="cb48-390"><a href="#cb48-390" aria-hidden="true" tabindex="-1"></a>severity score is missing for the same samples, so there is no alternative outcome</span>
-<span id="cb48-391"><a href="#cb48-391" aria-hidden="true" tabindex="-1"></a>to fall back on for them.</span>
-<span id="cb48-392"><a href="#cb48-392" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-393"><a href="#cb48-393" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
-<span id="cb48-394"><a href="#cb48-394" aria-hidden="true" tabindex="-1"></a><span class="fu">## These nine samples are dropped later, and it is not a QC failure</span></span>
-<span id="cb48-395"><a href="#cb48-395" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-396"><a href="#cb48-396" aria-hidden="true" tabindex="-1"></a>Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so</span>
-<span id="cb48-397"><a href="#cb48-397" aria-hidden="true" tabindex="-1"></a><span class="in">`lm`</span> / <span class="in">`limma`</span> will drop any sample with no PTSD status — the analysis in</span>
-<span id="cb48-398"><a href="#cb48-398" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">chapter 06</span><span class="co">](06_ewas.qmd)</span> and the pipeline run in</span>
-<span id="cb48-399"><a href="#cb48-399" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">chapter 07</span><span class="co">](07_pipeline.qmd)</span> therefore fit **n = 87**, not 96.</span>
-<span id="cb48-400"><a href="#cb48-400" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-401"><a href="#cb48-401" aria-hidden="true" tabindex="-1"></a>This tutorial keeps all 96 samples through normalization</span>
-<span id="cb48-402"><a href="#cb48-402" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 02</span><span class="co">](02_normalization.qmd)</span>), probe filtering</span>
-<span id="cb48-403"><a href="#cb48-403" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 03</span><span class="co">](03_probe_filtering.qmd)</span>), cell-composition estimation</span>
-<span id="cb48-404"><a href="#cb48-404" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 04</span><span class="co">](04_cell_composition.qmd)</span>), and batch diagnosis</span>
-<span id="cb48-405"><a href="#cb48-405" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 05</span><span class="co">](05_batch_effects.qmd)</span>) on purpose. None of those steps uses PTSD</span>
-<span id="cb48-406"><a href="#cb48-406" aria-hidden="true" tabindex="-1"></a>status: deconvolution and PCA describe the arrays, not the association model, so</span>
-<span id="cb48-407"><a href="#cb48-407" aria-hidden="true" tabindex="-1"></a>there is no reason to discard usable arrays before the step that actually needs the</span>
-<span id="cb48-408"><a href="#cb48-408" aria-hidden="true" tabindex="-1"></a>exposure. The count changes exactly once, at the point the exposure enters.</span>
-<span id="cb48-409"><a href="#cb48-409" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-410"><a href="#cb48-410" aria-hidden="true" tabindex="-1"></a>The distinction worth internalising: **samples dropped for quality** are samples you</span>
-<span id="cb48-411"><a href="#cb48-411" aria-hidden="true" tabindex="-1"></a>do not trust, and **samples dropped for missing phenotype** are samples you trust</span>
-<span id="cb48-412"><a href="#cb48-412" aria-hidden="true" tabindex="-1"></a>but cannot model. Report them separately. Collapsing them into one &quot;n = 87 after QC&quot;</span>
-<span id="cb48-413"><a href="#cb48-413" aria-hidden="true" tabindex="-1"></a>sentence — the most common way this gets written up — hides the fact that nine</span>
-<span id="cb48-414"><a href="#cb48-414" aria-hidden="true" tabindex="-1"></a>usable arrays were lost to an incomplete metadata table, which is a very different</span>
-<span id="cb48-415"><a href="#cb48-415" aria-hidden="true" tabindex="-1"></a>problem from nine failed arrays.</span>
-<span id="cb48-416"><a href="#cb48-416" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb48-417"><a href="#cb48-417" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-418"><a href="#cb48-418" aria-hidden="true" tabindex="-1"></a>Because the nine are a loss from missingness rather than quality, it is worth a</span>
-<span id="cb48-419"><a href="#cb48-419" aria-hidden="true" tabindex="-1"></a>moment to ask whether they are **missing at random** or missing in a way that</span>
-<span id="cb48-420"><a href="#cb48-420" aria-hidden="true" tabindex="-1"></a>correlates with something. If the samples without PTSD status were, say, all male or</span>
-<span id="cb48-421"><a href="#cb48-421" aria-hidden="true" tabindex="-1"></a>all from one chip, dropping them would distort the design:</span>
+<span id="cb48-374"><a href="#cb48-374" aria-hidden="true" tabindex="-1"></a>Tabulate missingness for every term in the planned model, before you normalize:</span>
+<span id="cb48-375"><a href="#cb48-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-378"><a href="#cb48-378" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb48-379"><a href="#cb48-379" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: pheno-missing</span></span>
+<span id="cb48-380"><a href="#cb48-380" aria-hidden="true" tabindex="-1"></a>model_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ptsd&quot;</span>, <span class="st">&quot;sex&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;pc1&quot;</span>, <span class="st">&quot;pc2&quot;</span>, <span class="st">&quot;pc3&quot;</span>, <span class="st">&quot;childhood_abuse&quot;</span>,</span>
+<span id="cb48-381"><a href="#cb48-381" aria-hidden="true" tabindex="-1"></a>                <span class="st">&quot;mergedcapsandpsswinthin30days&quot;</span>)</span>
+<span id="cb48-382"><a href="#cb48-382" aria-hidden="true" tabindex="-1"></a>miss <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb48-383"><a href="#cb48-383" aria-hidden="true" tabindex="-1"></a>  <span class="at">variable =</span> model_vars,</span>
+<span id="cb48-384"><a href="#cb48-384" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_missing =</span> <span class="fu">sapply</span>(model_vars, <span class="cf">function</span>(v)</span>
+<span id="cb48-385"><a href="#cb48-385" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(<span class="fu">is.na</span>(ss[[v]]) <span class="sc">|</span> ss[[v]] <span class="sc">==</span> <span class="st">&quot;&quot;</span>)),</span>
+<span id="cb48-386"><a href="#cb48-386" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span>)</span>
+<span id="cb48-387"><a href="#cb48-387" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(miss, <span class="at">caption =</span> <span class="st">&quot;Missing values per candidate model variable, across all 96 QC-passing arrays.&quot;</span>)</span>
+<span id="cb48-388"><a href="#cb48-388" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb48-389"><a href="#cb48-389" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-390"><a href="#cb48-390" aria-hidden="true" tabindex="-1"></a>PTSD status — the exposure — is missing for</span>
+<span id="cb48-391"><a href="#cb48-391" aria-hidden="true" tabindex="-1"></a><span class="in">`r sum(is.na(ss$ptsd) | ss$ptsd == &quot;&quot;)`</span> of the 96 samples. The raw CAPS/PSS indicator</span>
+<span id="cb48-392"><a href="#cb48-392" aria-hidden="true" tabindex="-1"></a>(<span class="in">`mergedcapsandpsswinthin30days`</span>), which <span class="in">`ptsd`</span> is derived from, is missing for the same</span>
+<span id="cb48-393"><a href="#cb48-393" aria-hidden="true" tabindex="-1"></a>samples, as expected. The three genetic ancestry PCs are missing for one further sample.</span>
+<span id="cb48-394"><a href="#cb48-394" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-395"><a href="#cb48-395" aria-hidden="true" tabindex="-1"></a>::: {.callout-important}</span>
+<span id="cb48-396"><a href="#cb48-396" aria-hidden="true" tabindex="-1"></a><span class="fu">## These ten samples are dropped later, and it is not a QC failure</span></span>
+<span id="cb48-397"><a href="#cb48-397" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-398"><a href="#cb48-398" aria-hidden="true" tabindex="-1"></a>Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so</span>
+<span id="cb48-399"><a href="#cb48-399" aria-hidden="true" tabindex="-1"></a><span class="in">`lm`</span> / <span class="in">`limma`</span> will drop any sample with no PTSD status — the analysis in</span>
+<span id="cb48-400"><a href="#cb48-400" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">chapter 06</span><span class="co">](06_ewas.qmd)</span> and the pipeline run in</span>
+<span id="cb48-401"><a href="#cb48-401" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">chapter 07</span><span class="co">](07_pipeline.qmd)</span> therefore fit **n = 86**, not 96: nine samples</span>
+<span id="cb48-402"><a href="#cb48-402" aria-hidden="true" tabindex="-1"></a>have no PTSD status, and one more has no genetic ancestry PCs</span>
+<span id="cb48-403"><a href="#cb48-403" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">Genetic ancestry PCs</span><span class="co">](04b_genetic_pcs.qmd)</span>).</span>
+<span id="cb48-404"><a href="#cb48-404" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-405"><a href="#cb48-405" aria-hidden="true" tabindex="-1"></a>This tutorial keeps all 96 samples through normalization</span>
+<span id="cb48-406"><a href="#cb48-406" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 02</span><span class="co">](02_normalization.qmd)</span>), probe filtering</span>
+<span id="cb48-407"><a href="#cb48-407" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 03</span><span class="co">](03_probe_filtering.qmd)</span>), and cell-composition estimation</span>
+<span id="cb48-408"><a href="#cb48-408" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 04</span><span class="co">](04_cell_composition.qmd)</span>) on purpose. None of those steps uses PTSD</span>
+<span id="cb48-409"><a href="#cb48-409" aria-hidden="true" tabindex="-1"></a>status: they describe the arrays, not the association model, so there is no reason to</span>
+<span id="cb48-410"><a href="#cb48-410" aria-hidden="true" tabindex="-1"></a>discard usable arrays before the step that actually needs the exposure. The count</span>
+<span id="cb48-411"><a href="#cb48-411" aria-hidden="true" tabindex="-1"></a>changes once, in <span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span>, because the batch correction</span>
+<span id="cb48-412"><a href="#cb48-412" aria-hidden="true" tabindex="-1"></a>and surrogate variables there are estimated with the exposure and the genetic PCs in</span>
+<span id="cb48-413"><a href="#cb48-413" aria-hidden="true" tabindex="-1"></a>the model.</span>
+<span id="cb48-414"><a href="#cb48-414" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-415"><a href="#cb48-415" aria-hidden="true" tabindex="-1"></a>The distinction worth internalising: **samples dropped for quality** are samples you</span>
+<span id="cb48-416"><a href="#cb48-416" aria-hidden="true" tabindex="-1"></a>do not trust, and **samples dropped for missing phenotype** are samples you trust</span>
+<span id="cb48-417"><a href="#cb48-417" aria-hidden="true" tabindex="-1"></a>but cannot model. Report them separately. Collapsing them into one &quot;n = 86 after QC&quot;</span>
+<span id="cb48-418"><a href="#cb48-418" aria-hidden="true" tabindex="-1"></a>sentence — the most common way this gets written up — hides the fact that ten</span>
+<span id="cb48-419"><a href="#cb48-419" aria-hidden="true" tabindex="-1"></a>usable arrays were lost to an incomplete metadata table, which is a very different</span>
+<span id="cb48-420"><a href="#cb48-420" aria-hidden="true" tabindex="-1"></a>problem from ten failed arrays.</span>
+<span id="cb48-421"><a href="#cb48-421" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb48-422"><a href="#cb48-422" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-425"><a href="#cb48-425" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb48-426"><a href="#cb48-426" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: missing-pattern</span></span>
-<span id="cb48-427"><a href="#cb48-427" aria-hidden="true" tabindex="-1"></a>no_ptsd <span class="ot">&lt;-</span> <span class="fu">is.na</span>(ss<span class="sc">$</span>ptsd) <span class="sc">|</span> ss<span class="sc">$</span>ptsd <span class="sc">==</span> <span class="st">&quot;&quot;</span></span>
-<span id="cb48-428"><a href="#cb48-428" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;samples with no PTSD status:&quot;</span>, <span class="fu">sum</span>(no_ptsd), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb48-429"><a href="#cb48-429" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;sex:&quot;</span>, <span class="fu">paste</span>(<span class="fu">names</span>(<span class="fu">table</span>(ss<span class="sc">$</span>sex[no_ptsd])),</span>
-<span id="cb48-430"><a href="#cb48-430" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">table</span>(ss<span class="sc">$</span>sex[no_ptsd]), <span class="at">collapse =</span> <span class="st">&quot; / &quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb48-431"><a href="#cb48-431" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;age range:&quot;</span>, <span class="fu">paste</span>(<span class="fu">range</span>(ss<span class="sc">$</span>age[no_ptsd]), <span class="at">collapse =</span> <span class="st">&quot;-&quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb48-432"><a href="#cb48-432" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;distinct chips:&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide[no_ptsd])),</span>
-<span id="cb48-433"><a href="#cb48-433" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;of&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb48-434"><a href="#cb48-434" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb48-435"><a href="#cb48-435" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-436"><a href="#cb48-436" aria-hidden="true" tabindex="-1"></a>Four female and five male, ages spanning the full cohort range, spread across eight</span>
-<span id="cb48-437"><a href="#cb48-437" aria-hidden="true" tabindex="-1"></a>of the twelve chips — the missingness looks incidental rather than structured. That</span>
-<span id="cb48-438"><a href="#cb48-438" aria-hidden="true" tabindex="-1"></a>is reassuring, but note that it is a *check you can only do for observed variables*;</span>
-<span id="cb48-439"><a href="#cb48-439" aria-hidden="true" tabindex="-1"></a>it cannot rule out the samples differing on something unrecorded.</span>
+<span id="cb48-423"><a href="#cb48-423" aria-hidden="true" tabindex="-1"></a>Because the nine without PTSD status are a loss from missingness rather than quality, it is worth a</span>
+<span id="cb48-424"><a href="#cb48-424" aria-hidden="true" tabindex="-1"></a>moment to ask whether they are **missing at random** or missing in a way that</span>
+<span id="cb48-425"><a href="#cb48-425" aria-hidden="true" tabindex="-1"></a>correlates with something. If the samples without PTSD status were, say, all male or</span>
+<span id="cb48-426"><a href="#cb48-426" aria-hidden="true" tabindex="-1"></a>all from one chip, dropping them would distort the design:</span>
+<span id="cb48-427"><a href="#cb48-427" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-430"><a href="#cb48-430" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb48-431"><a href="#cb48-431" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: missing-pattern</span></span>
+<span id="cb48-432"><a href="#cb48-432" aria-hidden="true" tabindex="-1"></a>no_ptsd <span class="ot">&lt;-</span> <span class="fu">is.na</span>(ss<span class="sc">$</span>ptsd) <span class="sc">|</span> ss<span class="sc">$</span>ptsd <span class="sc">==</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb48-433"><a href="#cb48-433" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;samples with no PTSD status:&quot;</span>, <span class="fu">sum</span>(no_ptsd), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb48-434"><a href="#cb48-434" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;sex:&quot;</span>, <span class="fu">paste</span>(<span class="fu">names</span>(<span class="fu">table</span>(ss<span class="sc">$</span>sex[no_ptsd])),</span>
+<span id="cb48-435"><a href="#cb48-435" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">table</span>(ss<span class="sc">$</span>sex[no_ptsd]), <span class="at">collapse =</span> <span class="st">&quot; / &quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb48-436"><a href="#cb48-436" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;age range:&quot;</span>, <span class="fu">paste</span>(<span class="fu">range</span>(ss<span class="sc">$</span>age[no_ptsd]), <span class="at">collapse =</span> <span class="st">&quot;-&quot;</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb48-437"><a href="#cb48-437" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;distinct chips:&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide[no_ptsd])),</span>
+<span id="cb48-438"><a href="#cb48-438" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;of&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb48-439"><a href="#cb48-439" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb48-440"><a href="#cb48-440" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-441"><a href="#cb48-441" aria-hidden="true" tabindex="-1"></a><span class="fu">### Variables absent for every sample</span></span>
-<span id="cb48-442"><a href="#cb48-442" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-443"><a href="#cb48-443" aria-hidden="true" tabindex="-1"></a>For blood methylation the most consequential gap is usually **smoking**. Smoking</span>
-<span id="cb48-444"><a href="#cb48-444" aria-hidden="true" tabindex="-1"></a>produces some of the largest and most reproducible methylation signals in blood</span>
-<span id="cb48-445"><a href="#cb48-445" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@joehanes2016smoking</span><span class="co">]</span>, so an unmeasured smoking variable is unmeasured confounding</span>
-<span id="cb48-446"><a href="#cb48-446" aria-hidden="true" tabindex="-1"></a>in every model you fit. The Grady deposit gives PTSD, age, sex, race, and childhood</span>
-<span id="cb48-447"><a href="#cb48-447" aria-hidden="true" tabindex="-1"></a>trauma — but no smoking variable, which is common in public deposits rather than</span>
-<span id="cb48-448"><a href="#cb48-448" aria-hidden="true" tabindex="-1"></a>unusual.</span>
-<span id="cb48-449"><a href="#cb48-449" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-450"><a href="#cb48-450" aria-hidden="true" tabindex="-1"></a>That absence is worth noting here because it shapes decisions in the next two</span>
-<span id="cb48-451"><a href="#cb48-451" aria-hidden="true" tabindex="-1"></a>chapters. The full set of options, and the one this tutorial</span>
-<span id="cb48-452"><a href="#cb48-452" aria-hidden="true" tabindex="-1"></a>takes, is laid out in <span class="co">[</span><span class="ot">the EWAS chapter</span><span class="co">](06_ewas.qmd)</span>.</span>
-<span id="cb48-453"><a href="#cb48-453" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-454"><a href="#cb48-454" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
-<span id="cb48-455"><a href="#cb48-455" aria-hidden="true" tabindex="-1"></a><span class="fu">## Inventory your covariates before you normalize</span></span>
-<span id="cb48-456"><a href="#cb48-456" aria-hidden="true" tabindex="-1"></a>Write down the model you intend to fit, then check each term against the metadata you</span>
-<span id="cb48-457"><a href="#cb48-457" aria-hidden="true" tabindex="-1"></a>actually have. For each term ask two questions: *is it present at all?* and *how many</span>
-<span id="cb48-458"><a href="#cb48-458" aria-hidden="true" tabindex="-1"></a>samples is it missing for?* The first tells you what you cannot adjust for; the second</span>
-<span id="cb48-459"><a href="#cb48-459" aria-hidden="true" tabindex="-1"></a>tells you your real analysis n. Note both, and decide *then* how you will handle them —</span>
-<span id="cb48-460"><a href="#cb48-460" aria-hidden="true" tabindex="-1"></a>including whether a term is worth the samples it costs.</span>
-<span id="cb48-461"><a href="#cb48-461" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb48-462"><a href="#cb48-462" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-463"><a href="#cb48-463" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
-<span id="cb48-464"><a href="#cb48-464" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-465"><a href="#cb48-465" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb48-441"><a href="#cb48-441" aria-hidden="true" tabindex="-1"></a>Four female and five male, ages spanning the full cohort range, spread across eight</span>
+<span id="cb48-442"><a href="#cb48-442" aria-hidden="true" tabindex="-1"></a>of the twelve chips — the missingness looks incidental rather than structured. That</span>
+<span id="cb48-443"><a href="#cb48-443" aria-hidden="true" tabindex="-1"></a>is reassuring, but note that it is a *check you can only do for observed variables*;</span>
+<span id="cb48-444"><a href="#cb48-444" aria-hidden="true" tabindex="-1"></a>it cannot rule out the samples differing on something unrecorded.</span>
+<span id="cb48-445"><a href="#cb48-445" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-446"><a href="#cb48-446" aria-hidden="true" tabindex="-1"></a><span class="fu">### Variables absent for every sample</span></span>
+<span id="cb48-447"><a href="#cb48-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-448"><a href="#cb48-448" aria-hidden="true" tabindex="-1"></a>For blood methylation the most consequential gap is usually **smoking**. Smoking</span>
+<span id="cb48-449"><a href="#cb48-449" aria-hidden="true" tabindex="-1"></a>produces some of the largest and most reproducible methylation signals in blood</span>
+<span id="cb48-450"><a href="#cb48-450" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@joehanes2016smoking</span><span class="co">]</span>, so an unmeasured smoking variable is unmeasured confounding</span>
+<span id="cb48-451"><a href="#cb48-451" aria-hidden="true" tabindex="-1"></a>in every model you fit. The Grady deposit gives PTSD, age, sex, race, and childhood</span>
+<span id="cb48-452"><a href="#cb48-452" aria-hidden="true" tabindex="-1"></a>trauma — but no smoking variable, which is common in public deposits rather than</span>
+<span id="cb48-453"><a href="#cb48-453" aria-hidden="true" tabindex="-1"></a>unusual.</span>
+<span id="cb48-454"><a href="#cb48-454" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-455"><a href="#cb48-455" aria-hidden="true" tabindex="-1"></a>That absence is worth noting here because it shapes decisions in chapters 05 and 06:</span>
+<span id="cb48-456"><a href="#cb48-456" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span> builds a methylation-based smoking proxy. The full set of options, and the one this tutorial</span>
+<span id="cb48-457"><a href="#cb48-457" aria-hidden="true" tabindex="-1"></a>takes, is laid out in <span class="co">[</span><span class="ot">the EWAS chapter</span><span class="co">](06_ewas.qmd)</span>.</span>
+<span id="cb48-458"><a href="#cb48-458" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-459"><a href="#cb48-459" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb48-460"><a href="#cb48-460" aria-hidden="true" tabindex="-1"></a><span class="fu">## Inventory your covariates before you normalize</span></span>
+<span id="cb48-461"><a href="#cb48-461" aria-hidden="true" tabindex="-1"></a>Write down the model you intend to fit, then check each term against the metadata you</span>
+<span id="cb48-462"><a href="#cb48-462" aria-hidden="true" tabindex="-1"></a>actually have. For each term ask two questions: *is it present at all?* and *how many</span>
+<span id="cb48-463"><a href="#cb48-463" aria-hidden="true" tabindex="-1"></a>samples is it missing for?* The first tells you what you cannot adjust for; the second</span>
+<span id="cb48-464"><a href="#cb48-464" aria-hidden="true" tabindex="-1"></a>tells you your real analysis n. Note both, and decide *then* how you will handle them —</span>
+<span id="cb48-465"><a href="#cb48-465" aria-hidden="true" tabindex="-1"></a>including whether a term is worth the samples it costs.</span>
 <span id="cb48-466"><a href="#cb48-466" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb48-467"><a href="#cb48-467" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-468"><a href="#cb48-468" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb48-469"><a href="#cb48-469" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-470"><a href="#cb48-470" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb48-471"><a href="#cb48-471" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

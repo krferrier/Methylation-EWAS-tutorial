@@ -20,10 +20,33 @@ biological one, and — importantly — how to decide *whether and how* to corre
 ::: {.callout-note}
 ## What this chapter needs
 This chapter starts from `data/03_grs_filtered.rds`, written by [chapter 03](03_probe_filtering.qmd). If you
-did not run that chapter, fetch the published checkpoint instead:
+did not run that chapter, fetch the published checkpoint instead. It also reads
+`data/04_cellcounts.rds` (written by [chapter 04](04_cell_composition.qmd)) and
+`data/sample_sheet.csv`, both of which are in the repository.
 
 ```{.bash filename="Terminal"}
 ./get_data.sh D_filtered
+```
+:::
+
+::: {.callout-note collapse="true"}
+## Picking the chapter up from the saved checkpoints instead
+
+Two steps in this chapter — the full M-value matrix in [section 2](#sec-pca) and the
+`num.sv`/`sva` pair in [section 6](#sec-sva) — need about 9 GB of memory between them.
+If that is more than your machine has, the published checkpoints are the same files the
+`save-05` chunk at the end of this chapter writes:
+
+```{.bash filename="Terminal"}
+./get_data.sh D_filtered E_model_inputs
+```
+
+```{.r filename="RStudio Console"}
+sva_o <- readRDS("data/05_sva.rds")
+SV    <- sva_o$SV          # 86 x 6 surrogate variables
+mdk   <- sva_o$mdk         # the 86 modeled samples
+smoke <- sva_o$smoke       # the methylation-derived smoking score
+Mcb   <- readRDS("data/05_mvals_combat.rds")   # stratified-ComBat M-values
 ```
 :::
 
@@ -45,11 +68,17 @@ grs <- readRDS("data/03_grs_filtered.rds")
 
 # The reference-based cell proportions written by chapter 04 (96 x 6). This one
 # is small enough to live in the repository, so it needs no download.
-props <- readRDS("data/04_cc_full.rds")$prop
+props <- readRDS("data/04_cellcounts.rds")
 
 # The sample sheet rides along on the object, so the phenotype table comes back
 # out of it rather than being read from the CSV again.
 md <- as.data.frame(pData(grs))
+
+# The three genetic ancestry PCs (see the genetic PCs chapter) are joined from the sample sheet by
+# sample ID.
+gpcs <- c("pc1", "pc2", "pc3")
+ss   <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
+md[, gpcs] <- ss[match(md$sample_id, ss$sample_id), gpcs]
 
 # Everything below indexes samples three different ways -- array columns, rows
 # of `md`, rows of `props` -- so align them once, here, and assert it. A silent
@@ -58,11 +87,12 @@ props <- props[md$sample_id, , drop = FALSE]
 stopifnot(identical(colnames(grs), md$sample_id),
           identical(rownames(props), md$sample_id))
 
-# The 87 samples an association model can actually use: PTSD status is NA for
-# nine arrays (see chapter 01), and a model containing the exposure drops them.
-# The PCA diagnostic in section 2 deliberately keeps all 96.
+# The 86 samples an association model can actually use: PTSD status is NA for
+# nine arrays (see chapter 01) and the genetic PCs are NA for one more, and a
+# model containing either drops them. The PCA diagnostic in section 2 deliberately
+# keeps all 96.
 keep  <- !(is.na(md$ptsd) | md$ptsd == "") & !is.na(md$sex) &
-         !is.na(md$age) & complete.cases(props)
+         !is.na(md$age) & complete.cases(props) & complete.cases(md[, gpcs])
 mdk   <- md[keep, ]
 propk <- props[keep, , drop = FALSE]
 
@@ -75,7 +105,7 @@ cat("arrays:", ncol(grs), "| probes:", nrow(grs),
 ```
 
 ::: {.callout-note}
-## Where 96 becomes 87
+## Where 96 becomes 86
 
 Two sample counts appear in this chapter and it is worth being clear about which is
 which.
@@ -84,12 +114,12 @@ The **PCA diagnostics in §2** run on all **96** QC-passing arrays. They describ
 technical structure in the arrays and take no model, so the exposure never enters and
 there is no reason to exclude anything.
 
-**Batch effect adjustment runs on 87** — the stratified ComBat,
+**Batch effect adjustment runs on 86** — the stratified ComBat,
 and SVA. For each of these analyses, it's necessary to provide which variables should
 be protected which includes the phenotype of interest. There are nine samples with no recorded PTSD status,
-therefore these are excluded.
+and one more with no genetic ancestry PCs, therefore these are excluded.
 
-The **Smoking proxy** is also run on 87 samples, but for the reason of capturing the variance of the sample set that the EWAS will actually be performed on.
+The **Smoking proxy** is also run on 86 samples, but for the reason of capturing the variance of the sample set that the EWAS will actually be performed on.
 :::
 
 ## 1. The sources of technical variation on an array {#sec-sources}
@@ -177,7 +207,8 @@ slide  <- factor(as.character(md$slide))
 posrow <- substr(md$array_pos, 1, 3)
 vars <- list(chip_slide = slide, array_position = factor(posrow),
              PTSD = factor(md$ptsd), sex = factor(md$sex), age = md$age,
-             Neu = props[, "Neu"], CD4T = props[, "CD4T"], CD8T = props[, "CD8T"])
+             Neu = props[, "Neu"], CD4T = props[, "CD4T"], CD8T = props[, "CD8T"],
+             gPC1 = md$pc1, gPC2 = md$pc2, gPC3 = md$pc3)
 
 # R^2 of each PC regressed on each variable: a factor enters as its full set of
 # dummies, so a many-level factor like chip is compared against the others with
@@ -190,14 +221,15 @@ round(pc_r2, 2)
 
 ```{r}
 #| label: pc-heatmap
-#| fig-cap: "Association (R²) between the top 10 principal components and each candidate variable. Computed on the 20,000 most variable probes — a subset used here only to keep this diagnostic fast; the SVA below runs on the full filtered probe set. Cell-composition variables (Neu, CD8T) dominate PC1; age and CD4T explain PC2; sex and chip are entangled on PC5; chip smears across many PCs. PTSD — the exposure of interest — is essentially absent, the honest reality of a subtle epigenetic effect."
+#| fig-cap: "Association (R²) between the top 10 principal components and each candidate variable. Computed on the 20,000 most variable probes — a subset used here only to keep this diagnostic fast; the SVA below runs on the full filtered probe set. Cell-composition variables (Neu, CD8T) dominate PC1; age and CD4T explain PC2; sex and chip are entangled on PC5; chip smears across many PCs. Genetic PC1 is associated with PC1, PC9 and PC10; genetic PCs 2 and 3 have weaker associations. PTSD — the exposure of interest — is essentially absent, the honest reality of a subtle epigenetic effect."
 #| fig-width: 9.6
-#| fig-height: 4.6
+#| fig-height: 5.8
 # Long form for geom_tile, with display labels instead of the variable names
 # used in the matrix.
 nice <- c(chip_slide = "Chip (slide)", array_position = "Array position",
           PTSD = "PTSD", sex = "Sex", age = "Age",
-          Neu = "Neutrophil", CD4T = "CD4 T", CD8T = "CD8 T")
+          Neu = "Neutrophil", CD4T = "CD4 T", CD8T = "CD8 T",
+          gPC1 = "Genetic PC1", gPC2 = "Genetic PC2", gPC3 = "Genetic PC3")
 hm <- as.data.frame(as.table(pc_r2))
 names(hm) <- c("variable", "PC", "r2")
 # rev() so the first variable in `nice` ends up at the top of the y axis
@@ -224,9 +256,8 @@ p_hm <- ggplot(hm, aes(PC, variable, fill = r2)) +
         axis.text.x.top = element_text(color = "#6E675B", lineheight = 1.15))  # gray
 p_hm
 
-# The repository tracks a copy of this figure; rewrite it here so the file on
-# disk is always the one the code above just produced.
-ggsave("data/05_pc_heatmap.png", plot = p_hm, width = 9.6, height = 4.6, dpi = 200)
+# Export figure
+ggsave("data/05_pc_heatmap.png", plot = p_hm, width = 9.6, height = 5.8, dpi = 200)
 ```
 
 Key take-aways from the heatmap:
@@ -240,13 +271,19 @@ Key take-aways from the heatmap:
 2. **Chip is a real technical effect,** associating with several PCs (peaking at
    $R^2$ = `r sprintf("%.2f", max(pc_r2["chip_slide",]))`). Some of this magnitude is
    inflated because `slide` has many levels (11 degrees of freedom soak up variance
-   mechanically), so we interpret chip effects with the adjusted $R^2$ and with the
+   mechanically), so we read the chip $R^2$ with that inflation in mind and rely on the
    confounding check below, not the raw number alone.
 3. **PTSD doesn't explain much.** The exposure explains almost none of the leading variance.
    This is not a cause for alarm. Real epigenetic
    effects of a psychiatric phenotype are small and spread across many probes, making them 
    practically invisible at the whole-genome PCA level. The association test in
    [analysis](06_ewas.qmd) is designed to find these signals.
+4. **Genetic ancestry leaves a smaller but real footprint.** Genetic PC1 is associated
+   with methylation PC1 ($R^2$ = `r sprintf("%.2f", pc_r2["gPC1","PC1"])`), PC9
+   ($R^2$ = `r sprintf("%.2f", pc_r2["gPC1","PC9"])`) and PC10
+   ($R^2$ = `r sprintf("%.2f", pc_r2["gPC1","PC10"])`). Genetic PCs 2 and 3 have weaker
+   associations with the top ten PCs, at most
+   $R^2$ = `r sprintf("%.2f", max(pc_r2[c("gPC2","gPC3"), ]))`.
 
 ```{r}
 #| label: pc-neu-scatter
@@ -300,7 +337,7 @@ conf <- data.frame(
 knitr::kable(conf, caption = "Confounding between technical factors and biological variables (Cramér's V; 0 = independent, 1 = perfectly confounded).")
 ```
 
-This results of this can greatly impact how you proceed with correcting for batch effects.
+The results of this check can greatly impact how you proceed with correcting for batch effects.
 In this case:
 
 - **chip × PTSD = `r round(cramV(md$slide, md$ptsd),2)`** — low. The exposure is
@@ -317,7 +354,7 @@ In this case:
 Sex is a strong source of variation in methylation data, so as a rule sex should be accounted for
 in the model design. Here chip is collinear with sex. If you put both `chip`
 and `sex` in the design as fixed effects, the model cannot separate them and the
-sex coefficient and the chip coefficients become unidentifiable.[@leek2010sva_confound].
+sex coefficient and the chip coefficients become unidentifiable [@leek2010sva_confound].
 :::
 
 ## 4. Choosing a correction strategy {#sec-strategy}
@@ -336,7 +373,7 @@ keep (`mod`), and ComBat removes only the batch-associated shift:
 # chapter creates. `mvals` is a probe x sample matrix, `pheno` a data frame with
 # one row per sample, and `pheno$batch` the recorded batch you are correcting.
 library(sva)
-mod <- model.matrix(~ exposure + sex + age + cell_proportions, data = pheno)
+mod <- model.matrix(~ exposure + sex + age + cell_proportions + ancestry_pcs, data = pheno)
 mvals_combat <- ComBat(dat = mvals, batch = pheno$batch, mod = mod)
 ```
 
@@ -409,7 +446,7 @@ separately in each sex stratum and then recombine:
 mvals_adj <- mvals
 for (s in levels(pheno$stratum)) {
   i     <- which(pheno$stratum == s)
-  mod_s <- model.matrix(~ exposure + age + smoking + cell_proportions,
+  mod_s <- model.matrix(~ exposure + age + smoking + cell_proportions + ancestry_pcs,
                         data = pheno[i, ])
   mvals_adj[, i] <- sva::ComBat(dat = mvals[, i, drop = FALSE],
                                 batch = droplevels(pheno$batch[i]),
@@ -432,7 +469,7 @@ Two choices in that call are worth explaining:
 
   ```{r}
   #| label: stratum-chip-sizes
-  ## The 87 modeled samples, split the way ComBat will split them. `slide` is the
+  ## The 86 modeled samples, split the way ComBat will split them. `slide` is the
   ## Sentrix barcode of the chip, so it is the batch label itself; splitting it by
   ## sex shows the batch sizes each stratum's ComBat call will actually see.
   for (s in c("F", "M")) {
@@ -468,16 +505,18 @@ Two choices in that call are worth explaining:
   stable choice at this sample size; the non-parametric alternative needs more
   samples per batch than we have.
 
-The correction works: chip explains R² ≈ 0.20 (female) and 0.14 (male) of the
-leading residual structure *before* using ComBat and is reduced after, and PTSD retains R² ≈ 0.01 in both strata —
-the batch signal comes down without affecting the exposure.
+The correction works (the `combat-effect` chunk in [section 6](#sec-sva) measures it):
+across the 20,000 most variable probes, chip explains a mean per-probe R² of 0.15
+before ComBat and 0.11 after, while sex (0.024 before, 0.027 after) and PTSD (0.009
+before, 0.010 after) are retained — the batch signal comes down without affecting the
+exposure.
 
 ### Array position
 
 Chip position (`array_pos`) is the second measured technical factor, and it is *not* confounded
 with anything biological here. While in theory we could use ComBat to adjust for this as well in
 the chip-adjusted-recombined dataset, in practice this is not the best choice. The array_pos only has 8 levels,
-so it's cost in degrees of freedom (7) in modeling array_pos as a covariate is acceptable for the sample size we are testing in.
+so its cost as a covariate, 7 degrees of freedom, is acceptable at this sample size.
 
 
 
@@ -489,8 +528,8 @@ smoking variable — a very common situation with GEO datasets. Fortunately, thi
 is something we can address with the methylation data itself.
 
 We can take CpGs that the literature has established as smoking-associated,
-and summarize their methylation into a single continuous score. We use a 20-CpG panel
-of loci replicated across the large smoking EWAS
+and summarize their methylation into a single continuous score. We use a 24-CpG panel
+(20 of which survive chapter 03's probe filtering) of loci replicated across the large smoking EWAS
 [@joehanes2016smoking; @zeilinger2013smoking; @shenker2013epic; @elliott2014smoking],
 anchored on `cg05575921` in *AHRR* — the most reproducible smoking-associated CpG in
 blood:
@@ -525,7 +564,7 @@ cat("published CpGs dropped by probe filtering:",
 ```{r}
 #| label: smoke-proxy
 ## PC1 of the replicated smoking panel, oriented so that higher = heavier exposure.
-## Built on the 87 modeled arrays, so the score describes the variance of the set
+## Built on the 86 modeled arrays, so the score describes the variance of the set
 ## the EWAS is actually fit on.
 ##
 ## The panel betas are read back off `grs` rather than taken from `M`: 20 rows of
@@ -561,9 +600,9 @@ independent probes.
 
 ```{r}
 #| label: tested-matrix
-# `Mk` is the matrix everything downstream is estimated on: the 87 modeled arrays,
+# `Mk` is the matrix everything downstream is estimated on: the 86 modeled arrays,
 # with the proxy's own panel probes removed and any probe that is non-finite in
-# *any* of those 87 samples dropped -- ComBat and sva() both refuse an Inf.
+# *any* of those 86 samples dropped -- ComBat and sva() both refuse an Inf.
 excl <- rownames(M) %in% panel_probes
 Mk   <- M[!excl, keep, drop = FALSE]
 Mk   <- Mk[rowSums(!is.finite(Mk)) == 0, , drop = FALSE]
@@ -584,7 +623,7 @@ A proxy built from methylation is a linear combination of methylation. If those 
 20 CpGs stay in the tested probe set, you are regressing each of them partly on
 itself — guaranteed significance that means nothing. We therefore drop all
 `r excluded_n` panel probes before testing. Together with two probes whose
-M-values are non-finite in this 87-sample subset (`cg17759086`, `cg01801182` —
+M-values are non-finite in this 86-sample subset (`cg17759086`, `cg01801182` —
 β pinned at 0 or 1, so log₂(β/(1−β)) is ±∞), that is why the EWAS reports
 **`r format(tested_probes, big.mark = ",")`** CpGs rather than the 756,273 that
 survived filtering in [chapter 03](03_probe_filtering.qmd).
@@ -616,7 +655,8 @@ reported in the Grady Trauma Project phenotypes, so we can use SVA to hopefully 
 remaining technical variation from these types of batch effects if they are present. SVA is run on
 M-values with a **full model** (everything you want to keep) and a
 **null model** (everything except the exposure). We 'protect' PTSD, sex, age, the
-smoking proxy, array position, and the six estimated cell-type proportions:
+smoking proxy, array position, the six estimated cell-type proportions, and the three
+genetic ancestry PCs:
 
 ```{r}
 #| label: combat-run
@@ -636,10 +676,10 @@ for (s in levels(sexk)) {
   # sex is constant inside a stratum, so it is not -- and cannot be -- in cb_mod.
   # Everything else we intend to keep is passed here so ComBat does not remove it
   # along with the chip shift.
-  d  <- cbind(cellk[i, , drop = FALSE],
+  d  <- cbind(cellk[i, , drop = FALSE], mdk[i, gpcs],
               ptsd = mdk$ptsd[i], age = as.numeric(mdk$age)[i], smoke = smoke[i])
-  cb_mod <- model.matrix(~ ptsd + age + smoke + Neu + NK + CD4T + CD8T + Bcell + Mono,
-                         data = d)
+  cb_mod <- model.matrix(~ ptsd + age + smoke + Neu + NK + CD4T + CD8T + Bcell + Mono +
+                           pc1 + pc2 + pc3, data = d)
   cat(sprintf("%s stratum: n = %d | chips = %d | smallest chip = %d\n",
               s, length(i), nlevels(bs), min(table(bs))))
   Mcb[, i] <- ComBat(dat = Mk[, i, drop = FALSE], batch = bs, mod = cb_mod,
@@ -678,17 +718,21 @@ report("PTSD (must survive)", mdk$ptsd)     # the exposure must be untouched
 # Array position enters as a fixed covariate rather than being ComBat-ed: all
 # eight levels are present, unconfounded, and cost only 7 degrees of freedom.
 pos <- factor(as.character(mdk$array_pos))
-mdm <- cbind(cellk, ptsd = mdk$ptsd, sex = sexk, age = as.numeric(mdk$age),
+mdm <- cbind(cellk, mdk[, gpcs], ptsd = mdk$ptsd, sex = sexk, age = as.numeric(mdk$age),
              smoke = smoke, pos = pos)
 
-mod  <- model.matrix(~ ptsd + sex + age + smoke + pos + Neu + NK + CD4T + CD8T + Bcell + Mono, data = mdm)
-mod0 <- model.matrix(~        sex + age + smoke + pos + Neu + NK + CD4T + CD8T + Bcell + Mono, data = mdm)
+# The genetic PCs go into both models: in mod0 they are variation SVA is told it
+# does not need to capture, so no surrogate variable ends up re-estimating ancestry.
+mod  <- model.matrix(~ ptsd + sex + age + smoke + pos + Neu + NK + CD4T + CD8T + Bcell + Mono +
+                       pc1 + pc2 + pc3, data = mdm)
+mod0 <- model.matrix(~        sex + age + smoke + pos + Neu + NK + CD4T + CD8T + Bcell + Mono +
+                       pc1 + pc2 + pc3, data = mdm)
 stopifnot(qr(mod)$rank == ncol(mod))       # a rank-deficient full model makes sva() meaningless
 
 # num.sv()'s Buja-Eyuboglu test on the uncorrected matrix: how many dimensions of
 # structure are *detectable* before any correction. This and the sva() call below
 # are the expensive pair in the chapter -- together roughly 5 minutes, peaking
-# near 8.9 GB, because both work on the full 756,251 x 87 matrix.
+# near 8.9 GB, because both work on the full 756,251 x 86 matrix.
 n_sv_be <- num.sv(Mk, mod, method = "be")
 
 # We fit 6, not n_sv_be -- see the k-selection sweep below for why. The sweep
@@ -717,7 +761,7 @@ are estimated from every probe that survived filtering.
 `num.sv`'s Buja–Eyuboglu permutation test suggests **`r n_sv_be`** SVs here.
 We fit **`r k_selected`**. `num.sv` answers *how many dimensions of residual structure are statistically
 detectable* — and with 756,251 probes, plenty are detectable, but are also tiny.
-What we need to know is *how many are worth a degree of freedom* in modeling, and at n = 87,
+What we need to know is *how many are worth a degree of freedom* in modeling, and at n = 86,
 degrees of freedom are a constraint. So, we swept k over
 `r paste(k_candidates, collapse = ", ")` and judged each fit on two things: calibration (genomic inflation λ, which should
 sit near 1) and precision (the median standard error of the PTSD coefficient,
@@ -751,7 +795,7 @@ rows <- list(data.frame(
   n_p1e5 = sum(tt0$P.Value < 1e-5), n_fdr = sum(tt0$adj.P.Val < 0.05),
   n_bonf = sum(tt0$P.Value < 0.05 / nrow(tt0)),
   r2_slide = NA, r2_smoke_sv = NA, max_r2_sv_ptsd = NA, strata_full_rank = TRUE,
-  df_F = 45 - (ncol(mod) - 1), df_M = 42 - (ncol(mod) - 1)))
+  df_F = sum(sexk == "F") - (ncol(mod) - 1), df_M = sum(sexk == "M") - (ncol(mod) - 1)))
 
 for (K in k_candidates) {
   # sva() prints its own progress and leaves the last line unterminated, so
@@ -776,7 +820,7 @@ for (K in k_candidates) {
   full_rank <- all(sapply(levels(sexk), function(lv) {
     i  <- which(sexk == lv)
     ds <- cbind(model.matrix(~ ptsd + age + smoke + pos + Neu + NK + CD4T + CD8T +
-                               Bcell + Mono, data = mdm)[i, , drop = FALSE],
+                               Bcell + Mono + pc1 + pc2 + pc3, data = mdm)[i, , drop = FALSE],
                 SVk[i, , drop = FALSE])
     qr(ds)$rank == ncol(ds)
   }))
@@ -796,7 +840,7 @@ for (K in k_candidates) {
       summary(lm(SVk[, j] ~ mdk$ptsd))$r.squared)),
     strata_full_rank = full_rank,
     # residual df left in each sex stratum, which is the real cost of large k
-    df_F = 45 - (ncol(dm) - 1), df_M = 42 - (ncol(dm) - 1))
+    df_F = sum(sexk == "F") - (ncol(dm) - 1), df_M = sum(sexk == "M") - (ncol(dm) - 1))
 }
 ks <- do.call(rbind, rows)
 write.csv(ks, "data/05_k_lambda_sweep.csv", row.names = FALSE)
@@ -817,15 +861,16 @@ knitr::kable(
 
 Reading down that table:
 
-- **k = 0 is clearly wrong.** λ = 0.85 is badly *deflated*, the signature of
+- **k = 0 is clearly wrong.** λ = `r sprintf("%.2f", ks$lambda[ks$k==0])` is badly *deflated*, the signature of
   unmodeled structure inflating residual variance and washing out real
   differences.
-- **k = 6 fixes the calibration** (λ = 1.02) and buys most of the precision on
+- **k = 6 fixes the calibration** (λ = `r sprintf("%.2f", ks$lambda[ks$k==6])`) and buys most of the precision on
   offer. The median SE drops
   `r sprintf("%.1f%%", 100*(1 - ks$se_ratio[ks$k==6]))` against k = 0, and
   `r sprintf("%.0f%%", 100*ks$frac_gain[ks$k==6])` of probes come out with a
-  smaller SE than they had at k = 0 — that second figure is the `frac_gain`
-  column, a count of probes that improved, not a share of the improvement. The
+  smaller SE than they had at k = 0 — that second figure is the share of probes
+  whose SE improved (the `frac_gain` column of `data/05_k_lambda_sweep.csv`, not shown
+  in the table), not the size of the improvement. The
   largest median-SE drop anywhere in the sweep is
   `r sprintf("%.1f%%, at k = %d", 100*max(1 - ks$se_ratio, na.rm = TRUE), ks$k[which.max(1 - ks$se_ratio)])`,
   so k = 6 captures about
@@ -833,14 +878,14 @@ Reading down that table:
   of what is available — while keeping four more residual degrees of freedom and
   a λ far closer to 1.
 - **k = 8, 10, and 15 buy almost nothing and cost real power.** By k = 10, λ has
-  drifted up to 1.07, which is still an acceptable lambda, and the SEs have barely moved,
+  drifted up to `r sprintf("%.2f", ks$lambda[ks$k==10])`, which is still an acceptable lambda, and the SEs have barely moved,
   but the burden of degrees of freedom becomes problematic.
 - **The SVs increasingly re-capture the smoking proxy.** R² of `smoke` on the SVs climbs
-  from 0.39 at k = 6 to 0.64 at k = 15. Since we specifically want smoking as a
+  from `r sprintf("%.2f", ks$r2_smoke_sv[ks$k==6])` at k = 6 to `r sprintf("%.2f", ks$r2_smoke_sv[ks$k==15])` at k = 15. Since we specifically want smoking as a
   named, interpretable covariate, letting latent variables absorb it is a loss,
   not a gain.
 
-k = 6 is the smallest k that gets λ to 1 and that leaves the most residual degrees of freedom.
+Of the k values tested, k = 6 is the smallest that brings λ close to 1, and so the one that leaves the most residual degrees of freedom.
 
 
 
@@ -865,13 +910,13 @@ knitr::kable(sv_table, digits = 4,
   caption = "What each surrogate variable tracks. Chip (slide) and array position dominate; association with PTSD stays below 0.05 throughout.")
 ```
 
-SV5 is strongly chip-linked (R² = 0.64) and SV4 next (R² = 0.34). Note that SV4 and SV5 also carry substantial sex
-association (R² = 0.37 and 0.46) — a direct consequence of the chip × sex confound
+SV5 is strongly chip-linked (R² = `r sprintf("%.2f", sv_table$r2_slide[5])`) and SV4 next (R² = `r sprintf("%.2f", sv_table$r2_slide[4])`). Note that SV4 and SV5 also carry substantial sex
+association (R² = `r sprintf("%.2f", sv_table$r2_sex[4])` and `r sprintf("%.2f", sv_table$r2_sex[5])`) — a direct consequence of the chip × sex confound
 documented above.
 
 ```{r}
 #| label: sva-bars
-#| fig-cap: "Association (R²) of each surrogate variable with chip (technical), sex (biological), and PTSD (the exposure). The SVs carry the chip structure — SV5 reaches R² = 0.64 — and the sex signal entangled with it, while every SV stays near-orthogonal to PTSD (largest R² = 0.04). This is SVA working as intended: it absorbs unwanted technical variation without touching the signal we want to test."
+#| fig-cap: "Association (R²) of each surrogate variable with chip (technical), sex (biological), and PTSD (the exposure). The SVs carry the chip structure — SV5 reaches R² = 0.68 — and the sex signal entangled with it, while every SV stays near-orthogonal to PTSD (largest R² = 0.04). This is SVA working as intended: it absorbs unwanted technical variation without touching the signal we want to test."
 #| fig-width: 8.4
 #| fig-height: 4.4
 # Three of the sv_table columns, in long form. The factor levels are set
@@ -917,7 +962,8 @@ cat(sprintf("Largest SV-PTSD association: %.3f (all SVs are ~orthogonal to the e
 ```
 
 We carry these surrogate variables forward as covariates in the
-[EWAS model](06_ewas.qmd), alongside sex, age, and cell composition.
+[EWAS model](06_ewas.qmd), alongside sex, age, the smoking proxy, array position, cell
+composition, and the three genetic ancestry PCs.
 
 ::: {.callout-tip}
 ## Don't over-correct
@@ -949,7 +995,7 @@ saveRDS(list(smoke = smoke, panel = panel, present = panel_probes,
         "data/05_smoking_proxy.rds")
 
 # 3. The model inputs chapters 06 and 07 read: the surrogate variables, the
-#    87-sample metadata and cell proportions they were estimated alongside, and
+#    86-sample metadata and cell proportions they were estimated alongside, and
 #    the design record. `k_selected` is what the EWAS uses to slice `SV`.
 saveRDS(list(SV = SV, n.sv = ncol(SV), keep = keep, mdk = mdk, propk = propk,
              smoke = smoke, panel_probes = panel_probes, panel_pve = panel_pve,
@@ -960,38 +1006,15 @@ saveRDS(list(SV = SV, n.sv = ncol(SV), keep = keep, mdk = mdk, propk = propk,
              chip_r2 = chip_r2, pos_r2 = sv_table$r2_pos,
              position_in_model = TRUE,
              design_note = paste("ComBat(slide) within sex strata;",
-                                 "array position as fixed covariate; SVA k=6")),
+                                 "array position as fixed covariate;",
+                                 "genetic PCs pc1-pc3 as covariates; SVA k=6")),
         "data/05_sva.rds")
 
 # 4. The corrected M-value matrix the EWAS is actually fit on. This one is
-#    511 MB, which is why it is excluded from git and distributed as a Zenodo
+#    about 480 MB, which is why it is excluded from git and distributed as a Zenodo
 #    tier rather than committed.
 saveRDS(Mcb, "data/05_mvals_combat.rds")
 ```
-
-::: {.callout-note collapse="true"}
-## Picking the chapter up from the saved checkpoints instead
-
-The two expensive steps above — the full M-value matrix and the `num.sv`/`sva` pair —
-need about 9 GB of memory between them. If that is more than your machine has, the
-published checkpoints are the same files this chapter just wrote:
-
-```{.bash filename="Terminal"}
-./get_data.sh D_filtered E_model_inputs
-```
-
-```{.r filename="RStudio Console"}
-sva_o <- readRDS("data/05_sva.rds")
-SV    <- sva_o$SV          # 87 x 6 surrogate variables
-mdk   <- sva_o$mdk         # the 87 modeled samples
-smoke <- sva_o$smoke       # the methylation-derived smoking score
-Mcb   <- readRDS("data/05_mvals_combat.rds")   # stratified-ComBat M-values
-```
-
-What this route does not give you is the diagnostic reasoning — you inherit k = 6 and
-the stratified design as decisions already made, rather than watching the evidence for
-them accumulate.
-:::
 
 ## 7. When you don't have IDATs: batch correction from a processed matrix {#sec-no-idats}
 
@@ -1011,20 +1034,21 @@ non-IDAT path is largely the same — with two caveats:
 
    ```{.r filename="Generic example, do not run"}
    # Schematic only -- `exposure + covariates` stands for your own model terms.
-   M <- log2(beta / (1 - beta))          # from a processed beta-matrix
-   mod  <- model.matrix(~ exposure + covariates, data = pData)
-   mod0 <- model.matrix(~ covariates, data = pData)
-   SV   <- sva(M, mod, mod0)$sv
+   M_dep    <- log2(beta_dep / (1 - beta_dep))   # from a processed beta-matrix
+   mod_dep  <- model.matrix(~ exposure + covariates, data = pheno)
+   mod0_dep <- model.matrix(~ covariates, data = pheno)
+   SV_dep   <- sva(M_dep, mod_dep, mod0_dep)$sv
    ```
 
-`ComBat` is likewise matrix-native (`sva::ComBat(dat = M, batch = plate, mod = mod)`),
+`ComBat` is likewise matrix-native (`sva::ComBat(dat = M_dep, batch = plate, mod = mod_dep)`),
 so if a *clean, recorded, un-confounded* batch variable is present in a
 matrix-only deposit, you can correct it directly.
 
 ---
 
 **Next:** [EWAS analysis](06_ewas.qmd) — fit the association model for PTSD with
-sex, age, cell composition, and surrogate variables as covariates, and interpret the
+sex, age, the smoking proxy, array position, cell composition, genetic ancestry PCs,
+and surrogate variables as covariates, and interpret the
 results honestly.
 
 ## References {.unnumbered}

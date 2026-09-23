@@ -91,6 +91,15 @@ clean_pheno <- function(x) {
   paste(unique(f), collapse = ", ")
 }
 cat70$Phenotypes <- vapply(cat70$Phenotype_fields, clean_pheno, character(1))
+
+# --- Genetic PCs: deposited as sample characteristics, so read every field ----
+# Submitters name them "pc1", "ancestry_pc1", "anc.pca1" or "snp based principle
+# component 1", so match all four spellings.
+pc_pat <- "^(ancestry[_ ]?)?pc[0-9]+$|^anc\\.?pca?[0-9]+$|princip(al|le) component"
+cat70$Has_genetic_PCs <- vapply(cat70$All_char_tags, function(x) {
+  f <- tolower(trimws(strsplit(ifelse(is.na(x), "", x), "|", fixed = TRUE)[[1]]))
+  any(grepl(pc_pat, f))
+}, logical(1))
 cat70$N_phenotypes <- vapply(strsplit(cat70$Phenotypes, ", "),
                              function(v) sum(nzchar(v)), integer(1))
 
@@ -120,7 +129,7 @@ cat70$N_samples_all <- nsamp[grp[!duplicated(grp)]]
 # Title first, then the phenotypes you could test, then everything else
 show_cols <- c("Accessions", "Title", "Phenotypes", "Suitability_tier",
                "Suitability_score", "Meth_array", "N_samples", "Has_sex",
-               "Has_age", "Has_ancestry", "Has_cell_composition",
+               "Has_age", "Has_ancestry", "Has_genetic_PCs", "Has_cell_composition",
                "N_phenotypes", "PubMed")
 show_cols <- show_cols[show_cols %in% colnames(cat70)]
 
@@ -138,7 +147,7 @@ out$GSE       <- out$Accessions
 out$N_samples <- out$N_samples_all
 csv_cols <- c("GSE", "N_series", "Title", "Phenotypes", "N_phenotypes",
               "Suitability_tier", "Suitability_score", "Meth_array", "N_samples",
-              "Has_sex", "Has_age", "Has_ancestry", "Has_cell_composition", "PubMed",
+              "Has_sex", "Has_age", "Has_ancestry", "Has_genetic_PCs", "Has_cell_composition", "PubMed",
               "Suitability_notes", "Other_platforms", "Has_tissue",
               "N_phenotype_fields", "Phenotype_fields", "N_char_fields",
               "All_char_tags", "Sex_field", "Age_field", "Tissue_field",
@@ -152,7 +161,7 @@ pretty <- c(Accessions = "GEO accession", Title = "Title",
             Phenotypes = "Phenotypes", Suitability_tier = "Suitability tier",
             Suitability_score = "Suitability score", Meth_array = "Methylation array",
             N_samples = "N samples", Has_sex = "Has sex", Has_age = "Has age",
-            Has_ancestry = "Has ancestry",
+            Has_ancestry = "Has ancestry", Has_genetic_PCs = "Has genetic PCs",
             Has_cell_composition = "Has cell composition",
             N_phenotypes = "N phenotypes", PubMed = "PubMed")
 
@@ -204,7 +213,7 @@ htmltools::tagList(
         list(targets = idx("Accessions"), className = "dt-center", width = "110px"),
         list(targets = idx(c("Suitability_tier", "Suitability_score", "N_samples",
                              "N_phenotypes", "Has_sex", "Has_age", "Has_ancestry",
-                             "Has_cell_composition", "PubMed")),
+                             "Has_genetic_PCs", "Has_cell_composition", "PubMed")),
              className = "dt-center", width = "70px"),
         list(targets = idx("Meth_array"), className = "dt-center", width = "100px")
       )
@@ -237,6 +246,7 @@ htmltools::tagList(
 | `N samples` | Total samples across all matrix files for the first accession listed (super-series are summed). |
 | `Has sex`, `Has age` | Whether sex and age are in the sample characteristics — both are strong methylation covariates you will almost always model. |
 | `Has ancestry` | Whether genetic ancestry / race is reported (relevant for ancestry-aware probe masking, as in [Probe filtering](03_probe_filtering.qmd)). |
+| `Has genetic PCs` | Whether genetic ancestry principal components are deposited with the samples, for use as model covariates (see [Genetic ancestry PCs](04b_genetic_pcs.qmd)). |
 | `Has cell composition` | Whether cell-type proportions are deposited — not necessary, but saves a step in data pre-processing if it is available. |
 | `Phenotypes`, `N phenotypes` | The variables you could actually test — every phenotype and exposure field the submitter deposited, named but without their values. A cell reading *none deposited* means exactly that: the study's characteristics carry nothing beyond sex, age, tissue and identifiers, so there is no exposure or outcome here to model. Sample and array identifiers, estimated cell proportions, principal components, derived age-acceleration metrics and technical flags are excluded, so this is a shortlist of candidate EWAS outcomes rather than a dump of the characteristics. Names are the submitter's own except where this tutorial defines a plainer one: Grady's `mergedcapsandpsswinthin30days` and `childabphyssexemot_ctq_01modandsev` appear as **PTSD** and **Childhood abuse**, matching the derived columns in [Setup](00_setup.qmd). |
 | `PubMed` | Linked publication, where one exists. |
@@ -278,7 +288,7 @@ From the shortlist we chose **GSE132203**, the Grady Trauma Project, because it
 is unusually complete for teaching: raw IDATs are deposited, it has explicit age
 and sex plus several trauma/PTSD exposures, and it provides 
 cell-type proportions, giving us answer keys to validate the deconvolution step 
-against. There are also published manuscripts that we can compare our results with [@smith2011grady] [@katrinli2020ptsd].
+against. There are also published manuscripts that we can compare our results with [@smith2011grady] [@katrinli2024ptsd].
 
 ::: {.callout-note}
 ## Not every study gives you IDATs
@@ -291,7 +301,7 @@ which steps you can and cannot still do.
 ## Download the catalog
 
 The catalog is available as a CSV. It holds exactly the 60 studies in the table
-above, in the same order, with 30 columns rather than the 13 shown:
+above, in the same order, with `r length(csv_cols)` columns rather than the `r length(show_cols)` shown:
 
 - [**methylation_geo_catalog.csv**](methylation_geo_catalog.csv) — ready to load with `read_csv()` (R) or `pd.read_csv()` (Python).
 
@@ -306,6 +316,6 @@ You can also grab the current view directly from the table using the **CSV** and
 
 ---
 
-**Next:** with a dataset in hand, head to [Setup](00_setup.qmd) to meet the
-platform and see how the raw IDATs reach R — or jump straight to
-[Quality control](01_qc.qmd) if you already know the array.
+**Next:** with a dataset in hand, head to [Background](00a_background.qmd) to meet the
+platform — or, if you already know the array, skip straight to [Setup](00_setup.qmd)
+to download the raw IDATs and read them into R.

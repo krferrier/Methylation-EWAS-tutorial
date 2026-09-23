@@ -70,6 +70,8 @@ dependencies:
 
   # data handling, figures, rendering
   - r-data.table
+  - r-r.utils          # fread() needs it to decompress .gz; otherwise only arrives via GEOquery
+  - r-jsonlite         # chapter 08 queries the UCSC API for the HGNC track
   - r-ggplot2
   - r-knitr
   - r-dt

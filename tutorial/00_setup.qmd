@@ -37,7 +37,9 @@ works fine.
 Every chapter begins with a hidden chunk that does `source("_setup.R")`. That file is
 deliberately limited to two housekeeping jobs: it puts the library holding the EPIC
 annotation packages on R's search path, and it registers the figure font and ggplot theme
-so the plots share the site's look.
+so the plots share the site's look. It also quietly attaches the packages the theme needs,
+but no chapter relies on that: every chapter was checked by running its code without
+`_setup.R` at all.
 
 What it does **not** do is supply anything the code you read depends on. Each chapter
 loads the packages it uses with its own visible `library()` call, writes its file paths out
@@ -567,7 +569,7 @@ table(sizes)
 ## Computational cost: time, memory, and disk {#sec-cost}
 
 Everything below was measured on the machine that produced this tutorial — 32 logical
-cores (24 physical), 126 GB RAM, local NVMe — running the final filtered 87-sample cohort and 756,251 CpGs.
+cores (24 physical), 126 GB RAM, local NVMe — running the final filtered 86-sample cohort and 756,251 CpGs.
 Your times will differ, but this should provide a general estimate to guide what sample
 size you can analyse with your computing resources. The expensive steps are cell-type
 deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending 
@@ -580,7 +582,7 @@ process**, which is what has to fit in RAM.
 
 | Chapter | Step                                         | Wall time | Peak memory |
 |---|----------------------------------------------|---:|---:|
-| [01 QC](01_qc.qmd) | Read 96 IDAT pairs (`read.metharray`)        | 2 min 21 s | 5.8 GB |
+| [00 Setup](00_setup.qmd#sec-read-idats) | Read 96 IDAT pairs (`read.metharray`)        | 2 min 21 s | 5.8 GB |
 | [01 QC](01_qc.qmd) | Detection *p*-values (`detectionP`)          | 48 s | 3.8 GB |
 | [02 Normalization](02_normalization.qmd) | Functional normalization (`preprocessFunnorm`) | 2 min 4 s | 12.5 GB |
 | [03 Probe filtering](03_probe_filtering.qmd) | Mask + detection-*p* + sex chromosomes       | 26 s | 5.6 GB |
@@ -588,8 +590,8 @@ process**, which is what has to fit in RAM.
 | [05 Batch effects](05_batch_effects.qmd) | Stratified `ComBat` on slide                 | 57 s | 4.1 GB |
 | [05 Batch effects](05_batch_effects.qmd) | `num.sv` + `sva` at *k* = 6                  | 5 min 1 s | 8.9 GB |
 | [06 EWAS](06_ewas.qmd) | EWAS using `lmFit` + `eBayes` + BACON        | 18 s | 4.1 GB |
-| [Chapter 07](07_pipeline.qmd) | Non-stratified EWAS on 87 samples, 8 workers | 6 min 12 s | **12.0 GB** |
-| [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (45 and 42) run simultaneously, 4 workers each | 11 min 37 s | 6.3 GB |
+| [Chapter 07](07_pipeline.qmd) | Non-stratified EWAS on 86 samples, 8 workers | 6 min 12 s | **12.0 GB** |
+| [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (44 and 42) run simultaneously, 4 workers each | 11 min 37 s | 6.3 GB |
 | [08 Annotation](08_annotation.qmd) | GENCODE v41 join over 756,251 CpGs           | 11 s | 1.3 GB |
 
 On average, the whole tutorial should take you about 30 minutes of compute. The 
@@ -599,7 +601,7 @@ local computer. Saved checkpoints of these results are available in the Zenodo r
 steps in these chapters.
 
 For the Chapter 07 EWAS run using a snakemake pipeline, the first row is the whole cohort in one
-EWAS. The second splits it into two — here by sex, giving 45 and 42 samples — and runs
+EWAS. The second splits it into two — here by sex, giving 44 and 42 samples — and runs
 those two in parallel. Note that the split run needs *less* memory, not more: peak memory
 is driven by **samples × workers**, and each stratum is running half the samples with half
 the workers. The amount of memory required for the EWAS using snakemake can be reduced by
@@ -609,10 +611,10 @@ the wall time will increase.
 ::: {.callout-warning}
 ## Time versus Memory tradeoffs
 You may have noticed that the EWAS method shown in Chapter 6 runs significantly faster than the EWAS performed using 
-snakemake in Chapter 07, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 87 
+snakemake in Chapter 07, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 86 
 samples at 8 workers. Those two numbers are not fixed in the same way, though. The pipeline's memory is a function of how 
 many workers you give it, so it is a dial you control; the Chapter 06 approach holds the whole matrix in one process, so 
-its memory is set by the data and grows with the cohort. 87 samples is quite small, and a full-scale EWAS will have 
+its memory is set by the data and grows with the cohort. 86 samples is quite small, and a full-scale EWAS will have 
 several hundreds to thousands of samples. The faster method shown in Chapter 06 will very quickly require more memory resources 
 than you have available as the number of samples you try to run at once increase. The Snakemake pipleine in Chapter 07 takes a bit longer,
 especially for smaller datasets, because part of what it's doing under the hood is breaking the big dataset into smaller, more 
@@ -621,7 +623,7 @@ is longer runtimes.
 ::: 
 
 Disk space can also be a constraint. The input files require the largest amount of space, but some of the intermediate files produced 
-can also be large. For the 87 sample subset, I would make sure you have at least 6 GB of free disk space. 
+can also be large. For the 86 sample subset, I would make sure you have at least 6 GB of free disk space. 
 
 ### Checking what resources your own machine has
 
@@ -643,6 +645,9 @@ physical count, but do not count on the factor of two: Intel's hybrid designs (1
 generation and later) pair hyperthreaded performance cores with single-threaded
 efficiency cores, so the machine these benchmarks were run on — a Core i9-14900K —
 reports **32 logical against 24 physical**. Set `workers` from the physical number.
+On Linux, `detectCores(logical = FALSE)` does not always manage this and can return the
+logical count instead — as it did for the output above, which was rendered on a Linux
+machine — so confirm the physical count with the terminal commands below.
 
 If you would rather not open R, or want to confirm what R is reporting:
 
@@ -782,7 +787,7 @@ Get-PSDrive -PSProvider FileSystem |
 
 If you want to try a full-scale model after finishing the tutorial, GEO also serves the
 entire series as one tar archive. It is **11.9 GB** compressed and expands to 1,590 IDAT
-files, so budget disk space and time accordingly — and expect the EWAS itself to take longer than the 87-sample walkthrough.
+files, so budget disk space and time accordingly — and expect the EWAS itself to take longer than the 86-sample walkthrough.
 
 ::: {.panel-tabset}
 
@@ -868,7 +873,7 @@ full <- cbind(full, pheno)
 
 # Everything out of the series matrix is text, including the numbers.
 for (k in c("age", "mergedcapsandpsswinthin30days",
-            "childabphyssexemot_ctq_01modandsev")) {
+            "childabphyssexemot_ctq_01modandsev", "pc1", "pc2", "pc3")) {
   full[[k]] <- suppressWarnings(as.numeric(full[[k]]))
 }
 
@@ -890,9 +895,10 @@ Running that gives 795 rows and 24 columns, with this breakdown:
 | Case    | 160 | 28  |
 | missing | 36  | 14  |
 
-Three things to notice before you model any of it. **PTSD status is more imbalanced
+Two things to notice before you model any of it. **PTSD status is more imbalanced
 than in the teaching subset** — 188 cases against 557 controls, and among males only 28
-cases — where the 96-sample subset was deliberately balanced on case/control and sex.
+cases — whereas the 96-sample subset was balanced on sex and enriched for cases (32
+cases against 55 controls).
 And **50 samples have no PTSD value at all**, so they will be excluded from any model
 using that variable, exactly as 9 of the 96 do in this tutorial.
 
@@ -904,6 +910,9 @@ ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 i  <- match(ss$sample_id, full$sample_id)
 sum(!is.na(i))                                   # 96
 identical(basename(ss$Basename), basename(full$Basename[i]))   # TRUE
+# The three genetic ancestry PCs in the 96-sample sheet were taken from this table.
+all.equal(ss[, c("pc1", "pc2", "pc3")], full[i, c("pc1", "pc2", "pc3")],
+          check.attributes = FALSE)                                  # TRUE
 ```
 
 Note that `Basename` above points at `idats_full/`, matching the download commands in
@@ -913,7 +922,10 @@ than editing the sheet afterwards.
 ## The sample sheet {#sec-sample-sheet}
 
 `minfi` reads IDATs given a **Basename** (the path up to `_Grn/_Red`). We pair
-each Basename with the phenotype row for that GSM. Here is the first 8 rows of the sample sheet:
+each Basename with the phenotype row for that GSM. The last three columns, `pc1`–`pc3`,
+are the genetic ancestry principal components GEO deposits for each sample; one of the 96
+has none. [Genetic ancestry PCs](04b_genetic_pcs.qmd) explains what they are and
+why the models use them. Here are the first 8 rows of the sample sheet:
 
 ```{r}
 #| label: sample-sheet
@@ -929,6 +941,6 @@ knitr::kable(head(ss[, c("sample_id","slide","array_pos","gender","age",
 
 ## What the next notebook does {#sec-next}
 
-With the sample sheet provided, the [QC notebook](01_qc.qmd) reads all 96 IDAT
-pairs into a single `RGChannelSet` and runs the quality checks that decide which
-samples are trustworthy before we begin normalization.
+With the IDATs read and saved as `data/01_RGset.rds`, the [QC notebook](01_qc.qmd)
+loads that `RGChannelSet` and runs the quality checks that decide which samples are
+trustworthy before we begin normalization.

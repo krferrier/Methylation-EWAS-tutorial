@@ -5446,20 +5446,20 @@ window.onload = function() {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./03_probe_filtering.html#sec-categories" class="sidebar-item-text sidebar-link">
- <span class="menu-text">2. The categories, quantified</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-ancestry" class="sidebar-item-text sidebar-link">
- <span class="menu-text">3. Ancestry matters</span></a>
+ <span class="menu-text">2. Ancestry matters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-detp-sex" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Detection-p and sex chromosomes</span></a>
+ <span class="menu-text">3. Detection-p and sex chromosomes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-apply" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Applying the filters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5474,6 +5474,12 @@ window.onload = function() {
   <div class="sidebar-item-container"> 
   <a href="./04_cell_composition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Cell composition: Whole Blood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04b_genetic_pcs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Genetic ancestry principal components</span></a>
   </div>
 </li>
           <li class="sidebar-item sidebar-item-section">
@@ -5628,44 +5634,38 @@ window.onload = function() {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./07_pipeline.html#sec-metal-build" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Building METAL</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-run" class="sidebar-item-text sidebar-link">
- <span class="menu-text">5. Running a non-stratified EWAS</span></a>
+ <span class="menu-text">4. Running a non-stratified EWAS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-strata" class="sidebar-item-text sidebar-link">
- <span class="menu-text">6. Stratifying by sex</span></a>
+ <span class="menu-text">5. Stratifying by sex</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-bacon" class="sidebar-item-text sidebar-link">
- <span class="menu-text">7. BACON</span></a>
+ <span class="menu-text">6. What BACON did to each arm</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-meta" class="sidebar-item-text sidebar-link">
- <span class="menu-text">8. Meta-analyzing with METAL</span></a>
+ <span class="menu-text">7. Meta-analyzing with METAL</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-reading" class="sidebar-item-text sidebar-link">
- <span class="menu-text">9. Reading the run as a whole</span></a>
+ <span class="menu-text">8. Reading the run as a whole</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-scaling" class="sidebar-item-text sidebar-link">
- <span class="menu-text">10. Scaling up</span></a>
+ <span class="menu-text">9. Scaling up</span></a>
   </div>
 </li>
       </ul>
@@ -5868,8 +5868,9 @@ Age: range 18-66 | mean 42.5 </code></pre>
 <li><strong><a href="./02_normalization.html">Normalization</a></strong> — within- and between-array normalization.</li>
 <li><strong><a href="./03_probe_filtering.html">Probe filtering</a></strong> — detection-p, cross-reactive, and ancestry-aware SNP masks.</li>
 <li><strong><a href="./04_cell_composition.html">Cell composition</a></strong> — reference-based deconvolution, validated against deposited proportions.</li>
+<li><strong><a href="./04b_genetic_pcs.html">Genetic ancestry PCs</a></strong> — what the deposited genetic ancestry principal components capture and why the models adjust for them.</li>
 <li><strong><a href="./05_batch_effects.html">Batch effects</a></strong> — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.</li>
-<li><strong><a href="./06_ewas.html">EWAS</a></strong> — the association model, adjusted for sex, age, smoking, array position, cell composition, and surrogate variables.</li>
+<li><strong><a href="./06_ewas.html">EWAS</a></strong> — the association model, adjusted for sex, age, a methylation-based smoking proxy, array position, cell composition, genetic ancestry PCs, and surrogate variables.</li>
 <li><strong><a href="./07_pipeline.html">Snakemake pipeline</a></strong> — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.</li>
 <li><strong><a href="./08_annotation.html">Annotation</a></strong> — mapping top CpGs to genes, regions (DMRs), and regulatory context.</li>
 </ol>
@@ -6424,13 +6425,14 @@ Age: range 18-66 | mean 42.5 </code></pre>
 <span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a><span class="ss">4. </span>**[Normalization](02_normalization.qmd)** — within- and between-array normalization.</span>
 <span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a><span class="ss">5. </span>**[Probe filtering](03_probe_filtering.qmd)** — detection-p, cross-reactive, and ancestry-aware SNP masks.</span>
 <span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a><span class="ss">6. </span>**[Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.</span>
-<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**[Batch effects](05_batch_effects.qmd)** — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.</span>
-<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**[EWAS](06_ewas.qmd)** — the association model, adjusted for sex, age, smoking, array position, cell composition, and surrogate variables.</span>
-<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a><span class="ss">9. </span>**[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.</span>
-<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a><span class="ss">10. </span>**[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.</span>
-<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a>Each notebook loads the object saved by the previous one, so you can work</span>
-<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>through them in order or jump to any step and pick up the saved checkpoint.</span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a><span class="ss">7. </span>**[Genetic ancestry PCs](04b_genetic_pcs.qmd)** — what the deposited genetic ancestry principal components capture and why the models adjust for them.</span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a><span class="ss">8. </span>**[Batch effects](05_batch_effects.qmd)** — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.</span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a><span class="ss">9. </span>**[EWAS](06_ewas.qmd)** — the association model, adjusted for sex, age, a methylation-based smoking proxy, array position, cell composition, genetic ancestry PCs, and surrogate variables.</span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a><span class="ss">10. </span>**[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.</span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a><span class="ss">11. </span>**[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.</span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>Each notebook loads the object saved by the previous one, so you can work</span>
+<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a>through them in order or jump to any step and pick up the saved checkpoint.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

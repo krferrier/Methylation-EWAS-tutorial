@@ -1,0 +1,318 @@
+---
+title: "Genetic ancestry principal components"
+---
+
+```{r}
+#| label: setup
+#| include: false
+source("_setup.R")
+```
+
+## What genetic PCs capture {#sec-what}
+
+**Genetic ancestry** describes which populations a person's genome descends from. It is
+a property of DNA, not a social label. Because populations that were separated for a
+long time drifted apart in allele frequencies, an individual's genotypes at many
+thousands of common variants carry a record of that descent. In a cohort drawn from
+several continents the largest differences in allele frequency fall between continental
+groups, so the leading axes of genetic variation broadly separate African, European,
+East Asian, South Asian and American ancestries. Within one continental group, the same
+approach picks up finer regional structure; within Europe, for example, the first two
+PCs reproduce the map of the continent [@novembre2008geography]. **Admixture** is the case where a person's
+genome descends from more than one population, as it does for most African Americans,
+who carry both African and European ancestry in proportions that vary from person to
+person [@bryc2015ancestry].
+
+**Principal component analysis** (PCA) summarises a table of many correlated variables
+with a few new variables, the principal components (PCs) [@jolliffe2016pca]. Each PC is a weighted sum of
+the original variables, chosen so that the first PC captures as much of the variance in
+the data as possible, the second captures the most of what remains while being
+uncorrelated with the first, and so on. Applied to a genotype matrix (individuals ×
+variants, coded 0/1/2 copies of one allele), each individual gets a score on each PC.
+Two individuals with similar allele frequencies across the genome get similar scores,
+so they sit close together when the scores are plotted; individuals from different
+populations sit far apart, and admixed individuals fall between the groups their
+ancestry comes from, roughly in proportion to how much of each they carry. The first
+few PCs of genome-wide genotypes therefore summarise genetic ancestry in a handful of
+continuous numbers [@patterson2006eigen]. Adjusting for those components is the standard correction
+for population stratification in genetic association studies
+[@price2006pca; @patterson2006eigen], and it carries over to EWAS. DNA methylation
+differs with ancestry too. Barfield et al. found widespread associations between
+methylation and race in 388 individuals and showed that, left unadjusted, this
+population structure can confound a methylation study [@barfield2014stratification].
+Part of the reason is genetic: sequence variants near a CpG can shift its methylation,
+and allele frequencies differ between populations. Chapter 03's masks do not deal with
+this. They remove probes whose *measurement* a SNP can corrupt, but a CpG whose
+methylation genuinely differs with ancestry passes every mask. If ancestry is also
+related to the exposure, it is a confounder, and even if it is not, it is structured
+variation the model can explain.
+
+From the [next chapter](05_batch_effects.qmd) on, every model in this tutorial carries
+three genetic ancestry principal components (PCs) as covariates: in ComBat and surrogate
+variable analysis in chapter 05, in the EWAS design in chapter 06, and in the pipeline's
+phenotype file in chapter 07. They are added to account for underlying population
+substructure: if methylation at a CpG differs with ancestry, and ancestry is also
+unevenly distributed between cases and controls, the CpG would look associated with the
+exposure when it is not. Carrying the PCs as covariates lets the model attribute that
+variation to ancestry rather than to the exposure. This short chapter explains what the
+PCs are, how they relate to self-reported race, and what to do when a dataset does not
+include them.
+
+::: {.callout-note}
+## What this chapter needs
+Everything up to the EPISTRUCTURE example needs only `data/sample_sheet.csv`, which is in
+the repository; the three PCs are its last three columns, `pc1`, `pc2` and `pc3`. The
+[EPISTRUCTURE example](#sec-epistructure) at the end also reads `data/02_funnorm_grs.rds`,
+written at the end of [normalization](02_normalization.qmd), and
+`data/04_cellcounts.rds`, written by [cell composition](04_cell_composition.qmd) and
+committed to the repository.
+:::
+
+```{r}
+#| label: load
+library(ggplot2)   # the scatter plot below
+
+ss   <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
+gpcs <- c("pc1", "pc2", "pc3")
+
+# The 86 samples an association model can use: PTSD status, sex, age and all three
+# PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the
+# 96 arrays has no PCs, and nine have no PTSD status.
+keep <- !(is.na(ss$ptsd) | ss$ptsd == "") & !is.na(ss$sex) & !is.na(ss$age) &
+        complete.cases(ss[, gpcs])
+pcs  <- ss[keep, ]
+cat("samples with PCs:", sum(complete.cases(ss[, gpcs])), "of", nrow(ss),
+    "| modeled samples:", nrow(pcs), "\n")
+```
+
+## Genetic PCs and self-reported race {#sec-race}
+
+Genetic PCs and self-reported race are different kinds of variable, and neither replaces
+the other. Race is a social category: the labels available, and which one a person is
+assigned or chooses, are set by the society they live in, not by their genome
+[@nasem2023descriptors; @borrell2021race]. Genetic ancestry is a property of the genome,
+and the PCs describe it continuously [@lewis2022ancestry]. The two are correlated in
+many cohorts, because people who share a racial label often share ancestry, but the
+correlation is not fixed, and it is often weak within a group: individuals recorded
+under one label can differ widely in ancestry, most obviously in admixed populations
+[@bryc2015ancestry]. Race also carries information genetic PCs cannot: it is the
+variable through which the effects of systemic racism, socioeconomic position, and
+other social and environmental exposures act on health, and those exposures shape DNA methylation
+[@borrell2021race]. So a race covariate and genetic PCs adjust for different things, and
+the 2023 National Academies report on population descriptors recommends using genetic
+ancestry, not race, when the aim is to account for genetic population structure, and
+naming which descriptor was used and why [@nasem2023descriptors].
+
+For this tutorial's purpose, adjusting for population substructure, genetic PCs are the
+appropriate variable: they measure the structure directly and continuously. Whether to
+also include self-reported race depends on the question. In a study of a socially
+patterned exposure, race may be an important covariate or even the exposure itself; in a
+study of a molecular trait, genetic PCs alone may be the better-specified choice. The
+Grady cohort also shows why race cannot stand in for the PCs here: almost every modeled
+sample carries the same label, so a categorical race variable doesn't provide meaningful
+differentiation for a statistical model, while the genetic PCs still vary from sample to
+sample:
+
+```{r}
+#| label: genetic-pcs
+table(race = ifelse(is.na(pcs$race) | pcs$race == "", "not recorded", pcs$race))
+
+# Their spread within the modeled set: continuous, and centred near zero because
+# they were computed on the whole cohort.
+round(sapply(pcs[, gpcs], summary), 4)
+```
+
+```{r}
+#| label: genetic-pc-scatter
+#| fig-width: 6.4
+#| fig-height: 4.6
+#| fig-cap: "The first two genetic ancestry PCs for the 86 modeled samples, coloured by self-reported race. Samples recorded with the same race label still spread along both components: this is the genetic variation a categorical race variable cannot represent, and the reason the PCs are used to adjust for population substructure."
+ggplot(pcs, aes(pc1, pc2, colour = ifelse(is.na(race) | race == "", "not recorded", race))) +
+  geom_point(size = 2.2, alpha = 0.8) +
+  scale_colour_manual(values = c(AA = "#1A6B75", Other = "#8C3A4A",
+                                 `not recorded` = "#8A8279"),
+                      name = "Self-reported race") +
+  labs(x = "Genetic PC1", y = "Genetic PC2")
+```
+
+The heatmap in [§2 of Batch effects](05_batch_effects.qmd#sec-pca) includes the three
+components, so you can see how much of the methylation variance they account for
+before any model is fit.
+
+## How many components {#sec-how-many}
+
+How many components a cohort needs depends on how structured it is. The usual way to
+decide is a scree plot: plot the variance each component explains against its rank and
+keep the components before the curve flattens, the "elbow" [@cattell1966scree].
+EIGENSOFT's `smartpca` also tests each component formally against a Tracy–Widom
+distribution [@patterson2006eigen]. Both need the full set of eigenvalues, which a
+deposit that ships only the first three PCs, as Grady's does, cannot give you. Three is
+a common choice, and it is what the PGC-PTSD meta-analysis used for genotyped cohorts
+[@katrinli2024ptsd]. In practice, most PCs beyond the first two or three within a
+continental group have little association with methylation and adjusting for them
+mainly costs degrees of freedom.
+
+::: {.callout-tip collapse="true"}
+## If your GEO deposit has no genetic PCs
+
+Most GEO methylation deposits do not include genetic PCs, so you will often have to
+make your own. In order of preference:
+
+1. **Compute them from genotypes.** If genotype data exist for the same individuals,
+   run a PCA on them. For a public methylation deposit this usually means the genotypes
+   are under controlled access (for example on dbGaP), which requires an approved data
+   access request from an institutional signing official, so it is rarely an option a
+   student can arrange alone; ask whether your PI already has access. Remove rare
+   variants and prune SNPs in linkage disequilibrium first, so that the components
+   describe genome-wide ancestry rather than a few long haplotypes.
+   PLINK 2 [@chang2015plink2] and EIGENSOFT's `smartpca`
+   [@patterson2006eigen; @price2006pca] are the standard tools:
+
+   ```{.bash filename="Generic example, do not run"}
+   # `mydata` is a placeholder for a PLINK fileset (.bed/.bim/.fam) of your cohort.
+   plink2 --bfile mydata --autosome --maf 0.05 \
+          --indep-pairwise 200 50 0.2 --out pruned
+   plink2 --bfile mydata --extract pruned.prune.in --pca 10 --out mydata_pcs
+   # mydata_pcs.eigenvec: one row per individual, PC1-PC10 as columns
+   ```
+
+2. **Estimate ancestry from the methylation data.** Without genotypes, PCs can be
+   computed from the methylation array itself. Barfield et al. showed that PCs built
+   from CpGs chosen because they proxy nearby SNPs adjust for population stratification
+   nearly as well as genotype PCs [@barfield2014stratification]. EPISTRUCTURE, part of
+   the GLINT toolset, implements a related approach [@rahmani2017epistructure;
+   @rahmani2017glint]; the [example below](#sec-epistructure) runs it on this cohort. The
+   PGC-PTSD meta-analysis used Barfield's method for its cohorts without genotypes and
+   kept PCs 2 and 3, the components most correlated with self-reported ancestry
+   [@katrinli2024ptsd]. Because methylation-based components can also pick up cell
+   composition or batch, check what they correlate with before you use them. Comparing
+   them with self-reported race and with chapter 04's cell proportions is our
+   suggestion for a minimum check.
+
+3. **Fall back on self-reported race or ethnicity.** If neither is possible, a
+   categorical self-reported race or ethnicity covariate captures some of the
+   population structure where the labels and ancestry are correlated, but it is a
+   different kind of variable ([above](#sec-race)): it cannot represent admixture, and
+   in a cohort where most samples share one label it adjusts for very little. Report
+   it as a limitation and say which descriptor you used.
+:::
+
+## Worked example: EPISTRUCTURE on the Grady data {#sec-epistructure}
+
+Because Grady deposits genetic PCs, it lets us check how well a methylation-only method
+recovers them. EPISTRUCTURE [@rahmani2017epistructure] works from a fixed list of 4,913
+CpGs whose methylation was found to be strongly explained by nearby SNPs. It removes the
+effect of cell composition from those sites and takes principal components of what is
+left. GLINT, the toolset that implements it, is written for Python 2.7
+[@rahmani2017glint], so the steps are written out in R below. Run on this dataset,
+GLINT's own `--epi` gives the same three components as this code: they correlate at
+r = −1 (the sign of a PC is arbitrary) and differ in scale only because scikit-learn
+standardizes with *n* rather than *n* − 1.
+
+Two things about the input matter. First, the reference CpGs are exactly the kind of
+SNP-influenced sites [probe filtering](03_probe_filtering.qmd) removes, so EPISTRUCTURE
+has to run on the normalized but **unfiltered** object; GLINT's documentation makes the
+same recommendation. Second, the list was selected in European individuals, and this
+cohort is mostly African American, so how well it works here is a real question rather
+than a foregone conclusion.
+
+```{r}
+#| label: epistructure
+library(minfi)   # getBeta()
+
+# GLINT's reference list, read from the GLINT repository at a fixed commit so it
+# keeps returning this exact file.
+ref <- readLines(paste0("https://raw.githubusercontent.com/cozygene/glint/",
+                        "31a138ce380faeaf0e698733e781771df33374fe/",
+                        "parsers/assets/epistructure_reference_sites.txt"))
+
+# Normalized, unfiltered beta values for the reference sites that are on the EPIC
+# array (the list was built on the 450K array, so a few are missing).
+grs  <- readRDS("data/02_funnorm_grs.rds")
+beta <- getBeta(grs[rownames(grs) %in% ref, ])
+rm(grs)   # 1.25 GB; only the reference sites are needed from here on
+cat("reference CpGs:", length(ref), "| on this array:", nrow(beta), "\n")
+
+# Covariates to remove before the PCA, in the same sample order as `beta`.
+cells <- readRDS("data/04_cellcounts.rds")[colnames(beta), ]
+sheet <- ss[match(colnames(beta), ss$sample_id), ]
+
+# EPISTRUCTURE: regress each reference site on the covariates, keep the residuals,
+# standardize each site, and take principal components across samples.
+epistructure <- function(beta, covariates, n_pcs = 3) {
+  res <- t(lm.fit(covariates, t(beta))$residuals)
+  prcomp(t(res), center = TRUE, scale. = TRUE)$x[, seq_len(n_pcs)]
+}
+
+# GLINT's documented usage regresses out cell composition only. On these arrays the
+# components that gives also track the chip each sample was run on, so the version
+# used below also removes sex and chip.
+epi_cells <- epistructure(beta, cbind(1, cells))
+epi       <- epistructure(beta, model.matrix(~ cells + sex + factor(slide), sheet))
+
+# How much each version's first component tracks chip, and how closely it follows
+# the deposited pc1 (95 samples; one has no deposited PCs).
+has_pcs <- complete.cases(sheet[, gpcs])
+chip_r2 <- function(e) summary(lm(e[, 1] ~ factor(sheet$slide)))$r.squared
+data.frame(covariates_removed = c("cell types", "cell types, sex, chip"),
+           chip_R2_of_EPI1    = round(c(chip_r2(epi_cells), chip_r2(epi)), 2),
+           abs_r_with_pc1     = round(abs(c(cor(epi_cells[has_pcs, 1], sheet$pc1[has_pcs]),
+                                            cor(epi[has_pcs, 1], sheet$pc1[has_pcs]))), 2))
+```
+
+```{r}
+#| label: epistructure-compare
+# Correlation of each deposited genetic PC with each EPISTRUCTURE component, and
+# how much of each deposited PC the three components explain together.
+epi_cor <- cor(sheet[has_pcs, gpcs], epi[has_pcs, ])
+colnames(epi_cor) <- paste0("EPI", 1:3)
+epi_r2 <- sapply(gpcs, function(p) summary(lm(sheet[has_pcs, p] ~ epi[has_pcs, ]))$r.squared)
+round(cbind(epi_cor, R2_from_EPI1_3 = epi_r2), 2)
+```
+
+```{r}
+#| label: fig-epistructure
+#| fig-width: 6.4
+#| fig-height: 4.6
+#| fig-cap: "The first EPISTRUCTURE component against the deposited genetic PC1, for the 95 samples with deposited PCs, coloured by self-reported race. The sign of a principal component is arbitrary, so a negative correlation is as good as a positive one."
+cmp <- data.frame(pc1 = sheet$pc1[has_pcs], EPI1 = epi[has_pcs, 1],
+                  race = ifelse(is.na(sheet$race[has_pcs]) | sheet$race[has_pcs] == "",
+                                "not recorded", sheet$race[has_pcs]))
+ggplot(cmp, aes(pc1, EPI1, colour = race)) +
+  geom_point(size = 2.2, alpha = 0.8) +
+  scale_colour_manual(values = c(AA = "#1A6B75", Other = "#8C3A4A",
+                                 `not recorded` = "#8A8279"),
+                      name = "Self-reported race") +
+  labs(x = "Deposited genetic PC1", y = "EPISTRUCTURE component 1")
+```
+
+EPISTRUCTURE recovers the main ancestry axis reasonably well: its first component
+correlates with the deposited PC1 at |r| = `r sprintf("%.2f", abs(epi_cor["pc1", "EPI1"]))`,
+and the three components together explain
+`r sprintf("%.0f%%", 100 * epi_r2["pc1"])` of PC1's variance. EPISTRUCTURE's components explain almost none of PC2
+(`r sprintf("%.0f%%", 100 * epi_r2["pc2"])`) or PC3
+(`r sprintf("%.0f%%", 100 * epi_r2["pc3"])`) in this cohort. The table printed by the `epistructure` chunk also shows why it is worth checking what
+methylation-based components correlate with before using them: with only cell types
+removed, the first component partly tracks the chip.
+
+So EPISTRUCTURE is a reasonable substitute for genetic PCs if they are not provided. The rest of this
+tutorial uses the deposited genetic PCs, not these.
+
+::: {.callout-note}
+## If you do use EPISTRUCTURE components as covariates
+EPISTRUCTURE doesn't require removing the reference sites from the association test. A
+conservative option is to exclude the ones still left after probe filtering, or to note
+that their association estimates were adjusted for a covariate built partly from their
+own methylation. Either way, report which option you chose.
+:::
+
+---
+
+**Next:** [Batch effects](05_batch_effects.qmd) — technical variation from chips,
+array positions, and plates, and how to detect it before deciding whether to
+correct.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

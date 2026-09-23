@@ -64,8 +64,8 @@ will show a large "methylation difference" that is really a difference in DNA
 sequence. This is a dangerous and often overlooked category for an EWAS, because 
 it produces reproducible, highly significant, and completely spurious associations 
 whenever the SNP allele frequency differs between your comparison groups. Zhou provides 
-SNP masks recommendations built from 1000 Genomes allele frequencies. If you are studying a 
-population that is not well represented by one of the 1000 Genomes Project, it is 
+SNP mask recommendations built from 1000 Genomes allele frequencies. If you are studying a 
+population that is not well represented by one of the 1000 Genomes Project populations, it is 
 recommended to find or curate a list of population-specific SNPs and exclude any CpGs 
 within the last 5bp of the CpG probe. If there is no appropriate 1000 Genomes population and 
 you don't have population/study-specific allele frequencies, you can use the general population SNP
@@ -169,14 +169,17 @@ these formats:
 # (bioconda's linux build is pinned at 1.8, which predates `yame fetch` --
 #  use the zhou-lab channel or build from source)
 
-yame fetch EPIC/EPIC.hg38.mask.cm EPIC/EPIC.ordering.tsv.gz
+# -d . puts the files in ./EPIC/ in the current directory. Without it they go to
+# YAME's shared store (~/.local/share/yame by default), and the commands below
+# would need the full path to that folder.
+yame fetch -d . EPIC/EPIC.hg38.mask.cm EPIC/EPIC.ordering.tsv.gz
 
-yame info    EPIC.hg38.mask.cm   # 24 mask terms over 866,553 probes
-yame summary EPIC.hg38.mask.cm   # how many probes each term flags
-yame unpack -a EPIC.hg38.mask.cm > mask_bits.tsv   # all 24 terms, one column each
+yame info    EPIC/EPIC.hg38.mask.cm   # 24 mask terms over 866,553 probes
+yame summary EPIC/EPIC.hg38.mask.cm   # how many probes each term flags
+yame unpack -a EPIC/EPIC.hg38.mask.cm > mask_bits.tsv   # all 24 terms, one column each
 ```
 
-`yame summary` is the quickest way to see what a term includes you before you commit
+`yame summary` is the quickest way to see what a term includes before you commit
 to it. Turning the bits into a probe list is then a row-wise OR across the columns
 you chose, indexed against the ordering:
 
@@ -185,8 +188,9 @@ produce or fetch are committed under `data/`, which is what the code below reads
 
 ```{.r filename="RStudio Console"}
 library(data.table)
-# `yame unpack` writes the term names to a sidecar .idx, one per line, in the
-# same order as the columns of mask_bits.tsv -- so read the column, not the header.
+# The mask's term names are in the .idx file `yame fetch` downloaded alongside
+# it, one per line, in the same order as the columns of mask_bits.tsv (which has
+# no header).
 terms  <- fread("data/EPIC.hg38.mask.cm.idx", header = FALSE)$V1
 probes <- fread("data/EPIC.ordering.tsv.gz")$Probe_ID     # canonical probe ordering
 bits   <- fread("data/mask_bits.tsv.gz", header = FALSE); setnames(bits, terms)
@@ -256,7 +260,7 @@ snp <- data.frame(
   snp_masked  = snp_by_pop[c("AFR", "AMR", "SAS", "EUR", "EAS")]
 )
 knitr::kable(snp, row.names = FALSE,
-             caption = "Probes flagged by M_SNP_<POP>_1pt (common SNP at the interrogated CpG, MAF >= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.")
+             caption = "Probes flagged by M_SNP_{POP}_1pt (common SNP at the interrogated CpG, MAF >= 1%) by 1000 Genomes super-population. African-ancestry samples have roughly twice as many SNP-affected probes as European.")
 ```
 
 African-ancestry populations carry the most common genetic variation, so more
@@ -296,18 +300,18 @@ important to include masking recommendations for both.
 ## The teaching point
 Probe filtering is not a fixed recipe — the SNP component depends on your study
 population. For a cohort of known, relatively homogeneous ancestry, use that
-population's mask. For an admixed or mixed-ancestry cohort, the conservative choice
-is to take the **union** of the relevant population masks (drop a probe if it is
-SNP-affected in *any* represented ancestry). For a multi-ancestry cohort or cohort 
-of unknown ancestry, the general population mask is the most appropriate.
+population's mask. For an admixed cohort with a few known ancestral components (as here, AFR + EUR),
+the conservative choice is to take the **union** of the relevant population masks (drop
+a probe if it is SNP-affected in *any* represented ancestry). For a cohort spanning many
+ancestries, or of unknown ancestry, the general population mask is the most appropriate.
 :::
 
 ## 3. Detection-p and sex-chromosome filtering {#sec-detp-sex}
 
 Two study-specific filters complete the funnel:
 
-- **Detection-p failures.** From [QC](01_qc.qmd) we have the per-probe detection
-  p-values. A probe that fails (p > 0.01) in more than ~10% of samples is
+- **Detection-p failures.** Detection p-values were introduced in [QC](01_qc.qmd),
+  which summarised them per sample; here they are recomputed per probe. A probe that fails (p > 0.01) in more than ~10% of samples is
   unreliable *in this dataset* and is dropped.
 - **Sex chromosomes.** For an autosomal EWAS, X- and Y-chromosome probes are also
   removed: X-inactivation and sex differences would
@@ -396,7 +400,7 @@ funnel <- data.frame(
   probes_dropped = c(NA, funl$drop_mask, funl$drop_detp, funl$drop_sex, NA),
   probes_remaining = c(funl$n0, NA, NA, NA, funl$retained)
 )
-knitr::kable(funnel, caption = "Probe-filtering funnel on the 96-sample subset (AFR + EUR aware).")
+knitr::kable(funnel, caption = "Probe-filtering funnel on the 96-sample subset (AFR + EUR aware). Each filter is counted on its own and a probe can fail more than one, so the dropped counts do not add up to the total removed.")
 cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
             funl$retained, funl$n0, 100 * funl$retained / funl$n0))
 ```
@@ -433,11 +437,12 @@ so the general terms are not counted twice. The archived manifest is 14 MB, so t
 tutorial ships only its flagged probe IDs:
 
 ```{.r filename="Provenance, do not run"}
-# This is how data/03_legacy_pop_mask.tsv.gz was built
-# from the archived manifest. That manifest is not in the repository -- the
-# shipped file is its output, and the chunk below reads it.
+# This is how data/03_legacy_pop_mask.tsv.gz was built from the archived
+# manifest (14 MB, read from the zhou-lab repository). The shipped file is its
+# output, and the chunk below reads it.
 library(data.table)
-pop  <- fread("EPIC.hg38.manifest.pop.tsv.gz",
+pop  <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotationData/",
+                     "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/EPIC.hg38.manifest.pop.tsv.gz"),
               select = c("probeID", "MASK_general_AFR", "MASK_snp5_EUR"))
 long <- rbindlist(lapply(c("MASK_general_AFR", "MASK_snp5_EUR"),
   function(cl) data.table(probeID = pop$probeID[pop[[cl]]], mask = cl)))
@@ -475,14 +480,14 @@ differences are largely because a new aligner and genome build were used in v8.1
 probe's coordinates and therefore its 5 bp window could have shifted, as well as
 updated data on population-specific allele frequencies which are used to define SNPs.
 
-The mapping criteria is where the majority of the difference in count for recommended
-probe masks come from. The legacy mask flagged 65,537 probes as mapping failures and
-another 25,194 for a non-unique 30-base 3′ subsequence; v8.1 flags 428 under
+The mapping criteria are where most of the difference in the recommended mask counts
+comes from. The legacy mask flagged 65,537 probes as mapping failures and 25,194 for a
+non-unique 30-base 3′ subsequence, many of them the same probes; v8.1 flags 428 under
 `M_mapping` (unmapped, alignment score below 35, or Infinium-I alleles landing in
 different places) and 28,833 under `M_nonuniq` (mapped, but mapping quality under 10).
 v8.1 has no separate copy-number term because mapping quality now captures that
 information. In total that means the legacy code recommended masking for mapping
-criteria for 70,632 probes, whereas v8.1 that decreased to 29,261.
+criteria for 70,632 probes, whereas in v8.1 that number is 29,261.
 
 Given the vast difference in mapping-related criteria between versions, it's
 recommended to use the current `M_mapping` and `M_nonuniq` and only use the population
@@ -521,9 +526,10 @@ are keyed on **probe IDs**, not intensities. The workflow:
    # unchanged on a matrix, because the mask is keyed on probe IDs and nothing else.
    beta_filt <- beta[!rownames(beta) %in% drop8, ]
 
-   # archived manifest, if you need sub-population resolution instead
+   # archived manifest (14 MB), if you need sub-population resolution instead
    library(data.table)
-   pop  <- fread("EPIC.hg38.manifest.pop.tsv.gz")
+   pop  <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotationData/",
+                        "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/EPIC.hg38.manifest.pop.tsv.gz"))
    drop <- pop$probeID[pop$MASK_general_ASW]           # e.g. African-ancestry SW US
    beta_filt <- beta[!rownames(beta) %in% drop, ]
    ```
@@ -541,15 +547,18 @@ Zhou publishes masks per platform (450K / EPIC / EPICv2) and per genome build
 (hg19 / hg38). Use the manifest that matches the array the data were generated on;
 the probe IDs mostly overlap between 450K and EPIC but the mask *contents* differ.
 If you are combining a 450K series with an EPIC series, filter each on its own
-manifest, then intersect on the shared probe IDs.
+manifest, then intersect on the shared probe IDs. This tutorial uses the hg38 masks
+because its results are reported in hg38 coordinates ([annotation](08_annotation.qmd));
+the object's hg19 Illumina annotation is used here only to find the sex-chromosome
+probes.
 :::
 
 We save the filtered, EWAS-ready object for cell-composition estimation next:
 
 ```{r}
 #| label: save-filtered
-# 1. The EWAS-ready GenomicRatioSet. An S4 object with four parallel matrices and
-#    a GRanges, so RDS rather than a flat file. Read by cell-composition
+# 1. The EWAS-ready GenomicRatioSet. An S4 object with two parallel assay matrices
+#    (Beta and CN; getM() derives M-values from Beta) and a GRanges, so RDS rather than a flat file. Read by cell-composition
 #    estimation ([chapter 04](04_cell_composition.qmd)) and the batch-effect
 #    diagnostics ([chapter 05](05_batch_effects.qmd)).
 saveRDS(grs_filt, "data/03_grs_filtered.rds")
@@ -584,8 +593,8 @@ start from it instead:
 grs_filt <- readRDS("data/03_grs_filtered.rds")
 ```
 
-What you give up is the funnel: every count above is computed from the three probe
-lists, not read from a file, so none of it appears if you skip the chapter's code.
+The funnel counts are saved on their own too, in `data/03_filter_funnel.tsv`, which is
+committed to the repository, so you can still read them without running the chapter.
 :::
 
 The result: **`r format(funl$retained, big.mark=",")`** autosomal probes on
@@ -599,7 +608,7 @@ happen later, both in [chapter 05](05_batch_effects.qmd):
 - the **20 CpGs used to build the smoking proxy** are excluded, because regressing
   those probes on a score derived from themselves is circular; and
 - **two probes** (`cg17759086`, `cg01801182`) have β pinned at 0 or 1 in the
-  87-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.
+  86-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.
 
 So `r format(funl$retained, big.mark=",")` probes pass filtering and
 **756,251** are actually tested.

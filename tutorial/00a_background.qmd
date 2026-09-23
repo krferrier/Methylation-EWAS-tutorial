@@ -53,8 +53,8 @@ $$\beta = \frac{M}{M + U + \alpha}, \qquad M\text{-value} = \log_2\!\frac{M}{U}$
 The **beta value** is the direct proportion of methylation and values range
 between $[0,1]$. While the beta value is easily interpretable, the distribution of
 beta values are often non-normal and thus violate assumptions of normality when
-they are used in linear regression modeling. Thus, the beta values are log-transformed
-to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in
+they are used in linear regression modeling. Thus, the beta values are logit-transformed,
+$M = \log_2\left(\beta / (1 - \beta)\right)$, to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in
 distribution, which makes it the better choice for statistical modeling.
 ($\alpha \approx 100$ is a small offset that stabilizes betas where
 total intensity is low.)
@@ -63,10 +63,8 @@ total intensity is low.)
 ## Two probe designs
 Methylation array technology often uses two different probe chemistries.
 
-  - **Type I** probes use two beads (one for M, one for
-U) in the *same* color channel;
-  - **Type II** probes use a single bead and read M
-vs U in the *two* color channels. Type I probes are better suited for regions with
+  - **Type I** probes use two beads (one for M, one for U) in the *same* color channel;
+  - **Type II** probes use a single bead and read M vs U in the *two* color channels. Type I probes are better suited for regions with
 high CpG density, but require double the physical space on the array per locus.
 Type II are more compact, but have reduced sensitivity in high density regions.
 

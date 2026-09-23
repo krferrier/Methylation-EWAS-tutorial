@@ -14,8 +14,8 @@ in the assay, which needs to be accounted for before the probe intensities can b
 across samples in downstream analyses. Normalization is the method used to do this. This 
 notebook walks through the standard normalization strategies used for methylation data.
 
-Since all of the samples from our small example subset passed QC, we will start normaliztion 
-from the raw two-channel object produced in [QC](01_qc.qmd). If you did identify samples that 
+Since all of the samples from our small example subset passed QC, we will start normalization 
+from the raw two-channel object written in [Setup](00_setup.qmd) and examined in [QC](01_qc.qmd). If you did identify samples that 
 failed to meet QC thresholds, those samples should be removed prior to normalization.
 
 ::: {.callout-note}
@@ -282,15 +282,16 @@ Restart R, then re-run the chunk.
 ## If normalization does not fit on your machine
 
 The two chunks above need the 460 MB `RGChannelSet` in memory and peak around
-12.5 GB. If that is not practical, the published checkpoint holds exactly the
-pieces the figures below use — the three 20,000-probe β matrices and the two
-design lists — so you can fetch it and carry on:
+12.5 GB. If that is not practical, the published checkpoint holds both the
+normalized object itself and the pieces the figures below use — the three
+20,000-probe β matrices and the two design lists — so you can fetch it and carry on:
 
 ```{.bash filename="Terminal"}
 ./get_data.sh C_normalized
 ```
 
 ```{.r filename="RStudio Console"}
+grs_fun   <- readRDS("data/02_funnorm_grs.rds")   # the normalized object, 1.25 GB
 np <- readRDS("data/02_norm_pieces.rds")
 beta_raw  <- np$beta_raw
 beta_noob <- np$beta_noob
@@ -299,9 +300,9 @@ typeI     <- np$typeI
 typeII    <- np$typeII
 ```
 
-Every figure and table in this chapter will then run. What you give up is
-`grs_fun` itself, which [probe filtering](03_probe_filtering.qmd) reads — for
-that chapter, fetch `./get_data.sh D_filtered` instead. You also give up
+Every figure and table in this chapter will then run, and the saved
+`data/02_funnorm_grs.rds` is already the file [probe filtering](03_probe_filtering.qmd)
+reads, so you can skip the `save-norm` chunk at the end. What you give up is
 watching the normalization run, so take this route because you have to, not to
 save two minutes.
 :::
@@ -355,9 +356,12 @@ knitr::kable(tab, row.names = FALSE,
              caption = "Type I vs Type II β summaries across methods. The Type II spread widens toward the Type I spread after normalization. The medians do not converge, and are not expected to — see the text.")
 ```
 
-Read the `spread_sd` column, not the medians. Type II's spread rises from **0.286
-(raw)** to **0.313** after functional normalization, closing about a sixth of the
-gap to the Type I spread of 0.385. That expansion of the compressed Type II range
+Read the `spread_sd` column, not the medians. Type II's spread rises from
+**`r tab$spread_sd[tab$method == "raw" & tab$design == "Type II"]` (raw)** to
+**`r tab$spread_sd[tab$method == "funnorm" & tab$design == "Type II"]`** after functional
+normalization, narrowing its gap to the Type I spread from
+`r sprintf("%.3f", diff(rev(tab$spread_sd[tab$method == "raw"])))` to
+`r sprintf("%.3f", diff(rev(tab$spread_sd[tab$method == "funnorm"])))`. That expansion of the compressed Type II range
 is what design-bias correction does, and it is the same thing the density curves
 above show.
 

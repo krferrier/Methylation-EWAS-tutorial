@@ -18,7 +18,7 @@ literature — methylation-as-outcome vs. phenotype-as-outcome — and a
 residualization workflow that is common in practice.
 
 The worked example tests **PTSD case/control status** against methylation at each
-CpG, adjusting for sex, age, cell composition, and surrogate variables.
+CpG, adjusting for sex, age, cell composition, genetic ancestry, and surrogate variables.
 
 ::: {.callout-note}
 ## What this chapter needs
@@ -36,15 +36,16 @@ library(limma)   # lmFit(), eBayes(), topTable()
 library(bacon)   # bacon(), and the four diagnostic plots in section 4
 
 # The matrix the model is fit to: the stratified-ComBat M-values chapter 05
-# wrote, 756,251 probes x 87 samples. It is ~510 MB on disk and about the same
+# wrote, 756,251 probes x 86 samples. It is ~510 MB on disk and about the same
 # again in memory, so this read takes several seconds.
 Mcb <- readRDS("data/05_mvals_combat.rds")
 
-# Its small companion, which is committed to the repository: the 87-sample
-# phenotype table, the six cell proportions from chapter 04, the smoking proxy,
-# and the surrogate variables with the k that chapter 05's sweep settled on.
+# Its small companion, which is committed to the repository: the 86-sample
+# phenotype table (which carries the genetic ancestry PCs pc1-pc3), the six cell
+# proportions from chapter 04, the smoking proxy, and the surrogate variables
+# with the k that chapter 05's sweep settled on.
 sv_pieces <- readRDS("data/05_sva.rds")
-mdk   <- sv_pieces$mdk            # phenotype table, rows in Mcb's column order
+mdk   <- sv_pieces$mdk            # phenotype table (incl. pc1-pc3), rows in Mcb's column order
 propk <- sv_pieces$propk          # CD8T, CD4T, NK, Bcell, Mono, Neu
 smoke <- sv_pieces$smoke          # continuous smoking proxy score
 K     <- sv_pieces$k_selected     # the k chapter 05 settled on
@@ -127,15 +128,19 @@ Our design includes covariates for everything we established as a driver of meth
 - **a smoking proxy** — this cohort has no recorded smoking variable, so
   [chapter 05](05_batch_effects.qmd) builds one from a published panel of replicated
   smoking-associated CpGs. The panel probes themselves are excluded from testing.
+- **genetic ancestry** — the three genetic ancestry PCs (`pc1`–`pc3`) deposited with
+  the series, introduced in [chapter 05](05_batch_effects.qmd).
 - **array position** — the chip row (`R01C01`…`R08C01`), a recorded technical
   factor that is estimable here and so enters as a fixed effect (7 dummy columns).
 - **surrogate variables** — the `r ew$k_sv` SVs retained in
   [chapter 05](05_batch_effects.qmd), which absorb structure that none of the measured
   covariates name.
 
-This is the step where the sample count changes. Chapters 01–05 worked with all
-**96** QC-passing arrays, because none of those steps needs the exposure. The model
-above does, so the nine samples with no recorded PTSD status drop out and the EWAS
+Chapters 01–04 worked with all **96** QC-passing arrays, because none of those steps
+needs the exposure. The batch correction and surrogate variables in
+[chapter 05](05_batch_effects.qmd) do, so that chapter already set aside the nine
+samples with no recorded PTSD status and the one sample with no genetic ancestry PCs.
+The matrix loaded above is therefore the same modeled set, and the EWAS
 fits **n = `r ew$n`** (`r ew$ncase` cases, `r ew$nctrl` controls). No sample was
 excluded for quality — see [phenotype completeness](01_qc.qmd).
 
@@ -154,6 +159,30 @@ As a last resort, you can run the EWAS without accounting for smoking, just keep
 interpreting results. 
 :::
 
+::: {.callout-note collapse="true"}
+## Picking the chapter up from the saved fit instead
+
+Fitting 756,251 probes needs the 510 MB ComBat matrix in memory with a few GB of working
+space on top of it. If that is not practical on your machine, fetch the published fit and
+read it instead of running the chunks that fit and save the model: `ewas-fit` below,
+and `run-bacon`, `bacon-summary`, `bacon-diagnostics` and `save-ewas` in
+[section 4](#sec-bacon) and at the end of the chapter:
+
+```{.bash filename="Terminal"}
+./get_data.sh F_ewas_results
+```
+
+```{.r filename="RStudio Console"}
+ew <- readRDS("data/06_ewas.rds")
+tt <- ew$tt                                   # already carries the BACON columns
+bs <- readRDS("data/06_bacon_summary.rds")
+```
+
+Every other number, table and figure in this chapter will then run. The four BACON
+diagnostic plots are the one thing you lose, because they are drawn from the `bc` object
+rather than from the saved table.
+:::
+
 ```{r}
 #| label: ewas-fit
 # Array position is an 8-level factor on an EPIC chip, so it costs 7 dummy
@@ -165,9 +194,12 @@ pos <- factor(as.character(mdk$array_pos))
 # Every model term goes into one data frame so that model.matrix() can name the
 # columns it builds: `propk` expands to the six cell proportions by their own
 # names, and `SV` to SV1...SV6. check.names = FALSE keeps those names intact.
+# pc1-pc3 are the genetic ancestry PCs carried on mdk from chapter 05.
 dd <- data.frame(ptsd = ptsd, sex = factor(mdk$sex), age = mdk$age,
-                 smoke = smoke, pos = pos, propk, SV = SV, check.names = FALSE)
-design <- model.matrix(~ ptsd + sex + age + smoke + pos +
+                 smoke = smoke, pos = pos,
+                 pc1 = mdk$pc1, pc2 = mdk$pc2, pc3 = mdk$pc3,
+                 propk, SV = SV, check.names = FALSE)
+design <- model.matrix(~ ptsd + sex + age + smoke + pos + pc1 + pc2 + pc3 +
                          CD8T + CD4T + NK + Bcell + Mono + Neu + SV, data = dd)
 stopifnot("ptsdCase" %in% colnames(design))
 ew$design_ncol <- ncol(design)
@@ -194,7 +226,7 @@ tt$probe <- rownames(tt)
 # Delta-beta: the case-minus-control difference on the beta scale, taken from
 # the same ComBat-adjusted M-values the model saw, so the effect reported and
 # the effect tested describe one matrix. The back-transform is a second copy of
-# 756,251 x 87 doubles, so it is dropped again as soon as the means are taken.
+# 756,251 x 86 doubles, so it is dropped again as soon as the means are taken.
 bcb <- 2^Mcb / (2^Mcb + 1)
 db  <- rowMeans(bcb[, is_case, drop = FALSE],  na.rm = TRUE) -
        rowMeans(bcb[, !is_case, drop = FALSE], na.rm = TRUE)
@@ -381,11 +413,16 @@ In this run the fit tracks the histogram, the QQ panels are near-diagonal, the t
 are hairy caterpillars, and the posteriors form a dense cloud inside the ellipses — all
 four say the sampler converged and the empirical null is trustworthy.
 
-::: {.callout-tip}
+::: {.callout-important}
 ## Make BACON a default, and read the diagnostics
 Report BACON-adjusted effect sizes and p-values as your primary EWAS results. It is 
 not usually necessary to report the diagnostic plots, but I strongly recommend reporting 
 the adjusted lambda.
+
+And it is not a substitute for a better model: if your λ is inflated because of
+unmodeled batch or cell composition, the right response is to fix that (chapters 04 and
+05) rather than lean on BACON. Use it for the residual bias that remains after
+adjustment.
 :::
 
 ## 5. Results {#sec-results}
@@ -406,35 +443,121 @@ knitr::kable(head(tt[order(tt$bacon.p),
              caption = "Top 6 CpGs, ranked by BACON-adjusted p-value. logFC is the M-value effect; delta_beta is the case−control β difference (interpretable as percent methylation).")
 ```
 
-Only `r n_bonf` CpG passes Bonferroni and `r n_fdr` pass FDR < 0.05 — a borderline
-result that a study of this size cannot settle either way. With n = 87, a
-single marginal hit is not unexpected.
+`r n_bonf` CpGs pass Bonferroni and `r n_fdr` pass FDR < 0.05 — a null
+result that a study of this size cannot settle either way. A null result is not unusual at this sample size. The Grady Trauma Project was one of 23 cohorts in the Psychiatric Genomics Consortium PTSD meta-analysis of blood DNA methylation, which with 5,077 participants (2,156 PTSD cases and 2,921 trauma-exposed controls) identified 11 CpGs associated with PTSD [@katrinli2024ptsd].
 
-The next two figures are the same Manhattan plot drawn twice, once on limma's
-uncorrected p-values and once on the BACON-adjusted ones. Plotting both is worth
-the space: it shows exactly what the correction did to your results, and it makes
-clear that the one CpG which clears Bonferroni does so *because of* the rescaling,
-not independently of it. Report the adjusted version.
+The next code blocks produce a Manhattan plot, a QQ plot and a volcano plot from the BACON-adjusted results. No CpG reaches epigenome-wide significance: the strongest, `cg15434749`, has a BACON-adjusted p = 2.01 × 10⁻⁷ against a Bonferroni threshold of 6.61 × 10⁻⁸, and an FDR of 0.090.
+
+A Manhattan plot needs a genomic position for every CpG. Here they come from Zhou's
+hg38 coordinates, the same annotation chapter 08 uses:
 
 ```{r}
-#| label: manhattan
-#| fig-cap: "Manhattan plot of the EWAS, drawn on limma's uncorrected p-values. Nothing crosses the Bonferroni line (red) on this scale — the single CpG that clears Bonferroni does so only after BACON rescaling, which shifts it just past the threshold. A near-empty Manhattan is the expected result for a subtle psychiatric phenotype in a small teaching subset (n=87); the full-scale analysis (n≈800) and meta-analysis across cohorts is what powers genome-wide discovery for PTSD [@katrinli2020ptsd]."
-#| echo: false
-knitr::include_graphics("data/06_manhattan.png")
+#| label: manhattan-coords
+library(data.table)   # fread(), and the table operations below
+library(ggplot2)      # the Manhattan, QQ and volcano plots
+
+# hg38 position of every EPIC probe. The coordinate table has no probe column: row i
+# belongs to the probe named on row i of the probe ordering, so the two are read
+# together. The ordering is the file chapter 03 committed; the coordinates (5 MB)
+# are read from the zhou-lab/InfiniumAnnotation repository.
+ord <- fread("data/EPIC.ordering.tsv.gz", select = "Probe_ID")
+crd <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotation/",
+                    "e91f9e992cc60f2f52f15c564e359ac6718d4cfd/EPIC/EPIC.hg38.coord.tsv.gz"))
+coords <- data.table(probe = ord$Probe_ID, chr = crd$CpG_chrm, pos = crd$CpG_beg)
+
+# One row per tested CpG, with its position and its BACON-adjusted p-values
+pl <- merge(as.data.table(tt)[, .(probe, bacon.p, bacon.adj.P)], coords,
+            by = "probe")
+
+# Keep the numbered chromosomes. Chapter 03 removed chrX and chrY; this also drops
+# the 17 tested CpGs that sit on unplaced contigs or have no hg38 position.
+pl <- pl[grepl("^chr[0-9]+$", chr)]
+pl[, chrn := as.integer(sub("^chr", "", chr))]
+setorder(pl, chrn, pos)
+
+# Lay the chromosomes end to end: each chromosome's positions are shifted right by
+# the combined length of the chromosomes before it.
+chr_len <- pl[, .(len = max(pos)), by = chrn]
+chr_len[, offset := cumsum(as.numeric(len)) - len]
+pl[chr_len, x := pos + i.offset, on = "chrn"]
+chr_mid <- pl[, .(mid = (min(x) + max(x)) / 2), by = chrn]   # where each axis label goes
+
+# One function draws the plot; `pcol` names the p-value column it is drawn on.
+# `bonf` is the Bonferroni threshold from the hits chunk above.
+manhattan <- function(d, pcol, title) {
+  ggplot(d, aes(x, -log10(.data[[pcol]]), colour = factor(chrn %% 2))) +
+    geom_point(size = 0.8, alpha = 0.5) +
+    geom_hline(yintercept = -log10(bonf), colour = "#8C3A4A") +          # plum
+    scale_colour_manual(values = c(`0` = "#0F3D43", `1` = "#2A8F9B"),    # alternating teal
+                        guide = "none") +
+    scale_x_continuous(breaks = chr_mid$mid, labels = chr_mid$chrn,
+                       expand = c(0.01, 0)) +
+    labs(x = "Chromosome", y = expression(-log[10](italic(p))), title = title) +
+    theme(panel.grid.major.x = element_blank())
+}
+nrow(pl)
 ```
 
 ```{r}
 #| label: manhattan-bacon
-#| fig-cap: "The same Manhattan plot drawn on the BACON-adjusted p-values — the ones the chapter recommends you report. The axes, the coordinates, and the Bonferroni line are identical to the previous figure; only the y-values change. Rescaling by the empirical null lifts `cg15434749` (filled point) just across Bonferroni and leaves `cg20600436` (open ring) passing FDR < 0.05 alone. Comparing the two panels is the point: BACON does not manufacture signal, it re-centres and re-scales the whole test-statistic distribution, and a CpG that was already at the top of the uncorrected plot is the one that moves across."
-#| echo: false
-knitr::include_graphics("data/06_manhattan_bacon.png")
+#| fig-width: 11
+#| fig-height: 5
+#| fig-cap: "Manhattan plot of the EWAS, drawn on the BACON-adjusted p-values — the ones the chapter recommends you report. No CpG crosses the Bonferroni line (plum); the top-ranked CpG, `cg15434749`, is labelled. A near-empty Manhattan is the expected result for a subtle psychiatric phenotype in a small teaching subset (n=86); the full Grady Trauma Project cohort (n≈800) and meta-analysis across cohorts is what powers genome-wide discovery for PTSD [@katrinli2024ptsd]."
+top1 <- pl[which.min(bacon.p)]                      # the top-ranked CpG, labelled
+
+manhattan(pl, "bacon.p", "PTSD EWAS, BACON-adjusted p-values") +
+  geom_text(data = top1, aes(x, -log10(bacon.p), label = probe),
+            inherit.aes = FALSE, vjust = -1.2, size = 3.3, colour = "#3A362F")
+```
+
+A QQ plot summarises the same BACON-adjusted results across all CpGs at once. BACON's own version is among the
+diagnostics above. Code for producing your own qq plots is provided here so you can make them for your own studies.  Each CpG's observed
+p-value is plotted against the p-value it would have under a null distribution.
+
+```{r}
+#| label: qq
+#| fig-width: 6
+#| fig-height: 6
+#| fig-cap: "QQ plot of the BACON-adjusted EWAS p-values. Points on the diagonal are what a study with no associations produces; a curve lifting off the line across the whole range is inflation, while a departure confined to the far right is candidate signal. The genomic inflation factor λ is in the subtitle. The curve follows the diagonal through the bulk of the distribution and lies slightly above it in the upper tail; the most extreme CpG reaches −log₁₀ p = 6.70, below the Bonferroni threshold of 7.18."
+n <- nrow(tt)
+qq <- data.table(expected = -log10(ppoints(n)),
+                 observed = -log10(sort(tt$bacon.p)))
+
+ggplot(qq, aes(expected, observed)) +
+  geom_abline(slope = 1, intercept = 0, colour = "#7F7F7F") +
+  geom_point(size = 0.8, colour = "#2A8F9B") +
+  labs(x = expression(Expected~-log[10](italic(p))),
+       y = expression(Observed~-log[10](italic(p))),
+       subtitle = sprintf("BACON-adjusted p-values (\u03bb = %.3f)", bs$lambda_bacon))
 ```
 
 ```{r}
 #| label: volcano
-#| fig-cap: "Volcano plot. The x-axis is the EWAS effect size itself — the `ptsdCase` coefficient from the limma fit, on the M-value scale, adjusted for every covariate in the design. Colour marks the sign of that coefficient: teal for CpGs less methylated in cases, plum for those more methylated. Note that this is the adjusted effect, so its sign can differ from a raw case-minus-control β difference for probes where the covariates carry part of the signal. The three most significant probes are ringed and labelled. Even they move methylation only slightly, illustrating that EWAS effect sizes for complex phenotypes are typically small and require large samples to detect reliably."
-#| echo: false
-knitr::include_graphics("data/06_volcano.png")
+#| fig-width: 7
+#| fig-height: 6
+#| fig-cap: "Volcano plot. The x-axis is the EWAS effect size itself — the `ptsdCase` coefficient from the limma fit (logFC), on the M-value scale, adjusted for every covariate in the design; the y-axis is the BACON-adjusted p-value. Colour marks the sign of that coefficient: dark teal for CpGs less methylated in cases, light teal for those more methylated. Note that this is the adjusted effect, so its sign can differ from a raw case-minus-control β difference for probes where the covariates carry part of the signal. The plum line is the Bonferroni threshold, which no CpG crosses. The three top-ranked CpGs are ringed and labelled: `cg15434749` (logFC −0.385, Δβ −0.026), `cg20600436` (logFC 0.171, Δβ 0.014) and `cg25717994` (logFC 0.310, Δβ 0.006). Even they move methylation only slightly, illustrating that EWAS effect sizes for complex phenotypes are typically small and require large samples to detect reliably."
+library(ggrepel)      # geom_text_repel(): keeps the three labels from overlapping
+
+# x: the tested ptsdCase coefficient (logFC, M-value scale); y: BACON-adjusted p.
+vd <- as.data.table(tt)[, .(probe, logFC, bacon.p)]
+vd[, direction := ifelse(logFC < 0, "Less methylated in cases",
+                                    "More methylated in cases")]
+top3 <- vd[order(bacon.p)][1:3]                     # the three top-ranked CpGs
+
+ggplot(vd, aes(logFC, -log10(bacon.p), colour = direction)) +
+  geom_point(size = 0.6, alpha = 0.4) +
+  geom_hline(yintercept = -log10(bonf), colour = "#8C3A4A") +          # plum
+  geom_point(data = top3, shape = 21, fill = NA, colour = "#8C3A4A",
+             size = 3.5, stroke = 1) +
+  geom_text_repel(data = top3, aes(label = probe), colour = "#3A362F",
+                  size = 3.3, nudge_y = 0.4, min.segment.length = 0,
+                  segment.colour = "#3A362F", seed = 1) +
+  scale_colour_manual(values = c(`Less methylated in cases` = "#0F3D43",
+                                 `More methylated in cases` = "#2A8F9B"),
+                      name = NULL) +
+  labs(x = "PTSD effect (logFC, M-value scale)",
+       y = expression(-log[10](italic(p)[BACON]))) +
+  theme(legend.position = "top")
 ```
 
 ## 6. An alternative in common use: the M-value residual workflow {#sec-residual}
@@ -448,7 +571,7 @@ tutorial's pipeline author) prefer, is a **two-stage residualization**:
    position) and keep the **residuals** — the methylation signal with technical
    structure removed.
 2. **Run the association on the residuals** with only the biological model:
-   $$\text{resid}(\text{M})_{\text{CpG}} \sim \text{PTSD} + \text{sex} + \text{age} + \text{cell composition}$$
+   $$\text{resid}(\text{M})_{\text{CpG}} \sim \text{PTSD} + \text{sex} + \text{age} + \text{smoking proxy} + \text{cell composition} + \text{ancestry PCs}$$
 
 ```{.r filename="Generic example, do not run"}
 # Schematic only -- placeholder names, not objects this chapter creates.
@@ -457,7 +580,7 @@ tech    <- model.matrix(~ SV)                      # nuisance-only design
 M_resid <- residuals(lmFit(mvals, tech), mvals)    # limma residuals, probes x samples
 
 # Stage 2: association model on the residuals, biological covariates only
-bio <- model.matrix(~ exposure + sex + age + cell_proportions, data = pheno)
+bio <- model.matrix(~ exposure + sex + age + smoking + cell_proportions + ancestry_pcs, data = pheno)
 fit <- eBayes(lmFit(M_resid, bio))
 ```
 
@@ -465,7 +588,7 @@ fit <- eBayes(lmFit(M_resid, bio))
 spends `r ew$design_ncol` design columns *per probe*; at n = `r ew$n` that leaves
 `r ew$resid_df` residual df. Moving the technical terms into a first stage — where they
 are estimated once — leaves the association model lean
-(`PTSD + sex + age + 6 cell props`) and returns df to the test that matters.
+(`PTSD + sex + age + smoking proxy + 6 cell props + 3 ancestry PCs`) and returns df to the test that matters.
 
  It is also common to regress out the blood cell proportions in
 addition to the technical variation prior to running the main model. There is no *wrong* 
@@ -520,6 +643,12 @@ The workflow is three steps:
    the underlying effects to differ — and it gives you a **heterogeneity test**
    (Cochran's *Q*, *I²*) that formally asks whether the sexes differ at each CpG.
 
+The standard tool for performing meta analysis in genomics is **METAL**
+[@willer2010metal] and can also be used for epigenomics.  It reads each
+stratum's results file, matches CpGs by ID, does the inverse-variance weighting and the
+heterogeneity test genome-wide, and writes a combined table. [Chapter 07](07_pipeline.qmd) runs the stratified EWAS and METAL as a
+managed workflow. METAL's `SCHEME STDERR` *is* an inverse-variance-weighted fixed-effects meta-analysis, so the R code below and METAL produce exactly the same results.
+
 Inverse-variance meta-analysis is short enough to show in full. Every line below is
 vectorized, so this is the whole genome-wide meta-analysis, not a one-CpG illustration:
 
@@ -557,11 +686,16 @@ stratum-specific effect (in this case discordance could indicate sex-specific ef
 which is part of why you stratified. In a multi-cohort meta-analysis, where the strata
 are meant to be replicates, the discordance would indicate lower credibility.
 
-The standard tool for performing meta analysis in genomics is **METAL**
-[@willer2010metal] and can also be used for epigenomics.  It reads each
-stratum's results file, matches CpGs by ID, does the inverse-variance weighting and the
-heterogeneity test genome-wide, and writes a combined table. [Chapter 07](07_pipeline.qmd) runs the stratified EWAS and METAL as a
-managed workflow. METAL's `SCHEME STDERR` *is* an inverse-variance-weighted fixed-effects meta-analysis, so the above R code and METAL produce exactly the same results.
+Two things follow for how you read a meta-analysed table:
+
+1. **Check the arms.** For every hit you plan to report, look up the per-stratum
+   estimate, SE and p-value. If one arm is flat, you have a stratum-specific finding
+   and you should describe it that way.
+2. **Distrust `I²` at two strata.** With two studies and one heterogeneity degree of
+   freedom, I² is extremely noisy. A CpG whose two estimates point in opposite
+   directions can still report I² = 0 if one arm's SE is large enough that the two
+   are statistically compatible — low I² there means "not enough precision to tell
+   them apart", not "they agree".
 
 ::: {.callout-tip}
 ## Why use METAL?
@@ -572,20 +706,6 @@ correction on request. For a two-stratum methylation meta-analysis where you con
 both input files, the R above is easier to audit and keeps everything in one language.
 For a multi-cohort consortium meta-analysis, use METAL.
 :::
-
-## 8. When you don't have IDATs {#sec-no-idats}
-
-Everything in this notebook operates on a **methylation matrix** and a phenotype
-table, so the non-IDAT path is identical once you have M-values:
-
-- Convert a deposited β-matrix to M-values (`M = log2(beta/(1-beta))`;
-  see [normalization](02_normalization.qmd)).
-- Obtain covariates from the series metadata: sex and age from `pData`, cell
-  composition via a **reference-based estimator that runs on β-matrices**
-  (e.g. `EpiDISH`/`RPC`) when you can't run `estimateCellCounts2` from IDATs
-  ([chapter 04](04_cell_composition.qmd) covers this), and surrogate variables from
-  `sva` run on the matrix ([chapter 05](05_batch_effects.qmd)).
-- Fit the identical `limma` model. The association step never touches raw intensities.
 
 ## Saving what we just computed
 
@@ -614,26 +734,19 @@ saveRDS(bs, "data/06_bacon_summary.rds")
 write.csv(tt, gzfile("data/06_ewas_bacon_toptable.csv.gz"), row.names = FALSE)
 ```
 
-::: {.callout-note collapse="true"}
-## Picking the chapter up from the saved fit instead
+## 8. When you don't have IDATs {#sec-no-idats}
 
-Fitting 756,251 probes needs the 510 MB ComBat matrix in memory with a few GB of working
-space on top of it. If that is not practical on your machine, fetch the published fit and
-read it instead of running the two chunks above:
+Everything in this notebook operates on a **methylation matrix** and a phenotype
+table, so the non-IDAT path is identical once you have M-values:
 
-```{.bash filename="Terminal"}
-./get_data.sh F_ewas_results
-```
-
-```{.r filename="RStudio Console"}
-ew <- readRDS("data/06_ewas.rds")
-tt <- ew$tt                                   # already carries the BACON columns
-bs <- readRDS("data/06_bacon_summary.rds")
-```
-
-Every number and table in this chapter will then run. The four diagnostic plots will
-not, because they are drawn from the `bc` object rather than from the saved table.
-:::
+- Convert a deposited β-matrix to M-values (`M = log2(beta/(1-beta))`;
+  see [normalization](02_normalization.qmd)).
+- Obtain covariates from the series metadata: sex and age from `pData`, cell
+  composition via a **reference-based estimator that runs on β-matrices**
+  (e.g. `EpiDISH`/`RPC`) when you can't run `estimateCellCounts2` from IDATs
+  ([chapter 04](04_cell_composition.qmd) covers this), and surrogate variables from
+  `sva` run on the matrix ([chapter 05](05_batch_effects.qmd)).
+- Fit the identical `limma` model. The association step never touches raw intensities.
 
 ---
 

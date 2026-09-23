@@ -5503,20 +5503,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./03_probe_filtering.html#sec-categories" class="sidebar-item-text sidebar-link">
- <span class="menu-text">2. The categories, quantified</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-ancestry" class="sidebar-item-text sidebar-link">
- <span class="menu-text">3. Ancestry matters</span></a>
+ <span class="menu-text">2. Ancestry matters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-detp-sex" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Detection-p and sex chromosomes</span></a>
+ <span class="menu-text">3. Detection-p and sex chromosomes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-apply" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Applying the filters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5531,6 +5531,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="./04_cell_composition.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Cell composition: Whole Blood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04b_genetic_pcs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Genetic ancestry principal components</span></a>
   </div>
 </li>
           <li class="sidebar-item sidebar-item-section">
@@ -5685,44 +5691,38 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./07_pipeline.html#sec-metal-build" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Building METAL</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-run" class="sidebar-item-text sidebar-link">
- <span class="menu-text">5. Running a non-stratified EWAS</span></a>
+ <span class="menu-text">4. Running a non-stratified EWAS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-strata" class="sidebar-item-text sidebar-link">
- <span class="menu-text">6. Stratifying by sex</span></a>
+ <span class="menu-text">5. Stratifying by sex</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-bacon" class="sidebar-item-text sidebar-link">
- <span class="menu-text">7. BACON</span></a>
+ <span class="menu-text">6. What BACON did to each arm</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-meta" class="sidebar-item-text sidebar-link">
- <span class="menu-text">8. Meta-analyzing with METAL</span></a>
+ <span class="menu-text">7. Meta-analyzing with METAL</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-reading" class="sidebar-item-text sidebar-link">
- <span class="menu-text">9. Reading the run as a whole</span></a>
+ <span class="menu-text">8. Reading the run as a whole</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-scaling" class="sidebar-item-text sidebar-link">
- <span class="menu-text">10. Scaling up</span></a>
+ <span class="menu-text">9. Scaling up</span></a>
   </div>
 </li>
       </ul>
@@ -6012,20 +6012,21 @@ window.Quarto = {
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>plm <span class="ot">&lt;-</span> <span class="fu">reshape</span>(pl, <span class="at">varying =</span> <span class="fu">colnames</span>(props), <span class="at">v.names =</span> <span class="st">&quot;prop&quot;</span>,</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">timevar =</span> <span class="st">&quot;cell&quot;</span>, <span class="at">times =</span> <span class="fu">colnames</span>(props),</span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">direction =</span> <span class="st">&quot;long&quot;</span>)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Stacking order is the factor order, so set it explicitly: largest fraction at</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># the bottom of the bar, rarest at the top.</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>plm<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>cell, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Neu&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;NK&quot;</span>))</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Order the bars by neutrophil fraction so the gradient across samples is</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># visible instead of being scattered by array order.</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(props[,<span class="st">&quot;Neu&quot;</span>]); plm<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>sample_id,</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                                                     <span class="at">levels =</span> <span class="fu">rownames</span>(props)[ord])</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plm, <span class="fu">aes</span>(sample_id, prop, <span class="at">fill =</span> cell)) <span class="sc">+</span></span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">&quot;Set2&quot;</span>) <span class="sc">+</span></span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;sample (ordered by neutrophil fraction)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;estimated proportion&quot;</span>,</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">&quot;cell type&quot;</span>, <span class="at">title =</span> <span class="st">&quot;Blood cell composition varies widely between samples&quot;</span>) <span class="sc">+</span></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.x =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Stacking order follows the factor order, so set it explicitly. ggplot2 draws</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># the first level at the top of each bar, so neutrophils form the top band and</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># NK cells the bottom one.</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>plm<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>cell, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Neu&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;NK&quot;</span>))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Order the bars by neutrophil fraction so the gradient across samples is</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># visible instead of being scattered by array order.</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(props[,<span class="st">&quot;Neu&quot;</span>]); plm<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>sample_id,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                                                     <span class="at">levels =</span> <span class="fu">rownames</span>(props)[ord])</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plm, <span class="fu">aes</span>(sample_id, prop, <span class="at">fill =</span> cell)) <span class="sc">+</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">&quot;Set2&quot;</span>) <span class="sc">+</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;sample (ordered by neutrophil fraction)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;estimated proportion&quot;</span>,</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">&quot;cell type&quot;</span>, <span class="at">title =</span> <span class="st">&quot;Blood cell composition varies widely between samples&quot;</span>) <span class="sc">+</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.x =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
@@ -6254,10 +6255,10 @@ window.Quarto = {
 <div class="code-with-filename-file">
 <pre><strong>Generic example, do not run</strong></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15" data-filename="Generic example, do not run"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Schematic only, and this one *would* run if you pasted it -- which is the</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># problem. It assigns to `props`, so it would silently replace the IDOL</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># estimates computed above with EpiDISH&#39;s, and every figure and model after</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># this point would quietly change. Give the result its own name.</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15" data-filename="Generic example, do not run"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Schematic only. `beta_mat` stands for your own CpG x sample beta matrix. The</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># result is deliberately not called `props`: that name holds this chapter&#39;s IDOL</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># estimates, and overwriting it would quietly change every figure and model</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># after this point.</span></span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(EpiDISH)</span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(centDHSbloodDMC.m)                     <span class="co"># blood reference centroids</span></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">epidish</span>(beta_mat, <span class="at">ref.m =</span> centDHSbloodDMC.m, <span class="at">method =</span> <span class="st">&quot;RPC&quot;</span>)</span>
@@ -6274,7 +6275,7 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>When no suitable reference exists (unusual tissues, or you worry the reference doesn’t match your population), <strong>reference-free</strong> methods estimate latent composition-like components directly from the data: RefFreeEWAS <span class="citation" data-cites="houseman2014reffree">(<a href="#ref-houseman2014reffree" role="doc-biblioref">Houseman et al. 2016</a>)</span>, SVA <span class="citation" data-cites="leek2012sva">(<a href="#ref-leek2012sva" role="doc-biblioref">Leek et al. 2012</a>)</span>, and RUV. These are covered in <a href="./05_batch_effects.html">batch effects</a>; the trade-off is that the recovered components are not labeled cell types, only surrogate variables to adjust for.</p>
+<p>When no suitable reference exists (unusual tissues, or you worry the reference doesn’t match your population), <strong>reference-free</strong> methods estimate latent composition-like components directly from the data: RefFreeEWAS <span class="citation" data-cites="houseman2014reffree">(<a href="#ref-houseman2014reffree" role="doc-biblioref">Houseman et al. 2016</a>)</span>, SVA <span class="citation" data-cites="leek2012sva">(<a href="#ref-leek2012sva" role="doc-biblioref">Leek et al. 2012</a>)</span>, and RUV. This tutorial does not use RefFreeEWAS; SVA is used in <a href="./05_batch_effects.html">batch effects</a> to capture unmeasured variation, and RUV is mentioned there. The trade-off is that the recovered components are not labeled cell types, only surrogate variables to adjust for.</p>
 </div>
 </div>
 <p>We carry the estimated proportions forward as EWAS covariates:</p>
@@ -6306,9 +6307,9 @@ window.Quarto = {
 <span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;data/04_validation_scatter.png&quot;</span>, p_val, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="fl">5.2</span>, <span class="at">dpi =</span> <span class="dv">130</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p>Proportions are estimated for all <strong>96</strong> QC-passing arrays. Deconvolution does not use the exposure, so there is no reason to restrict it to the modeled subset here — the nine samples with no recorded PTSD status (<a href="./01_qc.html">chapter 01</a>) drop out later, when the exposure enters the model, leaving n = 87 for the EWAS.</p>
+<p>Proportions are estimated for all <strong>96</strong> QC-passing arrays. Deconvolution does not use the exposure, so there is no reason to restrict it to the modeled subset here — the nine samples with no recorded PTSD status (<a href="./01_qc.html">chapter 01</a>) drop out later, when the exposure enters the model, as does the one sample with no genetic ancestry PCs (<a href="./04b_genetic_pcs.html">Genetic ancestry PCs</a>), leaving n = 86 for the EWAS.</p>
 <hr>
-<p><strong>Next:</strong> <a href="./05_batch_effects.html">Batch effects</a> — technical variation from chips, array positions, and plates, and how to detect it before deciding whether to correct.</p>
+<p><strong>Next:</strong> <a href="./04b_genetic_pcs.html">Genetic ancestry PCs</a> — what the three ancestry covariates used from chapter 05 onwards are, and why they are a better covariate than self-reported race.</p>
 </section>
 <section id="references" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
@@ -6976,248 +6977,251 @@ Teschendorff, Andrew E, Charles E Breeze, Shijie C Zheng, and Stephan Beck. 2017
 <span id="cb17-194"><a href="#cb17-194" aria-hidden="true" tabindex="-1"></a>plm <span class="ot">&lt;-</span> <span class="fu">reshape</span>(pl, <span class="at">varying =</span> <span class="fu">colnames</span>(props), <span class="at">v.names =</span> <span class="st">&quot;prop&quot;</span>,</span>
 <span id="cb17-195"><a href="#cb17-195" aria-hidden="true" tabindex="-1"></a>               <span class="at">timevar =</span> <span class="st">&quot;cell&quot;</span>, <span class="at">times =</span> <span class="fu">colnames</span>(props),</span>
 <span id="cb17-196"><a href="#cb17-196" aria-hidden="true" tabindex="-1"></a>               <span class="at">direction =</span> <span class="st">&quot;long&quot;</span>)</span>
-<span id="cb17-197"><a href="#cb17-197" aria-hidden="true" tabindex="-1"></a><span class="co"># Stacking order is the factor order, so set it explicitly: largest fraction at</span></span>
-<span id="cb17-198"><a href="#cb17-198" aria-hidden="true" tabindex="-1"></a><span class="co"># the bottom of the bar, rarest at the top.</span></span>
-<span id="cb17-199"><a href="#cb17-199" aria-hidden="true" tabindex="-1"></a>plm<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>cell, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Neu&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;NK&quot;</span>))</span>
-<span id="cb17-200"><a href="#cb17-200" aria-hidden="true" tabindex="-1"></a><span class="co"># Order the bars by neutrophil fraction so the gradient across samples is</span></span>
-<span id="cb17-201"><a href="#cb17-201" aria-hidden="true" tabindex="-1"></a><span class="co"># visible instead of being scattered by array order.</span></span>
-<span id="cb17-202"><a href="#cb17-202" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(props[,<span class="st">&quot;Neu&quot;</span>]); plm<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>sample_id,</span>
-<span id="cb17-203"><a href="#cb17-203" aria-hidden="true" tabindex="-1"></a>                                                     <span class="at">levels =</span> <span class="fu">rownames</span>(props)[ord])</span>
-<span id="cb17-204"><a href="#cb17-204" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plm, <span class="fu">aes</span>(sample_id, prop, <span class="at">fill =</span> cell)) <span class="sc">+</span></span>
-<span id="cb17-205"><a href="#cb17-205" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb17-206"><a href="#cb17-206" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">&quot;Set2&quot;</span>) <span class="sc">+</span></span>
-<span id="cb17-207"><a href="#cb17-207" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;sample (ordered by neutrophil fraction)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;estimated proportion&quot;</span>,</span>
-<span id="cb17-208"><a href="#cb17-208" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">&quot;cell type&quot;</span>, <span class="at">title =</span> <span class="st">&quot;Blood cell composition varies widely between samples&quot;</span>) <span class="sc">+</span></span>
-<span id="cb17-209"><a href="#cb17-209" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
-<span id="cb17-210"><a href="#cb17-210" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.x =</span> <span class="fu">element_blank</span>())</span>
-<span id="cb17-211"><a href="#cb17-211" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb17-212"><a href="#cb17-212" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-213"><a href="#cb17-213" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Validation against the deposited answer key</span></span>
-<span id="cb17-214"><a href="#cb17-214" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-215"><a href="#cb17-215" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project deposited its own cell-type proportion estimates with the</span>
-<span id="cb17-216"><a href="#cb17-216" aria-hidden="true" tabindex="-1"></a>GEO record. That gives us the opportunity to check our deconvolution.</span>
-<span id="cb17-217"><a href="#cb17-217" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-220"><a href="#cb17-220" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb17-221"><a href="#cb17-221" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: deposited-fetch</span></span>
-<span id="cb17-222"><a href="#cb17-222" aria-hidden="true" tabindex="-1"></a><span class="co"># The deposited proportions are part of the GEO record&#39;s *phenotype*, not of the</span></span>
-<span id="cb17-223"><a href="#cb17-223" aria-hidden="true" tabindex="-1"></a><span class="co"># IDATs, so they come out of the series matrix rather than out of `rg`. GEOquery</span></span>
-<span id="cb17-224"><a href="#cb17-224" aria-hidden="true" tabindex="-1"></a><span class="co"># parses each &quot;label: value&quot; characteristic into its own column named</span></span>
-<span id="cb17-225"><a href="#cb17-225" aria-hidden="true" tabindex="-1"></a><span class="co"># &quot;&lt;label&gt;:ch1&quot;, which is where the six proportions arrive.</span></span>
-<span id="cb17-226"><a href="#cb17-226" aria-hidden="true" tabindex="-1"></a>dep_file <span class="ot">&lt;-</span> <span class="st">&quot;data/04_deposited_cellcounts.tsv&quot;</span></span>
-<span id="cb17-227"><a href="#cb17-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-228"><a href="#cb17-228" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(dep_file)) {</span>
-<span id="cb17-229"><a href="#cb17-229" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The series matrix is ~30 MB and the deposited values never change, so once</span></span>
-<span id="cb17-230"><a href="#cb17-230" aria-hidden="true" tabindex="-1"></a>  <span class="co"># the small table below exists it is what later renders read. Delete it to</span></span>
-<span id="cb17-231"><a href="#cb17-231" aria-hidden="true" tabindex="-1"></a>  <span class="co"># force the fetch again.</span></span>
-<span id="cb17-232"><a href="#cb17-232" aria-hidden="true" tabindex="-1"></a>  dep <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">fread</span>(dep_file))</span>
-<span id="cb17-233"><a href="#cb17-233" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb17-234"><a href="#cb17-234" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 60 seconds is not enough to pull 30 MB from GEO on a slow link.</span></span>
-<span id="cb17-235"><a href="#cb17-235" aria-hidden="true" tabindex="-1"></a>  <span class="fu">options</span>(<span class="at">timeout =</span> <span class="fu">max</span>(<span class="dv">1200</span>, <span class="fu">getOption</span>(<span class="st">&quot;timeout&quot;</span>)))</span>
-<span id="cb17-236"><a href="#cb17-236" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-237"><a href="#cb17-237" aria-hidden="true" tabindex="-1"></a>  <span class="co"># getGPL = FALSE skips the platform manifest, which we do not need here.</span></span>
-<span id="cb17-238"><a href="#cb17-238" aria-hidden="true" tabindex="-1"></a>  gse <span class="ot">&lt;-</span> <span class="fu">getGEO</span>(<span class="st">&quot;GSE132203&quot;</span>, <span class="at">GSEMatrix =</span> <span class="cn">TRUE</span>, <span class="at">getGPL =</span> <span class="cn">FALSE</span>)[[<span class="dv">1</span>]]</span>
-<span id="cb17-239"><a href="#cb17-239" aria-hidden="true" tabindex="-1"></a>  pd  <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">pData</span>(gse)</span>
-<span id="cb17-240"><a href="#cb17-240" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-241"><a href="#cb17-241" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Our cell-type names on the left, GEO&#39;s column names on the right.</span></span>
-<span id="cb17-242"><a href="#cb17-242" aria-hidden="true" tabindex="-1"></a>  dep_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">CD8T =</span> <span class="st">&quot;cd8t:ch1&quot;</span>, <span class="at">CD4T =</span> <span class="st">&quot;cd4t:ch1&quot;</span>, <span class="at">NK =</span> <span class="st">&quot;nk:ch1&quot;</span>,</span>
-<span id="cb17-243"><a href="#cb17-243" aria-hidden="true" tabindex="-1"></a>                <span class="at">Bcell =</span> <span class="st">&quot;bcell:ch1&quot;</span>, <span class="at">Mono =</span> <span class="st">&quot;mono:ch1&quot;</span>, <span class="at">Neu =</span> <span class="st">&quot;neu:ch1&quot;</span>)</span>
-<span id="cb17-244"><a href="#cb17-244" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-245"><a href="#cb17-245" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Everything out of a series matrix is text, including the numbers.</span></span>
-<span id="cb17-246"><a href="#cb17-246" aria-hidden="true" tabindex="-1"></a>  dep <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">lapply</span>(dep_cols,</span>
-<span id="cb17-247"><a href="#cb17-247" aria-hidden="true" tabindex="-1"></a>                              <span class="cf">function</span>(k) <span class="fu">as.numeric</span>(<span class="fu">as.character</span>(pd[[k]]))))</span>
-<span id="cb17-248"><a href="#cb17-248" aria-hidden="true" tabindex="-1"></a>  dep<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">as.character</span>(pd<span class="sc">$</span>geo_accession)</span>
-<span id="cb17-249"><a href="#cb17-249" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-250"><a href="#cb17-250" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The series carries 795 samples; match() keeps the 96 on our plate subset,</span></span>
-<span id="cb17-251"><a href="#cb17-251" aria-hidden="true" tabindex="-1"></a>  <span class="co"># in the row order of `props` so the merge below cannot silently misalign.</span></span>
-<span id="cb17-252"><a href="#cb17-252" aria-hidden="true" tabindex="-1"></a>  dep <span class="ot">&lt;-</span> dep[<span class="fu">match</span>(<span class="fu">rownames</span>(props), dep<span class="sc">$</span>sample_id), <span class="fu">c</span>(<span class="st">&quot;sample_id&quot;</span>, <span class="fu">names</span>(dep_cols))]</span>
-<span id="cb17-253"><a href="#cb17-253" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb17-254"><a href="#cb17-254" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb17-255"><a href="#cb17-255" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-258"><a href="#cb17-258" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb17-259"><a href="#cb17-259" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-compute</span></span>
-<span id="cb17-260"><a href="#cb17-260" aria-hidden="true" tabindex="-1"></a>cells <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;NK&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Neu&quot;</span>)</span>
-<span id="cb17-261"><a href="#cb17-261" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-262"><a href="#cb17-262" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per sample with both sets of numbers side by side. Both frames carry</span></span>
-<span id="cb17-263"><a href="#cb17-263" aria-hidden="true" tabindex="-1"></a><span class="co"># the same six column names, so merge() appends the suffixes that tell them</span></span>
-<span id="cb17-264"><a href="#cb17-264" aria-hidden="true" tabindex="-1"></a><span class="co"># apart -- .est for ours, .dep for the study&#39;s.</span></span>
-<span id="cb17-265"><a href="#cb17-265" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(props); est<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">rownames</span>(props)</span>
-<span id="cb17-266"><a href="#cb17-266" aria-hidden="true" tabindex="-1"></a>m   <span class="ot">&lt;-</span> <span class="fu">merge</span>(est, dep, <span class="at">by =</span> <span class="st">&quot;sample_id&quot;</span>, <span class="at">suffixes =</span> <span class="fu">c</span>(<span class="st">&quot;.est&quot;</span>, <span class="st">&quot;.dep&quot;</span>))</span>
-<span id="cb17-267"><a href="#cb17-267" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-268"><a href="#cb17-268" aria-hidden="true" tabindex="-1"></a><span class="co"># Three complementary summaries per cell type: correlation says whether the</span></span>
-<span id="cb17-269"><a href="#cb17-269" aria-hidden="true" tabindex="-1"></a><span class="co"># between-sample variation agrees (the part that matters for confounding</span></span>
-<span id="cb17-270"><a href="#cb17-270" aria-hidden="true" tabindex="-1"></a><span class="co"># adjustment), mean absolute error says how far apart the absolute values are,</span></span>
-<span id="cb17-271"><a href="#cb17-271" aria-hidden="true" tabindex="-1"></a><span class="co"># and the two means expose a systematic offset the correlation would hide.</span></span>
-<span id="cb17-272"><a href="#cb17-272" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">cell =</span> cells, <span class="at">r =</span> <span class="cn">NA_real_</span>, <span class="at">mae =</span> <span class="cn">NA_real_</span>,</span>
-<span id="cb17-273"><a href="#cb17-273" aria-hidden="true" tabindex="-1"></a>                  <span class="at">mean_est =</span> <span class="cn">NA_real_</span>, <span class="at">mean_dep =</span> <span class="cn">NA_real_</span>)</span>
-<span id="cb17-274"><a href="#cb17-274" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(cells)) {</span>
-<span id="cb17-275"><a href="#cb17-275" aria-hidden="true" tabindex="-1"></a>  e <span class="ot">&lt;-</span> m[[<span class="fu">paste0</span>(cells[i], <span class="st">&quot;.est&quot;</span>)]]</span>
-<span id="cb17-276"><a href="#cb17-276" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> m[[<span class="fu">paste0</span>(cells[i], <span class="st">&quot;.dep&quot;</span>)]]</span>
-<span id="cb17-277"><a href="#cb17-277" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>r[i]        <span class="ot">&lt;-</span> <span class="fu">cor</span>(e, d, <span class="at">use =</span> <span class="st">&quot;complete.obs&quot;</span>)</span>
-<span id="cb17-278"><a href="#cb17-278" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>mae[i]      <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">abs</span>(e <span class="sc">-</span> d), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb17-279"><a href="#cb17-279" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>mean_est[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(e, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb17-280"><a href="#cb17-280" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>mean_dep[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(d, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb17-281"><a href="#cb17-281" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb17-282"><a href="#cb17-282" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-283"><a href="#cb17-283" aria-hidden="true" tabindex="-1"></a><span class="co"># The per-sample comparison and the per-cell-type summary travel together: this</span></span>
-<span id="cb17-284"><a href="#cb17-284" aria-hidden="true" tabindex="-1"></a><span class="co"># is the object saved at the end of the chapter, and the one the paragraph below</span></span>
-<span id="cb17-285"><a href="#cb17-285" aria-hidden="true" tabindex="-1"></a><span class="co"># the figure reads its numbers from.</span></span>
-<span id="cb17-286"><a href="#cb17-286" aria-hidden="true" tabindex="-1"></a>val <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">merged =</span> m, <span class="at">validation =</span> res)</span>
-<span id="cb17-287"><a href="#cb17-287" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb17-288"><a href="#cb17-288" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-291"><a href="#cb17-291" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb17-292"><a href="#cb17-292" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-table</span></span>
-<span id="cb17-293"><a href="#cb17-293" aria-hidden="true" tabindex="-1"></a>disp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb17-294"><a href="#cb17-294" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">cell type</span><span class="st">`</span>        <span class="ot">=</span> res<span class="sc">$</span>cell,</span>
-<span id="cb17-295"><a href="#cb17-295" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Pearson r</span><span class="st">`</span>        <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.3f&quot;</span>, res<span class="sc">$</span>r),</span>
-<span id="cb17-296"><a href="#cb17-296" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">mean abs. error</span><span class="st">`</span>  <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.4f&quot;</span>, res<span class="sc">$</span>mae),</span>
-<span id="cb17-297"><a href="#cb17-297" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">our mean</span><span class="st">`</span>         <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_est),</span>
-<span id="cb17-298"><a href="#cb17-298" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">deposited mean</span><span class="st">`</span>   <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_dep),</span>
-<span id="cb17-299"><a href="#cb17-299" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb17-300"><a href="#cb17-300" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(disp, <span class="at">caption =</span> <span class="st">&quot;Our estimates vs the study&#39;s deposited proportions, per cell type (n = 96).&quot;</span>)</span>
-<span id="cb17-301"><a href="#cb17-301" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb17-302"><a href="#cb17-302" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-305"><a href="#cb17-305" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb17-306"><a href="#cb17-306" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-scatter</span></span>
-<span id="cb17-307"><a href="#cb17-307" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates &gt; 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study&#39;s own estimates.&quot;</span></span>
-<span id="cb17-308"><a href="#cb17-308" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 8</span></span>
-<span id="cb17-309"><a href="#cb17-309" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 5.2</span></span>
-<span id="cb17-310"><a href="#cb17-310" aria-hidden="true" tabindex="-1"></a><span class="co"># Six panels, one per cell type, so stack the pairs into a long table.</span></span>
-<span id="cb17-311"><a href="#cb17-311" aria-hidden="true" tabindex="-1"></a>long <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(<span class="fu">lapply</span>(cells, <span class="cf">function</span>(k)</span>
-<span id="cb17-312"><a href="#cb17-312" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.table</span>(<span class="at">cell =</span> k, <span class="at">est =</span> m[[<span class="fu">paste0</span>(k, <span class="st">&quot;.est&quot;</span>)]], <span class="at">dep =</span> m[[<span class="fu">paste0</span>(k, <span class="st">&quot;.dep&quot;</span>)]])))</span>
-<span id="cb17-313"><a href="#cb17-313" aria-hidden="true" tabindex="-1"></a>long<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(long<span class="sc">$</span>cell, <span class="at">levels =</span> cells)</span>
-<span id="cb17-314"><a href="#cb17-314" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-315"><a href="#cb17-315" aria-hidden="true" tabindex="-1"></a><span class="co"># The correlation from the table above, printed in each panel&#39;s corner: with</span></span>
-<span id="cb17-316"><a href="#cb17-316" aria-hidden="true" tabindex="-1"></a><span class="co"># free axes per panel a reader cannot judge agreement by eye alone.</span></span>
-<span id="cb17-317"><a href="#cb17-317" aria-hidden="true" tabindex="-1"></a>labs_r <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">cell =</span> <span class="fu">factor</span>(res<span class="sc">$</span>cell, <span class="at">levels =</span> cells),</span>
-<span id="cb17-318"><a href="#cb17-318" aria-hidden="true" tabindex="-1"></a>                     <span class="at">lab  =</span> <span class="fu">sprintf</span>(<span class="st">&quot;r = %.3f&quot;</span>, res<span class="sc">$</span>r))</span>
-<span id="cb17-319"><a href="#cb17-319" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-320"><a href="#cb17-320" aria-hidden="true" tabindex="-1"></a>p_val <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(long, <span class="fu">aes</span>(dep, est)) <span class="sc">+</span></span>
-<span id="cb17-321"><a href="#cb17-321" aria-hidden="true" tabindex="-1"></a>  <span class="co"># y = x first, so the points sit on top of it.</span></span>
-<span id="cb17-322"><a href="#cb17-322" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;#6E675B&quot;</span>) <span class="sc">+</span>  <span class="co"># gray</span></span>
-<span id="cb17-323"><a href="#cb17-323" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> .<span class="dv">6</span>, <span class="at">size =</span> <span class="fl">1.3</span>, <span class="at">color =</span> <span class="st">&quot;#1A6B75&quot;</span>) <span class="sc">+</span>                          <span class="co"># teal</span></span>
-<span id="cb17-324"><a href="#cb17-324" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>cell, <span class="at">scales =</span> <span class="st">&quot;free&quot;</span>) <span class="sc">+</span></span>
-<span id="cb17-325"><a href="#cb17-325" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> labs_r, <span class="fu">aes</span>(<span class="at">x =</span> <span class="sc">-</span><span class="cn">Inf</span>, <span class="at">y =</span> <span class="cn">Inf</span>, <span class="at">label =</span> lab),</span>
-<span id="cb17-326"><a href="#cb17-326" aria-hidden="true" tabindex="-1"></a>            <span class="at">hjust =</span> <span class="sc">-</span><span class="fl">0.15</span>, <span class="at">vjust =</span> <span class="fl">1.5</span>, <span class="at">size =</span> <span class="dv">3</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
-<span id="cb17-327"><a href="#cb17-327" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;deposited proportion (study answer key)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;our Houseman/IDOL estimate&quot;</span>,</span>
-<span id="cb17-328"><a href="#cb17-328" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Deconvolution validation: estimated vs deposited cell proportions&quot;</span>)</span>
-<span id="cb17-329"><a href="#cb17-329" aria-hidden="true" tabindex="-1"></a>p_val</span>
-<span id="cb17-330"><a href="#cb17-330" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb17-331"><a href="#cb17-331" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-332"><a href="#cb17-332" aria-hidden="true" tabindex="-1"></a>Correlations range from **`r sprintf(&quot;%.3f&quot;, min(val$validation$r))`** (NK, the</span>
-<span id="cb17-333"><a href="#cb17-333" aria-hidden="true" tabindex="-1"></a>rarest and hardest-to-estimate type) to **`r sprintf(&quot;%.3f&quot;, max(val$validation$r))`**</span>
-<span id="cb17-334"><a href="#cb17-334" aria-hidden="true" tabindex="-1"></a>(neutrophils), and the mean absolute error never exceeds</span>
-<span id="cb17-335"><a href="#cb17-335" aria-hidden="true" tabindex="-1"></a>**`r sprintf(&quot;%.1f&quot;, 100*max(val$validation$mae))` percentage points**. Small</span>
-<span id="cb17-336"><a href="#cb17-336" aria-hidden="true" tabindex="-1"></a>systematic offsets (e.g. our B-cell estimates run slightly high) are expected when</span>
-<span id="cb17-337"><a href="#cb17-337" aria-hidden="true" tabindex="-1"></a>the reference library or normalization differs from the original authors&#39;, and they</span>
-<span id="cb17-338"><a href="#cb17-338" aria-hidden="true" tabindex="-1"></a>matter far less than the near-perfect *ranking* — because in the EWAS model it is</span>
-<span id="cb17-339"><a href="#cb17-339" aria-hidden="true" tabindex="-1"></a>the between-sample variation, not the absolute level, that does the confounding</span>
-<span id="cb17-340"><a href="#cb17-340" aria-hidden="true" tabindex="-1"></a>adjustment.</span>
-<span id="cb17-341"><a href="#cb17-341" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-342"><a href="#cb17-342" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
-<span id="cb17-343"><a href="#cb17-343" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical note</span></span>
-<span id="cb17-344"><a href="#cb17-344" aria-hidden="true" tabindex="-1"></a>Many studies do not provide cell proportions. In a real analysis you trust the method </span>
-<span id="cb17-345"><a href="#cb17-345" aria-hidden="true" tabindex="-1"></a>and **sanity-check the output**: neutrophils should dominate whole blood (~50–70%), </span>
-<span id="cb17-346"><a href="#cb17-346" aria-hidden="true" tabindex="-1"></a>proportions should sum to ~1, and the distribution should look biologically plausible. </span>
-<span id="cb17-347"><a href="#cb17-347" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb17-348"><a href="#cb17-348" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-349"><a href="#cb17-349" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. When you don&#39;t have IDATs: deconvolution from a processed matrix</span></span>
-<span id="cb17-350"><a href="#cb17-350" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-351"><a href="#cb17-351" aria-hidden="true" tabindex="-1"></a>Reference-based deconvolution normally wants the raw <span class="in">`RGChannelSet`</span>, so a</span>
-<span id="cb17-352"><a href="#cb17-352" aria-hidden="true" tabindex="-1"></a>β-matrix-only deposit is the harder case. Two routes:</span>
-<span id="cb17-353"><a href="#cb17-353" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-354"><a href="#cb17-354" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**`projectCellType` on a β-matrix.** The Houseman projection itself only needs</span>
-<span id="cb17-355"><a href="#cb17-355" aria-hidden="true" tabindex="-1"></a>   methylation *values* at the reference CpGs, not intensities. Pull the reference</span>
-<span id="cb17-356"><a href="#cb17-356" aria-hidden="true" tabindex="-1"></a>   β-values and its cell-type means, subset your matrix to the shared reference CpGs,</span>
-<span id="cb17-357"><a href="#cb17-357" aria-hidden="true" tabindex="-1"></a>   and run the constrained projection directly:</span>
-<span id="cb17-358"><a href="#cb17-358" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-359"><a href="#cb17-359" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.r filename=&quot;Generic example, do not run&quot;}</span></span>
-<span id="cb17-360"><a href="#cb17-360" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Schematic only. `beta_mat` is a CpG x sample matrix -- in the deposit-only</span></span>
-<span id="cb17-361"><a href="#cb17-361" aria-hidden="true" tabindex="-1"></a>   <span class="co"># case, whatever the submitter posted; locally, getBeta() on the chapter 03</span></span>
-<span id="cb17-362"><a href="#cb17-362" aria-hidden="true" tabindex="-1"></a>   <span class="co"># object gives one. The result is deliberately NOT called `props`: that name</span></span>
-<span id="cb17-363"><a href="#cb17-363" aria-hidden="true" tabindex="-1"></a>   <span class="co"># holds this chapter&#39;s IDOL estimates, and overwriting it would change every</span></span>
-<span id="cb17-364"><a href="#cb17-364" aria-hidden="true" tabindex="-1"></a>   <span class="co"># number downstream without any error to warn you.</span></span>
-<span id="cb17-365"><a href="#cb17-365" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(FlowSorted.Blood.EPIC)</span>
-<span id="cb17-366"><a href="#cb17-366" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(genefilter)</span>
-<span id="cb17-367"><a href="#cb17-367" aria-hidden="true" tabindex="-1"></a>   ref <span class="ot">&lt;-</span> ...   <span class="co"># matrix: IDOL CpGs x 6 cell types, from the package</span></span>
-<span id="cb17-368"><a href="#cb17-368" aria-hidden="true" tabindex="-1"></a>   shared       <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(beta_mat), <span class="fu">rownames</span>(ref))</span>
-<span id="cb17-369"><a href="#cb17-369" aria-hidden="true" tabindex="-1"></a>   props_manual <span class="ot">&lt;-</span> minfi<span class="sc">:::</span><span class="fu">projectCellType</span>(beta_mat[shared, ], ref[shared, ])</span>
-<span id="cb17-370"><a href="#cb17-370" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb17-371"><a href="#cb17-371" aria-hidden="true" tabindex="-1"></a>   The estimates are slightly noisier than the joint-normalization route because the</span>
-<span id="cb17-372"><a href="#cb17-372" aria-hidden="true" tabindex="-1"></a>   sample and reference weren&#39;t normalized together, but for a well-processed matrix</span>
-<span id="cb17-373"><a href="#cb17-373" aria-hidden="true" tabindex="-1"></a>   they are close.</span>
-<span id="cb17-374"><a href="#cb17-374" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-375"><a href="#cb17-375" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**`EpiDISH` (reference-based, matrix-native).** The <span class="in">`EpiDISH`</span> package</span>
-<span id="cb17-376"><a href="#cb17-376" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@teschendorff2017reference</span><span class="co">]</span> is designed to take a β-matrix plus a reference</span>
-<span id="cb17-377"><a href="#cb17-377" aria-hidden="true" tabindex="-1"></a>   centroid matrix and return proportions via robust partial correlation (RPC),</span>
-<span id="cb17-378"><a href="#cb17-378" aria-hidden="true" tabindex="-1"></a>   CIBERSORT, or constrained projection. It ships blood reference centroids and is</span>
-<span id="cb17-379"><a href="#cb17-379" aria-hidden="true" tabindex="-1"></a>   the most convenient option when you only have processed data:</span>
-<span id="cb17-380"><a href="#cb17-380" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-381"><a href="#cb17-381" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.r filename=&quot;Generic example, do not run&quot;}</span></span>
-<span id="cb17-382"><a href="#cb17-382" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Schematic only, and this one *would* run if you pasted it -- which is the</span></span>
-<span id="cb17-383"><a href="#cb17-383" aria-hidden="true" tabindex="-1"></a>   <span class="co"># problem. It assigns to `props`, so it would silently replace the IDOL</span></span>
-<span id="cb17-384"><a href="#cb17-384" aria-hidden="true" tabindex="-1"></a>   <span class="co"># estimates computed above with EpiDISH&#39;s, and every figure and model after</span></span>
-<span id="cb17-385"><a href="#cb17-385" aria-hidden="true" tabindex="-1"></a>   <span class="co"># this point would quietly change. Give the result its own name.</span></span>
-<span id="cb17-386"><a href="#cb17-386" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(EpiDISH)</span>
-<span id="cb17-387"><a href="#cb17-387" aria-hidden="true" tabindex="-1"></a>   <span class="fu">data</span>(centDHSbloodDMC.m)                     <span class="co"># blood reference centroids</span></span>
-<span id="cb17-388"><a href="#cb17-388" aria-hidden="true" tabindex="-1"></a>   out <span class="ot">&lt;-</span> <span class="fu">epidish</span>(beta_mat, <span class="at">ref.m =</span> centDHSbloodDMC.m, <span class="at">method =</span> <span class="st">&quot;RPC&quot;</span>)</span>
-<span id="cb17-389"><a href="#cb17-389" aria-hidden="true" tabindex="-1"></a>   props_epidish <span class="ot">&lt;-</span> out<span class="sc">$</span>estF</span>
-<span id="cb17-390"><a href="#cb17-390" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb17-391"><a href="#cb17-391" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-392"><a href="#cb17-392" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb17-393"><a href="#cb17-393" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reference-free alternatives</span></span>
-<span id="cb17-394"><a href="#cb17-394" aria-hidden="true" tabindex="-1"></a>When no suitable reference exists (unusual tissues, or you worry the reference</span>
-<span id="cb17-395"><a href="#cb17-395" aria-hidden="true" tabindex="-1"></a>doesn&#39;t match your population), **reference-free** methods estimate latent</span>
-<span id="cb17-396"><a href="#cb17-396" aria-hidden="true" tabindex="-1"></a>composition-like components directly from the data: RefFreeEWAS</span>
-<span id="cb17-397"><a href="#cb17-397" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@houseman2014reffree</span><span class="co">]</span>, SVA <span class="co">[</span><span class="ot">@leek2012sva</span><span class="co">]</span>, and RUV. These are covered in</span>
-<span id="cb17-398"><a href="#cb17-398" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span>; the trade-off is that the recovered</span>
-<span id="cb17-399"><a href="#cb17-399" aria-hidden="true" tabindex="-1"></a>components are not labeled cell types, only surrogate variables to adjust for.</span>
-<span id="cb17-400"><a href="#cb17-400" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb17-401"><a href="#cb17-401" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-402"><a href="#cb17-402" aria-hidden="true" tabindex="-1"></a>We carry the estimated proportions forward as EWAS covariates:</span>
+<span id="cb17-197"><a href="#cb17-197" aria-hidden="true" tabindex="-1"></a><span class="co"># Stacking order follows the factor order, so set it explicitly. ggplot2 draws</span></span>
+<span id="cb17-198"><a href="#cb17-198" aria-hidden="true" tabindex="-1"></a><span class="co"># the first level at the top of each bar, so neutrophils form the top band and</span></span>
+<span id="cb17-199"><a href="#cb17-199" aria-hidden="true" tabindex="-1"></a><span class="co"># NK cells the bottom one.</span></span>
+<span id="cb17-200"><a href="#cb17-200" aria-hidden="true" tabindex="-1"></a>plm<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>cell, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Neu&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;NK&quot;</span>))</span>
+<span id="cb17-201"><a href="#cb17-201" aria-hidden="true" tabindex="-1"></a><span class="co"># Order the bars by neutrophil fraction so the gradient across samples is</span></span>
+<span id="cb17-202"><a href="#cb17-202" aria-hidden="true" tabindex="-1"></a><span class="co"># visible instead of being scattered by array order.</span></span>
+<span id="cb17-203"><a href="#cb17-203" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(props[,<span class="st">&quot;Neu&quot;</span>]); plm<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">factor</span>(plm<span class="sc">$</span>sample_id,</span>
+<span id="cb17-204"><a href="#cb17-204" aria-hidden="true" tabindex="-1"></a>                                                     <span class="at">levels =</span> <span class="fu">rownames</span>(props)[ord])</span>
+<span id="cb17-205"><a href="#cb17-205" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plm, <span class="fu">aes</span>(sample_id, prop, <span class="at">fill =</span> cell)) <span class="sc">+</span></span>
+<span id="cb17-206"><a href="#cb17-206" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb17-207"><a href="#cb17-207" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">&quot;Set2&quot;</span>) <span class="sc">+</span></span>
+<span id="cb17-208"><a href="#cb17-208" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;sample (ordered by neutrophil fraction)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;estimated proportion&quot;</span>,</span>
+<span id="cb17-209"><a href="#cb17-209" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">&quot;cell type&quot;</span>, <span class="at">title =</span> <span class="st">&quot;Blood cell composition varies widely between samples&quot;</span>) <span class="sc">+</span></span>
+<span id="cb17-210"><a href="#cb17-210" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb17-211"><a href="#cb17-211" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.x =</span> <span class="fu">element_blank</span>())</span>
+<span id="cb17-212"><a href="#cb17-212" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb17-213"><a href="#cb17-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-214"><a href="#cb17-214" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. Validation against the deposited answer key</span></span>
+<span id="cb17-215"><a href="#cb17-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-216"><a href="#cb17-216" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project deposited its own cell-type proportion estimates with the</span>
+<span id="cb17-217"><a href="#cb17-217" aria-hidden="true" tabindex="-1"></a>GEO record. That gives us the opportunity to check our deconvolution.</span>
+<span id="cb17-218"><a href="#cb17-218" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-221"><a href="#cb17-221" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb17-222"><a href="#cb17-222" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: deposited-fetch</span></span>
+<span id="cb17-223"><a href="#cb17-223" aria-hidden="true" tabindex="-1"></a><span class="co"># The deposited proportions are part of the GEO record&#39;s *phenotype*, not of the</span></span>
+<span id="cb17-224"><a href="#cb17-224" aria-hidden="true" tabindex="-1"></a><span class="co"># IDATs, so they come out of the series matrix rather than out of `rg`. GEOquery</span></span>
+<span id="cb17-225"><a href="#cb17-225" aria-hidden="true" tabindex="-1"></a><span class="co"># parses each &quot;label: value&quot; characteristic into its own column named</span></span>
+<span id="cb17-226"><a href="#cb17-226" aria-hidden="true" tabindex="-1"></a><span class="co"># &quot;&lt;label&gt;:ch1&quot;, which is where the six proportions arrive.</span></span>
+<span id="cb17-227"><a href="#cb17-227" aria-hidden="true" tabindex="-1"></a>dep_file <span class="ot">&lt;-</span> <span class="st">&quot;data/04_deposited_cellcounts.tsv&quot;</span></span>
+<span id="cb17-228"><a href="#cb17-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-229"><a href="#cb17-229" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(dep_file)) {</span>
+<span id="cb17-230"><a href="#cb17-230" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The series matrix is ~30 MB and the deposited values never change, so once</span></span>
+<span id="cb17-231"><a href="#cb17-231" aria-hidden="true" tabindex="-1"></a>  <span class="co"># the small table below exists it is what later renders read. Delete it to</span></span>
+<span id="cb17-232"><a href="#cb17-232" aria-hidden="true" tabindex="-1"></a>  <span class="co"># force the fetch again.</span></span>
+<span id="cb17-233"><a href="#cb17-233" aria-hidden="true" tabindex="-1"></a>  dep <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">fread</span>(dep_file))</span>
+<span id="cb17-234"><a href="#cb17-234" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb17-235"><a href="#cb17-235" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 60 seconds is not enough to pull 30 MB from GEO on a slow link.</span></span>
+<span id="cb17-236"><a href="#cb17-236" aria-hidden="true" tabindex="-1"></a>  <span class="fu">options</span>(<span class="at">timeout =</span> <span class="fu">max</span>(<span class="dv">1200</span>, <span class="fu">getOption</span>(<span class="st">&quot;timeout&quot;</span>)))</span>
+<span id="cb17-237"><a href="#cb17-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-238"><a href="#cb17-238" aria-hidden="true" tabindex="-1"></a>  <span class="co"># getGPL = FALSE skips the platform manifest, which we do not need here.</span></span>
+<span id="cb17-239"><a href="#cb17-239" aria-hidden="true" tabindex="-1"></a>  gse <span class="ot">&lt;-</span> <span class="fu">getGEO</span>(<span class="st">&quot;GSE132203&quot;</span>, <span class="at">GSEMatrix =</span> <span class="cn">TRUE</span>, <span class="at">getGPL =</span> <span class="cn">FALSE</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb17-240"><a href="#cb17-240" aria-hidden="true" tabindex="-1"></a>  pd  <span class="ot">&lt;-</span> Biobase<span class="sc">::</span><span class="fu">pData</span>(gse)</span>
+<span id="cb17-241"><a href="#cb17-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-242"><a href="#cb17-242" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Our cell-type names on the left, GEO&#39;s column names on the right.</span></span>
+<span id="cb17-243"><a href="#cb17-243" aria-hidden="true" tabindex="-1"></a>  dep_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">CD8T =</span> <span class="st">&quot;cd8t:ch1&quot;</span>, <span class="at">CD4T =</span> <span class="st">&quot;cd4t:ch1&quot;</span>, <span class="at">NK =</span> <span class="st">&quot;nk:ch1&quot;</span>,</span>
+<span id="cb17-244"><a href="#cb17-244" aria-hidden="true" tabindex="-1"></a>                <span class="at">Bcell =</span> <span class="st">&quot;bcell:ch1&quot;</span>, <span class="at">Mono =</span> <span class="st">&quot;mono:ch1&quot;</span>, <span class="at">Neu =</span> <span class="st">&quot;neu:ch1&quot;</span>)</span>
+<span id="cb17-245"><a href="#cb17-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-246"><a href="#cb17-246" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Everything out of a series matrix is text, including the numbers.</span></span>
+<span id="cb17-247"><a href="#cb17-247" aria-hidden="true" tabindex="-1"></a>  dep <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">lapply</span>(dep_cols,</span>
+<span id="cb17-248"><a href="#cb17-248" aria-hidden="true" tabindex="-1"></a>                              <span class="cf">function</span>(k) <span class="fu">as.numeric</span>(<span class="fu">as.character</span>(pd[[k]]))))</span>
+<span id="cb17-249"><a href="#cb17-249" aria-hidden="true" tabindex="-1"></a>  dep<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">as.character</span>(pd<span class="sc">$</span>geo_accession)</span>
+<span id="cb17-250"><a href="#cb17-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-251"><a href="#cb17-251" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The series carries 795 samples; match() keeps the 96 on our plate subset,</span></span>
+<span id="cb17-252"><a href="#cb17-252" aria-hidden="true" tabindex="-1"></a>  <span class="co"># in the row order of `props` so the merge below cannot silently misalign.</span></span>
+<span id="cb17-253"><a href="#cb17-253" aria-hidden="true" tabindex="-1"></a>  dep <span class="ot">&lt;-</span> dep[<span class="fu">match</span>(<span class="fu">rownames</span>(props), dep<span class="sc">$</span>sample_id), <span class="fu">c</span>(<span class="st">&quot;sample_id&quot;</span>, <span class="fu">names</span>(dep_cols))]</span>
+<span id="cb17-254"><a href="#cb17-254" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-255"><a href="#cb17-255" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb17-256"><a href="#cb17-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-259"><a href="#cb17-259" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb17-260"><a href="#cb17-260" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-compute</span></span>
+<span id="cb17-261"><a href="#cb17-261" aria-hidden="true" tabindex="-1"></a>cells <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;CD8T&quot;</span>,<span class="st">&quot;CD4T&quot;</span>,<span class="st">&quot;NK&quot;</span>,<span class="st">&quot;Bcell&quot;</span>,<span class="st">&quot;Mono&quot;</span>,<span class="st">&quot;Neu&quot;</span>)</span>
+<span id="cb17-262"><a href="#cb17-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-263"><a href="#cb17-263" aria-hidden="true" tabindex="-1"></a><span class="co"># One row per sample with both sets of numbers side by side. Both frames carry</span></span>
+<span id="cb17-264"><a href="#cb17-264" aria-hidden="true" tabindex="-1"></a><span class="co"># the same six column names, so merge() appends the suffixes that tell them</span></span>
+<span id="cb17-265"><a href="#cb17-265" aria-hidden="true" tabindex="-1"></a><span class="co"># apart -- .est for ours, .dep for the study&#39;s.</span></span>
+<span id="cb17-266"><a href="#cb17-266" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(props); est<span class="sc">$</span>sample_id <span class="ot">&lt;-</span> <span class="fu">rownames</span>(props)</span>
+<span id="cb17-267"><a href="#cb17-267" aria-hidden="true" tabindex="-1"></a>m   <span class="ot">&lt;-</span> <span class="fu">merge</span>(est, dep, <span class="at">by =</span> <span class="st">&quot;sample_id&quot;</span>, <span class="at">suffixes =</span> <span class="fu">c</span>(<span class="st">&quot;.est&quot;</span>, <span class="st">&quot;.dep&quot;</span>))</span>
+<span id="cb17-268"><a href="#cb17-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-269"><a href="#cb17-269" aria-hidden="true" tabindex="-1"></a><span class="co"># Three complementary summaries per cell type: correlation says whether the</span></span>
+<span id="cb17-270"><a href="#cb17-270" aria-hidden="true" tabindex="-1"></a><span class="co"># between-sample variation agrees (the part that matters for confounding</span></span>
+<span id="cb17-271"><a href="#cb17-271" aria-hidden="true" tabindex="-1"></a><span class="co"># adjustment), mean absolute error says how far apart the absolute values are,</span></span>
+<span id="cb17-272"><a href="#cb17-272" aria-hidden="true" tabindex="-1"></a><span class="co"># and the two means expose a systematic offset the correlation would hide.</span></span>
+<span id="cb17-273"><a href="#cb17-273" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">cell =</span> cells, <span class="at">r =</span> <span class="cn">NA_real_</span>, <span class="at">mae =</span> <span class="cn">NA_real_</span>,</span>
+<span id="cb17-274"><a href="#cb17-274" aria-hidden="true" tabindex="-1"></a>                  <span class="at">mean_est =</span> <span class="cn">NA_real_</span>, <span class="at">mean_dep =</span> <span class="cn">NA_real_</span>)</span>
+<span id="cb17-275"><a href="#cb17-275" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(cells)) {</span>
+<span id="cb17-276"><a href="#cb17-276" aria-hidden="true" tabindex="-1"></a>  e <span class="ot">&lt;-</span> m[[<span class="fu">paste0</span>(cells[i], <span class="st">&quot;.est&quot;</span>)]]</span>
+<span id="cb17-277"><a href="#cb17-277" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> m[[<span class="fu">paste0</span>(cells[i], <span class="st">&quot;.dep&quot;</span>)]]</span>
+<span id="cb17-278"><a href="#cb17-278" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>r[i]        <span class="ot">&lt;-</span> <span class="fu">cor</span>(e, d, <span class="at">use =</span> <span class="st">&quot;complete.obs&quot;</span>)</span>
+<span id="cb17-279"><a href="#cb17-279" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>mae[i]      <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">abs</span>(e <span class="sc">-</span> d), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-280"><a href="#cb17-280" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>mean_est[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(e, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-281"><a href="#cb17-281" aria-hidden="true" tabindex="-1"></a>  res<span class="sc">$</span>mean_dep[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(d, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-282"><a href="#cb17-282" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-283"><a href="#cb17-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-284"><a href="#cb17-284" aria-hidden="true" tabindex="-1"></a><span class="co"># The per-sample comparison and the per-cell-type summary travel together: this</span></span>
+<span id="cb17-285"><a href="#cb17-285" aria-hidden="true" tabindex="-1"></a><span class="co"># is the object saved at the end of the chapter, and the one the paragraph below</span></span>
+<span id="cb17-286"><a href="#cb17-286" aria-hidden="true" tabindex="-1"></a><span class="co"># the figure reads its numbers from.</span></span>
+<span id="cb17-287"><a href="#cb17-287" aria-hidden="true" tabindex="-1"></a>val <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">merged =</span> m, <span class="at">validation =</span> res)</span>
+<span id="cb17-288"><a href="#cb17-288" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb17-289"><a href="#cb17-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-292"><a href="#cb17-292" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb17-293"><a href="#cb17-293" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-table</span></span>
+<span id="cb17-294"><a href="#cb17-294" aria-hidden="true" tabindex="-1"></a>disp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb17-295"><a href="#cb17-295" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">cell type</span><span class="st">`</span>        <span class="ot">=</span> res<span class="sc">$</span>cell,</span>
+<span id="cb17-296"><a href="#cb17-296" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Pearson r</span><span class="st">`</span>        <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.3f&quot;</span>, res<span class="sc">$</span>r),</span>
+<span id="cb17-297"><a href="#cb17-297" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">mean abs. error</span><span class="st">`</span>  <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.4f&quot;</span>, res<span class="sc">$</span>mae),</span>
+<span id="cb17-298"><a href="#cb17-298" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">our mean</span><span class="st">`</span>         <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_est),</span>
+<span id="cb17-299"><a href="#cb17-299" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">deposited mean</span><span class="st">`</span>   <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">&quot;%.1f%%&quot;</span>, <span class="dv">100</span><span class="sc">*</span>res<span class="sc">$</span>mean_dep),</span>
+<span id="cb17-300"><a href="#cb17-300" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-301"><a href="#cb17-301" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(disp, <span class="at">caption =</span> <span class="st">&quot;Our estimates vs the study&#39;s deposited proportions, per cell type (n = 96).&quot;</span>)</span>
+<span id="cb17-302"><a href="#cb17-302" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb17-303"><a href="#cb17-303" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-306"><a href="#cb17-306" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb17-307"><a href="#cb17-307" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: validation-scatter</span></span>
+<span id="cb17-308"><a href="#cb17-308" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates &gt; 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study&#39;s own estimates.&quot;</span></span>
+<span id="cb17-309"><a href="#cb17-309" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 8</span></span>
+<span id="cb17-310"><a href="#cb17-310" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 5.2</span></span>
+<span id="cb17-311"><a href="#cb17-311" aria-hidden="true" tabindex="-1"></a><span class="co"># Six panels, one per cell type, so stack the pairs into a long table.</span></span>
+<span id="cb17-312"><a href="#cb17-312" aria-hidden="true" tabindex="-1"></a>long <span class="ot">&lt;-</span> <span class="fu">rbindlist</span>(<span class="fu">lapply</span>(cells, <span class="cf">function</span>(k)</span>
+<span id="cb17-313"><a href="#cb17-313" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.table</span>(<span class="at">cell =</span> k, <span class="at">est =</span> m[[<span class="fu">paste0</span>(k, <span class="st">&quot;.est&quot;</span>)]], <span class="at">dep =</span> m[[<span class="fu">paste0</span>(k, <span class="st">&quot;.dep&quot;</span>)]])))</span>
+<span id="cb17-314"><a href="#cb17-314" aria-hidden="true" tabindex="-1"></a>long<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">factor</span>(long<span class="sc">$</span>cell, <span class="at">levels =</span> cells)</span>
+<span id="cb17-315"><a href="#cb17-315" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-316"><a href="#cb17-316" aria-hidden="true" tabindex="-1"></a><span class="co"># The correlation from the table above, printed in each panel&#39;s corner: with</span></span>
+<span id="cb17-317"><a href="#cb17-317" aria-hidden="true" tabindex="-1"></a><span class="co"># free axes per panel a reader cannot judge agreement by eye alone.</span></span>
+<span id="cb17-318"><a href="#cb17-318" aria-hidden="true" tabindex="-1"></a>labs_r <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">cell =</span> <span class="fu">factor</span>(res<span class="sc">$</span>cell, <span class="at">levels =</span> cells),</span>
+<span id="cb17-319"><a href="#cb17-319" aria-hidden="true" tabindex="-1"></a>                     <span class="at">lab  =</span> <span class="fu">sprintf</span>(<span class="st">&quot;r = %.3f&quot;</span>, res<span class="sc">$</span>r))</span>
+<span id="cb17-320"><a href="#cb17-320" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-321"><a href="#cb17-321" aria-hidden="true" tabindex="-1"></a>p_val <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(long, <span class="fu">aes</span>(dep, est)) <span class="sc">+</span></span>
+<span id="cb17-322"><a href="#cb17-322" aria-hidden="true" tabindex="-1"></a>  <span class="co"># y = x first, so the points sit on top of it.</span></span>
+<span id="cb17-323"><a href="#cb17-323" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;#6E675B&quot;</span>) <span class="sc">+</span>  <span class="co"># gray</span></span>
+<span id="cb17-324"><a href="#cb17-324" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> .<span class="dv">6</span>, <span class="at">size =</span> <span class="fl">1.3</span>, <span class="at">color =</span> <span class="st">&quot;#1A6B75&quot;</span>) <span class="sc">+</span>                          <span class="co"># teal</span></span>
+<span id="cb17-325"><a href="#cb17-325" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>cell, <span class="at">scales =</span> <span class="st">&quot;free&quot;</span>) <span class="sc">+</span></span>
+<span id="cb17-326"><a href="#cb17-326" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> labs_r, <span class="fu">aes</span>(<span class="at">x =</span> <span class="sc">-</span><span class="cn">Inf</span>, <span class="at">y =</span> <span class="cn">Inf</span>, <span class="at">label =</span> lab),</span>
+<span id="cb17-327"><a href="#cb17-327" aria-hidden="true" tabindex="-1"></a>            <span class="at">hjust =</span> <span class="sc">-</span><span class="fl">0.15</span>, <span class="at">vjust =</span> <span class="fl">1.5</span>, <span class="at">size =</span> <span class="dv">3</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb17-328"><a href="#cb17-328" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;deposited proportion (study answer key)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;our Houseman/IDOL estimate&quot;</span>,</span>
+<span id="cb17-329"><a href="#cb17-329" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">&quot;Deconvolution validation: estimated vs deposited cell proportions&quot;</span>)</span>
+<span id="cb17-330"><a href="#cb17-330" aria-hidden="true" tabindex="-1"></a>p_val</span>
+<span id="cb17-331"><a href="#cb17-331" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb17-332"><a href="#cb17-332" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-333"><a href="#cb17-333" aria-hidden="true" tabindex="-1"></a>Correlations range from **`r sprintf(&quot;%.3f&quot;, min(val$validation$r))`** (NK, the</span>
+<span id="cb17-334"><a href="#cb17-334" aria-hidden="true" tabindex="-1"></a>rarest and hardest-to-estimate type) to **`r sprintf(&quot;%.3f&quot;, max(val$validation$r))`**</span>
+<span id="cb17-335"><a href="#cb17-335" aria-hidden="true" tabindex="-1"></a>(neutrophils), and the mean absolute error never exceeds</span>
+<span id="cb17-336"><a href="#cb17-336" aria-hidden="true" tabindex="-1"></a>**`r sprintf(&quot;%.1f&quot;, 100*max(val$validation$mae))` percentage points**. Small</span>
+<span id="cb17-337"><a href="#cb17-337" aria-hidden="true" tabindex="-1"></a>systematic offsets (e.g. our B-cell estimates run slightly high) are expected when</span>
+<span id="cb17-338"><a href="#cb17-338" aria-hidden="true" tabindex="-1"></a>the reference library or normalization differs from the original authors&#39;, and they</span>
+<span id="cb17-339"><a href="#cb17-339" aria-hidden="true" tabindex="-1"></a>matter far less than the near-perfect *ranking* — because in the EWAS model it is</span>
+<span id="cb17-340"><a href="#cb17-340" aria-hidden="true" tabindex="-1"></a>the between-sample variation, not the absolute level, that does the confounding</span>
+<span id="cb17-341"><a href="#cb17-341" aria-hidden="true" tabindex="-1"></a>adjustment.</span>
+<span id="cb17-342"><a href="#cb17-342" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-343"><a href="#cb17-343" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb17-344"><a href="#cb17-344" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical note</span></span>
+<span id="cb17-345"><a href="#cb17-345" aria-hidden="true" tabindex="-1"></a>Many studies do not provide cell proportions. In a real analysis you trust the method </span>
+<span id="cb17-346"><a href="#cb17-346" aria-hidden="true" tabindex="-1"></a>and **sanity-check the output**: neutrophils should dominate whole blood (~50–70%), </span>
+<span id="cb17-347"><a href="#cb17-347" aria-hidden="true" tabindex="-1"></a>proportions should sum to ~1, and the distribution should look biologically plausible. </span>
+<span id="cb17-348"><a href="#cb17-348" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb17-349"><a href="#cb17-349" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-350"><a href="#cb17-350" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. When you don&#39;t have IDATs: deconvolution from a processed matrix</span></span>
+<span id="cb17-351"><a href="#cb17-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-352"><a href="#cb17-352" aria-hidden="true" tabindex="-1"></a>Reference-based deconvolution normally wants the raw <span class="in">`RGChannelSet`</span>, so a</span>
+<span id="cb17-353"><a href="#cb17-353" aria-hidden="true" tabindex="-1"></a>β-matrix-only deposit is the harder case. Two routes:</span>
+<span id="cb17-354"><a href="#cb17-354" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-355"><a href="#cb17-355" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**`projectCellType` on a β-matrix.** The Houseman projection itself only needs</span>
+<span id="cb17-356"><a href="#cb17-356" aria-hidden="true" tabindex="-1"></a>   methylation *values* at the reference CpGs, not intensities. Pull the reference</span>
+<span id="cb17-357"><a href="#cb17-357" aria-hidden="true" tabindex="-1"></a>   β-values and its cell-type means, subset your matrix to the shared reference CpGs,</span>
+<span id="cb17-358"><a href="#cb17-358" aria-hidden="true" tabindex="-1"></a>   and run the constrained projection directly:</span>
+<span id="cb17-359"><a href="#cb17-359" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-360"><a href="#cb17-360" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.r filename=&quot;Generic example, do not run&quot;}</span></span>
+<span id="cb17-361"><a href="#cb17-361" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Schematic only. `beta_mat` is a CpG x sample matrix -- in the deposit-only</span></span>
+<span id="cb17-362"><a href="#cb17-362" aria-hidden="true" tabindex="-1"></a>   <span class="co"># case, whatever the submitter posted; locally, getBeta() on the chapter 03</span></span>
+<span id="cb17-363"><a href="#cb17-363" aria-hidden="true" tabindex="-1"></a>   <span class="co"># object gives one. The result is deliberately NOT called `props`: that name</span></span>
+<span id="cb17-364"><a href="#cb17-364" aria-hidden="true" tabindex="-1"></a>   <span class="co"># holds this chapter&#39;s IDOL estimates, and overwriting it would change every</span></span>
+<span id="cb17-365"><a href="#cb17-365" aria-hidden="true" tabindex="-1"></a>   <span class="co"># number downstream without any error to warn you.</span></span>
+<span id="cb17-366"><a href="#cb17-366" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(FlowSorted.Blood.EPIC)</span>
+<span id="cb17-367"><a href="#cb17-367" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(genefilter)</span>
+<span id="cb17-368"><a href="#cb17-368" aria-hidden="true" tabindex="-1"></a>   ref <span class="ot">&lt;-</span> ...   <span class="co"># matrix: IDOL CpGs x 6 cell types, from the package</span></span>
+<span id="cb17-369"><a href="#cb17-369" aria-hidden="true" tabindex="-1"></a>   shared       <span class="ot">&lt;-</span> <span class="fu">intersect</span>(<span class="fu">rownames</span>(beta_mat), <span class="fu">rownames</span>(ref))</span>
+<span id="cb17-370"><a href="#cb17-370" aria-hidden="true" tabindex="-1"></a>   props_manual <span class="ot">&lt;-</span> minfi<span class="sc">:::</span><span class="fu">projectCellType</span>(beta_mat[shared, ], ref[shared, ])</span>
+<span id="cb17-371"><a href="#cb17-371" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb17-372"><a href="#cb17-372" aria-hidden="true" tabindex="-1"></a>   The estimates are slightly noisier than the joint-normalization route because the</span>
+<span id="cb17-373"><a href="#cb17-373" aria-hidden="true" tabindex="-1"></a>   sample and reference weren&#39;t normalized together, but for a well-processed matrix</span>
+<span id="cb17-374"><a href="#cb17-374" aria-hidden="true" tabindex="-1"></a>   they are close.</span>
+<span id="cb17-375"><a href="#cb17-375" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-376"><a href="#cb17-376" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**`EpiDISH` (reference-based, matrix-native).** The <span class="in">`EpiDISH`</span> package</span>
+<span id="cb17-377"><a href="#cb17-377" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@teschendorff2017reference</span><span class="co">]</span> is designed to take a β-matrix plus a reference</span>
+<span id="cb17-378"><a href="#cb17-378" aria-hidden="true" tabindex="-1"></a>   centroid matrix and return proportions via robust partial correlation (RPC),</span>
+<span id="cb17-379"><a href="#cb17-379" aria-hidden="true" tabindex="-1"></a>   CIBERSORT, or constrained projection. It ships blood reference centroids and is</span>
+<span id="cb17-380"><a href="#cb17-380" aria-hidden="true" tabindex="-1"></a>   the most convenient option when you only have processed data:</span>
+<span id="cb17-381"><a href="#cb17-381" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-382"><a href="#cb17-382" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.r filename=&quot;Generic example, do not run&quot;}</span></span>
+<span id="cb17-383"><a href="#cb17-383" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Schematic only. `beta_mat` stands for your own CpG x sample beta matrix. The</span></span>
+<span id="cb17-384"><a href="#cb17-384" aria-hidden="true" tabindex="-1"></a>   <span class="co"># result is deliberately not called `props`: that name holds this chapter&#39;s IDOL</span></span>
+<span id="cb17-385"><a href="#cb17-385" aria-hidden="true" tabindex="-1"></a>   <span class="co"># estimates, and overwriting it would quietly change every figure and model</span></span>
+<span id="cb17-386"><a href="#cb17-386" aria-hidden="true" tabindex="-1"></a>   <span class="co"># after this point.</span></span>
+<span id="cb17-387"><a href="#cb17-387" aria-hidden="true" tabindex="-1"></a>   <span class="fu">library</span>(EpiDISH)</span>
+<span id="cb17-388"><a href="#cb17-388" aria-hidden="true" tabindex="-1"></a>   <span class="fu">data</span>(centDHSbloodDMC.m)                     <span class="co"># blood reference centroids</span></span>
+<span id="cb17-389"><a href="#cb17-389" aria-hidden="true" tabindex="-1"></a>   out <span class="ot">&lt;-</span> <span class="fu">epidish</span>(beta_mat, <span class="at">ref.m =</span> centDHSbloodDMC.m, <span class="at">method =</span> <span class="st">&quot;RPC&quot;</span>)</span>
+<span id="cb17-390"><a href="#cb17-390" aria-hidden="true" tabindex="-1"></a>   props_epidish <span class="ot">&lt;-</span> out<span class="sc">$</span>estF</span>
+<span id="cb17-391"><a href="#cb17-391" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb17-392"><a href="#cb17-392" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-393"><a href="#cb17-393" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb17-394"><a href="#cb17-394" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reference-free alternatives</span></span>
+<span id="cb17-395"><a href="#cb17-395" aria-hidden="true" tabindex="-1"></a>When no suitable reference exists (unusual tissues, or you worry the reference</span>
+<span id="cb17-396"><a href="#cb17-396" aria-hidden="true" tabindex="-1"></a>doesn&#39;t match your population), **reference-free** methods estimate latent</span>
+<span id="cb17-397"><a href="#cb17-397" aria-hidden="true" tabindex="-1"></a>composition-like components directly from the data: RefFreeEWAS</span>
+<span id="cb17-398"><a href="#cb17-398" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@houseman2014reffree</span><span class="co">]</span>, SVA <span class="co">[</span><span class="ot">@leek2012sva</span><span class="co">]</span>, and RUV. This tutorial does not use</span>
+<span id="cb17-399"><a href="#cb17-399" aria-hidden="true" tabindex="-1"></a>RefFreeEWAS; SVA is used in <span class="co">[</span><span class="ot">batch effects</span><span class="co">](05_batch_effects.qmd)</span> to capture unmeasured</span>
+<span id="cb17-400"><a href="#cb17-400" aria-hidden="true" tabindex="-1"></a>variation, and RUV is mentioned there. The trade-off is that the recovered</span>
+<span id="cb17-401"><a href="#cb17-401" aria-hidden="true" tabindex="-1"></a>components are not labeled cell types, only surrogate variables to adjust for.</span>
+<span id="cb17-402"><a href="#cb17-402" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb17-403"><a href="#cb17-403" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-406"><a href="#cb17-406" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb17-407"><a href="#cb17-407" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-cellcounts</span></span>
-<span id="cb17-408"><a href="#cb17-408" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The proportions themselves: a 96 x 6 matrix with GSM ids as rownames. This</span></span>
-<span id="cb17-409"><a href="#cb17-409" aria-hidden="true" tabindex="-1"></a><span class="co">#    is the file the later chapters read when they need cell-type covariates.</span></span>
-<span id="cb17-410"><a href="#cb17-410" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(props, <span class="st">&quot;data/04_cellcounts.rds&quot;</span>)</span>
-<span id="cb17-411"><a href="#cb17-411" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-412"><a href="#cb17-412" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The whole estimateCellCounts2() return, as deposited in the Zenodo record.</span></span>
-<span id="cb17-413"><a href="#cb17-413" aria-hidden="true" tabindex="-1"></a><span class="co">#    Keeping the full object means the file on record is the object the code</span></span>
-<span id="cb17-414"><a href="#cb17-414" aria-hidden="true" tabindex="-1"></a><span class="co">#    above produced, with nothing dropped or coerced.</span></span>
-<span id="cb17-415"><a href="#cb17-415" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(cc, <span class="st">&quot;data/04_cc_full.rds&quot;</span>)</span>
-<span id="cb17-416"><a href="#cb17-416" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-417"><a href="#cb17-417" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. The validation: the per-sample comparison (`merged`) and the per-cell-type</span></span>
-<span id="cb17-418"><a href="#cb17-418" aria-hidden="true" tabindex="-1"></a><span class="co">#    summary (`validation`) that the table, the figure and the paragraph above</span></span>
-<span id="cb17-419"><a href="#cb17-419" aria-hidden="true" tabindex="-1"></a><span class="co">#    are all drawn from.</span></span>
-<span id="cb17-420"><a href="#cb17-420" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(val, <span class="st">&quot;data/04_validation.rds&quot;</span>)</span>
-<span id="cb17-421"><a href="#cb17-421" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-422"><a href="#cb17-422" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. The deposited proportions, flat and small enough to live in the repository</span></span>
-<span id="cb17-423"><a href="#cb17-423" aria-hidden="true" tabindex="-1"></a><span class="co">#    rather than in a Zenodo tier -- which is what lets the fetch above run once</span></span>
-<span id="cb17-424"><a href="#cb17-424" aria-hidden="true" tabindex="-1"></a><span class="co">#    instead of on every render.</span></span>
-<span id="cb17-425"><a href="#cb17-425" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(dep, <span class="st">&quot;data/04_deposited_cellcounts.tsv&quot;</span>,</span>
-<span id="cb17-426"><a href="#cb17-426" aria-hidden="true" tabindex="-1"></a>            <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb17-427"><a href="#cb17-427" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-428"><a href="#cb17-428" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. The validation figure at the size the rendered page uses. The site serves</span></span>
-<span id="cb17-429"><a href="#cb17-429" aria-hidden="true" tabindex="-1"></a><span class="co">#    the committed copy, so it is written by the same code that drew it above.</span></span>
-<span id="cb17-430"><a href="#cb17-430" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;data/04_validation_scatter.png&quot;</span>, p_val, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="fl">5.2</span>, <span class="at">dpi =</span> <span class="dv">130</span>)</span>
-<span id="cb17-431"><a href="#cb17-431" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb17-432"><a href="#cb17-432" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-433"><a href="#cb17-433" aria-hidden="true" tabindex="-1"></a>Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not</span>
-<span id="cb17-434"><a href="#cb17-434" aria-hidden="true" tabindex="-1"></a>use the exposure, so there is no reason to restrict it to the modeled subset here —</span>
-<span id="cb17-435"><a href="#cb17-435" aria-hidden="true" tabindex="-1"></a>the nine samples with no recorded PTSD status</span>
-<span id="cb17-436"><a href="#cb17-436" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 01</span><span class="co">](01_qc.qmd)</span>) drop out later, when the exposure enters the model, leaving</span>
-<span id="cb17-437"><a href="#cb17-437" aria-hidden="true" tabindex="-1"></a>n = 87 for the EWAS.</span>
-<span id="cb17-438"><a href="#cb17-438" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-439"><a href="#cb17-439" aria-hidden="true" tabindex="-1"></a>---</span>
-<span id="cb17-440"><a href="#cb17-440" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-441"><a href="#cb17-441" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Batch effects</span><span class="co">](05_batch_effects.qmd)</span> — technical variation from chips,</span>
-<span id="cb17-442"><a href="#cb17-442" aria-hidden="true" tabindex="-1"></a>array positions, and plates, and how to detect it before deciding whether to</span>
-<span id="cb17-443"><a href="#cb17-443" aria-hidden="true" tabindex="-1"></a>correct.</span>
-<span id="cb17-444"><a href="#cb17-444" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-445"><a href="#cb17-445" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
-<span id="cb17-446"><a href="#cb17-446" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-447"><a href="#cb17-447" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb17-448"><a href="#cb17-448" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb17-404"><a href="#cb17-404" aria-hidden="true" tabindex="-1"></a>We carry the estimated proportions forward as EWAS covariates:</span>
+<span id="cb17-405"><a href="#cb17-405" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-408"><a href="#cb17-408" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb17-409"><a href="#cb17-409" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: save-cellcounts</span></span>
+<span id="cb17-410"><a href="#cb17-410" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. The proportions themselves: a 96 x 6 matrix with GSM ids as rownames. This</span></span>
+<span id="cb17-411"><a href="#cb17-411" aria-hidden="true" tabindex="-1"></a><span class="co">#    is the file the later chapters read when they need cell-type covariates.</span></span>
+<span id="cb17-412"><a href="#cb17-412" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(props, <span class="st">&quot;data/04_cellcounts.rds&quot;</span>)</span>
+<span id="cb17-413"><a href="#cb17-413" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-414"><a href="#cb17-414" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. The whole estimateCellCounts2() return, as deposited in the Zenodo record.</span></span>
+<span id="cb17-415"><a href="#cb17-415" aria-hidden="true" tabindex="-1"></a><span class="co">#    Keeping the full object means the file on record is the object the code</span></span>
+<span id="cb17-416"><a href="#cb17-416" aria-hidden="true" tabindex="-1"></a><span class="co">#    above produced, with nothing dropped or coerced.</span></span>
+<span id="cb17-417"><a href="#cb17-417" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(cc, <span class="st">&quot;data/04_cc_full.rds&quot;</span>)</span>
+<span id="cb17-418"><a href="#cb17-418" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-419"><a href="#cb17-419" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. The validation: the per-sample comparison (`merged`) and the per-cell-type</span></span>
+<span id="cb17-420"><a href="#cb17-420" aria-hidden="true" tabindex="-1"></a><span class="co">#    summary (`validation`) that the table, the figure and the paragraph above</span></span>
+<span id="cb17-421"><a href="#cb17-421" aria-hidden="true" tabindex="-1"></a><span class="co">#    are all drawn from.</span></span>
+<span id="cb17-422"><a href="#cb17-422" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(val, <span class="st">&quot;data/04_validation.rds&quot;</span>)</span>
+<span id="cb17-423"><a href="#cb17-423" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-424"><a href="#cb17-424" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. The deposited proportions, flat and small enough to live in the repository</span></span>
+<span id="cb17-425"><a href="#cb17-425" aria-hidden="true" tabindex="-1"></a><span class="co">#    rather than in a Zenodo tier -- which is what lets the fetch above run once</span></span>
+<span id="cb17-426"><a href="#cb17-426" aria-hidden="true" tabindex="-1"></a><span class="co">#    instead of on every render.</span></span>
+<span id="cb17-427"><a href="#cb17-427" aria-hidden="true" tabindex="-1"></a><span class="fu">write.table</span>(dep, <span class="st">&quot;data/04_deposited_cellcounts.tsv&quot;</span>,</span>
+<span id="cb17-428"><a href="#cb17-428" aria-hidden="true" tabindex="-1"></a>            <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>, <span class="at">quote =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-429"><a href="#cb17-429" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-430"><a href="#cb17-430" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. The validation figure at the size the rendered page uses. The site serves</span></span>
+<span id="cb17-431"><a href="#cb17-431" aria-hidden="true" tabindex="-1"></a><span class="co">#    the committed copy, so it is written by the same code that drew it above.</span></span>
+<span id="cb17-432"><a href="#cb17-432" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;data/04_validation_scatter.png&quot;</span>, p_val, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="fl">5.2</span>, <span class="at">dpi =</span> <span class="dv">130</span>)</span>
+<span id="cb17-433"><a href="#cb17-433" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb17-434"><a href="#cb17-434" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-435"><a href="#cb17-435" aria-hidden="true" tabindex="-1"></a>Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not</span>
+<span id="cb17-436"><a href="#cb17-436" aria-hidden="true" tabindex="-1"></a>use the exposure, so there is no reason to restrict it to the modeled subset here —</span>
+<span id="cb17-437"><a href="#cb17-437" aria-hidden="true" tabindex="-1"></a>the nine samples with no recorded PTSD status</span>
+<span id="cb17-438"><a href="#cb17-438" aria-hidden="true" tabindex="-1"></a>(<span class="co">[</span><span class="ot">chapter 01</span><span class="co">](01_qc.qmd)</span>) drop out later, when the exposure enters the model, as does the one sample with</span>
+<span id="cb17-439"><a href="#cb17-439" aria-hidden="true" tabindex="-1"></a>no genetic ancestry PCs (<span class="co">[</span><span class="ot">Genetic ancestry PCs</span><span class="co">](04b_genetic_pcs.qmd)</span>), leaving</span>
+<span id="cb17-440"><a href="#cb17-440" aria-hidden="true" tabindex="-1"></a>n = 86 for the EWAS.</span>
+<span id="cb17-441"><a href="#cb17-441" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-442"><a href="#cb17-442" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb17-443"><a href="#cb17-443" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-444"><a href="#cb17-444" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Genetic ancestry PCs</span><span class="co">](04b_genetic_pcs.qmd)</span> — what the three ancestry</span>
+<span id="cb17-445"><a href="#cb17-445" aria-hidden="true" tabindex="-1"></a>covariates used from chapter 05 onwards are, and why they are a better covariate than</span>
+<span id="cb17-446"><a href="#cb17-446" aria-hidden="true" tabindex="-1"></a>self-reported race.</span>
+<span id="cb17-447"><a href="#cb17-447" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-448"><a href="#cb17-448" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb17-449"><a href="#cb17-449" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-450"><a href="#cb17-450" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb17-451"><a href="#cb17-451" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

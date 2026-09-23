@@ -15,6 +15,12 @@
 #   This version:                10.5281/zenodo.22287946
 set -euo pipefail
 
+# Always extract at the repository root, whatever directory you call this from.
+# Every tarball carries repo-relative paths (tutorial/data/..., ewas_pipeline/...),
+# so running this from tutorial/ would nest a second copy of the tree inside it
+# and the chapters would not find their inputs.
+cd "$(dirname "$0")"
+
 ZENODO_RECORD="${ZENODO_RECORD:-22287946}"
 BASE="https://zenodo.org/records/${ZENODO_RECORD}/files"
 ALL_TIERS=(A_idats B_qc C_normalized D_filtered E_model_inputs F_ewas_results G_pipeline_run H_annotation)

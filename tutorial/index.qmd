@@ -90,10 +90,11 @@ The preprocessing-through-analysis arc maps onto these notebooks:
 4. **[Normalization](02_normalization.qmd)** — within- and between-array normalization.
 5. **[Probe filtering](03_probe_filtering.qmd)** — detection-p, cross-reactive, and ancestry-aware SNP masks.
 6. **[Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.
-7. **[Batch effects](05_batch_effects.qmd)** — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.
-8. **[EWAS](06_ewas.qmd)** — the association model, adjusted for sex, age, smoking, array position, cell composition, and surrogate variables.
-9. **[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.
-10. **[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.
+7. **[Genetic ancestry PCs](04b_genetic_pcs.qmd)** — what the deposited genetic ancestry principal components capture and why the models adjust for them.
+8. **[Batch effects](05_batch_effects.qmd)** — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.
+9. **[EWAS](06_ewas.qmd)** — the association model, adjusted for sex, age, a methylation-based smoking proxy, array position, cell composition, genetic ancestry PCs, and surrogate variables.
+10. **[Snakemake pipeline](07_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.
+11. **[Annotation](08_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.
 
 Each notebook loads the object saved by the previous one, so you can work
 through them in order or jump to any step and pick up the saved checkpoint.

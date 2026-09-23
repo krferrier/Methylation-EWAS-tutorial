@@ -184,8 +184,9 @@ pl <- as.data.frame(props); pl$sample_id <- rownames(pl)
 plm <- reshape(pl, varying = colnames(props), v.names = "prop",
                timevar = "cell", times = colnames(props),
                direction = "long")
-# Stacking order is the factor order, so set it explicitly: largest fraction at
-# the bottom of the bar, rarest at the top.
+# Stacking order follows the factor order, so set it explicitly. ggplot2 draws
+# the first level at the top of each bar, so neutrophils form the top band and
+# NK cells the bottom one.
 plm$cell <- factor(plm$cell, levels = c("Neu","CD4T","CD8T","Mono","Bcell","NK"))
 # Order the bars by neutrophil fraction so the gradient across samples is
 # visible instead of being scattered by array order.
@@ -361,10 +362,10 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
    the most convenient option when you only have processed data:
 
    ```{.r filename="Generic example, do not run"}
-   # Schematic only, and this one *would* run if you pasted it -- which is the
-   # problem. It assigns to `props`, so it would silently replace the IDOL
-   # estimates computed above with EpiDISH's, and every figure and model after
-   # this point would quietly change. Give the result its own name.
+   # Schematic only. `beta_mat` stands for your own CpG x sample beta matrix. The
+   # result is deliberately not called `props`: that name holds this chapter's IDOL
+   # estimates, and overwriting it would quietly change every figure and model
+   # after this point.
    library(EpiDISH)
    data(centDHSbloodDMC.m)                     # blood reference centroids
    out <- epidish(beta_mat, ref.m = centDHSbloodDMC.m, method = "RPC")
@@ -376,8 +377,9 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
 When no suitable reference exists (unusual tissues, or you worry the reference
 doesn't match your population), **reference-free** methods estimate latent
 composition-like components directly from the data: RefFreeEWAS
-[@houseman2014reffree], SVA [@leek2012sva], and RUV. These are covered in
-[batch effects](05_batch_effects.qmd); the trade-off is that the recovered
+[@houseman2014reffree], SVA [@leek2012sva], and RUV. This tutorial does not use
+RefFreeEWAS; SVA is used in [batch effects](05_batch_effects.qmd) to capture unmeasured
+variation, and RUV is mentioned there. The trade-off is that the recovered
 components are not labeled cell types, only surrogate variables to adjust for.
 :::
 
@@ -413,14 +415,15 @@ ggsave("data/04_validation_scatter.png", p_val, width = 8, height = 5.2, dpi = 1
 Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not
 use the exposure, so there is no reason to restrict it to the modeled subset here —
 the nine samples with no recorded PTSD status
-([chapter 01](01_qc.qmd)) drop out later, when the exposure enters the model, leaving
-n = 87 for the EWAS.
+([chapter 01](01_qc.qmd)) drop out later, when the exposure enters the model, as does the one sample with
+no genetic ancestry PCs ([Genetic ancestry PCs](04b_genetic_pcs.qmd)), leaving
+n = 86 for the EWAS.
 
 ---
 
-**Next:** [Batch effects](05_batch_effects.qmd) — technical variation from chips,
-array positions, and plates, and how to detect it before deciding whether to
-correct.
+**Next:** [Genetic ancestry PCs](04b_genetic_pcs.qmd) — what the three ancestry
+covariates used from chapter 05 onwards are, and why they are a better covariate than
+self-reported race.
 
 ## References {.unnumbered}
 

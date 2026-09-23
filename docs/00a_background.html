@@ -5484,20 +5484,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./03_probe_filtering.html#sec-categories" class="sidebar-item-text sidebar-link">
- <span class="menu-text">2. The categories, quantified</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-ancestry" class="sidebar-item-text sidebar-link">
- <span class="menu-text">3. Ancestry matters</span></a>
+ <span class="menu-text">2. Ancestry matters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./03_probe_filtering.html#sec-detp-sex" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Detection-p and sex chromosomes</span></a>
+ <span class="menu-text">3. Detection-p and sex chromosomes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_probe_filtering.html#sec-apply" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">4. Applying the filters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5512,6 +5512,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="./04_cell_composition.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Cell composition: Whole Blood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04b_genetic_pcs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Genetic ancestry principal components</span></a>
   </div>
 </li>
           <li class="sidebar-item sidebar-item-section">
@@ -5666,44 +5672,38 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./07_pipeline.html#sec-metal-build" class="sidebar-item-text sidebar-link">
- <span class="menu-text">4. Building METAL</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-run" class="sidebar-item-text sidebar-link">
- <span class="menu-text">5. Running a non-stratified EWAS</span></a>
+ <span class="menu-text">4. Running a non-stratified EWAS</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-strata" class="sidebar-item-text sidebar-link">
- <span class="menu-text">6. Stratifying by sex</span></a>
+ <span class="menu-text">5. Stratifying by sex</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-bacon" class="sidebar-item-text sidebar-link">
- <span class="menu-text">7. BACON</span></a>
+ <span class="menu-text">6. What BACON did to each arm</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-meta" class="sidebar-item-text sidebar-link">
- <span class="menu-text">8. Meta-analyzing with METAL</span></a>
+ <span class="menu-text">7. Meta-analyzing with METAL</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-reading" class="sidebar-item-text sidebar-link">
- <span class="menu-text">9. Reading the run as a whole</span></a>
+ <span class="menu-text">8. Reading the run as a whole</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./07_pipeline.html#sec-scaling" class="sidebar-item-text sidebar-link">
- <span class="menu-text">10. Scaling up</span></a>
+ <span class="menu-text">9. Scaling up</span></a>
   </div>
 </li>
       </ul>
@@ -5799,7 +5799,7 @@ window.Quarto = {
 </ul>
 <p>From those two numbers we form the two estimates/metrics of methylation status used in methylation analyses:</p>
 <p><span class="math display">\[\beta = \frac{M}{M + U + \alpha}, \qquad M\text{-value} = \log_2\!\frac{M}{U}\]</span></p>
-<p>The <strong>beta value</strong> is the direct proportion of methylation and values range between <span class="math inline">\([0,1]\)</span>. While the beta value is easily interpretable, the distribution of beta values are often non-normal and thus violate assumptions of normality when they are used in linear regression modeling. Thus, the beta values are log-transformed to produce <strong>M-values</strong>. M-values are unbounded in range, and roughly homoscedastic in distribution, which makes it the better choice for statistical modeling. (<span class="math inline">\(\alpha \approx 100\)</span> is a small offset that stabilizes betas where total intensity is low.)</p>
+<p>The <strong>beta value</strong> is the direct proportion of methylation and values range between <span class="math inline">\([0,1]\)</span>. While the beta value is easily interpretable, the distribution of beta values are often non-normal and thus violate assumptions of normality when they are used in linear regression modeling. Thus, the beta values are logit-transformed, <span class="math inline">\(M = \log_2\left(\beta / (1 - \beta)\right)\)</span>, to produce <strong>M-values</strong>. M-values are unbounded in range, and roughly homoscedastic in distribution, which makes it the better choice for statistical modeling. (<span class="math inline">\(\alpha \approx 100\)</span> is a small offset that stabilizes betas where total intensity is low.)</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -5812,12 +5812,7 @@ window.Quarto = {
 <div class="callout-body-container callout-body">
 <p>Methylation array technology often uses two different probe chemistries.</p>
 <ul>
-<li><strong>Type I</strong> probes use two beads (one for M, one for</li>
-</ul>
-<ol start="21" type="A">
-<li>in the <em>same</em> color channel;</li>
-</ol>
-<ul>
+<li><strong>Type I</strong> probes use two beads (one for M, one for U) in the <em>same</em> color channel;</li>
 <li><strong>Type II</strong> probes use a single bead and read M vs U in the <em>two</em> color channels. Type I probes are better suited for regions with high CpG density, but require double the physical space on the array per locus. Type II are more compact, but have reduced sensitivity in high density regions.</li>
 </ul>
 <p>Normalization is done to allow for these different probe types to be compared.</p>
@@ -6373,8 +6368,8 @@ window.Quarto = {
 <span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>The **beta value** is the direct proportion of methylation and values range</span>
 <span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>between $<span class="co">[</span><span class="ot">0,1</span><span class="co">]</span>$. While the beta value is easily interpretable, the distribution of</span>
 <span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>beta values are often non-normal and thus violate assumptions of normality when</span>
-<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>they are used in linear regression modeling. Thus, the beta values are log-transformed</span>
-<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>they are used in linear regression modeling. Thus, the beta values are logit-transformed,</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>$M = \log_2\left(\beta / (1 - \beta)\right)$, to produce **M-values**. M-values are unbounded in range, and roughly homoscedastic in</span>
 <span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>distribution, which makes it the better choice for statistical modeling.</span>
 <span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>($\alpha \approx 100$ is a small offset that stabilizes betas where</span>
 <span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>total intensity is low.)</span>
@@ -6383,33 +6378,31 @@ window.Quarto = {
 <span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a><span class="fu">## Two probe designs</span></span>
 <span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>Methylation array technology often uses two different probe chemistries.</span>
 <span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>**Type I** probes use two beads (one for M, one for</span>
-<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>U) in the *same* color channel;</span>
-<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>**Type II** probes use a single bead and read M</span>
-<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>vs U in the *two* color channels. Type I probes are better suited for regions with</span>
-<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>high CpG density, but require double the physical space on the array per locus.</span>
-<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>Type II are more compact, but have reduced sensitivity in high density regions.</span>
-<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>Normalization is done to allow for these different probe types to be compared.</span>
-<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>**Type I** probes use two beads (one for M, one for U) in the *same* color channel;</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="ss">  - </span>**Type II** probes use a single bead and read M vs U in the *two* color channels. Type I probes are better suited for regions with</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>high CpG density, but require double the physical space on the array per locus.</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>Type II are more compact, but have reduced sensitivity in high density regions.</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>Normalization is done to allow for these different probe types to be compared.</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>A short history of the Illumina methylation platforms:</span>
 <span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>A short history of the Illumina methylation platforms:</span>
-<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Array <span class="pp">|</span> CpGs (approx.) <span class="pp">|</span> Notes <span class="pp">|</span></span>
-<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
-<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> HumanMethylation27 <span class="pp">|</span> 27,000 <span class="pp">|</span> promoter-focused, largely retired <span class="pp">|</span></span>
-<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> HumanMethylation450 <span class="pp">|</span> 485,000 <span class="pp">|</span> the workhorse of the 2010s <span class="pp">|</span></span>
-<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **MethylationEPIC v1** | **865,000** | **this tutorial** (GPL21145) <span class="pp">|</span></span>
-<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MethylationEPIC v2 <span class="pp">|</span> 935,000 <span class="pp">|</span> current; different probe IDs <span class="pp">|</span></span>
-<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>The dataset we will use in this tutorial is EPIC **v1**, but the same framework can be</span>
-<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>applied for other arrays.</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Array <span class="pp">|</span> CpGs (approx.) <span class="pp">|</span> Notes <span class="pp">|</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> HumanMethylation27 <span class="pp">|</span> 27,000 <span class="pp">|</span> promoter-focused, largely retired <span class="pp">|</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> HumanMethylation450 <span class="pp">|</span> 485,000 <span class="pp">|</span> the workhorse of the 2010s <span class="pp">|</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **MethylationEPIC v1** | **865,000** | **this tutorial** (GPL21145) <span class="pp">|</span></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> MethylationEPIC v2 <span class="pp">|</span> 935,000 <span class="pp">|</span> current; different probe IDs <span class="pp">|</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>The dataset we will use in this tutorial is EPIC **v1**, but the same framework can be</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>applied for other arrays.</span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a><span class="fu"># Where to go next</span></span>
 <span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a><span class="fu"># Where to go next</span></span>
-<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">Setup</span><span class="co">](00_setup.qmd)</span> introduces the Grady Trauma Project subset, shows how to</span>
-<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>download the raw IDAT files, and lays out what running the whole tutorial costs</span>
-<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>in time, memory, and disk.</span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">Setup</span><span class="co">](00_setup.qmd)</span> introduces the Grady Trauma Project subset, shows how to</span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>download the raw IDAT files, and lays out what running the whole tutorial costs</span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>in time, memory, and disk.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
