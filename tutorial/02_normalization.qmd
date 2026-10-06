@@ -109,8 +109,8 @@ dim(beta_raw)
 # across samples, i.e. how much the probes of a design differ from one another --
 # not within-probe noise, which is why rowMeans() comes first.
 type_summ <- function(beta, typeI, typeII) {
-  bi  <- beta[rownames(beta) %in% typeI, , drop = FALSE]
-  bii <- beta[rownames(beta) %in% typeII, , drop = FALSE]
+  bi  <- beta[rownames(beta) %in% typeI, ]
+  bii <- beta[rownames(beta) %in% typeII, ]
   data.frame(
     design      = c("Type I", "Type II"),
     n_probes    = c(nrow(bi), nrow(bii)),
@@ -213,8 +213,8 @@ beta_fun <- getBeta(grs_fun)[probe_sample, ]
 
 # A design comparison is only meaningful if all three matrices describe the same
 # probes; fail loudly here rather than silently comparing different probe sets.
-stopifnot(identical(rownames(beta_raw), rownames(beta_noob)),
-          identical(rownames(beta_raw), rownames(beta_fun)))
+stopifnot(identical(rownames(beta_raw), rownames(beta_noob)))
+stopifnot(identical(rownames(beta_raw), rownames(beta_fun)))
 
 grs_fun
 ```

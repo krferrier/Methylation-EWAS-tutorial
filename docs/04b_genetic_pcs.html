@@ -5782,18 +5782,20 @@ window.onload = function() {
 <details open class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)   <span class="co"># the scatter plot below</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>ss   <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/sample_sheet.csv&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>gpcs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;pc1&quot;</span>, <span class="st">&quot;pc2&quot;</span>, <span class="st">&quot;pc3&quot;</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># The 86 samples an association model can use: PTSD status, sex, age and all three</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 96 arrays has no PCs, and nine have no PTSD status.</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>keep <span class="ot">&lt;-</span> <span class="sc">!</span>(<span class="fu">is.na</span>(ss<span class="sc">$</span>ptsd) <span class="sc">|</span> ss<span class="sc">$</span>ptsd <span class="sc">==</span> <span class="st">&quot;&quot;</span>) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(ss<span class="sc">$</span>sex) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(ss<span class="sc">$</span>age) <span class="sc">&amp;</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">complete.cases</span>(ss[, gpcs])</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>pcs  <span class="ot">&lt;-</span> ss[keep, ]</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;samples with PCs:&quot;</span>, <span class="fu">sum</span>(<span class="fu">complete.cases</span>(ss[, gpcs])), <span class="st">&quot;of&quot;</span>, <span class="fu">nrow</span>(ss),</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| modeled samples:&quot;</span>, <span class="fu">nrow</span>(pcs), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)     <span class="co"># filter() and left_join() for the sample sheet</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>ss   <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/sample_sheet.csv&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>gpcs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;pc1&quot;</span>, <span class="st">&quot;pc2&quot;</span>, <span class="st">&quot;pc3&quot;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># The 86 samples an association model can use: PTSD status, sex, age and all three</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 96 arrays has no PCs, and nine have no PTSD status.</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>pcs <span class="ot">&lt;-</span> ss <span class="sc">%&gt;%</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ptsd), ptsd <span class="sc">!=</span> <span class="st">&quot;&quot;</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(sex), <span class="sc">!</span><span class="fu">is.na</span>(age),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(pc1), <span class="sc">!</span><span class="fu">is.na</span>(pc2), <span class="sc">!</span><span class="fu">is.na</span>(pc3))</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;samples with PCs:&quot;</span>, <span class="fu">sum</span>(<span class="fu">complete.cases</span>(ss[, gpcs])), <span class="st">&quot;of&quot;</span>, <span class="fu">nrow</span>(ss),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| modeled samples:&quot;</span>, <span class="fu">nrow</span>(pcs), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>samples with PCs: 95 of 96 | modeled samples: 86 </code></pre>
@@ -5915,7 +5917,7 @@ Max.     0.0610  0.0276  0.0353</code></pre>
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Covariates to remove before the PCA, in the same sample order as `beta`.</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>cells <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/04_cellcounts.rds&quot;</span>)[<span class="fu">colnames</span>(beta), ]</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>sheet <span class="ot">&lt;-</span> ss[<span class="fu">match</span>(<span class="fu">colnames</span>(beta), ss<span class="sc">$</span>sample_id), ]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>sheet <span class="ot">&lt;-</span> <span class="fu">left_join</span>(<span class="fu">data.frame</span>(<span class="at">sample_id =</span> <span class="fu">colnames</span>(beta)), ss, <span class="at">by =</span> <span class="st">&quot;sample_id&quot;</span>)</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co"># EPISTRUCTURE: regress each reference site on the covariates, keep the residuals,</span></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># standardize each site, and take principal components across samples.</span></span>
@@ -6598,259 +6600,261 @@ Rahmani, Elior, Reut Yedidim, Liat Shenhav, et al. 2017. <span>“<span>GLINT</s
 <span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
 <span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load</span></span>
 <span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)   <span class="co"># the scatter plot below</span></span>
-<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a>ss   <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/sample_sheet.csv&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a>gpcs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;pc1&quot;</span>, <span class="st">&quot;pc2&quot;</span>, <span class="st">&quot;pc3&quot;</span>)</span>
-<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a><span class="co"># The 86 samples an association model can use: PTSD status, sex, age and all three</span></span>
-<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a><span class="co"># PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the</span></span>
-<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a><span class="co"># 96 arrays has no PCs, and nine have no PTSD status.</span></span>
-<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a>keep <span class="ot">&lt;-</span> <span class="sc">!</span>(<span class="fu">is.na</span>(ss<span class="sc">$</span>ptsd) <span class="sc">|</span> ss<span class="sc">$</span>ptsd <span class="sc">==</span> <span class="st">&quot;&quot;</span>) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(ss<span class="sc">$</span>sex) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(ss<span class="sc">$</span>age) <span class="sc">&amp;</span></span>
-<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a>        <span class="fu">complete.cases</span>(ss[, gpcs])</span>
-<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a>pcs  <span class="ot">&lt;-</span> ss[keep, ]</span>
-<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;samples with PCs:&quot;</span>, <span class="fu">sum</span>(<span class="fu">complete.cases</span>(ss[, gpcs])), <span class="st">&quot;of&quot;</span>, <span class="fu">nrow</span>(ss),</span>
-<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| modeled samples:&quot;</span>, <span class="fu">nrow</span>(pcs), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-92"><a href="#cb15-92" aria-hidden="true" tabindex="-1"></a><span class="fu">## Genetic PCs and self-reported race {#sec-race}</span></span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)     <span class="co"># filter() and left_join() for the sample sheet</span></span>
+<span id="cb15-79"><a href="#cb15-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-80"><a href="#cb15-80" aria-hidden="true" tabindex="-1"></a>ss   <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/sample_sheet.csv&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb15-81"><a href="#cb15-81" aria-hidden="true" tabindex="-1"></a>gpcs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;pc1&quot;</span>, <span class="st">&quot;pc2&quot;</span>, <span class="st">&quot;pc3&quot;</span>)</span>
+<span id="cb15-82"><a href="#cb15-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-83"><a href="#cb15-83" aria-hidden="true" tabindex="-1"></a><span class="co"># The 86 samples an association model can use: PTSD status, sex, age and all three</span></span>
+<span id="cb15-84"><a href="#cb15-84" aria-hidden="true" tabindex="-1"></a><span class="co"># PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the</span></span>
+<span id="cb15-85"><a href="#cb15-85" aria-hidden="true" tabindex="-1"></a><span class="co"># 96 arrays has no PCs, and nine have no PTSD status.</span></span>
+<span id="cb15-86"><a href="#cb15-86" aria-hidden="true" tabindex="-1"></a>pcs <span class="ot">&lt;-</span> ss <span class="sc">%&gt;%</span></span>
+<span id="cb15-87"><a href="#cb15-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ptsd), ptsd <span class="sc">!=</span> <span class="st">&quot;&quot;</span>,</span>
+<span id="cb15-88"><a href="#cb15-88" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(sex), <span class="sc">!</span><span class="fu">is.na</span>(age),</span>
+<span id="cb15-89"><a href="#cb15-89" aria-hidden="true" tabindex="-1"></a>         <span class="sc">!</span><span class="fu">is.na</span>(pc1), <span class="sc">!</span><span class="fu">is.na</span>(pc2), <span class="sc">!</span><span class="fu">is.na</span>(pc3))</span>
+<span id="cb15-90"><a href="#cb15-90" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;samples with PCs:&quot;</span>, <span class="fu">sum</span>(<span class="fu">complete.cases</span>(ss[, gpcs])), <span class="st">&quot;of&quot;</span>, <span class="fu">nrow</span>(ss),</span>
+<span id="cb15-91"><a href="#cb15-91" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| modeled samples:&quot;</span>, <span class="fu">nrow</span>(pcs), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-92"><a href="#cb15-92" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb15-93"><a href="#cb15-93" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-94"><a href="#cb15-94" aria-hidden="true" tabindex="-1"></a>Genetic PCs and self-reported race are different kinds of variable, and neither replaces</span>
-<span id="cb15-95"><a href="#cb15-95" aria-hidden="true" tabindex="-1"></a>the other. Race is a social category: the labels available, and which one a person is</span>
-<span id="cb15-96"><a href="#cb15-96" aria-hidden="true" tabindex="-1"></a>assigned or chooses, are set by the society they live in, not by their genome</span>
-<span id="cb15-97"><a href="#cb15-97" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@nasem2023descriptors; @borrell2021race</span><span class="co">]</span>. Genetic ancestry is a property of the genome,</span>
-<span id="cb15-98"><a href="#cb15-98" aria-hidden="true" tabindex="-1"></a>and the PCs describe it continuously <span class="co">[</span><span class="ot">@lewis2022ancestry</span><span class="co">]</span>. The two are correlated in</span>
-<span id="cb15-99"><a href="#cb15-99" aria-hidden="true" tabindex="-1"></a>many cohorts, because people who share a racial label often share ancestry, but the</span>
-<span id="cb15-100"><a href="#cb15-100" aria-hidden="true" tabindex="-1"></a>correlation is not fixed, and it is often weak within a group: individuals recorded</span>
-<span id="cb15-101"><a href="#cb15-101" aria-hidden="true" tabindex="-1"></a>under one label can differ widely in ancestry, most obviously in admixed populations</span>
-<span id="cb15-102"><a href="#cb15-102" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@bryc2015ancestry</span><span class="co">]</span>. Race also carries information genetic PCs cannot: it is the</span>
-<span id="cb15-103"><a href="#cb15-103" aria-hidden="true" tabindex="-1"></a>variable through which the effects of systemic racism, socioeconomic position, and</span>
-<span id="cb15-104"><a href="#cb15-104" aria-hidden="true" tabindex="-1"></a>other social and environmental exposures act on health, and those exposures shape DNA methylation</span>
-<span id="cb15-105"><a href="#cb15-105" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@borrell2021race</span><span class="co">]</span>. So a race covariate and genetic PCs adjust for different things, and</span>
-<span id="cb15-106"><a href="#cb15-106" aria-hidden="true" tabindex="-1"></a>the 2023 National Academies report on population descriptors recommends using genetic</span>
-<span id="cb15-107"><a href="#cb15-107" aria-hidden="true" tabindex="-1"></a>ancestry, not race, when the aim is to account for genetic population structure, and</span>
-<span id="cb15-108"><a href="#cb15-108" aria-hidden="true" tabindex="-1"></a>naming which descriptor was used and why <span class="co">[</span><span class="ot">@nasem2023descriptors</span><span class="co">]</span>.</span>
-<span id="cb15-109"><a href="#cb15-109" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-110"><a href="#cb15-110" aria-hidden="true" tabindex="-1"></a>For this tutorial&#39;s purpose, adjusting for population substructure, genetic PCs are the</span>
-<span id="cb15-111"><a href="#cb15-111" aria-hidden="true" tabindex="-1"></a>appropriate variable: they measure the structure directly and continuously. Whether to</span>
-<span id="cb15-112"><a href="#cb15-112" aria-hidden="true" tabindex="-1"></a>also include self-reported race depends on the question. In a study of a socially</span>
-<span id="cb15-113"><a href="#cb15-113" aria-hidden="true" tabindex="-1"></a>patterned exposure, race may be an important covariate or even the exposure itself; in a</span>
-<span id="cb15-114"><a href="#cb15-114" aria-hidden="true" tabindex="-1"></a>study of a molecular trait, genetic PCs alone may be the better-specified choice. The</span>
-<span id="cb15-115"><a href="#cb15-115" aria-hidden="true" tabindex="-1"></a>Grady cohort also shows why race cannot stand in for the PCs here: almost every modeled</span>
-<span id="cb15-116"><a href="#cb15-116" aria-hidden="true" tabindex="-1"></a>sample carries the same label, so a categorical race variable doesn&#39;t provide meaningful</span>
-<span id="cb15-117"><a href="#cb15-117" aria-hidden="true" tabindex="-1"></a>differentiation for a statistical model, while the genetic PCs still vary from sample to</span>
-<span id="cb15-118"><a href="#cb15-118" aria-hidden="true" tabindex="-1"></a>sample:</span>
-<span id="cb15-119"><a href="#cb15-119" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-122"><a href="#cb15-122" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb15-123"><a href="#cb15-123" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: genetic-pcs</span></span>
-<span id="cb15-124"><a href="#cb15-124" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">race =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(pcs<span class="sc">$</span>race) <span class="sc">|</span> pcs<span class="sc">$</span>race <span class="sc">==</span> <span class="st">&quot;&quot;</span>, <span class="st">&quot;not recorded&quot;</span>, pcs<span class="sc">$</span>race))</span>
-<span id="cb15-125"><a href="#cb15-125" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-126"><a href="#cb15-126" aria-hidden="true" tabindex="-1"></a><span class="co"># Their spread within the modeled set: continuous, and centred near zero because</span></span>
-<span id="cb15-127"><a href="#cb15-127" aria-hidden="true" tabindex="-1"></a><span class="co"># they were computed on the whole cohort.</span></span>
-<span id="cb15-128"><a href="#cb15-128" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">sapply</span>(pcs[, gpcs], summary), <span class="dv">4</span>)</span>
-<span id="cb15-129"><a href="#cb15-129" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb15-130"><a href="#cb15-130" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-133"><a href="#cb15-133" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb15-134"><a href="#cb15-134" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: genetic-pc-scatter</span></span>
-<span id="cb15-135"><a href="#cb15-135" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6.4</span></span>
-<span id="cb15-136"><a href="#cb15-136" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4.6</span></span>
-<span id="cb15-137"><a href="#cb15-137" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;The first two genetic ancestry PCs for the 86 modeled samples, coloured by self-reported race. Samples recorded with the same race label still spread along both components: this is the genetic variation a categorical race variable cannot represent, and the reason the PCs are used to adjust for population substructure.&quot;</span></span>
-<span id="cb15-138"><a href="#cb15-138" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pcs, <span class="fu">aes</span>(pc1, pc2, <span class="at">colour =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(race) <span class="sc">|</span> race <span class="sc">==</span> <span class="st">&quot;&quot;</span>, <span class="st">&quot;not recorded&quot;</span>, race))) <span class="sc">+</span></span>
-<span id="cb15-139"><a href="#cb15-139" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">2.2</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb15-140"><a href="#cb15-140" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">AA =</span> <span class="st">&quot;#1A6B75&quot;</span>, <span class="at">Other =</span> <span class="st">&quot;#8C3A4A&quot;</span>,</span>
-<span id="cb15-141"><a href="#cb15-141" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">`</span><span class="at">not recorded</span><span class="st">`</span> <span class="ot">=</span> <span class="st">&quot;#8A8279&quot;</span>),</span>
-<span id="cb15-142"><a href="#cb15-142" aria-hidden="true" tabindex="-1"></a>                      <span class="at">name =</span> <span class="st">&quot;Self-reported race&quot;</span>) <span class="sc">+</span></span>
-<span id="cb15-143"><a href="#cb15-143" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Genetic PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Genetic PC2&quot;</span>)</span>
-<span id="cb15-144"><a href="#cb15-144" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb15-145"><a href="#cb15-145" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-146"><a href="#cb15-146" aria-hidden="true" tabindex="-1"></a>The heatmap in <span class="co">[</span><span class="ot">§2 of Batch effects</span><span class="co">](05_batch_effects.qmd#sec-pca)</span> includes the three</span>
-<span id="cb15-147"><a href="#cb15-147" aria-hidden="true" tabindex="-1"></a>components, so you can see how much of the methylation variance they account for</span>
-<span id="cb15-148"><a href="#cb15-148" aria-hidden="true" tabindex="-1"></a>before any model is fit.</span>
-<span id="cb15-149"><a href="#cb15-149" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-150"><a href="#cb15-150" aria-hidden="true" tabindex="-1"></a><span class="fu">## How many components {#sec-how-many}</span></span>
+<span id="cb15-94"><a href="#cb15-94" aria-hidden="true" tabindex="-1"></a><span class="fu">## Genetic PCs and self-reported race {#sec-race}</span></span>
+<span id="cb15-95"><a href="#cb15-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-96"><a href="#cb15-96" aria-hidden="true" tabindex="-1"></a>Genetic PCs and self-reported race are different kinds of variable, and neither replaces</span>
+<span id="cb15-97"><a href="#cb15-97" aria-hidden="true" tabindex="-1"></a>the other. Race is a social category: the labels available, and which one a person is</span>
+<span id="cb15-98"><a href="#cb15-98" aria-hidden="true" tabindex="-1"></a>assigned or chooses, are set by the society they live in, not by their genome</span>
+<span id="cb15-99"><a href="#cb15-99" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@nasem2023descriptors; @borrell2021race</span><span class="co">]</span>. Genetic ancestry is a property of the genome,</span>
+<span id="cb15-100"><a href="#cb15-100" aria-hidden="true" tabindex="-1"></a>and the PCs describe it continuously <span class="co">[</span><span class="ot">@lewis2022ancestry</span><span class="co">]</span>. The two are correlated in</span>
+<span id="cb15-101"><a href="#cb15-101" aria-hidden="true" tabindex="-1"></a>many cohorts, because people who share a racial label often share ancestry, but the</span>
+<span id="cb15-102"><a href="#cb15-102" aria-hidden="true" tabindex="-1"></a>correlation is not fixed, and it is often weak within a group: individuals recorded</span>
+<span id="cb15-103"><a href="#cb15-103" aria-hidden="true" tabindex="-1"></a>under one label can differ widely in ancestry, most obviously in admixed populations</span>
+<span id="cb15-104"><a href="#cb15-104" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@bryc2015ancestry</span><span class="co">]</span>. Race also carries information genetic PCs cannot: it is the</span>
+<span id="cb15-105"><a href="#cb15-105" aria-hidden="true" tabindex="-1"></a>variable through which the effects of systemic racism, socioeconomic position, and</span>
+<span id="cb15-106"><a href="#cb15-106" aria-hidden="true" tabindex="-1"></a>other social and environmental exposures act on health, and those exposures shape DNA methylation</span>
+<span id="cb15-107"><a href="#cb15-107" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@borrell2021race</span><span class="co">]</span>. So a race covariate and genetic PCs adjust for different things, and</span>
+<span id="cb15-108"><a href="#cb15-108" aria-hidden="true" tabindex="-1"></a>the 2023 National Academies report on population descriptors recommends using genetic</span>
+<span id="cb15-109"><a href="#cb15-109" aria-hidden="true" tabindex="-1"></a>ancestry, not race, when the aim is to account for genetic population structure, and</span>
+<span id="cb15-110"><a href="#cb15-110" aria-hidden="true" tabindex="-1"></a>naming which descriptor was used and why <span class="co">[</span><span class="ot">@nasem2023descriptors</span><span class="co">]</span>.</span>
+<span id="cb15-111"><a href="#cb15-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-112"><a href="#cb15-112" aria-hidden="true" tabindex="-1"></a>For this tutorial&#39;s purpose, adjusting for population substructure, genetic PCs are the</span>
+<span id="cb15-113"><a href="#cb15-113" aria-hidden="true" tabindex="-1"></a>appropriate variable: they measure the structure directly and continuously. Whether to</span>
+<span id="cb15-114"><a href="#cb15-114" aria-hidden="true" tabindex="-1"></a>also include self-reported race depends on the question. In a study of a socially</span>
+<span id="cb15-115"><a href="#cb15-115" aria-hidden="true" tabindex="-1"></a>patterned exposure, race may be an important covariate or even the exposure itself; in a</span>
+<span id="cb15-116"><a href="#cb15-116" aria-hidden="true" tabindex="-1"></a>study of a molecular trait, genetic PCs alone may be the better-specified choice. The</span>
+<span id="cb15-117"><a href="#cb15-117" aria-hidden="true" tabindex="-1"></a>Grady cohort also shows why race cannot stand in for the PCs here: almost every modeled</span>
+<span id="cb15-118"><a href="#cb15-118" aria-hidden="true" tabindex="-1"></a>sample carries the same label, so a categorical race variable doesn&#39;t provide meaningful</span>
+<span id="cb15-119"><a href="#cb15-119" aria-hidden="true" tabindex="-1"></a>differentiation for a statistical model, while the genetic PCs still vary from sample to</span>
+<span id="cb15-120"><a href="#cb15-120" aria-hidden="true" tabindex="-1"></a>sample:</span>
+<span id="cb15-121"><a href="#cb15-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-124"><a href="#cb15-124" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb15-125"><a href="#cb15-125" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: genetic-pcs</span></span>
+<span id="cb15-126"><a href="#cb15-126" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">race =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(pcs<span class="sc">$</span>race) <span class="sc">|</span> pcs<span class="sc">$</span>race <span class="sc">==</span> <span class="st">&quot;&quot;</span>, <span class="st">&quot;not recorded&quot;</span>, pcs<span class="sc">$</span>race))</span>
+<span id="cb15-127"><a href="#cb15-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-128"><a href="#cb15-128" aria-hidden="true" tabindex="-1"></a><span class="co"># Their spread within the modeled set: continuous, and centred near zero because</span></span>
+<span id="cb15-129"><a href="#cb15-129" aria-hidden="true" tabindex="-1"></a><span class="co"># they were computed on the whole cohort.</span></span>
+<span id="cb15-130"><a href="#cb15-130" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">sapply</span>(pcs[, gpcs], summary), <span class="dv">4</span>)</span>
+<span id="cb15-131"><a href="#cb15-131" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-132"><a href="#cb15-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-135"><a href="#cb15-135" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb15-136"><a href="#cb15-136" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: genetic-pc-scatter</span></span>
+<span id="cb15-137"><a href="#cb15-137" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6.4</span></span>
+<span id="cb15-138"><a href="#cb15-138" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4.6</span></span>
+<span id="cb15-139"><a href="#cb15-139" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;The first two genetic ancestry PCs for the 86 modeled samples, coloured by self-reported race. Samples recorded with the same race label still spread along both components: this is the genetic variation a categorical race variable cannot represent, and the reason the PCs are used to adjust for population substructure.&quot;</span></span>
+<span id="cb15-140"><a href="#cb15-140" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pcs, <span class="fu">aes</span>(pc1, pc2, <span class="at">colour =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(race) <span class="sc">|</span> race <span class="sc">==</span> <span class="st">&quot;&quot;</span>, <span class="st">&quot;not recorded&quot;</span>, race))) <span class="sc">+</span></span>
+<span id="cb15-141"><a href="#cb15-141" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">2.2</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb15-142"><a href="#cb15-142" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">AA =</span> <span class="st">&quot;#1A6B75&quot;</span>, <span class="at">Other =</span> <span class="st">&quot;#8C3A4A&quot;</span>,</span>
+<span id="cb15-143"><a href="#cb15-143" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">`</span><span class="at">not recorded</span><span class="st">`</span> <span class="ot">=</span> <span class="st">&quot;#8A8279&quot;</span>),</span>
+<span id="cb15-144"><a href="#cb15-144" aria-hidden="true" tabindex="-1"></a>                      <span class="at">name =</span> <span class="st">&quot;Self-reported race&quot;</span>) <span class="sc">+</span></span>
+<span id="cb15-145"><a href="#cb15-145" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Genetic PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Genetic PC2&quot;</span>)</span>
+<span id="cb15-146"><a href="#cb15-146" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-147"><a href="#cb15-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-148"><a href="#cb15-148" aria-hidden="true" tabindex="-1"></a>The heatmap in <span class="co">[</span><span class="ot">§2 of Batch effects</span><span class="co">](05_batch_effects.qmd#sec-pca)</span> includes the three</span>
+<span id="cb15-149"><a href="#cb15-149" aria-hidden="true" tabindex="-1"></a>components, so you can see how much of the methylation variance they account for</span>
+<span id="cb15-150"><a href="#cb15-150" aria-hidden="true" tabindex="-1"></a>before any model is fit.</span>
 <span id="cb15-151"><a href="#cb15-151" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-152"><a href="#cb15-152" aria-hidden="true" tabindex="-1"></a>How many components a cohort needs depends on how structured it is. The usual way to</span>
-<span id="cb15-153"><a href="#cb15-153" aria-hidden="true" tabindex="-1"></a>decide is a scree plot: plot the variance each component explains against its rank and</span>
-<span id="cb15-154"><a href="#cb15-154" aria-hidden="true" tabindex="-1"></a>keep the components before the curve flattens, the &quot;elbow&quot; <span class="co">[</span><span class="ot">@cattell1966scree</span><span class="co">]</span>.</span>
-<span id="cb15-155"><a href="#cb15-155" aria-hidden="true" tabindex="-1"></a>EIGENSOFT&#39;s <span class="in">`smartpca`</span> also tests each component formally against a Tracy–Widom</span>
-<span id="cb15-156"><a href="#cb15-156" aria-hidden="true" tabindex="-1"></a>distribution <span class="co">[</span><span class="ot">@patterson2006eigen</span><span class="co">]</span>. Both need the full set of eigenvalues, which a</span>
-<span id="cb15-157"><a href="#cb15-157" aria-hidden="true" tabindex="-1"></a>deposit that ships only the first three PCs, as Grady&#39;s does, cannot give you. Three is</span>
-<span id="cb15-158"><a href="#cb15-158" aria-hidden="true" tabindex="-1"></a>a common choice, and it is what the PGC-PTSD meta-analysis used for genotyped cohorts</span>
-<span id="cb15-159"><a href="#cb15-159" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@katrinli2024ptsd</span><span class="co">]</span>. In practice, most PCs beyond the first two or three within a</span>
-<span id="cb15-160"><a href="#cb15-160" aria-hidden="true" tabindex="-1"></a>continental group have little association with methylation and adjusting for them</span>
-<span id="cb15-161"><a href="#cb15-161" aria-hidden="true" tabindex="-1"></a>mainly costs degrees of freedom.</span>
-<span id="cb15-162"><a href="#cb15-162" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-163"><a href="#cb15-163" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse=&quot;true&quot;}</span>
-<span id="cb15-164"><a href="#cb15-164" aria-hidden="true" tabindex="-1"></a><span class="fu">## If your GEO deposit has no genetic PCs</span></span>
-<span id="cb15-165"><a href="#cb15-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-166"><a href="#cb15-166" aria-hidden="true" tabindex="-1"></a>Most GEO methylation deposits do not include genetic PCs, so you will often have to</span>
-<span id="cb15-167"><a href="#cb15-167" aria-hidden="true" tabindex="-1"></a>make your own. In order of preference:</span>
-<span id="cb15-168"><a href="#cb15-168" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-169"><a href="#cb15-169" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Compute them from genotypes.** If genotype data exist for the same individuals,</span>
-<span id="cb15-170"><a href="#cb15-170" aria-hidden="true" tabindex="-1"></a>   run a PCA on them. For a public methylation deposit this usually means the genotypes</span>
-<span id="cb15-171"><a href="#cb15-171" aria-hidden="true" tabindex="-1"></a>   are under controlled access (for example on dbGaP), which requires an approved data</span>
-<span id="cb15-172"><a href="#cb15-172" aria-hidden="true" tabindex="-1"></a>   access request from an institutional signing official, so it is rarely an option a</span>
-<span id="cb15-173"><a href="#cb15-173" aria-hidden="true" tabindex="-1"></a>   student can arrange alone; ask whether your PI already has access. Remove rare</span>
-<span id="cb15-174"><a href="#cb15-174" aria-hidden="true" tabindex="-1"></a>   variants and prune SNPs in linkage disequilibrium first, so that the components</span>
-<span id="cb15-175"><a href="#cb15-175" aria-hidden="true" tabindex="-1"></a>   describe genome-wide ancestry rather than a few long haplotypes.</span>
-<span id="cb15-176"><a href="#cb15-176" aria-hidden="true" tabindex="-1"></a>   PLINK 2 <span class="co">[</span><span class="ot">@chang2015plink2</span><span class="co">]</span> and EIGENSOFT&#39;s <span class="in">`smartpca`</span></span>
-<span id="cb15-177"><a href="#cb15-177" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@patterson2006eigen; @price2006pca</span><span class="co">]</span> are the standard tools:</span>
-<span id="cb15-178"><a href="#cb15-178" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-179"><a href="#cb15-179" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.bash filename=&quot;Generic example, do not run&quot;}</span></span>
-<span id="cb15-180"><a href="#cb15-180" aria-hidden="true" tabindex="-1"></a>   <span class="co"># `mydata` is a placeholder for a PLINK fileset (.bed/.bim/.fam) of your cohort.</span></span>
-<span id="cb15-181"><a href="#cb15-181" aria-hidden="true" tabindex="-1"></a>   <span class="ex">plink2</span> <span class="at">--bfile</span> mydata <span class="at">--autosome</span> <span class="at">--maf</span> 0.05 <span class="dt">\</span></span>
-<span id="cb15-182"><a href="#cb15-182" aria-hidden="true" tabindex="-1"></a>          <span class="at">--indep-pairwise</span> 200 50 0.2 <span class="at">--out</span> pruned</span>
-<span id="cb15-183"><a href="#cb15-183" aria-hidden="true" tabindex="-1"></a>   <span class="ex">plink2</span> <span class="at">--bfile</span> mydata <span class="at">--extract</span> pruned.prune.in <span class="at">--pca</span> 10 <span class="at">--out</span> mydata_pcs</span>
-<span id="cb15-184"><a href="#cb15-184" aria-hidden="true" tabindex="-1"></a>   <span class="co"># mydata_pcs.eigenvec: one row per individual, PC1-PC10 as columns</span></span>
-<span id="cb15-185"><a href="#cb15-185" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
-<span id="cb15-186"><a href="#cb15-186" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-187"><a href="#cb15-187" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Estimate ancestry from the methylation data.** Without genotypes, PCs can be</span>
-<span id="cb15-188"><a href="#cb15-188" aria-hidden="true" tabindex="-1"></a>   computed from the methylation array itself. Barfield et al. showed that PCs built</span>
-<span id="cb15-189"><a href="#cb15-189" aria-hidden="true" tabindex="-1"></a>   from CpGs chosen because they proxy nearby SNPs adjust for population stratification</span>
-<span id="cb15-190"><a href="#cb15-190" aria-hidden="true" tabindex="-1"></a>   nearly as well as genotype PCs <span class="co">[</span><span class="ot">@barfield2014stratification</span><span class="co">]</span>. EPISTRUCTURE, part of</span>
-<span id="cb15-191"><a href="#cb15-191" aria-hidden="true" tabindex="-1"></a>   the GLINT toolset, implements a related approach [@rahmani2017epistructure;</span>
-<span id="cb15-192"><a href="#cb15-192" aria-hidden="true" tabindex="-1"></a>   @rahmani2017glint]; the <span class="co">[</span><span class="ot">example below</span><span class="co">](#sec-epistructure)</span> runs it on this cohort. The</span>
-<span id="cb15-193"><a href="#cb15-193" aria-hidden="true" tabindex="-1"></a>   PGC-PTSD meta-analysis used Barfield&#39;s method for its cohorts without genotypes and</span>
-<span id="cb15-194"><a href="#cb15-194" aria-hidden="true" tabindex="-1"></a>   kept PCs 2 and 3, the components most correlated with self-reported ancestry</span>
-<span id="cb15-195"><a href="#cb15-195" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@katrinli2024ptsd</span><span class="co">]</span>. Because methylation-based components can also pick up cell</span>
-<span id="cb15-196"><a href="#cb15-196" aria-hidden="true" tabindex="-1"></a>   composition or batch, check what they correlate with before you use them. Comparing</span>
-<span id="cb15-197"><a href="#cb15-197" aria-hidden="true" tabindex="-1"></a>   them with self-reported race and with chapter 04&#39;s cell proportions is our</span>
-<span id="cb15-198"><a href="#cb15-198" aria-hidden="true" tabindex="-1"></a>   suggestion for a minimum check.</span>
-<span id="cb15-199"><a href="#cb15-199" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-200"><a href="#cb15-200" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Fall back on self-reported race or ethnicity.** If neither is possible, a</span>
-<span id="cb15-201"><a href="#cb15-201" aria-hidden="true" tabindex="-1"></a>   categorical self-reported race or ethnicity covariate captures some of the</span>
-<span id="cb15-202"><a href="#cb15-202" aria-hidden="true" tabindex="-1"></a>   population structure where the labels and ancestry are correlated, but it is a</span>
-<span id="cb15-203"><a href="#cb15-203" aria-hidden="true" tabindex="-1"></a>   different kind of variable (<span class="co">[</span><span class="ot">above</span><span class="co">](#sec-race)</span>): it cannot represent admixture, and</span>
-<span id="cb15-204"><a href="#cb15-204" aria-hidden="true" tabindex="-1"></a>   in a cohort where most samples share one label it adjusts for very little. Report</span>
-<span id="cb15-205"><a href="#cb15-205" aria-hidden="true" tabindex="-1"></a>   it as a limitation and say which descriptor you used.</span>
-<span id="cb15-206"><a href="#cb15-206" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb15-207"><a href="#cb15-207" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-208"><a href="#cb15-208" aria-hidden="true" tabindex="-1"></a><span class="fu">## Worked example: EPISTRUCTURE on the Grady data {#sec-epistructure}</span></span>
+<span id="cb15-152"><a href="#cb15-152" aria-hidden="true" tabindex="-1"></a><span class="fu">## How many components {#sec-how-many}</span></span>
+<span id="cb15-153"><a href="#cb15-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-154"><a href="#cb15-154" aria-hidden="true" tabindex="-1"></a>How many components a cohort needs depends on how structured it is. The usual way to</span>
+<span id="cb15-155"><a href="#cb15-155" aria-hidden="true" tabindex="-1"></a>decide is a scree plot: plot the variance each component explains against its rank and</span>
+<span id="cb15-156"><a href="#cb15-156" aria-hidden="true" tabindex="-1"></a>keep the components before the curve flattens, the &quot;elbow&quot; <span class="co">[</span><span class="ot">@cattell1966scree</span><span class="co">]</span>.</span>
+<span id="cb15-157"><a href="#cb15-157" aria-hidden="true" tabindex="-1"></a>EIGENSOFT&#39;s <span class="in">`smartpca`</span> also tests each component formally against a Tracy–Widom</span>
+<span id="cb15-158"><a href="#cb15-158" aria-hidden="true" tabindex="-1"></a>distribution <span class="co">[</span><span class="ot">@patterson2006eigen</span><span class="co">]</span>. Both need the full set of eigenvalues, which a</span>
+<span id="cb15-159"><a href="#cb15-159" aria-hidden="true" tabindex="-1"></a>deposit that ships only the first three PCs, as Grady&#39;s does, cannot give you. Three is</span>
+<span id="cb15-160"><a href="#cb15-160" aria-hidden="true" tabindex="-1"></a>a common choice, and it is what the PGC-PTSD meta-analysis used for genotyped cohorts</span>
+<span id="cb15-161"><a href="#cb15-161" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@katrinli2024ptsd</span><span class="co">]</span>. In practice, most PCs beyond the first two or three within a</span>
+<span id="cb15-162"><a href="#cb15-162" aria-hidden="true" tabindex="-1"></a>continental group have little association with methylation and adjusting for them</span>
+<span id="cb15-163"><a href="#cb15-163" aria-hidden="true" tabindex="-1"></a>mainly costs degrees of freedom.</span>
+<span id="cb15-164"><a href="#cb15-164" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-165"><a href="#cb15-165" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip collapse=&quot;true&quot;}</span>
+<span id="cb15-166"><a href="#cb15-166" aria-hidden="true" tabindex="-1"></a><span class="fu">## If your GEO deposit has no genetic PCs</span></span>
+<span id="cb15-167"><a href="#cb15-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-168"><a href="#cb15-168" aria-hidden="true" tabindex="-1"></a>Most GEO methylation deposits do not include genetic PCs, so you will often have to</span>
+<span id="cb15-169"><a href="#cb15-169" aria-hidden="true" tabindex="-1"></a>make your own. In order of preference:</span>
+<span id="cb15-170"><a href="#cb15-170" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-171"><a href="#cb15-171" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>**Compute them from genotypes.** If genotype data exist for the same individuals,</span>
+<span id="cb15-172"><a href="#cb15-172" aria-hidden="true" tabindex="-1"></a>   run a PCA on them. For a public methylation deposit this usually means the genotypes</span>
+<span id="cb15-173"><a href="#cb15-173" aria-hidden="true" tabindex="-1"></a>   are under controlled access (for example on dbGaP), which requires an approved data</span>
+<span id="cb15-174"><a href="#cb15-174" aria-hidden="true" tabindex="-1"></a>   access request from an institutional signing official, so it is rarely an option a</span>
+<span id="cb15-175"><a href="#cb15-175" aria-hidden="true" tabindex="-1"></a>   student can arrange alone; ask whether your PI already has access. Remove rare</span>
+<span id="cb15-176"><a href="#cb15-176" aria-hidden="true" tabindex="-1"></a>   variants and prune SNPs in linkage disequilibrium first, so that the components</span>
+<span id="cb15-177"><a href="#cb15-177" aria-hidden="true" tabindex="-1"></a>   describe genome-wide ancestry rather than a few long haplotypes.</span>
+<span id="cb15-178"><a href="#cb15-178" aria-hidden="true" tabindex="-1"></a>   PLINK 2 <span class="co">[</span><span class="ot">@chang2015plink2</span><span class="co">]</span> and EIGENSOFT&#39;s <span class="in">`smartpca`</span></span>
+<span id="cb15-179"><a href="#cb15-179" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@patterson2006eigen; @price2006pca</span><span class="co">]</span> are the standard tools:</span>
+<span id="cb15-180"><a href="#cb15-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-181"><a href="#cb15-181" aria-hidden="true" tabindex="-1"></a>   <span class="in">```{.bash filename=&quot;Generic example, do not run&quot;}</span></span>
+<span id="cb15-182"><a href="#cb15-182" aria-hidden="true" tabindex="-1"></a>   <span class="co"># `mydata` is a placeholder for a PLINK fileset (.bed/.bim/.fam) of your cohort.</span></span>
+<span id="cb15-183"><a href="#cb15-183" aria-hidden="true" tabindex="-1"></a>   <span class="ex">plink2</span> <span class="at">--bfile</span> mydata <span class="at">--autosome</span> <span class="at">--maf</span> 0.05 <span class="dt">\</span></span>
+<span id="cb15-184"><a href="#cb15-184" aria-hidden="true" tabindex="-1"></a>          <span class="at">--indep-pairwise</span> 200 50 0.2 <span class="at">--out</span> pruned</span>
+<span id="cb15-185"><a href="#cb15-185" aria-hidden="true" tabindex="-1"></a>   <span class="ex">plink2</span> <span class="at">--bfile</span> mydata <span class="at">--extract</span> pruned.prune.in <span class="at">--pca</span> 10 <span class="at">--out</span> mydata_pcs</span>
+<span id="cb15-186"><a href="#cb15-186" aria-hidden="true" tabindex="-1"></a>   <span class="co"># mydata_pcs.eigenvec: one row per individual, PC1-PC10 as columns</span></span>
+<span id="cb15-187"><a href="#cb15-187" aria-hidden="true" tabindex="-1"></a>   <span class="in">```</span></span>
+<span id="cb15-188"><a href="#cb15-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-189"><a href="#cb15-189" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>**Estimate ancestry from the methylation data.** Without genotypes, PCs can be</span>
+<span id="cb15-190"><a href="#cb15-190" aria-hidden="true" tabindex="-1"></a>   computed from the methylation array itself. Barfield et al. showed that PCs built</span>
+<span id="cb15-191"><a href="#cb15-191" aria-hidden="true" tabindex="-1"></a>   from CpGs chosen because they proxy nearby SNPs adjust for population stratification</span>
+<span id="cb15-192"><a href="#cb15-192" aria-hidden="true" tabindex="-1"></a>   nearly as well as genotype PCs <span class="co">[</span><span class="ot">@barfield2014stratification</span><span class="co">]</span>. EPISTRUCTURE, part of</span>
+<span id="cb15-193"><a href="#cb15-193" aria-hidden="true" tabindex="-1"></a>   the GLINT toolset, implements a related approach [@rahmani2017epistructure;</span>
+<span id="cb15-194"><a href="#cb15-194" aria-hidden="true" tabindex="-1"></a>   @rahmani2017glint]; the <span class="co">[</span><span class="ot">example below</span><span class="co">](#sec-epistructure)</span> runs it on this cohort. The</span>
+<span id="cb15-195"><a href="#cb15-195" aria-hidden="true" tabindex="-1"></a>   PGC-PTSD meta-analysis used Barfield&#39;s method for its cohorts without genotypes and</span>
+<span id="cb15-196"><a href="#cb15-196" aria-hidden="true" tabindex="-1"></a>   kept PCs 2 and 3, the components most correlated with self-reported ancestry</span>
+<span id="cb15-197"><a href="#cb15-197" aria-hidden="true" tabindex="-1"></a>   <span class="co">[</span><span class="ot">@katrinli2024ptsd</span><span class="co">]</span>. Because methylation-based components can also pick up cell</span>
+<span id="cb15-198"><a href="#cb15-198" aria-hidden="true" tabindex="-1"></a>   composition or batch, check what they correlate with before you use them. Comparing</span>
+<span id="cb15-199"><a href="#cb15-199" aria-hidden="true" tabindex="-1"></a>   them with self-reported race and with chapter 04&#39;s cell proportions is our</span>
+<span id="cb15-200"><a href="#cb15-200" aria-hidden="true" tabindex="-1"></a>   suggestion for a minimum check.</span>
+<span id="cb15-201"><a href="#cb15-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-202"><a href="#cb15-202" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>**Fall back on self-reported race or ethnicity.** If neither is possible, a</span>
+<span id="cb15-203"><a href="#cb15-203" aria-hidden="true" tabindex="-1"></a>   categorical self-reported race or ethnicity covariate captures some of the</span>
+<span id="cb15-204"><a href="#cb15-204" aria-hidden="true" tabindex="-1"></a>   population structure where the labels and ancestry are correlated, but it is a</span>
+<span id="cb15-205"><a href="#cb15-205" aria-hidden="true" tabindex="-1"></a>   different kind of variable (<span class="co">[</span><span class="ot">above</span><span class="co">](#sec-race)</span>): it cannot represent admixture, and</span>
+<span id="cb15-206"><a href="#cb15-206" aria-hidden="true" tabindex="-1"></a>   in a cohort where most samples share one label it adjusts for very little. Report</span>
+<span id="cb15-207"><a href="#cb15-207" aria-hidden="true" tabindex="-1"></a>   it as a limitation and say which descriptor you used.</span>
+<span id="cb15-208"><a href="#cb15-208" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb15-209"><a href="#cb15-209" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-210"><a href="#cb15-210" aria-hidden="true" tabindex="-1"></a>Because Grady deposits genetic PCs, it lets us check how well a methylation-only method</span>
-<span id="cb15-211"><a href="#cb15-211" aria-hidden="true" tabindex="-1"></a>recovers them. EPISTRUCTURE <span class="co">[</span><span class="ot">@rahmani2017epistructure</span><span class="co">]</span> works from a fixed list of 4,913</span>
-<span id="cb15-212"><a href="#cb15-212" aria-hidden="true" tabindex="-1"></a>CpGs whose methylation was found to be strongly explained by nearby SNPs. It removes the</span>
-<span id="cb15-213"><a href="#cb15-213" aria-hidden="true" tabindex="-1"></a>effect of cell composition from those sites and takes principal components of what is</span>
-<span id="cb15-214"><a href="#cb15-214" aria-hidden="true" tabindex="-1"></a>left. GLINT, the toolset that implements it, is written for Python 2.7</span>
-<span id="cb15-215"><a href="#cb15-215" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@rahmani2017glint</span><span class="co">]</span>, so the steps are written out in R below. Run on this dataset,</span>
-<span id="cb15-216"><a href="#cb15-216" aria-hidden="true" tabindex="-1"></a>GLINT&#39;s own <span class="in">`--epi`</span> gives the same three components as this code: they correlate at</span>
-<span id="cb15-217"><a href="#cb15-217" aria-hidden="true" tabindex="-1"></a>r = −1 (the sign of a PC is arbitrary) and differ in scale only because scikit-learn</span>
-<span id="cb15-218"><a href="#cb15-218" aria-hidden="true" tabindex="-1"></a>standardizes with *n* rather than *n* − 1.</span>
-<span id="cb15-219"><a href="#cb15-219" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-220"><a href="#cb15-220" aria-hidden="true" tabindex="-1"></a>Two things about the input matter. First, the reference CpGs are exactly the kind of</span>
-<span id="cb15-221"><a href="#cb15-221" aria-hidden="true" tabindex="-1"></a>SNP-influenced sites <span class="co">[</span><span class="ot">probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> removes, so EPISTRUCTURE</span>
-<span id="cb15-222"><a href="#cb15-222" aria-hidden="true" tabindex="-1"></a>has to run on the normalized but **unfiltered** object; GLINT&#39;s documentation makes the</span>
-<span id="cb15-223"><a href="#cb15-223" aria-hidden="true" tabindex="-1"></a>same recommendation. Second, the list was selected in European individuals, and this</span>
-<span id="cb15-224"><a href="#cb15-224" aria-hidden="true" tabindex="-1"></a>cohort is mostly African American, so how well it works here is a real question rather</span>
-<span id="cb15-225"><a href="#cb15-225" aria-hidden="true" tabindex="-1"></a>than a foregone conclusion.</span>
-<span id="cb15-226"><a href="#cb15-226" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-229"><a href="#cb15-229" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb15-230"><a href="#cb15-230" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: epistructure</span></span>
-<span id="cb15-231"><a href="#cb15-231" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(minfi)   <span class="co"># getBeta()</span></span>
-<span id="cb15-232"><a href="#cb15-232" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-233"><a href="#cb15-233" aria-hidden="true" tabindex="-1"></a><span class="co"># GLINT&#39;s reference list, read from the GLINT repository at a fixed commit so it</span></span>
-<span id="cb15-234"><a href="#cb15-234" aria-hidden="true" tabindex="-1"></a><span class="co"># keeps returning this exact file.</span></span>
-<span id="cb15-235"><a href="#cb15-235" aria-hidden="true" tabindex="-1"></a>ref <span class="ot">&lt;-</span> <span class="fu">readLines</span>(<span class="fu">paste0</span>(<span class="st">&quot;https://raw.githubusercontent.com/cozygene/glint/&quot;</span>,</span>
-<span id="cb15-236"><a href="#cb15-236" aria-hidden="true" tabindex="-1"></a>                        <span class="st">&quot;31a138ce380faeaf0e698733e781771df33374fe/&quot;</span>,</span>
-<span id="cb15-237"><a href="#cb15-237" aria-hidden="true" tabindex="-1"></a>                        <span class="st">&quot;parsers/assets/epistructure_reference_sites.txt&quot;</span>))</span>
-<span id="cb15-238"><a href="#cb15-238" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-239"><a href="#cb15-239" aria-hidden="true" tabindex="-1"></a><span class="co"># Normalized, unfiltered beta values for the reference sites that are on the EPIC</span></span>
-<span id="cb15-240"><a href="#cb15-240" aria-hidden="true" tabindex="-1"></a><span class="co"># array (the list was built on the 450K array, so a few are missing).</span></span>
-<span id="cb15-241"><a href="#cb15-241" aria-hidden="true" tabindex="-1"></a>grs  <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/02_funnorm_grs.rds&quot;</span>)</span>
-<span id="cb15-242"><a href="#cb15-242" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">getBeta</span>(grs[<span class="fu">rownames</span>(grs) <span class="sc">%in%</span> ref, ])</span>
-<span id="cb15-243"><a href="#cb15-243" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(grs)   <span class="co"># 1.25 GB; only the reference sites are needed from here on</span></span>
-<span id="cb15-244"><a href="#cb15-244" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;reference CpGs:&quot;</span>, <span class="fu">length</span>(ref), <span class="st">&quot;| on this array:&quot;</span>, <span class="fu">nrow</span>(beta), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb15-245"><a href="#cb15-245" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-246"><a href="#cb15-246" aria-hidden="true" tabindex="-1"></a><span class="co"># Covariates to remove before the PCA, in the same sample order as `beta`.</span></span>
-<span id="cb15-247"><a href="#cb15-247" aria-hidden="true" tabindex="-1"></a>cells <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/04_cellcounts.rds&quot;</span>)[<span class="fu">colnames</span>(beta), ]</span>
-<span id="cb15-248"><a href="#cb15-248" aria-hidden="true" tabindex="-1"></a>sheet <span class="ot">&lt;-</span> ss[<span class="fu">match</span>(<span class="fu">colnames</span>(beta), ss<span class="sc">$</span>sample_id), ]</span>
-<span id="cb15-249"><a href="#cb15-249" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-250"><a href="#cb15-250" aria-hidden="true" tabindex="-1"></a><span class="co"># EPISTRUCTURE: regress each reference site on the covariates, keep the residuals,</span></span>
-<span id="cb15-251"><a href="#cb15-251" aria-hidden="true" tabindex="-1"></a><span class="co"># standardize each site, and take principal components across samples.</span></span>
-<span id="cb15-252"><a href="#cb15-252" aria-hidden="true" tabindex="-1"></a>epistructure <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, covariates, <span class="at">n_pcs =</span> <span class="dv">3</span>) {</span>
-<span id="cb15-253"><a href="#cb15-253" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">lm.fit</span>(covariates, <span class="fu">t</span>(beta))<span class="sc">$</span>residuals)</span>
-<span id="cb15-254"><a href="#cb15-254" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prcomp</span>(<span class="fu">t</span>(res), <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>x[, <span class="fu">seq_len</span>(n_pcs)]</span>
-<span id="cb15-255"><a href="#cb15-255" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-256"><a href="#cb15-256" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-257"><a href="#cb15-257" aria-hidden="true" tabindex="-1"></a><span class="co"># GLINT&#39;s documented usage regresses out cell composition only. On these arrays the</span></span>
-<span id="cb15-258"><a href="#cb15-258" aria-hidden="true" tabindex="-1"></a><span class="co"># components that gives also track the chip each sample was run on, so the version</span></span>
-<span id="cb15-259"><a href="#cb15-259" aria-hidden="true" tabindex="-1"></a><span class="co"># used below also removes sex and chip.</span></span>
-<span id="cb15-260"><a href="#cb15-260" aria-hidden="true" tabindex="-1"></a>epi_cells <span class="ot">&lt;-</span> <span class="fu">epistructure</span>(beta, <span class="fu">cbind</span>(<span class="dv">1</span>, cells))</span>
-<span id="cb15-261"><a href="#cb15-261" aria-hidden="true" tabindex="-1"></a>epi       <span class="ot">&lt;-</span> <span class="fu">epistructure</span>(beta, <span class="fu">model.matrix</span>(<span class="sc">~</span> cells <span class="sc">+</span> sex <span class="sc">+</span> <span class="fu">factor</span>(slide), sheet))</span>
-<span id="cb15-262"><a href="#cb15-262" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-263"><a href="#cb15-263" aria-hidden="true" tabindex="-1"></a><span class="co"># How much each version&#39;s first component tracks chip, and how closely it follows</span></span>
-<span id="cb15-264"><a href="#cb15-264" aria-hidden="true" tabindex="-1"></a><span class="co"># the deposited pc1 (95 samples; one has no deposited PCs).</span></span>
-<span id="cb15-265"><a href="#cb15-265" aria-hidden="true" tabindex="-1"></a>has_pcs <span class="ot">&lt;-</span> <span class="fu">complete.cases</span>(sheet[, gpcs])</span>
-<span id="cb15-266"><a href="#cb15-266" aria-hidden="true" tabindex="-1"></a>chip_r2 <span class="ot">&lt;-</span> <span class="cf">function</span>(e) <span class="fu">summary</span>(<span class="fu">lm</span>(e[, <span class="dv">1</span>] <span class="sc">~</span> <span class="fu">factor</span>(sheet<span class="sc">$</span>slide)))<span class="sc">$</span>r.squared</span>
-<span id="cb15-267"><a href="#cb15-267" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">covariates_removed =</span> <span class="fu">c</span>(<span class="st">&quot;cell types&quot;</span>, <span class="st">&quot;cell types, sex, chip&quot;</span>),</span>
-<span id="cb15-268"><a href="#cb15-268" aria-hidden="true" tabindex="-1"></a>           <span class="at">chip_R2_of_EPI1    =</span> <span class="fu">round</span>(<span class="fu">c</span>(<span class="fu">chip_r2</span>(epi_cells), <span class="fu">chip_r2</span>(epi)), <span class="dv">2</span>),</span>
-<span id="cb15-269"><a href="#cb15-269" aria-hidden="true" tabindex="-1"></a>           <span class="at">abs_r_with_pc1     =</span> <span class="fu">round</span>(<span class="fu">abs</span>(<span class="fu">c</span>(<span class="fu">cor</span>(epi_cells[has_pcs, <span class="dv">1</span>], sheet<span class="sc">$</span>pc1[has_pcs]),</span>
-<span id="cb15-270"><a href="#cb15-270" aria-hidden="true" tabindex="-1"></a>                                            <span class="fu">cor</span>(epi[has_pcs, <span class="dv">1</span>], sheet<span class="sc">$</span>pc1[has_pcs]))), <span class="dv">2</span>))</span>
-<span id="cb15-271"><a href="#cb15-271" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb15-272"><a href="#cb15-272" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-273"><a href="#cb15-273" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb15-274"><a href="#cb15-274" aria-hidden="true" tabindex="-1"></a><span class="fu">## Your figure may be flipped</span></span>
-<span id="cb15-275"><a href="#cb15-275" aria-hidden="true" tabindex="-1"></a>The sign (negative or positive) of each EPISTRUCTURE component depends on the BLAS library your R installation</span>
-<span id="cb15-276"><a href="#cb15-276" aria-hidden="true" tabindex="-1"></a>uses for matrix arithmetic, so the table and figure you produce may be flipped relative</span>
-<span id="cb15-277"><a href="#cb15-277" aria-hidden="true" tabindex="-1"></a>to the ones shown here: the correlations with the deposited PCs will have the opposite</span>
-<span id="cb15-278"><a href="#cb15-278" aria-hidden="true" tabindex="-1"></a>sign, and the figure will be flipped top to bottom. This page was rendered with OpenBLAS. A conda environment using BLIS, for example, gives EPISTRUCTURE component 1 values with the opposite sign. The absolute values are the same regardless of which BLAS library is used. What matters is the strength of the correlation between the EPISTRUCTURE component 1 and Genetic component 1, not the direction of the correlation.</span>
-<span id="cb15-279"><a href="#cb15-279" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb15-280"><a href="#cb15-280" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-283"><a href="#cb15-283" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb15-284"><a href="#cb15-284" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: epistructure-compare</span></span>
-<span id="cb15-285"><a href="#cb15-285" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlation of each deposited genetic PC with each EPISTRUCTURE component, and</span></span>
-<span id="cb15-286"><a href="#cb15-286" aria-hidden="true" tabindex="-1"></a><span class="co"># how much of each deposited PC the three components explain together.</span></span>
-<span id="cb15-287"><a href="#cb15-287" aria-hidden="true" tabindex="-1"></a>epi_cor <span class="ot">&lt;-</span> <span class="fu">cor</span>(sheet[has_pcs, gpcs], epi[has_pcs, ])</span>
-<span id="cb15-288"><a href="#cb15-288" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(epi_cor) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;EPI&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)</span>
-<span id="cb15-289"><a href="#cb15-289" aria-hidden="true" tabindex="-1"></a>epi_r2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(gpcs, <span class="cf">function</span>(p) <span class="fu">summary</span>(<span class="fu">lm</span>(sheet[has_pcs, p] <span class="sc">~</span> epi[has_pcs, ]))<span class="sc">$</span>r.squared)</span>
-<span id="cb15-290"><a href="#cb15-290" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(epi_cor, <span class="at">R2_from_EPI1_3 =</span> epi_r2), <span class="dv">2</span>)</span>
-<span id="cb15-291"><a href="#cb15-291" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb15-292"><a href="#cb15-292" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-295"><a href="#cb15-295" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb15-296"><a href="#cb15-296" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-epistructure</span></span>
-<span id="cb15-297"><a href="#cb15-297" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6.4</span></span>
-<span id="cb15-298"><a href="#cb15-298" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4.6</span></span>
-<span id="cb15-299"><a href="#cb15-299" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;The first EPISTRUCTURE component against the deposited genetic PC1, for the 95 samples with deposited PCs, coloured by self-reported race.&quot;</span></span>
-<span id="cb15-300"><a href="#cb15-300" aria-hidden="true" tabindex="-1"></a>cmp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">pc1 =</span> sheet<span class="sc">$</span>pc1[has_pcs], <span class="at">EPI1 =</span> epi[has_pcs, <span class="dv">1</span>],</span>
-<span id="cb15-301"><a href="#cb15-301" aria-hidden="true" tabindex="-1"></a>                  <span class="at">race =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(sheet<span class="sc">$</span>race[has_pcs]) <span class="sc">|</span> sheet<span class="sc">$</span>race[has_pcs] <span class="sc">==</span> <span class="st">&quot;&quot;</span>,</span>
-<span id="cb15-302"><a href="#cb15-302" aria-hidden="true" tabindex="-1"></a>                                <span class="st">&quot;not recorded&quot;</span>, sheet<span class="sc">$</span>race[has_pcs]))</span>
-<span id="cb15-303"><a href="#cb15-303" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cmp, <span class="fu">aes</span>(pc1, EPI1, <span class="at">colour =</span> race)) <span class="sc">+</span></span>
-<span id="cb15-304"><a href="#cb15-304" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">2.2</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb15-305"><a href="#cb15-305" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">AA =</span> <span class="st">&quot;#1A6B75&quot;</span>, <span class="at">Other =</span> <span class="st">&quot;#8C3A4A&quot;</span>,</span>
-<span id="cb15-306"><a href="#cb15-306" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">`</span><span class="at">not recorded</span><span class="st">`</span> <span class="ot">=</span> <span class="st">&quot;#8A8279&quot;</span>),</span>
-<span id="cb15-307"><a href="#cb15-307" aria-hidden="true" tabindex="-1"></a>                      <span class="at">name =</span> <span class="st">&quot;Self-reported race&quot;</span>) <span class="sc">+</span></span>
-<span id="cb15-308"><a href="#cb15-308" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Deposited genetic PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;EPISTRUCTURE component 1&quot;</span>)</span>
-<span id="cb15-309"><a href="#cb15-309" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb15-310"><a href="#cb15-310" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-311"><a href="#cb15-311" aria-hidden="true" tabindex="-1"></a>EPISTRUCTURE recovers the main ancestry axis reasonably well: its first component</span>
-<span id="cb15-312"><a href="#cb15-312" aria-hidden="true" tabindex="-1"></a>correlates with the deposited PC1 at |r| = <span class="in">`r sprintf(&quot;%.2f&quot;, abs(epi_cor[&quot;pc1&quot;, &quot;EPI1&quot;]))`</span>,</span>
-<span id="cb15-313"><a href="#cb15-313" aria-hidden="true" tabindex="-1"></a>and the three components together explain</span>
-<span id="cb15-314"><a href="#cb15-314" aria-hidden="true" tabindex="-1"></a><span class="in">`r sprintf(&quot;%.0f%%&quot;, 100 * epi_r2[&quot;pc1&quot;])`</span> of PC1&#39;s variance. EPISTRUCTURE&#39;s components explain almost none of PC2</span>
-<span id="cb15-315"><a href="#cb15-315" aria-hidden="true" tabindex="-1"></a>(<span class="in">`r sprintf(&quot;%.0f%%&quot;, 100 * epi_r2[&quot;pc2&quot;])`</span>) or PC3</span>
-<span id="cb15-316"><a href="#cb15-316" aria-hidden="true" tabindex="-1"></a>(<span class="in">`r sprintf(&quot;%.0f%%&quot;, 100 * epi_r2[&quot;pc3&quot;])`</span>) in this cohort. The table printed by the <span class="in">`epistructure`</span> chunk also shows why it is worth checking what</span>
-<span id="cb15-317"><a href="#cb15-317" aria-hidden="true" tabindex="-1"></a>methylation-based components correlate with before using them: with only cell types</span>
-<span id="cb15-318"><a href="#cb15-318" aria-hidden="true" tabindex="-1"></a>removed, the first component partly tracks the chip.</span>
-<span id="cb15-319"><a href="#cb15-319" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-320"><a href="#cb15-320" aria-hidden="true" tabindex="-1"></a>So EPISTRUCTURE is a reasonable substitute for genetic PCs if they are not provided. The rest of this</span>
-<span id="cb15-321"><a href="#cb15-321" aria-hidden="true" tabindex="-1"></a>tutorial uses the deposited genetic PCs, not these.</span>
-<span id="cb15-322"><a href="#cb15-322" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-323"><a href="#cb15-323" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb15-324"><a href="#cb15-324" aria-hidden="true" tabindex="-1"></a><span class="fu">## If you do use EPISTRUCTURE components as covariates</span></span>
-<span id="cb15-325"><a href="#cb15-325" aria-hidden="true" tabindex="-1"></a>EPISTRUCTURE doesn&#39;t require removing the reference sites from the association test. A</span>
-<span id="cb15-326"><a href="#cb15-326" aria-hidden="true" tabindex="-1"></a>conservative option is to exclude the ones still left after probe filtering, or to note</span>
-<span id="cb15-327"><a href="#cb15-327" aria-hidden="true" tabindex="-1"></a>that their association estimates were adjusted for a covariate built partly from their</span>
-<span id="cb15-328"><a href="#cb15-328" aria-hidden="true" tabindex="-1"></a>own methylation. Either way, report which option you chose.</span>
-<span id="cb15-329"><a href="#cb15-329" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb15-330"><a href="#cb15-330" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-331"><a href="#cb15-331" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb15-210"><a href="#cb15-210" aria-hidden="true" tabindex="-1"></a><span class="fu">## Worked example: EPISTRUCTURE on the Grady data {#sec-epistructure}</span></span>
+<span id="cb15-211"><a href="#cb15-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-212"><a href="#cb15-212" aria-hidden="true" tabindex="-1"></a>Because Grady deposits genetic PCs, it lets us check how well a methylation-only method</span>
+<span id="cb15-213"><a href="#cb15-213" aria-hidden="true" tabindex="-1"></a>recovers them. EPISTRUCTURE <span class="co">[</span><span class="ot">@rahmani2017epistructure</span><span class="co">]</span> works from a fixed list of 4,913</span>
+<span id="cb15-214"><a href="#cb15-214" aria-hidden="true" tabindex="-1"></a>CpGs whose methylation was found to be strongly explained by nearby SNPs. It removes the</span>
+<span id="cb15-215"><a href="#cb15-215" aria-hidden="true" tabindex="-1"></a>effect of cell composition from those sites and takes principal components of what is</span>
+<span id="cb15-216"><a href="#cb15-216" aria-hidden="true" tabindex="-1"></a>left. GLINT, the toolset that implements it, is written for Python 2.7</span>
+<span id="cb15-217"><a href="#cb15-217" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="ot">@rahmani2017glint</span><span class="co">]</span>, so the steps are written out in R below. Run on this dataset,</span>
+<span id="cb15-218"><a href="#cb15-218" aria-hidden="true" tabindex="-1"></a>GLINT&#39;s own <span class="in">`--epi`</span> gives the same three components as this code: they correlate at</span>
+<span id="cb15-219"><a href="#cb15-219" aria-hidden="true" tabindex="-1"></a>r = −1 (the sign of a PC is arbitrary) and differ in scale only because scikit-learn</span>
+<span id="cb15-220"><a href="#cb15-220" aria-hidden="true" tabindex="-1"></a>standardizes with *n* rather than *n* − 1.</span>
+<span id="cb15-221"><a href="#cb15-221" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-222"><a href="#cb15-222" aria-hidden="true" tabindex="-1"></a>Two things about the input matter. First, the reference CpGs are exactly the kind of</span>
+<span id="cb15-223"><a href="#cb15-223" aria-hidden="true" tabindex="-1"></a>SNP-influenced sites <span class="co">[</span><span class="ot">probe filtering</span><span class="co">](03_probe_filtering.qmd)</span> removes, so EPISTRUCTURE</span>
+<span id="cb15-224"><a href="#cb15-224" aria-hidden="true" tabindex="-1"></a>has to run on the normalized but **unfiltered** object; GLINT&#39;s documentation makes the</span>
+<span id="cb15-225"><a href="#cb15-225" aria-hidden="true" tabindex="-1"></a>same recommendation. Second, the list was selected in European individuals, and this</span>
+<span id="cb15-226"><a href="#cb15-226" aria-hidden="true" tabindex="-1"></a>cohort is mostly African American, so how well it works here is a real question rather</span>
+<span id="cb15-227"><a href="#cb15-227" aria-hidden="true" tabindex="-1"></a>than a foregone conclusion.</span>
+<span id="cb15-228"><a href="#cb15-228" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-231"><a href="#cb15-231" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb15-232"><a href="#cb15-232" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: epistructure</span></span>
+<span id="cb15-233"><a href="#cb15-233" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(minfi)   <span class="co"># getBeta()</span></span>
+<span id="cb15-234"><a href="#cb15-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-235"><a href="#cb15-235" aria-hidden="true" tabindex="-1"></a><span class="co"># GLINT&#39;s reference list, read from the GLINT repository at a fixed commit so it</span></span>
+<span id="cb15-236"><a href="#cb15-236" aria-hidden="true" tabindex="-1"></a><span class="co"># keeps returning this exact file.</span></span>
+<span id="cb15-237"><a href="#cb15-237" aria-hidden="true" tabindex="-1"></a>ref <span class="ot">&lt;-</span> <span class="fu">readLines</span>(<span class="fu">paste0</span>(<span class="st">&quot;https://raw.githubusercontent.com/cozygene/glint/&quot;</span>,</span>
+<span id="cb15-238"><a href="#cb15-238" aria-hidden="true" tabindex="-1"></a>                        <span class="st">&quot;31a138ce380faeaf0e698733e781771df33374fe/&quot;</span>,</span>
+<span id="cb15-239"><a href="#cb15-239" aria-hidden="true" tabindex="-1"></a>                        <span class="st">&quot;parsers/assets/epistructure_reference_sites.txt&quot;</span>))</span>
+<span id="cb15-240"><a href="#cb15-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-241"><a href="#cb15-241" aria-hidden="true" tabindex="-1"></a><span class="co"># Normalized, unfiltered beta values for the reference sites that are on the EPIC</span></span>
+<span id="cb15-242"><a href="#cb15-242" aria-hidden="true" tabindex="-1"></a><span class="co"># array (the list was built on the 450K array, so a few are missing).</span></span>
+<span id="cb15-243"><a href="#cb15-243" aria-hidden="true" tabindex="-1"></a>grs  <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/02_funnorm_grs.rds&quot;</span>)</span>
+<span id="cb15-244"><a href="#cb15-244" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">getBeta</span>(grs[<span class="fu">rownames</span>(grs) <span class="sc">%in%</span> ref, ])</span>
+<span id="cb15-245"><a href="#cb15-245" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(grs)   <span class="co"># 1.25 GB; only the reference sites are needed from here on</span></span>
+<span id="cb15-246"><a href="#cb15-246" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;reference CpGs:&quot;</span>, <span class="fu">length</span>(ref), <span class="st">&quot;| on this array:&quot;</span>, <span class="fu">nrow</span>(beta), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-247"><a href="#cb15-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-248"><a href="#cb15-248" aria-hidden="true" tabindex="-1"></a><span class="co"># Covariates to remove before the PCA, in the same sample order as `beta`.</span></span>
+<span id="cb15-249"><a href="#cb15-249" aria-hidden="true" tabindex="-1"></a>cells <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/04_cellcounts.rds&quot;</span>)[<span class="fu">colnames</span>(beta), ]</span>
+<span id="cb15-250"><a href="#cb15-250" aria-hidden="true" tabindex="-1"></a>sheet <span class="ot">&lt;-</span> <span class="fu">left_join</span>(<span class="fu">data.frame</span>(<span class="at">sample_id =</span> <span class="fu">colnames</span>(beta)), ss, <span class="at">by =</span> <span class="st">&quot;sample_id&quot;</span>)</span>
+<span id="cb15-251"><a href="#cb15-251" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-252"><a href="#cb15-252" aria-hidden="true" tabindex="-1"></a><span class="co"># EPISTRUCTURE: regress each reference site on the covariates, keep the residuals,</span></span>
+<span id="cb15-253"><a href="#cb15-253" aria-hidden="true" tabindex="-1"></a><span class="co"># standardize each site, and take principal components across samples.</span></span>
+<span id="cb15-254"><a href="#cb15-254" aria-hidden="true" tabindex="-1"></a>epistructure <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, covariates, <span class="at">n_pcs =</span> <span class="dv">3</span>) {</span>
+<span id="cb15-255"><a href="#cb15-255" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">lm.fit</span>(covariates, <span class="fu">t</span>(beta))<span class="sc">$</span>residuals)</span>
+<span id="cb15-256"><a href="#cb15-256" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prcomp</span>(<span class="fu">t</span>(res), <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>x[, <span class="fu">seq_len</span>(n_pcs)]</span>
+<span id="cb15-257"><a href="#cb15-257" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-258"><a href="#cb15-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-259"><a href="#cb15-259" aria-hidden="true" tabindex="-1"></a><span class="co"># GLINT&#39;s documented usage regresses out cell composition only. On these arrays the</span></span>
+<span id="cb15-260"><a href="#cb15-260" aria-hidden="true" tabindex="-1"></a><span class="co"># components that gives also track the chip each sample was run on, so the version</span></span>
+<span id="cb15-261"><a href="#cb15-261" aria-hidden="true" tabindex="-1"></a><span class="co"># used below also removes sex and chip.</span></span>
+<span id="cb15-262"><a href="#cb15-262" aria-hidden="true" tabindex="-1"></a>epi_cells <span class="ot">&lt;-</span> <span class="fu">epistructure</span>(beta, <span class="fu">cbind</span>(<span class="dv">1</span>, cells))</span>
+<span id="cb15-263"><a href="#cb15-263" aria-hidden="true" tabindex="-1"></a>epi       <span class="ot">&lt;-</span> <span class="fu">epistructure</span>(beta, <span class="fu">model.matrix</span>(<span class="sc">~</span> cells <span class="sc">+</span> sex <span class="sc">+</span> <span class="fu">factor</span>(slide), sheet))</span>
+<span id="cb15-264"><a href="#cb15-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-265"><a href="#cb15-265" aria-hidden="true" tabindex="-1"></a><span class="co"># How much each version&#39;s first component tracks chip, and how closely it follows</span></span>
+<span id="cb15-266"><a href="#cb15-266" aria-hidden="true" tabindex="-1"></a><span class="co"># the deposited pc1 (95 samples; one has no deposited PCs).</span></span>
+<span id="cb15-267"><a href="#cb15-267" aria-hidden="true" tabindex="-1"></a>has_pcs <span class="ot">&lt;-</span> <span class="fu">complete.cases</span>(sheet[, gpcs])</span>
+<span id="cb15-268"><a href="#cb15-268" aria-hidden="true" tabindex="-1"></a>chip_r2 <span class="ot">&lt;-</span> <span class="cf">function</span>(e) <span class="fu">summary</span>(<span class="fu">lm</span>(e[, <span class="dv">1</span>] <span class="sc">~</span> <span class="fu">factor</span>(sheet<span class="sc">$</span>slide)))<span class="sc">$</span>r.squared</span>
+<span id="cb15-269"><a href="#cb15-269" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">covariates_removed =</span> <span class="fu">c</span>(<span class="st">&quot;cell types&quot;</span>, <span class="st">&quot;cell types, sex, chip&quot;</span>),</span>
+<span id="cb15-270"><a href="#cb15-270" aria-hidden="true" tabindex="-1"></a>           <span class="at">chip_R2_of_EPI1    =</span> <span class="fu">round</span>(<span class="fu">c</span>(<span class="fu">chip_r2</span>(epi_cells), <span class="fu">chip_r2</span>(epi)), <span class="dv">2</span>),</span>
+<span id="cb15-271"><a href="#cb15-271" aria-hidden="true" tabindex="-1"></a>           <span class="at">abs_r_with_pc1     =</span> <span class="fu">round</span>(<span class="fu">abs</span>(<span class="fu">c</span>(<span class="fu">cor</span>(epi_cells[has_pcs, <span class="dv">1</span>], sheet<span class="sc">$</span>pc1[has_pcs]),</span>
+<span id="cb15-272"><a href="#cb15-272" aria-hidden="true" tabindex="-1"></a>                                            <span class="fu">cor</span>(epi[has_pcs, <span class="dv">1</span>], sheet<span class="sc">$</span>pc1[has_pcs]))), <span class="dv">2</span>))</span>
+<span id="cb15-273"><a href="#cb15-273" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-274"><a href="#cb15-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-275"><a href="#cb15-275" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb15-276"><a href="#cb15-276" aria-hidden="true" tabindex="-1"></a><span class="fu">## Your figure may be flipped</span></span>
+<span id="cb15-277"><a href="#cb15-277" aria-hidden="true" tabindex="-1"></a>The sign (negative or positive) of each EPISTRUCTURE component depends on the BLAS library your R installation</span>
+<span id="cb15-278"><a href="#cb15-278" aria-hidden="true" tabindex="-1"></a>uses for matrix arithmetic, so the table and figure you produce may be flipped relative</span>
+<span id="cb15-279"><a href="#cb15-279" aria-hidden="true" tabindex="-1"></a>to the ones shown here: the correlations with the deposited PCs will have the opposite</span>
+<span id="cb15-280"><a href="#cb15-280" aria-hidden="true" tabindex="-1"></a>sign, and the figure will be flipped top to bottom. This page was rendered with OpenBLAS. A conda environment using BLIS, for example, gives EPISTRUCTURE component 1 values with the opposite sign. The absolute values are the same regardless of which BLAS library is used. What matters is the strength of the correlation between the EPISTRUCTURE component 1 and Genetic component 1, not the direction of the correlation.</span>
+<span id="cb15-281"><a href="#cb15-281" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb15-282"><a href="#cb15-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-285"><a href="#cb15-285" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb15-286"><a href="#cb15-286" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: epistructure-compare</span></span>
+<span id="cb15-287"><a href="#cb15-287" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlation of each deposited genetic PC with each EPISTRUCTURE component, and</span></span>
+<span id="cb15-288"><a href="#cb15-288" aria-hidden="true" tabindex="-1"></a><span class="co"># how much of each deposited PC the three components explain together.</span></span>
+<span id="cb15-289"><a href="#cb15-289" aria-hidden="true" tabindex="-1"></a>epi_cor <span class="ot">&lt;-</span> <span class="fu">cor</span>(sheet[has_pcs, gpcs], epi[has_pcs, ])</span>
+<span id="cb15-290"><a href="#cb15-290" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(epi_cor) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;EPI&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)</span>
+<span id="cb15-291"><a href="#cb15-291" aria-hidden="true" tabindex="-1"></a>epi_r2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(gpcs, <span class="cf">function</span>(p) <span class="fu">summary</span>(<span class="fu">lm</span>(sheet[has_pcs, p] <span class="sc">~</span> epi[has_pcs, ]))<span class="sc">$</span>r.squared)</span>
+<span id="cb15-292"><a href="#cb15-292" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(epi_cor, <span class="at">R2_from_EPI1_3 =</span> epi_r2), <span class="dv">2</span>)</span>
+<span id="cb15-293"><a href="#cb15-293" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-294"><a href="#cb15-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-297"><a href="#cb15-297" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb15-298"><a href="#cb15-298" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-epistructure</span></span>
+<span id="cb15-299"><a href="#cb15-299" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-width: 6.4</span></span>
+<span id="cb15-300"><a href="#cb15-300" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-height: 4.6</span></span>
+<span id="cb15-301"><a href="#cb15-301" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;The first EPISTRUCTURE component against the deposited genetic PC1, for the 95 samples with deposited PCs, coloured by self-reported race.&quot;</span></span>
+<span id="cb15-302"><a href="#cb15-302" aria-hidden="true" tabindex="-1"></a>cmp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">pc1 =</span> sheet<span class="sc">$</span>pc1[has_pcs], <span class="at">EPI1 =</span> epi[has_pcs, <span class="dv">1</span>],</span>
+<span id="cb15-303"><a href="#cb15-303" aria-hidden="true" tabindex="-1"></a>                  <span class="at">race =</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(sheet<span class="sc">$</span>race[has_pcs]) <span class="sc">|</span> sheet<span class="sc">$</span>race[has_pcs] <span class="sc">==</span> <span class="st">&quot;&quot;</span>,</span>
+<span id="cb15-304"><a href="#cb15-304" aria-hidden="true" tabindex="-1"></a>                                <span class="st">&quot;not recorded&quot;</span>, sheet<span class="sc">$</span>race[has_pcs]))</span>
+<span id="cb15-305"><a href="#cb15-305" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(cmp, <span class="fu">aes</span>(pc1, EPI1, <span class="at">colour =</span> race)) <span class="sc">+</span></span>
+<span id="cb15-306"><a href="#cb15-306" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="fl">2.2</span>, <span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb15-307"><a href="#cb15-307" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">AA =</span> <span class="st">&quot;#1A6B75&quot;</span>, <span class="at">Other =</span> <span class="st">&quot;#8C3A4A&quot;</span>,</span>
+<span id="cb15-308"><a href="#cb15-308" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">`</span><span class="at">not recorded</span><span class="st">`</span> <span class="ot">=</span> <span class="st">&quot;#8A8279&quot;</span>),</span>
+<span id="cb15-309"><a href="#cb15-309" aria-hidden="true" tabindex="-1"></a>                      <span class="at">name =</span> <span class="st">&quot;Self-reported race&quot;</span>) <span class="sc">+</span></span>
+<span id="cb15-310"><a href="#cb15-310" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Deposited genetic PC1&quot;</span>, <span class="at">y =</span> <span class="st">&quot;EPISTRUCTURE component 1&quot;</span>)</span>
+<span id="cb15-311"><a href="#cb15-311" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb15-312"><a href="#cb15-312" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-313"><a href="#cb15-313" aria-hidden="true" tabindex="-1"></a>EPISTRUCTURE recovers the main ancestry axis reasonably well: its first component</span>
+<span id="cb15-314"><a href="#cb15-314" aria-hidden="true" tabindex="-1"></a>correlates with the deposited PC1 at |r| = <span class="in">`r sprintf(&quot;%.2f&quot;, abs(epi_cor[&quot;pc1&quot;, &quot;EPI1&quot;]))`</span>,</span>
+<span id="cb15-315"><a href="#cb15-315" aria-hidden="true" tabindex="-1"></a>and the three components together explain</span>
+<span id="cb15-316"><a href="#cb15-316" aria-hidden="true" tabindex="-1"></a><span class="in">`r sprintf(&quot;%.0f%%&quot;, 100 * epi_r2[&quot;pc1&quot;])`</span> of PC1&#39;s variance. EPISTRUCTURE&#39;s components explain almost none of PC2</span>
+<span id="cb15-317"><a href="#cb15-317" aria-hidden="true" tabindex="-1"></a>(<span class="in">`r sprintf(&quot;%.0f%%&quot;, 100 * epi_r2[&quot;pc2&quot;])`</span>) or PC3</span>
+<span id="cb15-318"><a href="#cb15-318" aria-hidden="true" tabindex="-1"></a>(<span class="in">`r sprintf(&quot;%.0f%%&quot;, 100 * epi_r2[&quot;pc3&quot;])`</span>) in this cohort. The table printed by the <span class="in">`epistructure`</span> chunk also shows why it is worth checking what</span>
+<span id="cb15-319"><a href="#cb15-319" aria-hidden="true" tabindex="-1"></a>methylation-based components correlate with before using them: with only cell types</span>
+<span id="cb15-320"><a href="#cb15-320" aria-hidden="true" tabindex="-1"></a>removed, the first component partly tracks the chip.</span>
+<span id="cb15-321"><a href="#cb15-321" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-322"><a href="#cb15-322" aria-hidden="true" tabindex="-1"></a>So EPISTRUCTURE is a reasonable substitute for genetic PCs if they are not provided. The rest of this</span>
+<span id="cb15-323"><a href="#cb15-323" aria-hidden="true" tabindex="-1"></a>tutorial uses the deposited genetic PCs, not these.</span>
+<span id="cb15-324"><a href="#cb15-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-325"><a href="#cb15-325" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
+<span id="cb15-326"><a href="#cb15-326" aria-hidden="true" tabindex="-1"></a><span class="fu">## If you do use EPISTRUCTURE components as covariates</span></span>
+<span id="cb15-327"><a href="#cb15-327" aria-hidden="true" tabindex="-1"></a>EPISTRUCTURE doesn&#39;t require removing the reference sites from the association test. A</span>
+<span id="cb15-328"><a href="#cb15-328" aria-hidden="true" tabindex="-1"></a>conservative option is to exclude the ones still left after probe filtering, or to note</span>
+<span id="cb15-329"><a href="#cb15-329" aria-hidden="true" tabindex="-1"></a>that their association estimates were adjusted for a covariate built partly from their</span>
+<span id="cb15-330"><a href="#cb15-330" aria-hidden="true" tabindex="-1"></a>own methylation. Either way, report which option you chose.</span>
+<span id="cb15-331"><a href="#cb15-331" aria-hidden="true" tabindex="-1"></a>:::</span>
 <span id="cb15-332"><a href="#cb15-332" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-333"><a href="#cb15-333" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Batch effects</span><span class="co">](05_batch_effects.qmd)</span> — technical variation from chips,</span>
-<span id="cb15-334"><a href="#cb15-334" aria-hidden="true" tabindex="-1"></a>array positions, and plates, and how to detect it before deciding whether to</span>
-<span id="cb15-335"><a href="#cb15-335" aria-hidden="true" tabindex="-1"></a>correct.</span>
-<span id="cb15-336"><a href="#cb15-336" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-337"><a href="#cb15-337" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb15-333"><a href="#cb15-333" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb15-334"><a href="#cb15-334" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-335"><a href="#cb15-335" aria-hidden="true" tabindex="-1"></a>**Next:** <span class="co">[</span><span class="ot">Batch effects</span><span class="co">](05_batch_effects.qmd)</span> — technical variation from chips,</span>
+<span id="cb15-336"><a href="#cb15-336" aria-hidden="true" tabindex="-1"></a>array positions, and plates, and how to detect it before deciding whether to</span>
+<span id="cb15-337"><a href="#cb15-337" aria-hidden="true" tabindex="-1"></a>correct.</span>
 <span id="cb15-338"><a href="#cb15-338" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-339"><a href="#cb15-339" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb15-340"><a href="#cb15-340" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb15-339"><a href="#cb15-339" aria-hidden="true" tabindex="-1"></a><span class="fu">## References {.unnumbered}</span></span>
+<span id="cb15-340"><a href="#cb15-340" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-341"><a href="#cb15-341" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb15-342"><a href="#cb15-342" aria-hidden="true" tabindex="-1"></a>:::</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

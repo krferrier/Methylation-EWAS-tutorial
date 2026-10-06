@@ -70,7 +70,7 @@ R 4.2.3 (Bioconductor 3.16), so a value may differ in its last digits on a newer
 The code itself is unchanged. See
 [`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
 
-You need eight CRAN and twenty Bioconductor packages. The whole installation is short
+You need ten CRAN and twenty-one Bioconductor packages. The whole installation is short
 enough to read, so **option 1 is to select the block below, copy it, and paste it into the
 Console.** Nothing to download first, nothing to configure, and you can see exactly what
 it does before you run it. Press Enter and wait.
@@ -80,12 +80,12 @@ repos <- "https://cloud.r-project.org"
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager", repos = repos)
 
 BiocManager::install(c(
-  "data.table", "ggplot2", "knitr", "DT", "ggrepel", "ggtext", "fst", "jsonlite",
+  "data.table", "ggplot2", "knitr", "DT", "ggrepel", "ggtext", "fst", "jsonlite", "dplyr", "tibble",
   "minfi", "illuminaio", "wateRmelon", "GEOquery", "Biobase",
   "IlluminaHumanMethylationEPICmanifest",
   "IlluminaHumanMethylationEPICanno.ilm10b4.hg19",
   "FlowSorted.Blood.EPIC", "genefilter",
-  "sva", "limma", "bacon",
+  "sva", "limma", "edgeR", "bacon",
   "sesame", "sesameData", "GenomicRanges", "rtracklayer",
   "missMethyl", "methylGSA", "knowYourCG", "ENmix"
 ), ask = FALSE, update = FALSE, upgrade = "never")
@@ -930,11 +930,14 @@ why the models use them. Here are the first 8 rows of the sample sheet:
 ```{r}
 #| label: sample-sheet
 # The same CSV you downloaded above -- this is the file the whole tutorial reads.
-ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
-ss <- ss[order(ss$slide, ss$array_pos), ]   # chip, then position within the chip
+library(dplyr)   # arrange() and select() on the sample sheet
+
+ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE) %>%
+  arrange(slide, array_pos)                   # chip, then position within the chip
 cat("Samples:", nrow(ss), " | Chips:", length(unique(ss$slide)), "\n")
-knitr::kable(head(ss[, c("sample_id","slide","array_pos","gender","age",
-                         "ptsd","race")], 8),
+knitr::kable(ss %>%
+               select(sample_id, slide, array_pos, gender, age, ptsd, race) %>%
+               head(8),
              row.names = FALSE,
              caption = "First 8 rows of the sample sheet")
 ```

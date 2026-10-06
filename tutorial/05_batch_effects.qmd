@@ -56,6 +56,8 @@ library(minfi)   # getBeta() on the filtered GenomicRatioSet
 library(sva)     # ComBat(), num.sv(), sva()
 library(limma)   # lmFit()/eBayes(), used in the k-selection sweep
 library(ggplot2) # every figure in this chapter
+library(dplyr)   # left_join(), filter() for the phenotype table
+library(tibble)  # rownames_to_column(), column_to_rownames() around the join
 
 # num.sv()'s permutation test and sva()'s iterative reweighting are both
 # stochastic, so the seed is what makes the surrogate variables -- and every
@@ -70,38 +72,43 @@ grs <- readRDS("data/03_grs_filtered.rds")
 # is small enough to live in the repository, so it needs no download.
 props <- readRDS("data/04_cellcounts.rds")
 
-# The sample sheet rides along on the object, so the phenotype table comes back
-# out of it rather than being read from the CSV again.
-md <- as.data.frame(pData(grs))
-
-# The three genetic ancestry PCs (see the genetic PCs chapter) are joined from the sample sheet by
-# sample ID.
+# The phenotype table comes out of the object, which carries the sample sheet.
+# The three genetic ancestry PCs (see the genetic PCs chapter) are then joined
+# from the sample sheet by sample ID. Any PC columns already on the object are
+# dropped first, so the join cannot create duplicate pc1.x / pc1.y columns.
+# left_join() drops row names, so they are moved into a column for the join
+# and put back afterwards.
 gpcs <- c("pc1", "pc2", "pc3")
 ss   <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
-md[, gpcs] <- ss[match(md$sample_id, ss$sample_id), gpcs]
+md <- as.data.frame(pData(grs)) %>%
+  rownames_to_column("array") %>%
+  select(-any_of(gpcs)) %>%
+  left_join(select(ss, sample_id, all_of(gpcs)), by = "sample_id") %>%
+  column_to_rownames("array")
 
 # Everything below indexes samples three different ways -- array columns, rows
-# of `md`, rows of `props` -- so align them once, here, and assert it. A silent
-# mis-alignment would produce plausible-looking nonsense in every figure.
-props <- props[md$sample_id, , drop = FALSE]
-stopifnot(identical(colnames(grs), md$sample_id),
-          identical(rownames(props), md$sample_id))
+# of `md`, rows of `props` -- so align them once, here, and check each one.
+props <- props[md$sample_id, ]
+stopifnot(identical(colnames(grs), md$sample_id))
+stopifnot(identical(rownames(props), md$sample_id))
 
-# The 86 samples an association model can actually use: PTSD status is NA for
-# nine arrays (see chapter 01) and the genetic PCs are NA for one more, and a
-# model containing either drops them. The PCA diagnostic in section 2 deliberately
-# keeps all 96.
-keep  <- !(is.na(md$ptsd) | md$ptsd == "") & !is.na(md$sex) &
-         !is.na(md$age) & complete.cases(props) & complete.cases(md[, gpcs])
-mdk   <- md[keep, ]
-propk <- props[keep, , drop = FALSE]
+# The 86 samples an association model can actually use: PTSD status is missing
+# for nine arrays (see chapter 01) and the genetic PCs for one more, and a model
+# containing either drops them. The PCA diagnostic in section 2 deliberately
+# keeps all 96. Control is set as the reference level, so the PTSD coefficient
+# is "Case relative to Control", the direction the whole tutorial reports.
+mdk <- md %>%
+  filter(!is.na(ptsd), ptsd != "",
+         !is.na(sex), !is.na(age),
+         !is.na(pc1), !is.na(pc2), !is.na(pc3),
+         sample_id %in% rownames(props)[complete.cases(props)]) %>%
+  mutate(ptsd = factor(ptsd, levels = c("Control", "Case")))
 
-# Control is the reference level: the PTSD coefficient is then "Case relative to
-# Control", which is the direction the whole tutorial reports.
-mdk$ptsd <- factor(mdk$ptsd, levels = c("Control", "Case"))
+# The cell proportions for the same samples, in the same order
+propk <- props[mdk$sample_id, ]
 
 cat("arrays:", ncol(grs), "| probes:", nrow(grs),
-    "| arrays with modelable phenotype:", sum(keep), "\n")
+    "| arrays with modelable phenotype:", nrow(mdk), "\n")
 ```
 
 ::: {.callout-note}
@@ -448,7 +455,7 @@ for (s in levels(pheno$stratum)) {
   i     <- which(pheno$stratum == s)
   mod_s <- model.matrix(~ exposure + age + smoking + cell_proportions + ancestry_pcs,
                         data = pheno[i, ])
-  mvals_adj[, i] <- sva::ComBat(dat = mvals[, i, drop = FALSE],
+  mvals_adj[, i] <- sva::ComBat(dat = mvals[, i],
                                 batch = droplevels(pheno$batch[i]),
                                 mod = mod_s, mean.only = TRUE, par.prior = TRUE)
 }
@@ -570,13 +577,13 @@ cat("published CpGs dropped by probe filtering:",
 ## The panel betas are read back off `grs` rather than taken from `M`: 20 rows of
 ## a 756,273-row object is a cheap subset, and the score is defined on the beta
 ## scale.
-Bp <- getBeta(grs[panel_probes, keep])
+Bp <- getBeta(grs[panel_probes, mdk$sample_id])
 
 ## Each probe is z-scored across samples first, so that a probe with a wide beta
 ## range does not dominate PC1 purely because of its scale. scale. = FALSE in
 ## prcomp() then, because the scaling has already happened.
 Z  <- t(scale(t(Bp)))
-Z  <- Z[rowSums(is.na(Z)) == 0, , drop = FALSE]
+Z  <- Z[rowSums(is.na(Z)) == 0, ]
 pc <- prcomp(t(Z), center = TRUE, scale. = FALSE)
 smoke     <- pc$x[, 1]
 panel_pve <- pc$sdev^2 / sum(pc$sdev^2)
@@ -604,8 +611,8 @@ independent probes.
 # with the proxy's own panel probes removed and any probe that is non-finite in
 # *any* of those 86 samples dropped -- ComBat and sva() both refuse an Inf.
 excl <- rownames(M) %in% panel_probes
-Mk   <- M[!excl, keep, drop = FALSE]
-Mk   <- Mk[rowSums(!is.finite(Mk)) == 0, , drop = FALSE]
+Mk   <- M[!excl, mdk$sample_id]
+Mk   <- Mk[rowSums(!is.finite(Mk)) == 0, ]
 
 excluded_n    <- sum(excl)
 tested_probes <- nrow(Mk)
@@ -676,13 +683,13 @@ for (s in levels(sexk)) {
   # sex is constant inside a stratum, so it is not -- and cannot be -- in cb_mod.
   # Everything else we intend to keep is passed here so ComBat does not remove it
   # along with the chip shift.
-  d  <- cbind(cellk[i, , drop = FALSE], mdk[i, gpcs],
+  d  <- cbind(cellk[i, ], mdk[i, gpcs],
               ptsd = mdk$ptsd[i], age = as.numeric(mdk$age)[i], smoke = smoke[i])
   cb_mod <- model.matrix(~ ptsd + age + smoke + Neu + NK + CD4T + CD8T + Bcell + Mono +
                            pc1 + pc2 + pc3, data = d)
   cat(sprintf("%s stratum: n = %d | chips = %d | smallest chip = %d\n",
               s, length(i), nlevels(bs), min(table(bs))))
-  Mcb[, i] <- ComBat(dat = Mk[, i, drop = FALSE], batch = bs, mod = cb_mod,
+  Mcb[, i] <- ComBat(dat = Mk[, i], batch = bs, mod = cb_mod,
                      par.prior = TRUE, mean.only = TRUE, prior.plots = FALSE)
 }
 ```
@@ -820,8 +827,8 @@ for (K in k_candidates) {
   full_rank <- all(sapply(levels(sexk), function(lv) {
     i  <- which(sexk == lv)
     ds <- cbind(model.matrix(~ ptsd + age + smoke + pos + Neu + NK + CD4T + CD8T +
-                               Bcell + Mono + pc1 + pc2 + pc3, data = mdm)[i, , drop = FALSE],
-                SVk[i, , drop = FALSE])
+                               Bcell + Mono + pc1 + pc2 + pc3, data = mdm)[i, ],
+                SVk[i, ])
     qr(ds)$rank == ncol(ds)
   }))
 
@@ -997,7 +1004,7 @@ saveRDS(list(smoke = smoke, panel = panel, present = panel_probes,
 # 3. The model inputs chapters 06 and 07 read: the surrogate variables, the
 #    86-sample metadata and cell proportions they were estimated alongside, and
 #    the design record. `k_selected` is what the EWAS uses to slice `SV`.
-saveRDS(list(SV = SV, n.sv = ncol(SV), keep = keep, mdk = mdk, propk = propk,
+saveRDS(list(SV = SV, n.sv = ncol(SV), mdk = mdk, propk = propk,
              smoke = smoke, panel_probes = panel_probes, panel_pve = panel_pve,
              excluded_n = excluded_n, tested_probes = tested_probes,
              prev_n_sv = n_sv_be, sv_table = sv_table,

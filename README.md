@@ -45,7 +45,8 @@ discovery. Treat the association results as a teaching artifact, not a finding.
 ```
 tutorial/          the .qmd chapters, _quarto.yml, _setup.R, references.bib
 tutorial/data/     small committed data: figures, summary CSVs, sample sheets
-scripts/           the R and shell scripts used to (re)compute each checkpoint
+scripts/           draw the figures no chapter draws itself: the dataset-catalogue
+                   overview (00b) and the chapter 07 pipeline figures
 docs/              the rendered site, served by GitHub Pages
 get_data.sh        fetches the large checkpoints from Zenodo
 MANIFEST.md        every distributed file, its size, and per-tier checksums
@@ -93,10 +94,15 @@ Grn/Red pairs, one pair per array) from GEO yourself; `01_qc.qmd` documents how.
 
 ## Rendering
 
+Render from the `tutorial/` folder with Quarto:
+
 ```bash
-bash qrender.sh render                       # whole site -> tutorial/_site
-bash qrender.sh render 06_ewas.qmd           # one chapter
+cd tutorial
+quarto render                # whole site -> tutorial/_site
+quarto render 06_ewas.qmd    # one chapter
 ```
+
+To publish, copy the contents of `tutorial/_site/` into `docs/` after a whole-site render.
 
 Chapter 04 needs `FlowSorted.Blood.EPIC`, which is a large Bioconductor experiment
 package; if it is not installed, use tier `E_model_inputs` and the chapter will read the

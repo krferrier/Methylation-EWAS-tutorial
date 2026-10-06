@@ -1,29 +1,77 @@
-## ch07 additional figures: faceted volcano, faceted effect scatter, foothills.
-## Reads only the existing pipeline result files - no analysis is re-run.
+## 07_figs.R -- draws the five figures chapter 07 displays from the EWAS
+## pipeline's result files. No analysis is re-run.
+##   tutorial/data/07_meta_qq.png            meta-analysis QQ
+##   tutorial/data/07_qq_overlay.png         QQ of all four analyses, overlaid
+##   tutorial/data/07_volcano_facets.png     one volcano per analysis
+##   tutorial/data/07_effect_concordance.png female vs male effect, meta hits
+##   tutorial/data/07_foothills.png          top CpGs across all four analyses
+##
+## Run from the repository root after the pipeline run, with its output in
+## ewas_pipeline/ (the folder chapter 07 reads as ../ewas_pipeline):
+##   Rscript scripts/07_figs.R
 suppressPackageStartupMessages({
   library(data.table); library(ggplot2); library(ggrepel)
 })
-t0 <- Sys.time()
 D   <- "ewas_pipeline/run_grady"
 DA  <- "ewas_pipeline/run_grady_all"
-out <- "repo/data"
+out <- "tutorial/data"
 
-A <- fread(file.path(DA, "PTSD_ewas_bacon_results.csv.gz"))
-F <- fread(file.path(D, "F/F_PTSD_ewas_bacon_results.csv.gz"))
-M <- fread(file.path(D, "M/M_PTSD_ewas_bacon_results.csv.gz"))
-m <- fread(file.path(D, "PTSD_ewas_meta_analysis_results_1.txt"))
+A <- fread(file.path(DA, "PTSD_ewas_bacon_results.csv.gz"))      # overall
+F <- fread(file.path(D, "F/F_PTSD_ewas_bacon_results.csv.gz"))   # female
+M <- fread(file.path(D, "M/M_PTSD_ewas_bacon_results.csv.gz"))   # male
+m <- fread(file.path(D, "PTSD_ewas_meta_analysis_results_1.txt"))  # METAL
 setnames(m, "P-value", "P")
 
-LV   <- c("Overall (n=87)", "Female (n=45)", "Male (n=42)", "Meta (F+M)")
-PAL  <- c("Overall (n=87)" = "gray30",  "Female (n=45)" = "#DD8452",
-          "Male (n=42)"    = "#4C72B0", "Meta (F+M)"    = "#C44E52")
-## Bonferroni is the only multiple-testing threshold these figures draw. The
-## GWAS "suggestive" line at p < 1e-5 is deliberately NOT plotted: it is a
-## genotyping convention with no inferential meaning for an EWAS, and drawing
-## it invites readers to treat it as a standard that nobody tests against.
+# Labels carry each arm's sample size, read from the pipeline's n column;
+# every figure uses the same label and colour for each analysis.
+LV  <- c(sprintf("Overall (n=%d)", A$n[1]), sprintf("Female (n=%d)", F$n[1]),
+         sprintf("Male (n=%d)", M$n[1]), "Meta (F+M)")
+PAL <- setNames(c("gray30", "#DD8452", "#4C72B0", "#C44E52"), LV)
+
+# Bonferroni threshold over all tested CpGs, the only threshold drawn
 BONF <- 0.05 / nrow(m)
-cat("n meta rows:", nrow(m), "| bonf:", signif(BONF, 7),
-    "| -log10:", round(-log10(BONF), 2), "\n")
+
+# genomic inflation factor
+lam <- function(p) { p <- p[is.finite(p) & p > 0]
+                     median(qchisq(p, 1, lower.tail = FALSE)) / qchisq(0.5, 1) }
+
+## ================= FIGURE 1: meta-analysis QQ ==============================
+qqdt <- function(p, lab) {
+  p <- sort(p[is.finite(p) & p > 0])
+  data.table(analysis = lab, obs = -log10(p),
+             exp = -log10(ppoints(length(p))))
+}
+qm <- qqdt(m$P, "Meta (F+M)")
+pq <- ggplot(qm, aes(exp, obs)) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60", linetype = 2) +
+  geom_point(size = 0.5, color = "#4C72B0", alpha = 0.6) +
+  labs(x = expression(Expected~-log[10](p)), y = expression(Observed~-log[10](p)),
+       title = "Meta-analysis QQ (BACON-adjusted, inverse-variance)",
+       subtitle = sprintf("%s CpGs, lambda = %.3f", format(nrow(m), big.mark = ","), lam(m$P))) +
+  theme_minimal(base_size = 11)
+ggsave(file.path(out, "07_meta_qq.png"), plot = pq, width = 6, height = 5, dpi = 200)
+
+## ================= FIGURE 2: QQ overlay of all four analyses ==============
+## Thin to a log-spaced index set: 756k points x 4 panels is unreadable and slow.
+thin <- function(d) { n <- nrow(d)
+  idx <- unique(round(c(1:2000, exp(seq(log(2001), log(n), length.out = 4000)))))
+  d[idx[idx <= n]] }
+ov <- rbindlist(lapply(list(
+  thin(qqdt(A$bacon.pval, LV[1])),
+  thin(qqdt(F$bacon.pval, LV[2])),
+  thin(qqdt(M$bacon.pval, LV[3])),
+  thin(qm)), identity))
+ov[, analysis := factor(analysis, levels = LV)]
+po <- ggplot(ov, aes(exp, obs, color = analysis)) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60", linetype = 2) +
+  geom_point(size = 0.5, alpha = 0.7) +
+  geom_hline(yintercept = -log10(BONF), color = "#C44E52", linetype = 3) +
+  scale_color_manual(values = PAL, name = NULL) +
+  labs(x = expression(Expected~-log[10](p)), y = expression(Observed~-log[10](p)),
+       title = "All four analyses, BACON-adjusted",
+       subtitle = "dotted line = Bonferroni threshold") +
+  theme_minimal(base_size = 11) + theme(legend.position = "top")
+ggsave(file.path(out, "07_qq_overlay.png"), plot = po, width = 7, height = 5.5, dpi = 200)
 
 ## ---- long-format table of all four analyses ------------------------------
 L <- rbindlist(list(
@@ -35,7 +83,7 @@ L <- L[is.finite(p) & p > 0 & is.finite(es)]
 L[, analysis := factor(analysis, levels = LV)]
 L[, nlp := -log10(p)]
 
-## ================= FIGURE 1: faceted volcano ==============================
+## ================= FIGURE 3: faceted volcano ==============================
 ## Keep every CpG with p < 1e-4 so no point near the top of any panel is lost,
 ## then thin the null cloud below that so four dense panels stay legible and
 ## the PNG stays a reasonable size. 1e-4 is a plotting cutoff for point
@@ -82,12 +130,9 @@ p_volc <- ggplot(V, aes(es, nlp)) +
 ggsave(file.path(out, "07_volcano_facets.png"), plot = p_volc,
        width = 11, height = 4.2, dpi = 200)
 
-## ================= FIGURE 2: F-vs-M effect concordance ====================
-## Single panel. Neither stratum clears Bonferroni on its own, so a per-arm
-## facet would show four panels of nothing significant. The question the
-## figure has to answer is narrower: for the CpGs the META-analysis calls
-## significant, do the two strata agree? So the point set is exactly those
-## meta-Bonferroni CpGs, with each arm's standard error drawn.
+## ================= FIGURE 4: F-vs-M effect concordance ====================
+## One point per CpG the meta-analysis calls Bonferroni-significant: its female
+## effect against its male effect, with each stratum's standard error drawn.
 J <- merge(F[, .(cpg = cpgid, F_es = bacon.es, F_se = bacon.se, F_p = bacon.pval)],
            M[, .(cpg = cpgid, M_es = bacon.es, M_se = bacon.se, M_p = bacon.pval)],
            by = "cpg")
@@ -137,7 +182,7 @@ p_scat <- ggplot(S, aes(F_es, M_es)) +
 ggsave(file.path(out, "07_effect_concordance.png"), plot = p_scat,
        width = 6.8, height = 6.4, dpi = 200)
 
-## ================= FIGURE 3: foothills ====================================
+## ================= FIGURE 5: foothills ====================================
 ## Union of the top 8 CpGs from each analysis, ordered by strongest evidence
 ## anywhere, with every analysis' estimate for that CpG shown.
 top8 <- L[order(p), head(.SD, 8), by = analysis]$cpg
@@ -170,14 +215,3 @@ p_foot <- ggplot(Ft, aes(cpg, nlp, colour = analysis, shape = direction)) +
         plot.subtitle = element_text(size = 9, colour = "gray30"))
 ggsave(file.path(out, "07_foothills.png"), plot = p_foot,
        width = 10, height = 5.2, dpi = 200)
-
-## ---- numbers the prose will need ----------------------------------------
-saveRDS(list(nsig = nsig, bonf = BONF,
-             n_meta_hits = nrow(S),
-             n_concordant = sum(S$concordant),
-             rho_meta_hits = rho,
-             meta_hits = S[, .(cpg, meta_p, dirs, F_es, M_es, hetisq)],
-             foothills_cpgs = ord$cpg,
-             foothills_n = length(top8)),
-        file.path(out, "07_newfig_extra.rds"))
-cat("\nelapsed:", round(difftime(Sys.time(), t0, units = "mins"), 2), "min\n")

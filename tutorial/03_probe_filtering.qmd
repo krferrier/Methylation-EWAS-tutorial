@@ -33,6 +33,7 @@ published checkpoint instead — note it is a 1.25 GB download:
 #| label: load
 library(minfi)       # getAnnotation() for probe coordinates, detectionP() for the p-value matrix
 library(data.table)  # fread() for the mask tables
+library(dplyr)       # filter() and pull() on the mask table
 
 # The functional-normalized GenomicRatioSet saved by
 # [normalization](02_normalization.qmd): 96 samples, beta and M-values for every
@@ -131,13 +132,15 @@ for another array or another mask version.
 #| label: mask-read
 # One row per probe on the array, one 0/1 column per mask code, plus the
 # row-wise OR of the eight in `mask_v81_8code`.
-mask <- fread("data/EPIC.hg38.mask.v81.8code.tsv.gz")
+mask <- fread("data/EPIC.hg38.mask.v81.8code.tsv.gz", data.table = FALSE)
 
 dim(mask)                            # 866,553 probes x 10 columns
 sum(mask$mask_v81_8code)             # 90,832 probes flagged by the union
 
 # the probes to drop
-drop8 <- mask[mask_v81_8code == 1L, Probe_ID]
+drop8 <- mask %>%
+  filter(mask_v81_8code == 1L) %>%
+  pull(Probe_ID)
 ```
 
 The table has one row per probe on the array and one 0/1 column per mask code, plus a
@@ -193,7 +196,8 @@ library(data.table)
 # no header).
 terms  <- fread("data/EPIC.hg38.mask.cm.idx", header = FALSE)$V1
 probes <- fread("data/EPIC.ordering.tsv.gz")$Probe_ID     # canonical probe ordering
-bits   <- fread("data/mask_bits.tsv.gz", header = FALSE); setnames(bits, terms)
+bits   <- fread("data/mask_bits.tsv.gz", header = FALSE, col.names = terms,
+                data.table = FALSE)
 
 # Choose the terms to mask on. These eight are the ones this chapter uses, and
 # the same eight the ready-made TSV carries.
@@ -217,7 +221,8 @@ than being quoted at you:
 # runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips
 # from 40 MB down to 0.5 MB -- small enough to keep in the repository.
 terms  <- fread("data/EPIC.hg38.mask.cm.idx", header = FALSE)$V1
-bits   <- fread("data/mask_bits.tsv.gz", header = FALSE); setnames(bits, terms)
+bits   <- fread("data/mask_bits.tsv.gz", header = FALSE, col.names = terms,
+                data.table = FALSE)
 
 # M_SNP_<POP>_1pt flags a common SNP (MAF >= 1%) at the interrogated CpG in that
 # 1000 Genomes super-population. Counted over the whole array, not over this
@@ -251,7 +256,7 @@ SNP" depends on which population you ask about. The number of SNP-affected probe
 #| label: pop-snp-table
 # The five-row table written by the `snp-by-pop` chunk above. Read here rather
 # than recounted, so this section and the funnel quote one source.
-sp <- fread("data/03_snp_by_pop.tsv")
+sp <- fread("data/03_snp_by_pop.tsv", data.table = FALSE)
 snp_by_pop <- setNames(sp$n_probes, sp$population)
 
 snp <- data.frame(
@@ -337,6 +342,25 @@ filter is per probe. If you did not run chapter 00, fetch the published checkpoi
 ```{.bash filename="Terminal"}
 ./get_data.sh B_qc
 ```
+:::
+
+::: {.callout-note collapse="true"}
+## If the detection-p step will not fit on your machine
+Recomputing `detectionP()` holds the raw two-channel object and a probe × sample
+p-value matrix in memory at once — roughly 4 GB on top of the normalized object. If
+that is more than you have, fetch the filtered checkpoint this chapter writes and
+start from it instead:
+
+```{.bash filename="Terminal"}
+./get_data.sh D_filtered
+```
+
+```{.r filename="RStudio Console"}
+grs_filt <- readRDS("data/03_grs_filtered.rds")
+```
+
+The funnel counts are saved on their own too, in `data/03_filter_funnel.tsv`, which is
+committed to the repository, so you can still read them without running the chapter.
 :::
 
 ```{r}
@@ -440,20 +464,24 @@ tutorial ships only its flagged probe IDs:
 # This is how data/03_legacy_pop_mask.tsv.gz was built from the archived
 # manifest (14 MB, read from the zhou-lab repository). The shipped file is its
 # output, and the chunk below reads it.
-library(data.table)
+library(data.table)   # fread() / fwrite()
+library(dplyr)        # bind_rows(), arrange()
 pop  <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotationData/",
                      "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/EPIC.hg38.manifest.pop.tsv.gz"),
-              select = c("probeID", "MASK_general_AFR", "MASK_snp5_EUR"))
-long <- rbindlist(lapply(c("MASK_general_AFR", "MASK_snp5_EUR"),
-  function(cl) data.table(probeID = pop$probeID[pop[[cl]]], mask = cl)))
-fwrite(long[order(mask, probeID)], "data/03_legacy_pop_mask.tsv.gz", sep = "\t")
+              select = c("probeID", "MASK_general_AFR", "MASK_snp5_EUR"),
+              data.table = FALSE)
+# One row per (flagged probe, mask column) pair, stacked into a single table
+long <- bind_rows(lapply(c("MASK_general_AFR", "MASK_snp5_EUR"),
+  function(cl) data.frame(probeID = pop$probeID[pop[[cl]]], mask = cl)))
+long <- arrange(long, mask, probeID)
+fwrite(long, "data/03_legacy_pop_mask.tsv.gz", sep = "\t")
 ```
 
 ```{r}
 #| label: mask-generation-contrast
 # Long form: one row per (probe, legacy mask column) pair, flagged probes only --
 # which is how two columns of an 866k-probe annotation fit in 0.6 MB.
-leg <- fread("data/03_legacy_pop_mask.tsv.gz")
+leg <- fread("data/03_legacy_pop_mask.tsv.gz", data.table = FALSE)
 L   <- split(leg$probeID, leg$mask)
 
 # The legacy mask applied to this study, with detection-p and sex held fixed so the
@@ -508,6 +536,49 @@ at a later step as these probes are needed to create a proxy smoking variable. S
 [the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options.
 :::
 
+## Saving what we just computed
+
+We save the filtered, EWAS-ready object for cell-composition estimation next:
+
+```{r}
+#| label: save-filtered
+# 1. The EWAS-ready GenomicRatioSet. An S4 object with two parallel assay matrices
+#    (Beta and CN; getM() derives M-values from Beta) and a GRanges, so RDS rather than a flat file. Read by cell-composition
+#    estimation ([chapter 04](04_cell_composition.qmd)) and the batch-effect
+#    diagnostics ([chapter 05](05_batch_effects.qmd)).
+saveRDS(grs_filt, "data/03_grs_filtered.rds")
+
+# 2. The funnel counts, so a later chapter or a methods section can quote them
+#    without re-running the filter.
+saveRDS(funl, "data/03_filter_funnel.rds")
+
+# 3. The per-code probe sets built in §2. A list of eight character vectors of
+#    unequal length, which a flat file would not hold.
+saveRDS(mp, "data/03_mask_pieces.rds")
+
+# 4. The funnel as a flat table as well: five rows, so it is committed to the
+#    repository and readable straight from GitHub by anyone who cannot hold the
+#    GenomicRatioSet in memory.
+write.table(funnel, "data/03_filter_funnel.tsv",
+            sep = "\t", row.names = FALSE, quote = FALSE, na = "")
+```
+
+The result: **`r format(funl$retained, big.mark=",")`** autosomal probes on
+96 samples, filtered under the Zhou v8.1 mask for mapping quality, SNP masking
+appropriate to an admixed African-American cohort (AFR and EUR terms together),
+detection reliability, and sex chromosomes.
+
+Nearly every probe that survives here is tested in the EWAS. Two small deductions
+happen later, both in [chapter 05](05_batch_effects.qmd):
+
+- the **20 CpGs used to build the smoking proxy** are excluded, because regressing
+  those probes on a score derived from themselves is circular; and
+- **two probes** (`cg17759086`, `cg01801182`) have β pinned at 0 or 1 in the
+  86-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.
+
+So `r format(funl$retained, big.mark=",")` probes pass filtering and
+**756,251** are actually tested.
+
 ## 5. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
 
 Probe filtering is one of the few preprocessing steps that works **identically**
@@ -552,66 +623,6 @@ because its results are reported in hg38 coordinates ([annotation](08_annotation
 the object's hg19 Illumina annotation is used here only to find the sex-chromosome
 probes.
 :::
-
-We save the filtered, EWAS-ready object for cell-composition estimation next:
-
-```{r}
-#| label: save-filtered
-# 1. The EWAS-ready GenomicRatioSet. An S4 object with two parallel assay matrices
-#    (Beta and CN; getM() derives M-values from Beta) and a GRanges, so RDS rather than a flat file. Read by cell-composition
-#    estimation ([chapter 04](04_cell_composition.qmd)) and the batch-effect
-#    diagnostics ([chapter 05](05_batch_effects.qmd)).
-saveRDS(grs_filt, "data/03_grs_filtered.rds")
-
-# 2. The funnel counts, so a later chapter or a methods section can quote them
-#    without re-running the filter.
-saveRDS(funl, "data/03_filter_funnel.rds")
-
-# 3. The per-code probe sets built in §2. A list of eight character vectors of
-#    unequal length, which a flat file would not hold.
-saveRDS(mp, "data/03_mask_pieces.rds")
-
-# 4. The funnel as a flat table as well: five rows, so it is committed to the
-#    repository and readable straight from GitHub by anyone who cannot hold the
-#    GenomicRatioSet in memory.
-write.table(funnel, "data/03_filter_funnel.tsv",
-            sep = "\t", row.names = FALSE, quote = FALSE, na = "")
-```
-
-::: {.callout-note collapse="true"}
-## If the detection-p step will not fit on your machine
-Recomputing `detectionP()` holds the raw two-channel object and a probe × sample
-p-value matrix in memory at once — roughly 4 GB on top of the normalized object. If
-that is more than you have, fetch the filtered checkpoint this chapter writes and
-start from it instead:
-
-```{.bash filename="Terminal"}
-./get_data.sh D_filtered
-```
-
-```{.r filename="RStudio Console"}
-grs_filt <- readRDS("data/03_grs_filtered.rds")
-```
-
-The funnel counts are saved on their own too, in `data/03_filter_funnel.tsv`, which is
-committed to the repository, so you can still read them without running the chapter.
-:::
-
-The result: **`r format(funl$retained, big.mark=",")`** autosomal probes on
-96 samples, filtered under the Zhou v8.1 mask for mapping quality, SNP masking
-appropriate to an admixed African-American cohort (AFR and EUR terms together),
-detection reliability, and sex chromosomes.
-
-Nearly every probe that survives here is tested in the EWAS. Two small deductions
-happen later, both in [chapter 05](05_batch_effects.qmd):
-
-- the **20 CpGs used to build the smoking proxy** are excluded, because regressing
-  those probes on a score derived from themselves is circular; and
-- **two probes** (`cg17759086`, `cg01801182`) have β pinned at 0 or 1 in the
-  86-sample analysis subset, so their M-values are ±∞ and they cannot be fitted.
-
-So `r format(funl$retained, big.mark=",")` probes pass filtering and
-**756,251** are actually tested.
 
 ---
 

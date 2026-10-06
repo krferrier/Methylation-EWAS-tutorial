@@ -33,8 +33,10 @@ did not run that chapter, fetch the published checkpoint instead:
 library(minfi)                  # estimateCellCounts2(), getBeta()
 library(FlowSorted.Blood.EPIC)  # the flow-sorted EPIC reference and the IDOL probe library
 library(GEOquery)               # getGEO(), for the study's own deposited proportions
-library(data.table)             # fread() for the deposited table, rbindlist() for the figure
+library(data.table)             # fread() for the deposited table
 library(ggplot2)                # every figure in this chapter
+library(dplyr)                  # joins for the deposited table, bind_rows() for the figure
+library(tibble)                 # rownames_to_column() before the join
 
 # The raw two-channel object written by the Setup chapter: 1,051,943 addresses
 # across 96 arrays, with no normalization applied. Deconvolution is one of the
@@ -153,7 +155,7 @@ What this route costs you is the one thing this chapter is about: you do not see
 reference being fetched, you do not see the joint normalization, and if your own study
 ever needs different cell types or a different reference, you will not have run the
 call that changes. It also leaves `cc` undefined, so the save of the full
-deconvolution return at the end of the chapter cannot run. Use it because your
+deconvolution return in the `save-cellcounts` chunk cannot run. Use it because your
 machine forces you to.
 :::
 
@@ -168,7 +170,7 @@ comp <- data.frame(cell_type = colnames(props),
                    mean_pct   = round(100 * colMeans(props), 1),
                    min_pct    = round(100 * apply(props, 2, min), 1),
                    max_pct    = round(100 * apply(props, 2, max), 1))
-comp <- comp[order(-comp$mean_pct), ]
+comp <- arrange(comp, desc(mean_pct))
 knitr::kable(comp, row.names = FALSE,
              caption = "Estimated cell-type composition across the 96 samples. Neutrophils dominate, as expected for whole blood, but the range is wide — this between-sample variation is exactly what must be modeled.")
 ```
@@ -218,7 +220,7 @@ if (file.exists(dep_file)) {
   # The series matrix is ~30 MB and the deposited values never change, so once
   # the small table below exists it is what later renders read. Delete it to
   # force the fetch again.
-  dep <- as.data.frame(fread(dep_file))
+  dep <- fread(dep_file, data.table = FALSE)
 } else {
   # 60 seconds is not enough to pull 30 MB from GEO on a slow link.
   options(timeout = max(1200, getOption("timeout")))
@@ -236,9 +238,10 @@ if (file.exists(dep_file)) {
                               function(k) as.numeric(as.character(pd[[k]]))))
   dep$sample_id <- as.character(pd$geo_accession)
 
-  # The series carries 795 samples; match() keeps the 96 on our plate subset,
-  # in the row order of `props` so the merge below cannot silently misalign.
-  dep <- dep[match(rownames(props), dep$sample_id), c("sample_id", names(dep_cols))]
+  # The series carries 795 samples. Joining onto our 96 sample IDs keeps only
+  # the samples on our plate subset, in the row order of `props`, so the
+  # comparison below cannot silently misalign.
+  dep <- left_join(data.frame(sample_id = rownames(props)), dep, by = "sample_id")
 }
 ```
 
@@ -246,11 +249,13 @@ if (file.exists(dep_file)) {
 #| label: validation-compute
 cells <- c("CD8T","CD4T","NK","Bcell","Mono","Neu")
 
-# One row per sample with both sets of numbers side by side. Both frames carry
-# the same six column names, so merge() appends the suffixes that tell them
-# apart -- .est for ours, .dep for the study's.
-est <- as.data.frame(props); est$sample_id <- rownames(props)
-m   <- merge(est, dep, by = "sample_id", suffixes = c(".est", ".dep"))
+# One row per sample with both sets of numbers side by side. The sample IDs are
+# the row names of `props`, so they are moved into a column to join on. Both
+# tables carry the same six column names, so the join appends the suffixes that
+# tell them apart -- .est for ours, .dep for the study's.
+m <- as.data.frame(props) %>%
+  rownames_to_column("sample_id") %>%
+  inner_join(dep, by = "sample_id", suffix = c(".est", ".dep"))
 
 # Three complementary summaries per cell type: correlation says whether the
 # between-sample variation agrees (the part that matters for confounding
@@ -268,7 +273,7 @@ for (i in seq_along(cells)) {
 }
 
 # The per-sample comparison and the per-cell-type summary travel together: this
-# is the object saved at the end of the chapter, and the one the paragraph below
+# is the object the save-cellcounts chunk saves, and the one the paragraph below
 # the figure reads its numbers from.
 val <- list(merged = m, validation = res)
 ```
@@ -291,9 +296,9 @@ knitr::kable(disp, caption = "Our estimates vs the study's deposited proportions
 #| fig-width: 8
 #| fig-height: 5.2
 # Six panels, one per cell type, so stack the pairs into a long table.
-long <- rbindlist(lapply(cells, function(k)
-  data.table(cell = k, est = m[[paste0(k, ".est")]], dep = m[[paste0(k, ".dep")]])))
-long$cell <- factor(long$cell, levels = cells)
+long <- bind_rows(lapply(cells, function(k)
+  data.frame(cell = k, est = m[[paste0(k, ".est")]], dep = m[[paste0(k, ".dep")]]))) %>%
+  mutate(cell = factor(cell, levels = cells))
 
 # The correlation from the table above, printed in each panel's corner: with
 # free axes per panel a reader cannot judge agreement by eye alone.
@@ -328,6 +333,44 @@ Many studies do not provide cell proportions. In a real analysis you trust the m
 and **sanity-check the output**: neutrophils should dominate whole blood (~50–70%), 
 proportions should sum to ~1, and the distribution should look biologically plausible. 
 :::
+
+## Saving what we just computed
+
+We carry the estimated proportions forward as EWAS covariates:
+
+```{r}
+#| label: save-cellcounts
+# 1. The proportions themselves: a 96 x 6 matrix with GSM ids as rownames. This
+#    is the file the later chapters read when they need cell-type covariates.
+saveRDS(props, "data/04_cellcounts.rds")
+
+# 2. The whole estimateCellCounts2() return, as deposited in the Zenodo record.
+#    Keeping the full object means the file on record is the object the code
+#    above produced, with nothing dropped or coerced.
+saveRDS(cc, "data/04_cc_full.rds")
+
+# 3. The validation: the per-sample comparison (`merged`) and the per-cell-type
+#    summary (`validation`) that the table, the figure and the paragraph above
+#    are all drawn from.
+saveRDS(val, "data/04_validation.rds")
+
+# 4. The deposited proportions, flat and small enough to live in the repository
+#    rather than in a Zenodo tier -- which is what lets the fetch above run once
+#    instead of on every render.
+write.table(dep, "data/04_deposited_cellcounts.tsv",
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+# 5. The validation figure at the size the rendered page uses. The site serves
+#    the committed copy, so it is written by the same code that drew it above.
+ggsave("data/04_validation_scatter.png", p_val, width = 8, height = 5.2, dpi = 130)
+```
+
+Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not
+use the exposure, so there is no reason to restrict it to the modeled subset here —
+the nine samples with no recorded PTSD status
+([chapter 01](01_qc.qmd)) drop out later, when the exposure enters the model, as does the one sample with
+no genetic ancestry PCs ([Genetic ancestry PCs](04b_genetic_pcs.qmd)), leaving
+n = 86 for the EWAS.
 
 ## 5. When you don't have IDATs: deconvolution from a processed matrix
 
@@ -382,42 +425,6 @@ RefFreeEWAS; SVA is used in [batch effects](05_batch_effects.qmd) to capture unm
 variation, and RUV is mentioned there. The trade-off is that the recovered
 components are not labeled cell types, only surrogate variables to adjust for.
 :::
-
-We carry the estimated proportions forward as EWAS covariates:
-
-```{r}
-#| label: save-cellcounts
-# 1. The proportions themselves: a 96 x 6 matrix with GSM ids as rownames. This
-#    is the file the later chapters read when they need cell-type covariates.
-saveRDS(props, "data/04_cellcounts.rds")
-
-# 2. The whole estimateCellCounts2() return, as deposited in the Zenodo record.
-#    Keeping the full object means the file on record is the object the code
-#    above produced, with nothing dropped or coerced.
-saveRDS(cc, "data/04_cc_full.rds")
-
-# 3. The validation: the per-sample comparison (`merged`) and the per-cell-type
-#    summary (`validation`) that the table, the figure and the paragraph above
-#    are all drawn from.
-saveRDS(val, "data/04_validation.rds")
-
-# 4. The deposited proportions, flat and small enough to live in the repository
-#    rather than in a Zenodo tier -- which is what lets the fetch above run once
-#    instead of on every render.
-write.table(dep, "data/04_deposited_cellcounts.tsv",
-            sep = "\t", row.names = FALSE, quote = FALSE)
-
-# 5. The validation figure at the size the rendered page uses. The site serves
-#    the committed copy, so it is written by the same code that drew it above.
-ggsave("data/04_validation_scatter.png", p_val, width = 8, height = 5.2, dpi = 130)
-```
-
-Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not
-use the exposure, so there is no reason to restrict it to the modeled subset here —
-the nine samples with no recorded PTSD status
-([chapter 01](01_qc.qmd)) drop out later, when the exposure enters the model, as does the one sample with
-no genetic ancestry PCs ([Genetic ancestry PCs](04b_genetic_pcs.qmd)), leaving
-n = 86 for the EWAS.
 
 ---
 

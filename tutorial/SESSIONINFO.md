@@ -15,7 +15,7 @@ Rscript install_packages.R
 ```
 
 It requires **R 4.4 or newer** and relies on `BiocManager`, which selects the
-Bioconductor release matching your R (R 4.6 → 3.23, R 4.5 → 3.22). All 28 package names
+Bioconductor release matching your R (R 4.6 → 3.23, R 4.5 → 3.22). All 31 package names
 resolve in every release from 3.19 on, and nothing needs a version pin. The floor is R 4.4
 because `knowYourCG`, used in chapter 08, first appears in Bioconductor 3.19.
 

@@ -7,7 +7,7 @@
 ##
 ## Requires R 4.4 or newer -- install the current release. BiocManager picks the
 ## Bioconductor release that matches your R (R 4.6 -> 3.23, R 4.5 -> 3.22), and
-## all 28 package names resolve in every release from 3.19 on (knowYourCG first
+## all 31 package names resolve in every release from 3.19 on (knowYourCG first
 ## appears in 3.19, which is why R 4.3 and Bioconductor 3.18 are not enough). Nothing here
 ## needs a version pin: install the current matrixStats like everything else.
 ##
@@ -55,7 +55,8 @@ if (bioc_ver < "3.19") {
 ## --- 2. the packages --------------------------------------------------------
 cran <- c("data.table", "ggplot2", "knitr", "DT",
           "ggrepel", "ggtext",   # figure labels (chapters 06 and 08)
-          "fst", "jsonlite")     # pipeline input file (07); UCSC API query (08)
+          "fst", "jsonlite",    # pipeline input file (07); UCSC API query (08)
+          "dplyr", "tibble")    # joining and filtering phenotype tables (04, 04b, 05)
 
 bioc <- c(
   # array I/O and preprocessing
@@ -65,7 +66,7 @@ bioc <- c(
   # cell composition
   "FlowSorted.Blood.EPIC", "genefilter",
   # batch effects, association testing, inflation
-  "sva", "limma", "bacon",
+  "sva", "limma", "edgeR", "bacon",
   # annotation and enrichment
   "sesame", "sesameData", "GenomicRanges", "rtracklayer",
   "missMethyl", "methylGSA", "knowYourCG", "ENmix"

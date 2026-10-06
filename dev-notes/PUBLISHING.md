@@ -98,7 +98,7 @@ From a clean directory, as a student would:
 git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
 cd Methylation-EWAS-tutorial
 ./get_data.sh F_ewas_results H_annotation
-bash qrender.sh render 08_annotation.qmd
+cd tutorial && quarto render 08_annotation.qmd
 ```
 
 That is the smallest download (422 MB) that exercises the fetch script, the checksum

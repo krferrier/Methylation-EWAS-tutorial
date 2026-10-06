@@ -71,6 +71,7 @@ committed to the repository.
 ```{r}
 #| label: load
 library(ggplot2)   # the scatter plot below
+library(dplyr)     # filter() and left_join() for the sample sheet
 
 ss   <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 gpcs <- c("pc1", "pc2", "pc3")
@@ -78,9 +79,10 @@ gpcs <- c("pc1", "pc2", "pc3")
 # The 86 samples an association model can use: PTSD status, sex, age and all three
 # PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the
 # 96 arrays has no PCs, and nine have no PTSD status.
-keep <- !(is.na(ss$ptsd) | ss$ptsd == "") & !is.na(ss$sex) & !is.na(ss$age) &
-        complete.cases(ss[, gpcs])
-pcs  <- ss[keep, ]
+pcs <- ss %>%
+  filter(!is.na(ptsd), ptsd != "",
+         !is.na(sex), !is.na(age),
+         !is.na(pc1), !is.na(pc2), !is.na(pc3))
 cat("samples with PCs:", sum(complete.cases(ss[, gpcs])), "of", nrow(ss),
     "| modeled samples:", nrow(pcs), "\n")
 ```
@@ -235,7 +237,7 @@ cat("reference CpGs:", length(ref), "| on this array:", nrow(beta), "\n")
 
 # Covariates to remove before the PCA, in the same sample order as `beta`.
 cells <- readRDS("data/04_cellcounts.rds")[colnames(beta), ]
-sheet <- ss[match(colnames(beta), ss$sample_id), ]
+sheet <- left_join(data.frame(sample_id = colnames(beta)), ss, by = "sample_id")
 
 # EPISTRUCTURE: regress each reference site on the covariates, keep the residuals,
 # standardize each site, and take principal components across samples.

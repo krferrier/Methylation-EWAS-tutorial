@@ -117,18 +117,20 @@ need to reformat them to match the format the snakemake pipeline expects.
 
 ```{r}
 #| label: build-pheno
-library(data.table)
+library(data.table)   # fread() / fwrite()
+library(dplyr)        # select(), bind_cols() and the result-table summaries below
 
 # Chapter 05 saved everything the model needs alongside the surrogate variables:
 # `mdk` (the 86 samples with a modelable phenotype), `propk` (their cell
 # proportions), `smoke` (the methylation-derived score) and `SV`.
 sva_o <- readRDS("data/05_sva.rds")
 mdk   <- sva_o$mdk
-propk <- as.data.table(sva_o$propk)[, .(CD8T, CD4T, NK, Bcell, Mono, Neu)]
-SVdt  <- as.data.table(sva_o$SV)
-setnames(SVdt, paste0("SV", seq_len(ncol(sva_o$SV))))
+propk <- as.data.frame(sva_o$propk) %>%
+  select(CD8T, CD4T, NK, Bcell, Mono, Neu)
+SVdf  <- as.data.frame(sva_o$SV)
+colnames(SVdf) <- paste0("SV", seq_len(ncol(SVdf)))
 
-pheno <- data.table(
+pheno <- data.frame(
   SampleID = mdk$sample_id,
   # ewas.R builds the design from the column as it stands, so 0/1 here is what
   # gets modeled -- 1 = Case keeps the coefficient pointing the same way as
@@ -139,9 +141,9 @@ pheno <- data.table(
   smoke    = as.numeric(sva_o$smoke),
   pos      = as.character(mdk$array_pos))
 # The three genetic ancestry PCs from the GEO deposit, as chapter 05 modeled them.
-gpcs  <- data.table(pc1 = as.numeric(mdk$pc1), pc2 = as.numeric(mdk$pc2),
+gpcs  <- data.frame(pc1 = as.numeric(mdk$pc1), pc2 = as.numeric(mdk$pc2),
                     pc3 = as.numeric(mdk$pc3))
-pheno <- cbind(pheno, propk, gpcs, SVdt)
+pheno <- bind_cols(pheno, propk, gpcs, SVdf)
 
 cat("pheno:", nrow(pheno), "samples x", ncol(pheno), "columns\n")
 cat("columns:", paste(names(pheno), collapse = ", "), "\n\n")
@@ -167,7 +169,7 @@ fwrite(pheno, "data/pheno.csv")                       # 86 x 21, a few KB
 # file must be SAMPLES in rows, CpGs in columns, not the other way round.
 Mcb   <- readRDS("data/05_mvals_combat.rds")          # 756,251 CpGs x 86 samples
 Mt    <- t(Mcb)
-mvals <- data.table(SampleID = rownames(Mt), as.data.table(Mt))
+mvals <- data.frame(SampleID = rownames(Mt), Mt, check.names = FALSE)
 
 write_fst(mvals, "data/mvals.fst", compress = 50)
 
@@ -249,11 +251,13 @@ method used for association testing.
 # CpG with the per-probe glm estimate, its standard error, the t-statistic and
 # the p-value. These are the pre-BACON numbers; the BACON-adjusted file that
 # section 6 reads is a separate output of the same run.
-allres <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz")
+allres <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz", data.table = FALSE)
 cat("columns:", paste(names(allres), collapse = ", "), "\n")
 cat("n CpGs:", nrow(allres), " | samples per model (n):", allres$n[1], "\n")
-setorder(allres, p.value)
-print(head(allres[, .(cpgid, estimate, std.error, statistic, p.value)], 5))
+allres <- arrange(allres, p.value)
+allres %>%
+  select(cpgid, estimate, std.error, statistic, p.value) %>%
+  head(5)
 ```
 
 ## 5. Stratifying by sex, then running each stratum {#sec-strata}
@@ -314,38 +318,39 @@ lam <- function(p) { p <- p[is.finite(p) & p > 0]
 # The three EWAS arms. Each BACON results file carries both the raw `p.value` and
 # the adjusted `bacon.pval`, which is what lets one row report lambda before and
 # after the correction. These three are ~163 MB of compressed CSV.
-res_all <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz")
-res_f   <- fread("../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz")
-res_m   <- fread("../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz")
+res_all <- fread("../ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz", data.table = FALSE)
+res_f   <- fread("../ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz", data.table = FALSE)
+res_m   <- fread("../ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz", data.table = FALSE)
 # The meta-analysis of those strata, from METAL (41 MB, uncompressed text).
 # Section 7 works through its columns; here only its p-values are needed.
-res_meta <- fread("../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt")
-setnames(res_meta, "P-value", "P")
+res_meta <- fread("../ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt", data.table = FALSE)
+res_meta <- rename(res_meta, P = `P-value`)
 
 # One row per EWAS arm. `n` comes out of the results file itself: ewas.R records
 # the number of samples that entered each per-CpG model.
 row1 <- function(lab, d) {
-  setorder(d, bacon.pval)
-  data.table(Analysis = lab, n = d$n[1],
+  d <- arrange(d, bacon.pval)
+  data.frame(Analysis = lab, n = d$n[1],
              lambda_raw = lam(d$p.value), lambda_bacon = lam(d$bacon.pval),
              n_P_lt_1e5 = sum(d$bacon.pval < 1e-5, na.rm = TRUE),
              top_cpg = d$cpgid[1], top_P = d$bacon.pval[1])
 }
 # Assemble the summary table: one row per EWAS arm, plus the meta-analysis.
-summ <- rbindlist(list(
+summ <- bind_rows(
   row1("Overall", res_all), row1("Female", res_f), row1("Male", res_m),
-  data.table(Analysis = "Meta (F+M)", n = NA_integer_,
+  data.frame(Analysis = "Meta (F+M)", n = NA_integer_,
              lambda_raw = NA_real_, lambda_bacon = lam(res_meta$P),
              n_P_lt_1e5 = sum(res_meta$P < 1e-5, na.rm = TRUE),
              top_cpg = res_meta$MarkerName[which.min(res_meta$P)],
-             top_P = min(res_meta$P))))
+             top_P = min(res_meta$P)))
 
 # Export the summary results.
 fwrite(summ, "data/07_pipeline_summary.csv")
 
-print(summ[, .(Analysis, n, lambda_raw = round(lambda_raw, 3),
-               lambda_bacon = round(lambda_bacon, 3),
-               n_P_lt_1e5, top_cpg, top_P = signif(top_P, 3))])
+summ %>%
+  mutate(lambda_raw   = round(lambda_raw, 3),
+         lambda_bacon = round(lambda_bacon, 3),
+         top_P        = signif(top_P, 3))
 ```
 
 The raw λ values start close to 1 but pull in *opposite directions* across the

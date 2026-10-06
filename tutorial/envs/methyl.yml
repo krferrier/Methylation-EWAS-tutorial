@@ -57,6 +57,7 @@ dependencies:
   # batch effects, association testing, inflation
   - bioconductor-sva
   - bioconductor-limma
+  - bioconductor-edger   # imported by sva and missMethyl; listed so it is never missing
   - bioconductor-bacon
 
   # annotation and enrichment
@@ -75,6 +76,8 @@ dependencies:
   - r-ggrepel          # figure labels, chapters 06 and 08
   - r-ggtext           # coloured axis labels, chapter 08 KYCG figure
   - r-fst              # the pipeline's .fst M-value input, chapter 07
+  - r-dplyr            # left_join() / filter() on phenotype tables, chapters 04, 04b, 05
+  - r-tibble           # rownames_to_column() / column_to_rownames(), chapter 05
   - r-ggplot2
   - r-knitr
   - r-dt

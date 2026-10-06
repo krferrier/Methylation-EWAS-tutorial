@@ -134,14 +134,6 @@ contains it; if you fetch the tier you simply overwrite the file with an identic
 
 ## Deliberately not distributed
 
-These intermediates are written by the tutorial but never read back by any chapter. They are diagnostics whose summary CSVs and figures are committed to git.
-
 | file | why it is excluded |
 |---|---|
-| `repo/data/05_mvals_combat_pos.rds` | redundant variant of 05_mvals_combat.rds (position-in-model diagnostic) |
-| `repo/data/05_sv_worth_it.rds` | diagnostic sweep object; the CSV/PNG summaries ship in git |
-| `repo/data/05_k_lambda_sweep.rds` | diagnostic sweep object; 05_k_lambda_sweep.csv ships in git |
-| `repo/data/05_sva_prev.rds` | superseded SVA fit from an earlier design |
-| `repo/data/05_position_comparison.rds` | diagnostic; summary CSV ships in git |
-| `repo/data/05_k_sweep_posmod.rds` | diagnostic; summary CSV ships in git |
-| `ewas_pipeline/data/mvals.csv.gz` | regenerable from tier D by scripts/build_pipeline_inputs.R (514 MB) |
+| `ewas_pipeline/data/mvals.csv.gz` | regenerable from tier E by chapter 07's pipeline-input code (514 MB) |

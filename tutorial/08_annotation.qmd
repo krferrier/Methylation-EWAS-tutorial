@@ -91,7 +91,9 @@ next update. We reproduce the steps by hand so the logic is clearly layed out.
 
 ```{r}
 #| label: libraries
-library(data.table)      # fread()/fwrite() and the := joins used all through this chapter
+library(data.table)      # fread()/fwrite(): fast reading and writing of the large tables
+library(dplyr)           # filter(), mutate(), left_join() and the other table verbs
+library(tibble)          # rownames_to_column(), for the gometh KEGG table in Part 3
 library(ggplot2)         # the two context bar charts in Part 1
 ```
 
@@ -137,10 +139,10 @@ zhou_epic <- paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotati
                     "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/")
 
 # 1. EWAS results: the BACON-adjusted toptable from chapter 06
-tt <- fread("data/06_ewas_bacon_toptable.csv.gz")
+tt <- fread("data/06_ewas_bacon_toptable.csv.gz", data.table = FALSE)
 
 # 2. Zhou gencode v41 gene model: gene names, biotypes, signed distance to TSS
-v41 <- fread(paste0(zhou_epic, "EPIC.hg38.manifest.gencode.v41.tsv.gz"))
+v41 <- fread(paste0(zhou_epic, "EPIC.hg38.manifest.gencode.v41.tsv.gz"), data.table = FALSE)
 # a probe with several transcripts has several distToTSS values (';'-joined);
 # keep the one nearest the TSS — this is what the promoter definition uses
 nearest_tss <- function(x) {
@@ -149,27 +151,29 @@ nearest_tss <- function(x) {
   v[which.min(abs(v))]
 }
 # one function call per probe over the whole manifest: the slow line here
-v41[, distTSS := vapply(distToTSS, nearest_tss, numeric(1))]
+v41 <- v41 %>% mutate(distTSS = vapply(distToTSS, nearest_tss, numeric(1)))
 
 # 3. CpG-island relation — only the v36 gene table carries CGIposition
 v36 <- fread(paste0(zhou_epic, "EPIC.hg38.manifest.gencode.v36.tsv.gz"),
-             select = c("probeID","CGIposition"))
-v36[, island := fifelse(is.na(CGIposition) | CGIposition == "", "OpenSea", CGIposition)]
+             select = c("probeID","CGIposition"), data.table = FALSE)
+v36 <- v36 %>%
+  mutate(island = if_else(is.na(CGIposition) | CGIposition == "", "OpenSea", CGIposition))
 
 # 4. Join everything on probe ID.
-#    all.x = TRUE: every tested CpG stays in the table, annotated or not.
-annotated <- tt |>
-  merge(v41[, .(probe = probeID, CpG_chrm, CpG_beg, CpG_end,
-                genesUniq, transcriptTypes, distTSS)], by = "probe", all.x = TRUE) |>
-  merge(v36[, .(probe = probeID, island)], by = "probe", all.x = TRUE)
+#    left_join(): every tested CpG stays in the table, annotated or not.
+annotated <- tt %>%
+  left_join(v41 %>% select(probe = probeID, CpG_chrm, CpG_beg, CpG_end,
+                          genesUniq, transcriptTypes, distTSS), by = "probe") %>%
+  left_join(v36 %>% select(probe = probeID, island), by = "probe")
 
 # 5. Zhou's gene-feature convention: the gene model runs from 1.5 kb upstream of
 #    the TSS through the termination site. A probe within +/-1.5 kb of a TSS is
 #    promoter-associated; genic but beyond that is gene body; no gene is intergenic.
-annotated[, feature := fifelse(is.na(genesUniq) | genesUniq %in% c("", "NA"), "Intergenic",
-                        fifelse(!is.na(distTSS) & abs(distTSS) <= 1500, "Promoter", "Gene body"))]
+annotated <- annotated %>%
+  mutate(feature = if_else(is.na(genesUniq) | genesUniq %in% c("", "NA"), "Intergenic",
+                   if_else(!is.na(distTSS) & abs(distTSS) <= 1500, "Promoter", "Gene body")))
 # rank by the BACON p-value
-setorder(annotated, bacon.p)
+annotated <- annotated %>% arrange(bacon.p)
 
 # The deposited table is written a few sections down, after the eQTM columns are
 # joined on, so that the file on disk carries every annotation this chapter builds.
@@ -184,17 +188,19 @@ array deliberately targets enhancers and open sea away from genes.
 
 ```{r}
 #| label: top10-derive
-t10 <- head(annotated, 10)[, .(
-  probe, chr = CpG_chrm, pos = CpG_beg,
-  # an intergenic probe has no symbol; print a dash rather than NA
-  gene = fifelse(is.na(genesUniq) | genesUniq == "", "-", genesUniq),
-  distTSS = round(distTSS), feature, island,
-  # delta_beta is chapter 06's case−control β difference; ×100 puts it in
-  # percentage points, which is how the prose discusses effect sizes
-  delta_beta = round(100 * delta_beta, 2),
-  bacon_p = signif(bacon.p, 3), bacon_FDR = signif(bacon.adj.P, 3))]
-setnames(t10, c("probe","chr","pos","gene","distToTSS","feature","island",
-                "\u0394\u03b2 (pp)","BACON p","BACON FDR"))
+t10 <- head(annotated, 10) %>%
+  mutate(
+    # an intergenic probe has no symbol; print a dash rather than NA
+    gene = if_else(is.na(genesUniq) | genesUniq == "", "-", genesUniq),
+    distToTSS = round(distTSS),
+    # delta_beta is chapter 06's case−control β difference; ×100 puts it in
+    # percentage points, which is how the prose discusses effect sizes
+    "\u0394\u03b2 (pp)" = round(100 * delta_beta, 2),
+    "BACON p"   = signif(bacon.p, 3),
+    "BACON FDR" = signif(bacon.adj.P, 3)) %>%
+  # keep the display columns, in display order, renaming as they are picked
+  select(probe, chr = CpG_chrm, pos = CpG_beg, gene, distToTSS, feature, island,
+         "\u0394\u03b2 (pp)", "BACON p", "BACON FDR")
 fwrite(t10, "data/08_annotation/top10_display.csv")
 ```
 
@@ -202,7 +208,7 @@ fwrite(t10, "data/08_annotation/top10_display.csv")
 #| label: top10
 #| message: false
 # written by the `top10-derive` chunk above
-t10 <- fread("data/08_annotation/top10_display.csv")
+t10 <- fread("data/08_annotation/top10_display.csv", data.table = FALSE)
 knitr::kable(t10, caption = "Top 10 CpGs by BACON-adjusted p-value, with hg38 coordinates and gene/island context.")
 ```
 
@@ -241,13 +247,16 @@ top  <- head(annotated, TOPN)          # `annotated` is already ordered by bacon
 # sets differ in size by three orders of magnitude and raw counts would not be
 # comparable.
 mk <- function(col, lev) {
-  a <- data.table(set = "Top 1,000",  grp = factor(top[[col]], levels = lev))
-  b <- data.table(set = "All tested", grp = factor(annotated[[col]], levels = lev))
-  d <- rbind(a, b)[!is.na(grp), .N, by = .(set, grp)]
-  d[, pct := 100 * N / sum(N), by = set]
-  # top set first, so the series the reader is asking about leads the legend
-  d[, set := factor(set, levels = c("Top 1,000", "All tested"))]
-  d
+  a <- data.frame(set = "Top 1,000",  grp = factor(top[[col]], levels = lev))
+  b <- data.frame(set = "All tested", grp = factor(annotated[[col]], levels = lev))
+  bind_rows(a, b) %>%
+    filter(!is.na(grp)) %>%
+    count(set, grp) %>%                     # number of CpGs per set and category: column n
+    group_by(set) %>%
+    mutate(pct = 100 * n / sum(n)) %>%      # percentage within each set
+    ungroup() %>%
+    # top set first, so the series the reader is asking about leads the legend
+    mutate(set = factor(set, levels = c("Top 1,000", "All tested")))
 }
 fd <- mk("feature", c("Promoter", "Gene body", "Intergenic"))
 # island levels in genomic order: island, its two shores, its two shelves, then
@@ -321,16 +330,17 @@ to the repository, so there is nothing to fetch. It is the output of a script fr
 # Extends `annotated` from the join above. The two files it writes at the end
 # are the ones every later section of this chapter reads.
 
-eqtm <- fread("data/08_annotation/bios_eqtm_hgnc_annotated.tsv.gz")
+eqtm <- fread("data/08_annotation/bios_eqtm_hgnc_annotated.tsv.gz", data.table = FALSE)
 
 # collapse to one row per CpG: effector gene(s) + strongest eQTM FDR
-eq <- eqtm[HGNCName_GRCh38 != "" & !is.na(HGNCName_GRCh38),
-           .(BIOS_eQTM_genes  = paste(sort(unique(HGNCName_GRCh38)), collapse = ";"),
-             BIOS_eQTM_minFDR = min(as.numeric(FDR), na.rm = TRUE)),
-           by = .(probe = SNPName)]
+eq <- eqtm %>%
+  filter(HGNCName_GRCh38 != "" & !is.na(HGNCName_GRCh38)) %>%
+  group_by(probe = SNPName) %>%
+  summarise(BIOS_eQTM_genes  = paste(sort(unique(HGNCName_GRCh38)), collapse = ";"),
+            BIOS_eQTM_minFDR = min(as.numeric(FDR), na.rm = TRUE))
 
-annotated <- merge(annotated, eq, by = "probe", all.x = TRUE)
-setorder(annotated, bacon.p)      # merge() re-sorts by the join key; rank it again
+# left_join() keeps every row of `annotated`, still in bacon.p order
+annotated <- left_join(annotated, eq, by = "probe")
 
 # --- what Part 1 hands on -------------------------------------------------
 # Export the annotation data as a .csv (as is found in the Zenodo tier H_annotation) and an RDS.
@@ -348,32 +358,38 @@ catalog only keeps pairs at FDR < 0.05. That said, if we filter our results to l
 ```{r}
 #| label: eqtm-top-derive
 # The twelve rows rendered below: the best-ranked hits that carry an eQTM.
-eqd <- annotated[!is.na(BIOS_eQTM_genes)][1:12]
+eqd <- annotated %>%
+  filter(!is.na(BIOS_eQTM_genes)) %>%
+  slice_head(n = 12)
 # Is the effector gene also the nearest gene? TRUE when any eQTM gene appears in
 # the probe's own (semicolon-separated) gene list. mapply because both sides are
 # strings that have to be split row by row.
-eqd[, nearest := fifelse(mapply(function(g, e) {
+eqd <- eqd %>%
+  mutate(nearest = if_else(mapply(function(g, e) {
       if (is.na(g) || g == "") return(FALSE)
       any(strsplit(e, ";")[[1]] %in% strsplit(g, ";")[[1]])
-    }, genesUniq, BIOS_eQTM_genes), "yes", "no")]
-eqdisp <- eqd[, .(probe,
-                  nearest_gene = fifelse(is.na(genesUniq) | genesUniq == "", "-", genesUniq),
-                  eQTM_gene = BIOS_eQTM_genes, `nearest?` = nearest,
-                  eQTM_FDR = signif(BIOS_eQTM_minFDR, 3),
-                  bacon_p = signif(bacon.p, 3))]
+    }, genesUniq, BIOS_eQTM_genes), "yes", "no"))
+eqdisp <- eqd %>%
+  mutate(nearest_gene = if_else(is.na(genesUniq) | genesUniq == "", "-", genesUniq),
+         eQTM_FDR = signif(BIOS_eQTM_minFDR, 3),
+         bacon_p  = signif(bacon.p, 3)) %>%
+  select(probe, nearest_gene, eQTM_gene = BIOS_eQTM_genes, `nearest?` = nearest,
+         eQTM_FDR, bacon_p)
 fwrite(eqdisp, "data/08_annotation/eqtm_display.csv")
 
 # the same hits, untrimmed and with every annotation column, for anyone who
 # wants to look further down the ranking than the table below shows
-fwrite(annotated[!is.na(BIOS_eQTM_genes)][1:200],
-       "data/08_annotation/eqtm_top_hits.csv")
+annotated %>%
+  filter(!is.na(BIOS_eQTM_genes)) %>%
+  slice_head(n = 200) %>%
+  fwrite("data/08_annotation/eqtm_top_hits.csv")
 ```
 
 ```{r}
 #| label: eqtm-top
 #| message: false
 # written by the `eqtm-top-derive` chunk above
-knitr::kable(fread("data/08_annotation/eqtm_display.csv"),
+knitr::kable(fread("data/08_annotation/eqtm_display.csv", data.table = FALSE),
   caption = "Top EWAS hits (by BACON p) that carry a BIOS cis-eQTM. The 'nearest?' column flags where the expression-linked effector gene is not the nearest gene by distance.")
 ```
 
@@ -449,30 +465,33 @@ table is read directly from the Zhou lab's repository in the chunk below.
 ```{r}
 #| label: make-bed
 # This chunk writes the file comb-p needs for input.
-tt  <- as.data.table(readRDS("data/06_ewas.rds")$tt)
+tt  <- readRDS("data/06_ewas.rds")$tt
 # The YAME probe order and the coordinate table are two halves of one file pair:
 # row i of the coordinate table is the probe named on row i of the ordering
 # file, which is why they are assembled side by side and not merged.
 # The ordering is the same committed file chapter 03 reads. The coordinate table
 # (5 MB) is downloaded from the zhou-lab/InfiniumAnnotation repository, pinned to a
 # commit so it cannot change underneath the ordering it has to line up with.
-ord <- fread("data/EPIC.ordering.tsv.gz", select = "Probe_ID")    # YAME probe order
+ord <- fread("data/EPIC.ordering.tsv.gz", select = "Probe_ID",    # YAME probe order
+             data.table = FALSE)
 crd <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotation/",
-                    "e91f9e992cc60f2f52f15c564e359ac6718d4cfd/EPIC/EPIC.hg38.coord.tsv.gz"))
-                                                                   # same order, one row per probe
-map <- data.table(probe = ord$Probe_ID,
+                    "e91f9e992cc60f2f52f15c564e359ac6718d4cfd/EPIC/EPIC.hg38.coord.tsv.gz"),
+             data.table = FALSE)                                   # same order, one row per probe
+map <- data.frame(probe = ord$Probe_ID,
                   CpG_chrm = crd$CpG_chrm, CpG_beg = crd$CpG_beg)
 
-bed <- merge(tt, map, by = "probe")[
+# inner_join(): only probes that are both tested and in the coordinate table
+bed <- inner_join(tt, map, by = "probe") %>%
   # comb-p walks ordered positions along a chromosome, so keep the assembled
   # chromosomes only: a probe on a scaffold has no neighbors to borrow from
-  grepl("^chr([0-9]+|X|Y)$", CpG_chrm),
+  filter(grepl("^chr([0-9]+|X|Y)$", CpG_chrm)) %>%
   # comb-p's column contract: chrom/start/end, the p-value it smooths, and an
   # id it carries through untouched. The '#' on the first name is what makes
   # the header a comment line to the tool.
-  .(`#chrom` = CpG_chrm, start = CpG_beg, end = CpG_beg + 2L,
-    pvals = bacon.p, cpgid = probe)]
-setorder(bed, `#chrom`, start)
+  mutate(end = CpG_beg + 2L) %>%
+  select(`#chrom` = CpG_chrm, start = CpG_beg, end, pvals = bacon.p, cpgid = probe) %>%
+  # order along each chromosome; probes that share a position are ordered by ID
+  arrange(`#chrom`, start, cpgid)
 fwrite(bed, "data/08_annotation/PTSD_ewas_annotated_results.bed", sep = "\t")
 ```
 
@@ -586,18 +605,22 @@ expression data can help clarify why we are seeing this signal in the MHC.
 #| fig-height: 3.6
 #| fig-cap: "The detected DMR at chr6:28.63 Mb (hg38, Zhou coordinates). Each stem is one CpG within 2.5 kb of the region; the eleven inside the shaded window (teal) are the region comb-p reports, and all eleven are less methylated in cases. Every one sits far below the single-CpG genome-wide threshold (plum line, −log₁₀ p = 7.2), yet together — because they are adjacent and move in the same direction — they reach Šidák-corrected p = 2.4 × 10⁻¹⁶. This power gain is the entire reason to do region-level analysis."
 library(data.table)
+library(dplyr)
 library(ggplot2)
 
 # The strongest comb-p region, by Sidak-corrected p, from the file the command above wrote
-lead <- fread("data/08_annotation/dmr/PTSD_dmr.regions-p.bed.gz")[order(z_sidak_p)][1]
+lead <- fread("data/08_annotation/dmr/PTSD_dmr.regions-p.bed.gz", data.table = FALSE) %>%
+  arrange(z_sidak_p) %>%
+  slice_head(n = 1)
 lead_chr <- lead[[1]]; lead_start <- lead$start; lead_end <- lead$end
 
 # Every tested CpG within 2.5 kb of the region, with its BACON p-value and hg38 position
-ann_loc <- as.data.table(readRDS("data/08_annotation/annotated.rds"))
+ann_loc <- readRDS("data/08_annotation/annotated.rds")
 bonf_line <- -log10(0.05 / nrow(ann_loc))
-loc <- ann_loc[CpG_chrm == lead_chr &
-               CpG_beg >= lead_start - 2500 & CpG_beg <= lead_end + 2500]
-loc[, in_region := CpG_beg >= lead_start & CpG_beg <= lead_end]
+loc <- ann_loc %>%
+  filter(CpG_chrm == lead_chr &
+         CpG_beg >= lead_start - 2500 & CpG_beg <= lead_end + 2500) %>%
+  mutate(in_region = CpG_beg >= lead_start & CpG_beg <= lead_end)
 
 ggplot(loc, aes(CpG_beg / 1e6, -log10(bacon.p), colour = in_region)) +
   annotate("rect", xmin = lead_start / 1e6, xmax = lead_end / 1e6,
@@ -634,11 +657,12 @@ This section starts from `data/08_annotation/PTSD_ewas_annotated_results.bed`, w
 # compared against below lives in `envs/combp.yml`.
 library(ENmix)
 
-bed <- data.table::fread("data/08_annotation/PTSD_ewas_annotated_results.bed")
-# ENmix expects its own column names, in this order
-data.table::setnames(bed, c("chr", "start", "end", "p", "probe"))
-bed <- as.data.frame(bed)          # ENmix wants a plain data.frame
-bed$chr <- as.character(bed$chr)
+bed <- data.table::fread("data/08_annotation/PTSD_ewas_annotated_results.bed",
+                         data.table = FALSE)   # ENmix wants a plain data.frame
+# ENmix expects its own column names, in this order: chr, start, end, p, probe
+bed <- bed %>%
+  rename(chr = `#chrom`, p = pvals, probe = cpgid) %>%
+  mutate(chr = as.character(chr))
 
 combp(data = bed,
       dist.cutoff = 750,           # must exceed bin.size (see the warning below)
@@ -650,9 +674,12 @@ combp(data = bed,
 # combp() always writes resu_combp.csv into the working directory; move it
 # alongside the other chapter 08 outputs
 file.rename("resu_combp.csv", "data/08_annotation/08_enmix_combp.csv")
-enmix <- data.table::fread("data/08_annotation/08_enmix_combp.csv")
+enmix <- data.table::fread("data/08_annotation/08_enmix_combp.csv", data.table = FALSE)
 cat("ENmix regions:", nrow(enmix), "| Sidak < 0.05:", sum(enmix$sidak < 0.05), "\n")
-enmix[which.min(enmix$sidak), .(chr, start, end, nprobe, sidak)]
+# the region with the smallest Sidak p
+enmix %>%
+  slice_min(sidak, n = 1) %>%
+  select(chr, start, end, nprobe, sidak)
 ```
 
 It runs in about a minute on our 756,234-row BED and finds the same lead region: a
@@ -723,7 +750,9 @@ library(jsonlite)        # fromJSON(), for the UCSC API query below
 
 # The comb-p DMR, in hg38: the region with the smallest Sidak-corrected p in the
 # regions-p file the comb-p command above wrote
-top_dmr <- fread("data/08_annotation/dmr/PTSD_dmr.regions-p.bed.gz")[order(z_sidak_p)][1]
+top_dmr <- fread("data/08_annotation/dmr/PTSD_dmr.regions-p.bed.gz", data.table = FALSE) %>%
+  arrange(z_sidak_p) %>%
+  slice_head(n = 1)
 dmr <- GRanges(top_dmr[[1]], IRanges(top_dmr$start, top_dmr$end))
 
 # The same three UCSC hg38 tables the pipeline's fetch_dmr_annotation_cache rule
@@ -733,13 +762,13 @@ ucsc <- "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/"
 
 # refGene: columns 3-6 are chrom, strand, txStart, txEnd; column 13 is the gene symbol
 rg <- fread(paste0(ucsc, "refGene.txt.gz"), header = FALSE, select = c(3, 4, 5, 6, 13),
-            col.names = c("chrom", "strand", "txStart", "txEnd", "gene"))
+            col.names = c("chrom", "strand", "txStart", "txEnd", "gene"), data.table = FALSE)
 refGene <- GRanges(rg$chrom, IRanges(rg$txStart + 1L, rg$txEnd),   # UCSC starts are 0-based
                    strand = rg$strand, gene = rg$gene)
 
 # cpgIslandExt: columns 2-4 are chrom, chromStart, chromEnd
 cgi <- fread(paste0(ucsc, "cpgIslandExt.txt.gz"), header = FALSE, select = 2:4,
-             col.names = c("chrom", "chromStart", "chromEnd"))
+             col.names = c("chrom", "chromStart", "chromEnd"), data.table = FALSE)
 cpgIslands <- GRanges(cgi$chrom, IRanges(cgi$chromStart + 1L, cgi$chromEnd))
 
 # The HGNC track is a bigBed (the pipeline converts it with bigBedToBed). R's
@@ -774,19 +803,21 @@ agree, it is not uncommon for annotation disagreements to occur:
 # One row per annotation source: what each names for the DMR. Rows one and two
 # come from the UCSC queries in the chunk above; row three from the GENCODE v41
 # annotation built in Part 1 (annotated.rds).
-ann <- as.data.table(readRDS("data/08_annotation/annotated.rds"))
+ann <- readRDS("data/08_annotation/annotated.rds")
 # the region's CpGs by coordinate, not by a pasted probe list, so the region
 # definition lives in one place
-reg <- ann[CpG_chrm == as.character(seqnames(dmr)) &
-           CpG_beg >= start(dmr) & CpG_beg <= end(dmr)]
-setorder(reg, CpG_beg)
+reg <- ann %>%
+  filter(CpG_chrm == as.character(seqnames(dmr)) &
+         CpG_beg >= start(dmr) & CpG_beg <= end(dmr)) %>%
+  arrange(CpG_beg)
 stopifnot(nrow(reg) == top_dmr$n_probes)   # the count comb-p reported; fail loudly if the map changed
 
 # every gencode v41 gene the eleven probes are assigned to, de-duplicated
 gencode_genes <- paste(sort(unique(unlist(strsplit(reg$genesUniq, ";")))),
                        collapse = ", ")
 
-dmr_src <- data.table(
+# check.names = FALSE keeps the space in "Annotation source"
+dmr_src <- data.frame(check.names = FALSE,
   `Annotation source` = c("UCSC refGene (pipeline default gene table)",
                           "UCSC HGNC track",
                           "Zhou GENCODE v41 (our probe-level annotation)"),
@@ -798,10 +829,10 @@ dmr_src <- data.table(
     paste0(hgnc$symbol, " (", hgnc$geneName, ", directly overlapping)"),
     paste0(gencode_genes, " (promoter-associated, non-coding)")))
 # the second column is labelled with the region's own hg38 coordinates
-setnames(dmr_src, "names",
-         sprintf("What it names for %s:%s\u2013%s", as.character(seqnames(dmr)),
-                 formatC(start(dmr), big.mark = ",", format = "d"),
-                 formatC(end(dmr),   big.mark = ",", format = "d")))
+region_label <- sprintf("What it names for %s:%s\u2013%s", as.character(seqnames(dmr)),
+                        formatC(start(dmr), big.mark = ",", format = "d"),
+                        formatC(end(dmr),   big.mark = ",", format = "d"))
+dmr_src <- dmr_src %>% rename_with(function(old) region_label, .cols = names)
 fwrite(dmr_src, "data/08_annotation/dmr_source_comparison.csv")
 ```
 
@@ -809,7 +840,7 @@ fwrite(dmr_src, "data/08_annotation/dmr_source_comparison.csv")
 #| label: dmr-sources
 #| message: false
 # written by the `dmr-sources-derive` chunk above
-knitr::kable(fread("data/08_annotation/dmr_source_comparison.csv"),
+knitr::kable(fread("data/08_annotation/dmr_source_comparison.csv", data.table = FALSE),
   caption = "Three hg38 gene annotations, three answers for the same DMR. refGene — the pipeline's default `gene_table` — names nothing nearby; the region only acquires a label from the pseudogene track or from GENCODE.")
 ```
 
@@ -831,24 +862,27 @@ hypomethylated in cases, look like this:
 # The eleven-row table rendered below, and the fuller per-CpG file that backs
 # it. Both come from `reg` — the region's CpGs in the Part 1 annotation layer,
 # built in the chunk above.
-disp <- reg[, .(CpG = probe,
-                `hg38 position (chr6)` = formatC(CpG_beg, big.mark = ",", format = "d"),
-                # the annotation layer's label is "Promoter (±1.5 kb TSS)";
-                # trim the parenthetical so the column stays narrow
-                `GENCODE feature` = sub(" \\(.*", "", feature),
-                `CGI context` = island,
-                # β difference on the 0-1 scale: -0.022 reads as 2.2 points hypo
-                `Δβ (case − control)` = round(delta_beta, 3),
-                `BACON p` = signif(bacon.p, 3))]
+disp <- reg %>%
+  mutate(
+    `hg38 position (chr6)` = formatC(CpG_beg, big.mark = ",", format = "d"),
+    # the annotation layer's label is "Promoter (±1.5 kb TSS)";
+    # trim the parenthetical so the column stays narrow
+    `GENCODE feature` = sub(" \\(.*", "", feature),
+    # β difference on the 0-1 scale: -0.022 reads as 2.2 points hypo
+    `Δβ (case − control)` = round(delta_beta, 3),
+    `BACON p` = signif(bacon.p, 3)) %>%
+  select(CpG = probe, `hg38 position (chr6)`, `GENCODE feature`,
+         `CGI context` = island, `Δβ (case − control)`, `BACON p`)
 fwrite(disp, "data/08_annotation/dmr_cpg_display.csv")
 
 # the same eleven CpGs with everything the annotation layer knows about them,
 # including the transcript list the display table has no room for
-full <- reg[, .(probe, CpG_beg, CpG_end, genesUniq, transcriptTypes, distTSS,
-                feature, island, BIOS_eQTM_genes,
-                delta_beta = round(delta_beta, 4),
-                bacon.es   = round(bacon.es, 3),
-                bacon.p    = signif(bacon.p, 3))]
+full <- reg %>%
+  mutate(delta_beta = round(delta_beta, 4),
+         bacon.es   = round(bacon.es, 3),
+         bacon.p    = signif(bacon.p, 3)) %>%
+  select(probe, CpG_beg, CpG_end, genesUniq, transcriptTypes, distTSS,
+         feature, island, BIOS_eQTM_genes, delta_beta, bacon.es, bacon.p)
 fwrite(full, "data/08_annotation/dmr_cpg_annotation.csv")
 ```
 
@@ -856,7 +890,7 @@ fwrite(full, "data/08_annotation/dmr_cpg_annotation.csv")
 #| label: dmr-cpgs
 #| message: false
 # written by the `dmr-cpgs-derive` chunk above
-knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv"),
+knitr::kable(fread("data/08_annotation/dmr_cpg_display.csv", data.table = FALSE),
   caption = "The eleven CpGs of the DMR. All fall in the same CpG-island north shore and are hypomethylated in PTSD cases — Δβ between −2.2 and −5.8 percentage points, every one in the same direction. That coherence is what makes a region call meaningful; none of the eleven individual BACON p-values comes close to genome-wide significance.")
 ```
 
@@ -880,13 +914,13 @@ renamed to match:
 ```{r}
 #| label: zhou-anno
 # One row per CpG probe with hg38 coordinates. `v41` is the Zhou manifest read in Part 1.
-z <- v41[grepl("^cg", probeID) & !is.na(CpG_beg)]
-genes <- fifelse(is.na(z$genesUniq), "", z$genesUniq)     # ';'-separated gene names
+z <- v41 %>% filter(grepl("^cg", probeID) & !is.na(CpG_beg))
+genes <- if_else(is.na(z$genesUniq), "", z$genesUniq)     # ';'-separated gene names
 zhou_anno <- S4Vectors::DataFrame(
   Name   = z$probeID,
   chr    = z$CpG_chrm,
   pos    = z$CpG_beg + 1L,                                # Zhou's starts are 0-based
-  strand = fifelse(is.na(z$probe_strand), "*", z$probe_strand),
+  strand = if_else(is.na(z$probe_strand), "*", z$probe_strand),
   UCSC_RefGene_Name = genes,
   # missMethyl wants one gene-region label per gene. It only uses them when you
   # restrict the test to particular regions (genomic.features), which we do not,
@@ -966,9 +1000,13 @@ set".
 # RDS written at the end is what the comparison table further down reads.
 # `zhou_anno` is the hg38 annotation built in Part 2's zhou-anno chunk.
 library(missMethyl)
-tt     <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
+library(dplyr)
+tt     <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz", data.table = FALSE)
 all.cpg <- tt$probe                          # tested universe = every CpG you analyzed
-sig.cpg <- tt[order(bacon.p)][1:1000]$probe  # your significant set
+sig.cpg <- tt %>%                             # your significant set
+  arrange(bacon.p) %>%
+  slice_head(n = 1000) %>%
+  pull(probe)
 
 # GO enrichment, corrected for probes-per-gene. array.type matches your array.
 # anno = zhou_anno: genes from Zhou's hg38 GENCODE v41, not Illumina's hg19 default
@@ -1003,23 +1041,32 @@ Run on our teaching subset, the corrected results are:
 # Drawn the same way as the EWAS pipeline's pathway plot (scripts/plot_enrichment.R
 # in github.com/krferrier/EWAS), so this figure and the pipeline's look alike.
 library(ggplot2)
-library(data.table)
+library(dplyr)
 
 fdr_threshold <- 0.05
 # The ten leading terms by nominal p within each collection: GO and KEGG are
 # corrected separately, so a pooled top ten would be all GO.
-top_terms <- rbind(
-  as.data.table(go)[order(P.DE)][1:10, .(collection = "GO", term = TERM, DE, FDR)],
-  as.data.table(kegg)[order(P.DE)][1:10, .(collection = "KEGG", term = Description, DE, FDR)])
-top_terms[, neg_log10_fdr := -log10(FDR)]
-top_terms[, signif := factor(FDR < fdr_threshold, levels = c(TRUE, FALSE))]
-# Order each panel by -log10(FDR), then nominal p for ties, so the leading term is on top
-top_terms[, term := make.unique(as.character(term), sep = " ")]
-top_terms[, term := factor(term, levels = rev(term))]
+top_terms <- bind_rows(
+  go %>%
+    arrange(P.DE) %>%
+    slice_head(n = 10) %>%
+    mutate(collection = "GO") %>%
+    select(collection, term = TERM, DE, FDR),
+  kegg %>%
+    arrange(P.DE) %>%
+    slice_head(n = 10) %>%
+    mutate(collection = "KEGG") %>%
+    select(collection, term = Description, DE, FDR))
+top_terms <- top_terms %>%
+  mutate(neg_log10_fdr = -log10(FDR),
+         signif = factor(FDR < fdr_threshold, levels = c(TRUE, FALSE)),
+         # Order each panel by -log10(FDR), then nominal p for ties, so the leading term is on top
+         term = make.unique(as.character(term), sep = " "),
+         term = factor(term, levels = rev(term)))
 
 # An invisible point carrying both significance levels, so the legend always
 # explains solid against hollow even when every point falls on one side.
-key <- data.table(neg_log10_fdr = top_terms$neg_log10_fdr[1], term = top_terms$term[1],
+key <- data.frame(neg_log10_fdr = top_terms$neg_log10_fdr[1], term = top_terms$term[1],
                   collection = top_terms$collection[1],
                   signif = factor(c(TRUE, FALSE), levels = c(TRUE, FALSE)))
 
@@ -1085,17 +1132,19 @@ committed to the repository, so the rest of the section runs without this step.
 #| eval: false
 library(methylGSA)
 library(data.table)   # fread()/fwrite()
+library(dplyr)        # filter(), select(), arrange() and the other table verbs
 
 # This chunk runs in its own R session, so it reads the Zhou v41 manifest itself.
 # prepareAnnot() wants one row per CpG: the probe ID and its ';'-separated genes.
 v41 <- fread(paste0("https://raw.githubusercontent.com/zhou-lab/InfiniumAnnotationData/",
                     "6d176d6e7e56465403d4478a09fe11b983eeb721/Anno/EPIC/",
-                    "EPIC.hg38.manifest.gencode.v41.tsv.gz"))
-cpg2gene  <- v41[grepl("^cg", probeID) & !is.na(genesUniq) & genesUniq != "",
-                 .(CpG = probeID, gene = genesUniq)]
-FullAnnot <- prepareAnnot(as.data.frame(cpg2gene))
+                    "EPIC.hg38.manifest.gencode.v41.tsv.gz"), data.table = FALSE)
+cpg2gene  <- v41 %>%
+  filter(grepl("^cg", probeID) & !is.na(genesUniq) & genesUniq != "") %>%
+  select(CpG = probeID, gene = genesUniq)
+FullAnnot <- prepareAnnot(cpg2gene)
 
-tt <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
+tt <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz", data.table = FALSE)
 pv <- setNames(tt$bacon.p, tt$probe)          # NAMED vector: names = CpG IDs
 
 # logistic-regression enrichment (bias covariate = probes per gene)
@@ -1112,8 +1161,8 @@ mrra <- methylRRA(cpg.pval = pv, FullAnnot = FullAnnot, method = "GSEA",
 # no longer get human pathway IDs back from KEGG, leaving Description empty. Fill
 # any gaps from KEGG's own list of human pathways.
 kegg_names <- fread("https://rest.kegg.jp/list/pathway/hsa", header = FALSE,
-                    col.names = c("id", "name"))
-kegg_names[, `:=`(id = sub("^hsa", "", id), name = sub(" - Homo sapiens \\(human\\)$", "", name))]
+                    col.names = c("id", "name"), data.table = FALSE) %>%
+  mutate(id = sub("^hsa", "", id), name = sub(" - Homo sapiens \\(human\\)$", "", name))
 fill_names <- function(res) {
   miss <- is.na(res$Description)
   res$Description[miss] <- kegg_names$name[match(res$ID[miss], kegg_names$id)]
@@ -1125,12 +1174,17 @@ mrra <- fill_names(mrra)
 # Export results
 saveRDS(list(methylglm = mglm, methylRRA = mrra),
         "data/08_annotation/08_methylgsa.rds")
-glm_top <- head(as.data.table(mglm)[order(pvalue)], 10)[
-  , .(Method = "methylglm", KEGG = ID, Pathway = Description, Size, pvalue, padj)]
+glm_top <- mglm %>%
+  arrange(pvalue) %>%
+  slice_head(n = 10) %>%
+  mutate(Method = "methylglm") %>%
+  select(Method, KEGG = ID, Pathway = Description, Size, pvalue, padj)
 fwrite(glm_top, "data/08_annotation/08_methylgsa_glm_top.csv")
-rra_top <- head(as.data.table(mrra)[order(pvalue)], 5)[
-  , .(Method = "methylRRA-GSEA", KEGG = ID, Pathway = Description, Size,
-      NES, pvalue, padj)]
+rra_top <- mrra %>%
+  arrange(pvalue) %>%
+  slice_head(n = 5) %>%
+  mutate(Method = "methylRRA-GSEA") %>%
+  select(Method, KEGG = ID, Pathway = Description, Size, NES, pvalue, padj)
 fwrite(rra_top, "data/08_annotation/08_methylgsa_rra_top.csv")
 ```
 
@@ -1143,10 +1197,15 @@ FDR < 0.05 and what each one puts at the top:
 # The comparison table rendered below, rebuilt from the three result files the
 # two chunks above write rather than typed out by hand.
 g  <- readRDS("data/08_annotation/08_gometh.rds")
-kg <- as.data.table(g$kegg, keep.rownames = "ID")[order(P.DE)]
+# gometh keeps the KEGG ids in the row names; move them into an ID column
+kg <- g$kegg %>%
+  rownames_to_column("ID") %>%
+  arrange(P.DE)
 # KEGG ids are zero-padded ("04140"), so they must not be read as integers.
-gl <- fread("data/08_annotation/08_methylgsa_glm_top.csv", colClasses = c(KEGG = "character"))
-rr <- fread("data/08_annotation/08_methylgsa_rra_top.csv", colClasses = c(KEGG = "character"))
+gl <- fread("data/08_annotation/08_methylgsa_glm_top.csv", colClasses = c(KEGG = "character"),
+            data.table = FALSE)
+rr <- fread("data/08_annotation/08_methylgsa_rra_top.csv", colClasses = c(KEGG = "character"),
+            data.table = FALSE)
 mg <- readRDS("data/08_annotation/08_methylgsa.rds")   # full methylglm and methylRRA tables
 
 # A misspelled column name returns NULL, which c() drops without warning; the
@@ -1154,7 +1213,8 @@ mg <- readRDS("data/08_annotation/08_methylgsa.rds")   # full methylglm and meth
 leaders <- c(kg$Description[1], gl$Pathway[1], rr$Pathway[1])
 stopifnot(length(leaders) == 3L)
 
-cmp <- data.table(
+# check.names = FALSE keeps the spaces and symbols in the column names
+cmp <- data.frame(check.names = FALSE,
   Method = c("gometh (Wallenius hypergeometric)",
              "methylglm (logistic regression)",
              "methylRRA-GSEA (rank aggregation)"),
@@ -1180,7 +1240,7 @@ fwrite(cmp, "data/08_annotation/08_gsa_method_comparison.csv")
 #| label: gsa-compare
 #| message: false
 # written by the `gsa-compare-derive` chunk above
-knitr::kable(fread("data/08_annotation/08_gsa_method_comparison.csv"),
+knitr::kable(fread("data/08_annotation/08_gsa_method_comparison.csv", data.table = FALSE),
   caption = "Three probe-bias corrections, one dataset, one gene annotation (Zhou hg38 GENCODE v41). gometh and methylglm return no KEGG pathway at FDR < 0.05; methylRRA-GSEA returns eight. Each nominates a different pathway as its leader — the ranking, not just the count, depends on the bias model and the input convention.")
 ```
 
@@ -1204,11 +1264,12 @@ another cohort.
 #| message: false
 # written by the `methylgsa` chunk above
 # KEGG ids are zero-padded ("05223"), so read them as text
-rra <- fread("data/08_annotation/08_methylgsa_rra_top.csv", colClasses = c(KEGG = "character"))
+rra <- fread("data/08_annotation/08_methylgsa_rra_top.csv", colClasses = c(KEGG = "character"),
+             data.table = FALSE)
 # NES is only present when the file came from a GSEA run, so take the columns
 # that are there instead of failing the render on a missing one
 rra_cols <- intersect(c("KEGG", "Pathway", "Size", "NES", "pvalue", "padj"), names(rra))
-knitr::kable(rra[, ..rra_cols],
+knitr::kable(rra %>% select(all_of(rra_cols)),
   digits = 4,
   caption = "The five top-ranked methylRRA-GSEA KEGG pathways. All five pass FDR < 0.05 (eight pathways do in total) on a dataset with no epigenome-wide signal, which is the sensitivity/specificity trade-off of a cutoff-free rank test made concrete.")
 ```
@@ -1248,14 +1309,18 @@ Cistrome maps all human data to hg38 [@zheng2019cistrome].
 #| label: kycg
 library(knowYourCG)
 library(sesameData)
+library(dplyr)
 
 # Download the EPIC knowledgebases into the ExperimentHub cache. testEnrichment()
 # stops with 'either not found or needs to be cached' until this has run once;
 # after that it is a no-op.
 kycgDataCache()
-tt      <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz")
+tt      <- data.table::fread("data/06_ewas_bacon_toptable.csv.gz", data.table = FALSE)
 all.cpg <- tt$probe                              # universe = every CpG you tested
-sig.cpg <- tt[order(bacon.p)][1:1000]$probe   # your query set
+sig.cpg <- tt %>%                                 # your query set
+  arrange(bacon.p) %>%
+  slice_head(n = 1000) %>%
+  pull(probe)
 
 # What CpG-feature databases are available for this platform?
 # ALWAYS list first: the catalog names carry datestamps and they change
@@ -1313,12 +1378,12 @@ those 5 features do and do not show.
 library(ggplot2)
 library(ggrepel)   # geom_text_repel(), labels that avoid the points
 library(ggtext)    # element_markdown(), axis labels coloured to match their block
-library(data.table)
+library(dplyr)
 
 fdr_threshold <- 0.05
-kd <- as.data.table(res)
-kd[, kb := sub("^KYCG[.]EPIC[.]", "", sub("[.][0-9]+$", "", group))]
-kd <- kd[!is.na(FDR) & is.finite(estimate)]
+kd <- res %>%
+  mutate(kb = sub("^KYCG[.]EPIC[.]", "", sub("[.][0-9]+$", "", group))) %>%
+  filter(!is.na(FDR) & is.finite(estimate))
 
 # Blocks in the pipeline's order: chromatin states and histone marks together,
 # then protein binding, then gene context. Alternate groups are shaded.
@@ -1326,44 +1391,58 @@ kb_order <- c("chromHMM", "HMconsensus", "TFBSconsensus", "CGI")
 kb_group <- c(chromHMM = 1, HMconsensus = 1, TFBSconsensus = 2, CGI = 3)
 kb_cols  <- c(chromHMM = "#B8883E", HMconsensus = "#5B7F95",
               TFBSconsensus = "#1A6B75", CGI = "#8C3A4A")
-kd[, kb := factor(kb, levels = kb_order)]
-setorder(kd, kb, dbname)
+kd <- kd %>%
+  mutate(kb = factor(kb, levels = kb_order)) %>%
+  arrange(kb, dbname)
 
 # Each block's width grows with log(number of features), so the 783 TF binding
 # sites do not swallow the axis and the 5 CpG-island features stay findable.
 n_tested <- table(kd$kb)
-kd[, inc := as.numeric((log(2 + n_tested) / n_tested)[as.character(kb)])]
-kd[, step := c(0, as.numeric(head(as.character(kb), -1) != tail(as.character(kb), -1)))]
-kd[, xpos := cumsum(inc + step)]
+kd <- kd %>%
+  mutate(inc  = as.numeric((log(2 + n_tested) / n_tested)[as.character(kb)]),
+         step = c(0, as.numeric(head(as.character(kb), -1) != tail(as.character(kb), -1))),
+         xpos = cumsum(inc + step))
 
-blocks <- kd[, .(middle = mean(xpos), beg = min(xpos), end = max(xpos), n = .N), by = kb]
+blocks <- kd %>%
+  group_by(kb) %>%
+  summarise(middle = mean(xpos), beg = min(xpos), end = max(xpos), n = n())
 min_w <- 0.006 * diff(range(kd$xpos))
-blocks[, half := pmax((end - beg) / 2, min_w)]
+blocks <- blocks %>% mutate(half = pmax((end - beg) / 2, min_w))
 pad <- min(diff(blocks$middle)) * 0.12
-blocks[, `:=`(rmin = middle - half - pad, rmax = middle + half + pad,
-              grp = kb_group[as.character(kb)])]
-blocks[, lab := sprintf("<span style='color:%s'>%s (%d)</span>",
-                        kb_cols[as.character(kb)], kb, n)]
-bands <- blocks[, .(rmin = min(rmin), rmax = max(rmax)), by = grp]
-bands[, shade := grp %% 2 == 0]
+blocks <- blocks %>%
+  mutate(rmin = middle - half - pad, rmax = middle + half + pad,
+         grp = kb_group[as.character(kb)],
+         lab = sprintf("<span style='color:%s'>%s (%d)</span>",
+                       kb_cols[as.character(kb)], kb, n))
+bands <- blocks %>%
+  group_by(grp) %>%
+  summarise(rmin = min(rmin), rmax = max(rmax)) %>%
+  mutate(shade = grp %% 2 == 0)
 
 # Only over-represented features are drawn: the test is one-sided, so a
 # depleted feature carries no evidence either way.
-pts <- kd[estimate > 0]
-pts[, y := -log10(FDR)]
-pts[, signif := factor(FDR < fdr_threshold, levels = c(TRUE, FALSE))]
-# The strongest significant feature in each knowledgebase gets a label
-labs_dt <- pts[signif == "TRUE"][order(-y), head(.SD, 1), by = kb]
+pts <- kd %>%
+  filter(estimate > 0) %>%
+  mutate(y = -log10(FDR),
+         signif = factor(FDR < fdr_threshold, levels = c(TRUE, FALSE)))
+# The strongest significant feature in each knowledgebase gets a label;
+# the labels are then listed strongest first
+kb_labels <- pts %>%
+  filter(signif == "TRUE") %>%
+  group_by(kb) %>%
+  slice_max(y, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(desc(y))
 y_top <- max(3, max(pts$y) * 1.18)
-key <- data.table(xpos = pts$xpos[1], y = pts$y[1],
+key <- data.frame(xpos = pts$xpos[1], y = pts$y[1],
                   signif = factor(c(TRUE, FALSE), levels = c(TRUE, FALSE)))
 
 ggplot(pts, aes(xpos, y)) +
-  geom_rect(data = bands[shade == TRUE], aes(xmin = rmin, xmax = rmax, ymin = -Inf, ymax = Inf),
+  geom_rect(data = filter(bands, shade == TRUE), aes(xmin = rmin, xmax = rmax, ymin = -Inf, ymax = Inf),
             fill = "grey92", colour = NA, alpha = 0.55, inherit.aes = FALSE) +
   geom_point(aes(size = estimate, colour = kb, shape = signif), alpha = 0.65) +
   geom_point(data = key, aes(xpos, y, shape = signif), size = 0, alpha = 0, inherit.aes = FALSE) +
-  geom_text_repel(data = labs_dt, aes(label = dbname, colour = kb), size = 2.9,
+  geom_text_repel(data = kb_labels, aes(label = dbname, colour = kb), size = 2.9,
                   direction = "y", nudge_y = 0.04 * y_top, point.padding = 0.6,
                   box.padding = 0.35, min.segment.length = 0, force = 4, force_pull = 0.3,
                   max.overlaps = Inf, seed = 1, segment.colour = "grey60",
@@ -1387,37 +1466,47 @@ ggplot(pts, aes(xpos, y)) +
 # This chunk executes: it reads the result table the chunk above wrote and
 # derives the three summaries the rest of this section discusses, so none of
 # those numbers can drift away from the run that produced them.
-k <- fread("data/08_annotation/08_kycg_results.csv")
+k <- fread("data/08_annotation/08_kycg_results.csv", data.table = FALSE)
 # testEnrichment names the knowledgebase in `group` and the feature in `dbname`,
 # which reads backwards; rename once here
-setnames(k, c("group", "dbname"), c("db", "feature"))
+k <- k %>% rename(db = group, feature = dbname)
 # drop the "KYCG.EPIC." prefix and the release datestamp: "CGI", "chromHMM", ...
-k[, kb := sub("^KYCG\\.EPIC\\.", "", sub("\\.[0-9]+$", "", db))]
+k <- k %>% mutate(kb = sub("^KYCG\\.EPIC\\.", "", sub("\\.[0-9]+$", "", db)))
 
-# per-knowledgebase: how much was tested, how much survived, and the leader
-ksum <- k[, .(
-  `Features tested` = .N,
-  `Nominal p<0.05`  = sum(p.value < 0.05, na.rm = TRUE),
-  `FDR<0.05`        = sum(FDR < 0.05, na.rm = TRUE),
-  `Top feature`     = feature[which.min(FDR)],
-  `Top log2(OR)`    = round(estimate[which.min(FDR)], 2),
-  `Top FDR`         = signif(min(FDR, na.rm = TRUE), 3)
-), by = .(Knowledgebase = kb)][order(-`FDR<0.05`)]
+# per-knowledgebase: how much was tested, how much survived, and the leader;
+# most FDR hits first, ties broken by the smaller top FDR
+ksum <- k %>%
+  group_by(Knowledgebase = kb) %>%
+  summarise(
+    `Features tested` = n(),
+    `Nominal p<0.05`  = sum(p.value < 0.05, na.rm = TRUE),
+    `FDR<0.05`        = sum(FDR < 0.05, na.rm = TRUE),
+    `Top feature`     = feature[which.min(FDR)],
+    `Top log2(OR)`    = round(estimate[which.min(FDR)], 2),
+    `Top FDR`         = signif(min(FDR, na.rm = TRUE), 3)) %>%
+  arrange(desc(`FDR<0.05`), `Top FDR`)
 fwrite(ksum, "data/08_annotation/08_kycg_db_summary.csv")
 
 # every feature that clears FDR < 0.05, best first
-ktop <- k[FDR < 0.05][order(FDR, p.value),
-  .(Knowledgebase = kb, Feature = feature,
-    `log2(OR)` = round(estimate, 2), `Query CpGs` = overlap,
-    `DB size` = nD, p = signif(p.value, 3), FDR = signif(FDR, 3))]
+ktop <- k %>%
+  filter(FDR < 0.05) %>%
+  arrange(FDR, p.value) %>%
+  mutate(`log2(OR)` = round(estimate, 2),
+         p   = signif(p.value, 3),
+         FDR = signif(FDR, 3)) %>%
+  select(Knowledgebase = kb, Feature = feature, `log2(OR)`,
+         `Query CpGs` = overlap, `DB size` = nD, p, FDR)
 fwrite(ktop, "data/08_annotation/08_kycg_top.csv")
 
 # the CGI knowledgebase in full — all five rows, significant or not, because the
 # section below reads it as a negative result and needs the near-misses visible
-kcgi <- k[kb == "CGI"][order(FDR),
-  .(Feature = feature, `log2(OR)` = round(estimate, 2),
-    `Query CpGs` = overlap, `DB size` = nD,
-    p = signif(p.value, 3), FDR = signif(FDR, 3))]
+kcgi <- k %>%
+  filter(kb == "CGI") %>%
+  arrange(FDR) %>%
+  mutate(`log2(OR)` = round(estimate, 2),
+         p   = signif(p.value, 3),
+         FDR = signif(FDR, 3)) %>%
+  select(Feature = feature, `log2(OR)`, `Query CpGs` = overlap, `DB size` = nD, p, FDR)
 fwrite(kcgi, "data/08_annotation/08_kycg_cgi.csv")
 ```
 
@@ -1425,7 +1514,7 @@ fwrite(kcgi, "data/08_annotation/08_kycg_cgi.csv")
 #| label: kycg-db
 #| message: false
 # written by the `kycg-derive` chunk above
-knitr::kable(fread("data/08_annotation/08_kycg_db_summary.csv"),
+knitr::kable(fread("data/08_annotation/08_kycg_db_summary.csv", data.table = FALSE),
   caption = "KYCG results per knowledgebase. The four databases differ in size by two orders of magnitude, and the largest one contributes only one of the significant hits.")
 ```
 
@@ -1452,7 +1541,7 @@ knitr::kable(kcgi, caption = "The CpG-island knowledgebase in full: all five isl
 #| label: kycg-top
 #| message: false
 # written by the `kycg-derive` chunk above
-knitr::kable(head(fread("data/08_annotation/08_kycg_top.csv"), 15),
+knitr::kable(head(fread("data/08_annotation/08_kycg_top.csv", data.table = FALSE), 15),
   caption = "All 5 of KYCG's features at FDR < 0.05. `Query CpGs` is how many of the 1,000 fell in that feature; `DB size` is how many of the 756,251 tested CpGs the feature covers.")
 ```
 

@@ -5909,8 +5909,8 @@ Annotation
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># across samples, i.e. how much the probes of a design differ from one another --</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># not within-probe noise, which is why rowMeans() comes first.</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>type_summ <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, typeI, typeII) {</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  bi  <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeI, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  bii <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeII, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  bi  <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeI, ]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  bii <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeII, ]</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">design      =</span> <span class="fu">c</span>(<span class="st">&quot;Type I&quot;</span>, <span class="st">&quot;Type II&quot;</span>),</span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_probes    =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(bi), <span class="fu">nrow</span>(bii)),</span>
@@ -6032,8 +6032,8 @@ Annotation
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># A design comparison is only meaningful if all three matrices describe the same</span></span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co"># probes; fail loudly here rather than silently comparing different probe sets.</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)),</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)))</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
 <span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>grs_fun</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
@@ -6959,8 +6959,8 @@ Triche, Timothy J, Daniel J Weisenberger, David Van Den Berg, Peter W Laird, and
 <span id="cb21-117"><a href="#cb21-117" aria-hidden="true" tabindex="-1"></a><span class="co"># across samples, i.e. how much the probes of a design differ from one another --</span></span>
 <span id="cb21-118"><a href="#cb21-118" aria-hidden="true" tabindex="-1"></a><span class="co"># not within-probe noise, which is why rowMeans() comes first.</span></span>
 <span id="cb21-119"><a href="#cb21-119" aria-hidden="true" tabindex="-1"></a>type_summ <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, typeI, typeII) {</span>
-<span id="cb21-120"><a href="#cb21-120" aria-hidden="true" tabindex="-1"></a>  bi  <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeI, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb21-121"><a href="#cb21-121" aria-hidden="true" tabindex="-1"></a>  bii <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeII, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb21-120"><a href="#cb21-120" aria-hidden="true" tabindex="-1"></a>  bi  <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeI, ]</span>
+<span id="cb21-121"><a href="#cb21-121" aria-hidden="true" tabindex="-1"></a>  bii <span class="ot">&lt;-</span> beta[<span class="fu">rownames</span>(beta) <span class="sc">%in%</span> typeII, ]</span>
 <span id="cb21-122"><a href="#cb21-122" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
 <span id="cb21-123"><a href="#cb21-123" aria-hidden="true" tabindex="-1"></a>    <span class="at">design      =</span> <span class="fu">c</span>(<span class="st">&quot;Type I&quot;</span>, <span class="st">&quot;Type II&quot;</span>),</span>
 <span id="cb21-124"><a href="#cb21-124" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_probes    =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(bi), <span class="fu">nrow</span>(bii)),</span>
@@ -7063,8 +7063,8 @@ Triche, Timothy J, Daniel J Weisenberger, David Van Den Berg, Peter W Laird, and
 <span id="cb21-225"><a href="#cb21-225" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-226"><a href="#cb21-226" aria-hidden="true" tabindex="-1"></a><span class="co"># A design comparison is only meaningful if all three matrices describe the same</span></span>
 <span id="cb21-227"><a href="#cb21-227" aria-hidden="true" tabindex="-1"></a><span class="co"># probes; fail loudly here rather than silently comparing different probe sets.</span></span>
-<span id="cb21-228"><a href="#cb21-228" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)),</span>
-<span id="cb21-229"><a href="#cb21-229" aria-hidden="true" tabindex="-1"></a>          <span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
+<span id="cb21-228"><a href="#cb21-228" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_noob)))</span>
+<span id="cb21-229"><a href="#cb21-229" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">rownames</span>(beta_raw), <span class="fu">rownames</span>(beta_fun)))</span>
 <span id="cb21-230"><a href="#cb21-230" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-231"><a href="#cb21-231" aria-hidden="true" tabindex="-1"></a>grs_fun</span>
 <span id="cb21-232"><a href="#cb21-232" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
