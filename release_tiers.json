@@ -833,19 +833,19 @@
     ],
     [
      "repo/data/04_validation.rds",
-     8114
+     8203
     ],
     [
      "repo/data/05_mvals_combat.rds",
-     510973489
+     505149587
     ],
     [
      "repo/data/05_sva.rds",
-     11687
+     14422
     ],
     [
      "repo/data/05_batch_pca.rds",
-     14241
+     18339
     ]
    ]
   },
@@ -854,15 +854,15 @@
    "files": [
     [
      "repo/data/06_ewas.rds",
-     56035031
+     56049672
     ],
     [
      "repo/data/06_bacon_summary.rds",
-     333
+     187
     ],
     [
      "repo/data/06_ewas_bacon_toptable.csv.gz",
-     61029526
+     61108280
     ]
    ]
   },
@@ -871,83 +871,83 @@
    "files": [
     [
      "ewas_pipeline/data/pheno.csv",
-     17485
+     20219
     ],
     [
      "ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz",
-     30244597
+     30244197
     ],
     [
      "ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz",
-     57673185
+     57795231
     ],
     [
      "ewas_pipeline/run_grady_all/bacon_plots/PTSD_fit.jpg",
-     207497
+     201552
     ],
     [
      "ewas_pipeline/run_grady_all/bacon_plots/PTSD_qqs.jpg",
-     289704
+     286681
     ],
     [
      "ewas_pipeline/run_grady_all/bacon_plots/PTSD_traces.jpg",
-     584236
+     563129
     ],
     [
      "ewas_pipeline/run_grady_all/bacon_plots/PTSD_posteriors.jpg",
-     438735
+     443820
     ],
     [
      "ewas_pipeline/run_grady/F/F_PTSD_ewas_results.csv.gz",
-     29286839
+     29265907
     ],
     [
      "ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz",
-     56713678
+     56487435
     ],
     [
      "ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_fit.jpg",
-     193550
+     196995
     ],
     [
      "ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_qqs.jpg",
-     266265
+     264950
     ],
     [
      "ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_traces.jpg",
-     546483
+     544158
     ],
     [
      "ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_posteriors.jpg",
-     368340
+     298422
     ],
     [
      "ewas_pipeline/run_grady/M/M_PTSD_ewas_results.csv.gz",
-     29247678
+     29234073
     ],
     [
      "ewas_pipeline/run_grady/M/M_PTSD_ewas_bacon_results.csv.gz",
-     56699181
+     56680887
     ],
     [
      "ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_fit.jpg",
-     190424
+     199328
     ],
     [
      "ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_qqs.jpg",
-     279661
+     269148
     ],
     [
      "ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_traces.jpg",
-     552615
+     591107
     ],
     [
      "ewas_pipeline/run_grady/M/bacon_plots/M_PTSD_posteriors.jpg",
-     355855
+     309992
     ],
     [
      "ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt",
-     42987000
+     42998368
     ],
     [
      "ewas_pipeline/run_grady/PTSD_ewas_meta_analysis_results_1.txt.info",
@@ -960,43 +960,27 @@
    ]
   },
   "H_annotation": {
-   "resume": "ch08 \u2014 Zhou manifests plus annotated results and comb-p outputs",
+   "resume": "ch08 \u2014 annotated results and comb-p outputs",
    "files": [
     [
-     "masks/EPIC.hg38.manifest.gencode.v41.tsv.gz",
-     62477035
-    ],
-    [
-     "masks/EPIC.hg38.manifest.gencode.v36.tsv.gz",
-     29916134
-    ],
-    [
-     "masks/EPIC.hg38.coord.tsv.gz",
-     5505138
-    ],
-    [
-     "masks/EPIC.ordering.tsv.gz",
-     7756709
-    ],
-    [
      "repo/data/08_annotation/annotated.rds",
-     69949757
+     82353846
     ],
     [
      "repo/data/08_annotation/PTSD_ewas_annotated_results.bed",
-     39981168
+     39982327
     ],
     [
      "repo/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz",
-     83051542
+     83115125
     ],
     [
-     "repo/data/08_annotation/bios_eqtm_hgnc_annotated.tsv",
-     9130455
+     "repo/data/08_annotation/dmr/PTSD_dmr.slk.bed.gz",
+     8362568
     ],
     [
-     "repo/data/08_annotation/08_dmr_combp_outputs.tar.gz",
-     17958047
+     "repo/data/08_annotation/dmr/PTSD_dmr.fdr.bed.gz",
+     9573592
     ]
    ]
   }

@@ -3,7 +3,7 @@
 Every file in the eight Zenodo tarballs, with its size and the tier's SHA-256 checksum. Paths inside the tarballs are relative to the repository root, with `repo/` rewritten to `tutorial/`, so extracting from the repo root puts each file where the `.qmd` documents expect it.
 
 The published record is **https://doi.org/10.5281/zenodo.22135215** (concept DOI, always the newest
-version; this build is record `22287946`, version DOI `10.5281/zenodo.22287946`). The
+version; this build is record `23198019`, version DOI `10.5281/zenodo.23198019`). The
 SHA-256 checksums below are what `get_data.sh` verifies after download; the record
 page additionally lists Zenodo's own MD5 for each file.
 
@@ -68,69 +68,65 @@ contains it; if you fetch the tier you simply overwrite the file with an identic
 
 ### Tier `E_model_inputs`
 
-`ewas-tutorial-data-E_model_inputs.tar.gz` — 487 MB compressed  
+`ewas-tutorial-data-E_model_inputs.tar.gz` — 482 MB compressed  
 **Resume point:** ch06 — skip cell composition, ComBat and SVA  
-`sha256 0492d780b1ecd0e48a0b9b0b4bb75f3f664a03bc83274c848c9eb46c757b4b3c`
+`sha256 580f8362ad50e902beea4d60dd7b2cca0207e87b4b4418d4832f95cb5756a5b4`
 
 | file | bytes |
 |---|---:|
 | `repo/data/04_cc_full.rds` | 3,378 |
-| `repo/data/04_validation.rds` | 8,114 |
-| `repo/data/05_mvals_combat.rds` | 510,973,489 |
-| `repo/data/05_sva.rds` | 11,687 |
-| `repo/data/05_batch_pca.rds` | 14,241 |
+| `repo/data/04_validation.rds` | 8,203 |
+| `repo/data/05_mvals_combat.rds` | 505,149,587 |
+| `repo/data/05_sva.rds` | 14,422 |
+| `repo/data/05_batch_pca.rds` | 18,339 |
 
 ### Tier `F_ewas_results`
 
 `ewas-tutorial-data-F_ewas_results.tar.gz` — 112 MB compressed  
 **Resume point:** ch07/ch08 — skip the limma + BACON run  
-`sha256 54f2cc5e1241aef6f0ef2df175788c061922cba719c180e9ca8abcfa2b2ce9c3`
+`sha256 2b1e8b7d7464d918713103494cbc3c30c0a09d8dff1c7d704e9f36239376a621`
 
 | file | bytes |
 |---|---:|
-| `repo/data/06_ewas.rds` | 56,035,031 |
-| `repo/data/06_bacon_summary.rds` | 333 |
-| `repo/data/06_ewas_bacon_toptable.csv.gz` | 61,029,526 |
+| `repo/data/06_ewas.rds` | 56,049,672 |
+| `repo/data/06_bacon_summary.rds` | 187 |
+| `repo/data/06_ewas_bacon_toptable.csv.gz` | 61,108,280 |
 
 ### Tier `G_pipeline_run`
 
 `ewas-tutorial-data-G_pipeline_run.tar.gz` — 265 MB compressed  
 **Resume point:** ch07 — Snakemake pipeline outputs (combined + stratified + meta)  
-`sha256 12eee2feff900d6630e271a8c62b8a8d4340d38a8f7b3ed0eb4d686f30bc62e5`
+`sha256 c67fcbe9e7a9cfaf342e710f790d79ba4ea8bbca95cda3510c9a8cee0ef7be85`
 
 | file | bytes |
 |---|---:|
-| `ewas_pipeline/data/pheno.csv` | 17,485 |
-| `ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz` | 30,244,597 |
-| `ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz` | 57,673,185 |
-| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_fit.jpg` | 207,497 |
-| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_qqs.jpg` | 289,704 |
-| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_traces.jpg` | 584,236 |
-| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_posteriors.jpg` | 438,735 |
-| `ewas_pipeline/run_grady/F/F_PTSD_ewas_results.csv.gz` | 29,286,839 |
-| `ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz` | 56,713,678 |
-| `ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_fit.jpg` | 193,550 |
-| `ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_qqs.jpg` | 266,265 |
-| `ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_traces.jpg` | 546,483 |
+| `ewas_pipeline/data/pheno.csv` | 20,219 |
+| `ewas_pipeline/run_grady_all/PTSD_ewas_results.csv.gz` | 30,244,197 |
+| `ewas_pipeline/run_grady_all/PTSD_ewas_bacon_results.csv.gz` | 57,795,231 |
+| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_fit.jpg` | 201,552 |
+| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_qqs.jpg` | 286,681 |
+| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_traces.jpg` | 563,129 |
+| `ewas_pipeline/run_grady_all/bacon_plots/PTSD_posteriors.jpg` | 443,820 |
+| `ewas_pipeline/run_grady/F/F_PTSD_ewas_results.csv.gz` | 29,265,907 |
+| `ewas_pipeline/run_grady/F/F_PTSD_ewas_bacon_results.csv.gz` | 56,487,435 |
+| `ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_fit.jpg` | 196,995 |
+| `ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_qqs.jpg` | 264,950 |
+| `ewas_pipeline/run_grady/F/bacon_plots/F_PTSD_traces.jpg` | 544,158 |
 | … and 10 more | |
 
 ### Tier `H_annotation`
 
-`ewas-tutorial-data-H_annotation.tar.gz` — 280 MB compressed  
-**Resume point:** ch08 — Zhou manifests plus annotated results and comb-p outputs  
-`sha256 3250d7c976ac69a6dcaa93d634ac575da72a7be5e58c0a8204462ae53f84191d`
+`ewas-tutorial-data-H_annotation.tar.gz` — 189 MB compressed  
+**Resume point:** ch08 — annotated results and comb-p outputs  
+`sha256 ed1b28f46a1180b9ef25841941e766a6fa3435491c6308f51de594f33b041a4f`
 
 | file | bytes |
 |---|---:|
-| `masks/EPIC.hg38.manifest.gencode.v41.tsv.gz` | 62,477,035 |
-| `masks/EPIC.hg38.manifest.gencode.v36.tsv.gz` | 29,916,134 |
-| `masks/EPIC.hg38.coord.tsv.gz` | 5,505,138 |
-| `masks/EPIC.ordering.tsv.gz` | 7,756,709 |
-| `repo/data/08_annotation/annotated.rds` | 69,949,757 |
-| `repo/data/08_annotation/PTSD_ewas_annotated_results.bed` | 39,981,168 |
-| `repo/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz` | 83,051,542 |
-| `repo/data/08_annotation/bios_eqtm_hgnc_annotated.tsv` | 9,130,455 |
-| `repo/data/08_annotation/08_dmr_combp_outputs.tar.gz` | 17,958,047 |
+| `repo/data/08_annotation/annotated.rds` | 82,353,846 |
+| `repo/data/08_annotation/PTSD_ewas_annotated_results.bed` | 39,982,327 |
+| `repo/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz` | 83,115,125 |
+| `repo/data/08_annotation/dmr/PTSD_dmr.slk.bed.gz` | 8,362,568 |
+| `repo/data/08_annotation/dmr/PTSD_dmr.fdr.bed.gz` | 9,573,592 |
 
 ## Deliberately not distributed
 

@@ -12,7 +12,7 @@
 # The record id below is the published one; override it by exporting ZENODO_RECORD
 # (e.g. to pin an older version of the data).
 #   Concept DOI (always newest): 10.5281/zenodo.22135215
-#   This version:                10.5281/zenodo.22287946
+#   This version:                10.5281/zenodo.23198019
 set -euo pipefail
 
 # Always extract at the repository root, whatever directory you call this from.
@@ -21,7 +21,7 @@ set -euo pipefail
 # and the chapters would not find their inputs.
 cd "$(dirname "$0")"
 
-ZENODO_RECORD="${ZENODO_RECORD:-22287946}"
+ZENODO_RECORD="${ZENODO_RECORD:-23198019}"
 BASE="https://zenodo.org/records/${ZENODO_RECORD}/files"
 ALL_TIERS=(A_idats B_qc C_normalized D_filtered E_model_inputs F_ewas_results G_pipeline_run H_annotation)
 
@@ -42,4 +42,4 @@ for t in "${want[@]}"; do
   tar -xzf "$tar"
   echo "    ok: $t"
 done
-echo "Done. Data landed under tutorial/data/ (and ewas_pipeline/, masks/ for tiers G and H)."
+echo "Done. Data landed under tutorial/data/ (and ewas_pipeline/ for tier G)."

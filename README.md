@@ -165,7 +165,7 @@ repository"** button in the sidebar to get APA or BibTeX directly.
 
 That is the *concept* DOI: it always resolves to the newest version of the data.
 To cite the exact files this tutorial was built from, use the version DOI
-https://doi.org/10.5281/zenodo.22287946 (record `22287946`).
+https://doi.org/10.5281/zenodo.23198019 (record `23198019`).
 
 ### Also cite the upstream sources
 
