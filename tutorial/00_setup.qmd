@@ -15,8 +15,7 @@ memory, and disk. It assumes the array background from
 
 ::: {.callout-important}
 ## Where to type each block
-Every code block in this chapter carries a grey label telling you where it runs. There are
-only two places, and mixing them up is the most common way to get stuck:
+Every code block in this chapter has a grey label at the top of the block telling you where it runs:
 
 - **RStudio Console** — the pane with the `>` prompt, where R lives. Every block of R code
   goes here.
@@ -24,31 +23,13 @@ only two places, and mixing them up is the most common way to get stuck:
   `git clone`. On macOS that is Terminal.app, on Windows it is PowerShell, on Linux it is
   whatever shell you use.
 
-One trap worth naming: RStudio has a **Terminal** tab sitting right next to the Console,
+RStudio has a **Terminal** tab sitting right next to the Console,
 and it is a system shell, not R. R code pasted there will fail with a string of syntax
 errors — so when a block says *RStudio Console*, make sure you have clicked the Console
 tab. If you are not using RStudio, `R` at a terminal gives you the same `>` prompt and
 works fine.
 :::
 
-::: {.callout-note collapse="true"}
-## One thing that runs before each chapter, and what it is not allowed to do
-
-Every chapter begins with a hidden chunk that does `source("_setup.R")`. That file is
-deliberately limited to two housekeeping jobs: it puts the library holding the EPIC
-annotation packages on R's search path, and it registers the figure font and ggplot theme
-so the plots share the site's look. It also quietly attaches the packages the theme needs,
-but no chapter relies on that: every chapter was checked by running its code without
-`_setup.R` at all.
-
-What it does **not** do is supply anything the code you read depends on. Each chapter
-loads the packages it uses with its own visible `library()` call, writes its file paths out
-in full as `data/<file>`, and names colors by hex code. So if you copy a block out of a
-chapter into a fresh R session, it runs — you are never silently relying on something
-defined in a file you cannot see. If a chapter's code ever fails for you with
-`object not found` or `could not find function`, that is a bug in the chapter, not
-something you are missing.
-:::
 
 ## Building the software environment {#sec-env}
 
@@ -65,15 +46,9 @@ the current release — and, if you want,
 [RStudio](https://posit.co/download/rstudio-desktop/). Everything below is typed
 into the **Console** pane — the one with the `>` prompt.
 
-One note on versions: the published numbers and the Zenodo checkpoints were produced on
-R 4.2.3 (Bioconductor 3.16), so a value may differ in its last digits on a newer stack.
-The code itself is unchanged. See
-[`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
-
 You need ten CRAN and twenty-one Bioconductor packages. The whole installation is short
 enough to read, so **option 1 is to select the block below, copy it, and paste it into the
-Console.** Nothing to download first, nothing to configure, and you can see exactly what
-it does before you run it. Press Enter and wait.
+Console.**. Press Enter and wait.
 
 ```{.r filename="RStudio Console"}
 repos <- "https://cloud.r-project.org"
@@ -92,7 +67,7 @@ BiocManager::install(c(
 ```
 
 Expect 20-40 minutes the first time. On Windows and macOS most of these arrive as
-pre-built binaries — there are simply a lot of them — while on Linux they build from
+pre-built binaries, while on Linux they build from
 source, which is slower. You will see a great deal of output scroll past; that is normal.
 
 ::: {.callout-note collapse="true"}
@@ -102,7 +77,7 @@ only if you prefer them.
 
 **Option 2 — run the shipped script without downloading it.** The same commands live in
 [`install_packages.R`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/install_packages.R),
-which also checks your R version first. One line in the Console fetches and runs it:
+which also checks your R version. Copy and paste the below line in the Console to fetch and run it:
 
 ```{.r filename="RStudio Console"}
 source("https://raw.githubusercontent.com/krferrier/Methylation-EWAS-tutorial/main/tutorial/install_packages.R")
@@ -125,9 +100,12 @@ Rscript install_packages.R
 :::
 
 The non-R sections: **chapter 07** runs the EWAS through a Snakemake pipeline, and that
-genuinely needs conda. Chapter 06 already runs the same association test directly in R,
-so nothing analytical is lost — chapter 07 shows how to scale it up. The `comb-p`
-region-level section of chapter 08 also needs conda; the rest of that chapter does not.
+genuinely needs conda. Chapter 06 already runs the same association test directly in R. So,
+using the Snakemake pipeline is not necessary to complete the tutorial, it is an alternative 
+to perform the same type of testing reproducibly at scale. If you just want to stick with R, 
+you can skip from Chapter 06 (EWAS) to Chapter 08 (annotation). The `comb-p`
+region-level section of chapter 08 also needs conda, but again, an exclusively R option is also 
+shown, so using conda isn't necessary. 
 
 ### conda
 
@@ -151,17 +129,14 @@ conda env create -f envs/methylgsa.yml    # chapter 08 methylGSA -- R 4.2
 | `ewas-methylgsa` | 08 (methylGSA section) | methylGSA on R 4.2 |
 
 If you only want the R chapters, `envs/methyl.yml` is the only one you need. `methylGSA`
-is one of three probe-bias corrections chapter 08 compares, and the other two —
-`gometh` and the sesame-based enrichment — run in the main environment.
+is one of three probe-bias corrections chapter 08 compares, and the other two run in the main environment.
 
 Each file lists only the packages the tutorial uses directly and lets conda resolve the
-rest. `envs/smk.yml` deliberately holds nothing but the workflow engine: the pipeline
-declares its own per-rule R environment and Snakemake builds it on first run, which is
-also where METAL is compiled from source. `envs/methylgsa.yml` is split out for a
-packaging reason rather than a scientific one: bioconda's newest `methylGSA` build is for
-R 4.2, so keeping it in `envs/methyl.yml` would hold that whole environment a
-Bioconductor generation back. Readers on the R-only route never see this — Bioconductor
-3.23 ships a current `methylGSA`, so `BiocManager` installs it alongside everything else.
+rest. `envs/smk.yml` deliberately installs only Snakemake: the pipeline
+declares its own per-rule environments and Snakemake builds them on the first run. `envs/methylgsa.yml` is split out 
+because bioconda's `methylGSA` build is for
+R 4.2, whereas all other packages depend on a newer version of R. This issue doesn't arise if you are using R or 
+RStudio as Bioconductor is able to install the latest version of `methylGSA` with everything else. 
 
 If you do not have conda, [Miniforge](https://github.com/conda-forge/miniforge) is a
 minimal installer that defaults to the conda-forge channel; its README covers macOS,
@@ -169,9 +144,8 @@ Windows, and Linux.
 
 :::
 
-The exact software state that produced every number in this tutorial — full
-`sessionInfo()` with all chapters' packages loaded, plus troubleshooting for two
-version-compatibility problems you may hit — is recorded in
+The exact R and package versions used in this tutorial is listed in the output from
+`sessionInfo()` recorded in
 [`SESSIONINFO.md`](https://github.com/krferrier/Methylation-EWAS-tutorial/blob/main/tutorial/SESSIONINFO.md).
 
 ## Raw Methylation data files {#sec-idat-files}
@@ -225,11 +199,11 @@ is what you want if you plan to work through the tutorial yourself. Run it in a
 git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
 ```
 
-That creates a folder called `Methylation-EWAS-tutorial`, and the sample sheet lands at
+That creates a folder called `Methylation-EWAS-tutorial`, and the sample sheet can be found at
 `Methylation-EWAS-tutorial/tutorial/data/sample_sheet.csv`.
 
 **Now point R at the `tutorial` folder inside it.** Every path in the chapters is written
-relative to that folder, so this one step decides whether the rest of the tutorial works.
+relative to that folder, so setting your working directory to this location is *very important*.
 In RStudio: **Session → Set Working Directory → Choose Directory…**, then pick
 `Methylation-EWAS-tutorial/tutorial`. Better still, open that folder as an RStudio Project
 (**File → Open Project…**) and it is set for you every time you come back.
@@ -248,7 +222,7 @@ If you only want the sample sheet, download it straight from the repository:
 (in your browser: right-click → Save As).
 
 Taking this route means **you have to build the folder structure yourself**, because the
-chapters look for `data/sample_sheet.csv` — the file inside a folder called `data`, not
+chapters look for `data/sample_sheet.csv` — make sure the file is inside a folder called `data`, not
 loose in your Downloads folder. Make a folder for the tutorial wherever you keep your
 work, put a `data` folder inside it, and save the file in there. You can do that from the
 Console:
@@ -262,16 +236,18 @@ download.file(
 file.exists("data/sample_sheet.csv")                   # must print TRUE
 ```
 
-Note that this gets you the sample sheet only — not the notebooks or the helper scripts.
+Note that this gets you the sample sheet only — not the notebooks, helper scripts, or other ready-to-use versions of files 
+provided in the repository.
 :::
 
 Either way, check that you have 96 samples plus a header row before continuing.
 
-### The layout every chapter assumes {#sec-layout}
+### The file path layout {#sec-layout}
 
-No chapter uses a path like `C:/Users/you/Downloads/...`. They all use short relative
-paths — `data/sample_sheet.csv`, `data/idats/` — which R resolves against your **working
-directory**. So the working directory has to be the folder that contains `data`:
+To reiterate once more, whether you have cloned the git repository or making your own project folder, 
+make sure that you have set your working directory appropriately. All code chunks throughout the tutorial 
+use short relative paths — `data/sample_sheet.csv`, `data/idats/` — which R resolves against your **working
+directory**. So the working directory has to be the folder that contains `data` (e.g. `.../Methylation-EWAS-tutorial/tutorial` if using the git clone):
 
 ```
 <your working directory>          <- getwd() prints this; "tutorial/" if you cloned
@@ -283,17 +259,9 @@ directory**. So the working directory has to be the folder that contains `data`:
 └── ...
 ```
 
-Two lines confirm you are in the right place, and they are worth running before every
-download step:
-
-```{.r filename="RStudio Console"}
-getwd()                               # where R currently is
-file.exists("data/sample_sheet.csv")  # TRUE means the paths below will resolve
-```
-
 ::: {.callout-warning}
 ## If you see `cannot open the connection`
-This is the most common error in the whole tutorial, and it is worth recognising on sight:
+If you have *not* set your working directory correctly and try to read in a file in R, you will see the following error. 
 
 ```
 Error in file(file, "rt") : cannot open the connection
@@ -303,9 +271,7 @@ In file(file, "rt") :
 ```
 
 You may see that short path or a longer one naming a folder that does not exist — either
-way the fix is the same. Nothing is wrong with the file and nothing is wrong with the
-code: R is looking in the wrong folder, because your working directory is not the one that
-contains `data`.
+way you need to adjust your working directory.
 
 **Step 1 — find the folder the file is actually in.** Search for `sample_sheet.csv` (or for
 the repository folder, `Methylation-EWAS-tutorial`) in Finder on macOS or File Explorer on
@@ -334,8 +300,8 @@ getwd()                               # confirm where R thinks it is
 file.exists("data/sample_sheet.csv")  # should print TRUE now
 ```
 
-Once that last line prints `TRUE`, re-run whatever failed and it will work. For a fuller
-walkthrough of working directories, see section 6 of
+Once you've set the working directory path correctly, re-run the code to read in the file. If you
+are still lost on file paths and working directories, see section 6 of
 [Jacinta Kong's Setup R page](https://jacintak.github.io/teaching/introR/#working-directories-in-r).
 :::
 
@@ -353,11 +319,10 @@ adjust that path rather than editing the sample sheet.
 
 ::: {.callout-tip}
 ## Which option should I pick?
-Start with **option 1**: it is R code you paste into the Console, it needs nothing
-installed beyond the packages above, and it behaves the same on macOS, Windows, and Linux.
+If you are new to programming, start with **option 1**: it is simply copy-paste into the Console.
 Option 2 pulls one archive from Zenodo instead of 192 separate files, so it is faster — but
 it needs either a terminal or a manual download in your browser. Option 3 fetches the same
-GEO files as option 1, from a terminal instead of the Console.
+GEO files as option 1 using a terminal.
 
 :::
 
@@ -395,14 +360,14 @@ for (k in seq_len(nrow(ss))) {
 cat("files downloaded:", length(list.files("data/idats")), "of 192\n")
 ```
 
-### Option 2 — one archive from Zenodo (one file instead of 192)
+### Option 2 — archive from Zenodo 
 
 The subset is deposited as a single archive alongside the other tutorial data, so this is
-one download and one extraction, with no per-sample loop and no GEO path construction. You can either 
+one download and one extraction. You can either 
 access and download the archive from Zenodo manually from the
 [tutorial data record](https://doi.org/10.5281/zenodo.22135215) — that link always
 resolves to the newest version — or 
-you can use the provided bash script `get_data.sh` as follows:
+you can use the provided bash script `get_data.sh` as follows from a terminal:
 
 ```{.bash filename="Terminal"}
 ./get_data.sh A_idats
@@ -490,15 +455,14 @@ and pairs the two channels for you:
 #| filename: "RStudio Console"
 library(minfi)
 
-# The sample sheet does double duty: it lists the files to read, and it holds
+# The sample sheet both lists the files to read, and contains
 # the phenotype row for each array that we attach to the object below.
 ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 
-# Type the variables we intend to model, now, once. Level order matters: R uses
+# Type the variables we intend to model. Level order matters: R uses
 # the FIRST level as the reference category, so listing "Control" first is what
 # makes chapter 06 report the effect of PTSD relative to controls. Left to
-# itself, factor() sorts alphabetically, puts "Case" first, and silently
-# reverses the sign of every effect estimate downstream.
+# itself, factor() sorts alphabetically and puts "Case" first. 
 ss$ptsd            <- factor(ss$ptsd,            levels = c("Control", "Case"))
 ss$sex             <- factor(ss$sex,             levels = c("F", "M"))
 ss$childhood_abuse <- factor(ss$childhood_abuse, levels = c("neg", "pos"))
@@ -509,11 +473,9 @@ RGset <- read.metharray(
   force     = TRUE          # see the callout below -- required for this dataset
 )
 
-# read.metharray() reads intensities and nothing else -- it does not carry the
-# sample sheet along with it. Attach the phenotype table now so that every later
-# chapter can recover it with pData(RGset) rather than re-reading the CSV and
-# hoping the row order still matches. It does match here, because the files were
-# read in sample-sheet order.
+# read.metharray() reads only the intensities. Attach the phenotype table so that later
+# we can recover it with pData(RGset) rather than re-reading the CSV and merging in the 
+# phenotype data repeatedly. 
 colnames(RGset) <- ss$sample_id                       # label arrays by GEO accession
 pData(RGset)    <- DataFrame(ss, row.names = ss$sample_id)   # DataFrame() comes from
                                                              # S4Vectors, attached by minfi
@@ -521,21 +483,19 @@ pData(RGset)    <- DataFrame(ss, row.names = ss$sample_id)   # DataFrame() comes
 RGset
 dim(RGset)                  # 1051943 addresses x 96 arrays
 
-# Save it. Chapters 01 and 02 both start from this object, and re-reading 192
-# IDATs costs about two and a half minutes every time. The file is roughly
-# 460 MB, so keep it on a disk you have room on.
+# Save it. Chapters 01 and 02 both start from this object. The file is roughly
+# 460 MB. If you need more space you can delete the raw idats. 
 saveRDS(RGset, "data/01_RGset.rds")
 ```
 
-The result is an `RGChannelSet`: raw red and green intensities per address, with no
-normalization and no probe filtering yet. Saved as `data/01_RGset.rds`, it is the input to
+The result is an `RGChannelSet`: raw red and green intensities per address saved as `data/01_RGset.rds`, 
+it is the input to
 [Quality control](01_qc.qmd) and to [normalization](02_normalization.qmd) — both chapters
-open by reading that exact file. It is also what the `B_qc` tier gives you if you skip this
-step, so if reading the IDATs is impractical on your machine you can download the object
-instead and carry on from chapter 01 unchanged.
+open by reading that exact file. You can also download this file from the `B_qc` file in the Zenodo archive
+if downloading and reading the IDATs is impractical on your machine. 
 
 ::: {.callout-warning}
-## `force = TRUE` is required here, and it is not a formality
+## `force = TRUE` is required here.
 Without it this dataset fails with:
 
 ```
@@ -549,9 +509,9 @@ remaining two (`201220980045` and `201228780138`, 16 samples) carry 1,051,943.
 the addresses common to every array. This is why `dim(RGset)` reports the smaller
 number.
 
-This is a scanner-decoding difference, not a data-quality problem, and taking the
-intersection is the correct way to handle the situation. A probe missing from some arrays cannot be compared
-across all of them anyway. But do not automatically use `force = TRUE` on other
+This is a scanner-decoding difference, not a data-quality problem. The correct solution in this 
+case is to take the intersection of the two array sets (which is done by setting `force = TRUE`). 
+A probe missing from some arrays cannot be compared across all of them anyway. But, don't automatically use `force = TRUE` on other
 data — if the array *types* genuinely differ (EPIC v1 mixed with v2, say), the same
 error is telling you something you should not override. Check what the sizes actually
 are before you force it:
@@ -568,12 +528,11 @@ table(sizes)
 
 ## Computational cost: time, memory, and disk {#sec-cost}
 
-Everything below was measured on the machine that produced this tutorial — 32 logical
-cores (24 physical), 126 GB RAM, local NVMe — running the final filtered 86-sample cohort and 756,251 CpGs.
+All the benchmarks below were measured on a computer with 32 logical
+cores (24 physical) and 126 GB RAM on the final filtered 86-sample cohort and 756,251 CpGs.
 Your times will differ, but this should provide a general estimate to guide what sample
 size you can analyse with your computing resources. The expensive steps are cell-type
-deconvolution, normalization, and SVA; The EWAS itself actually uses less resources depending 
-on how it's run.
+deconvolution, normalization, and SVA; The EWAS itself actually uses less resources (generally).
 
 ### Benchmarks per chapter
 
@@ -594,29 +553,29 @@ process**, which is what has to fit in RAM.
 | [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (44 and 42) run simultaneously, 4 workers each | 11 min 37 s | 6.3 GB |
 | [08 Annotation](08_annotation.qmd) | GENCODE v41 join over 756,251 CpGs           | 11 s | 1.3 GB |
 
-On average, the whole tutorial should take you about 30 minutes of compute. The 
+On average, the whole tutorial should take about 30 minutes of compute time. The 
 potential limiting resource is memory. The normalization and cell-type deconvolution takes about 12.5GB and 15GB of 
 memory to run, respectively. Those using a laptop with 8GB of RAM may not be able to perform these steps on their 
 local computer. Saved checkpoints of these results are available in the Zenodo record so that you can still run the rest of the 
 steps in these chapters.
 
 For the Chapter 07 EWAS run using a snakemake pipeline, the first row is the whole cohort in one
-EWAS. The second splits it into two — here by sex, giving 44 and 42 samples — and runs
-those two in parallel. Note that the split run needs *less* memory, not more: peak memory
+EWAS. The second splits it into two EWAS (here by sex), giving 44 and 42 samples — run 
+in parallel. Note that the split requires *less* memory; peak memory
 is driven by **samples × workers**, and each stratum is running half the samples with half
-the workers. The amount of memory required for the EWAS using snakemake can be reduced by
+the workers. The amount of memory required for the EWAS using Snakemake can also be modified by
 reducing the number of workers. The trade-off for reducing the number of workers is that
-the wall time will increase. 
+it will take longer to run. But, needing to wait a few more minutes to get results is better than not 
+being able to run an analysis at all!
 
 ::: {.callout-warning}
 ## Time versus Memory tradeoffs
 You may have noticed that the EWAS method shown in Chapter 6 runs significantly faster than the EWAS performed using 
 snakemake in Chapter 07, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 86 
 samples at 8 workers. Those two numbers are not fixed in the same way, though. The pipeline's memory is a function of how 
-many workers you give it, so it is a dial you control; the Chapter 06 approach holds the whole matrix in one process, so 
-its memory is set by the data and grows with the cohort. 86 samples is quite small, and a full-scale EWAS will have 
+many workers you give it. The Chapter 06 approach holds the whole matrix in one process. 86 samples is quite small, and a full-scale EWAS will have 
 several hundreds to thousands of samples. The faster method shown in Chapter 06 will very quickly require more memory resources 
-than you have available as the number of samples you try to run at once increase. The Snakemake pipleine in Chapter 07 takes a bit longer,
+than you have available as the number of samples you try to run at once increase. The Snakemake pipeline in Chapter 07 takes a bit longer,
 especially for smaller datasets, because part of what it's doing under the hood is breaking the big dataset into smaller, more 
 reasonably sized chunks. The Snakemake EWAS method was designed to minimize memory cost for full-scale analyses; the consequence of this 
 is longer runtimes.
@@ -732,9 +691,9 @@ Get-CimInstance Win32_ComputerSystem |
 
 ::: {.callout-note}
 ## "Available" is the number that matters
-Installed RAM is the headline figure, but the operating system and everything else
-you have open are already using some of it. Compare the peak-memory column in the
-table above against **available** memory, not installed.
+Your computer's operating system and everything else
+you have open on your computer are already using some of your available RAM. Compare the peak-memory column in the
+table above against the memory you have **available**.
 :::
 
 #### Disk Space
@@ -785,8 +744,8 @@ Get-PSDrive -PSProvider FileSystem |
 
 ## Optional: the full 795-sample dataset {#sec-full-series}
 
-If you want to try a full-scale model after finishing the tutorial, GEO also serves the
-entire series as one tar archive. It is **11.9 GB** compressed and expands to 1,590 IDAT
+If you want to try a full-scale model after finishing the tutorial, the
+full series is available on GEO as one tar archive. It is **11.9 GB** compressed and expands to 1,590 IDAT
 files, so budget disk space and time accordingly — and expect the EWAS itself to take longer than the 86-sample walkthrough.
 
 ::: {.panel-tabset}
@@ -812,7 +771,7 @@ tar -xvf GSE132203_RAW.tar      # tar ships with Windows 10 and later
 ```
 
 #### Web browser
-You can also manually download the full sample set by selecting the link for the `GSE132203_RAW.tar` from the Supplementary Files 
+You can manually download the full sample set by selecting the link for the `GSE132203_RAW.tar` from the Supplementary Files 
 section at the bottom of the [GEO Accession page for the Grady Trauma Project](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132203).
 
 :::
@@ -821,15 +780,14 @@ The archive also contains the platform manifest and a `filelist.txt` inventory.
 
 ### Building a sample sheet for the full series
 
-The 96-sample sheet was built for you, but for the full series you need to make your own.
+The 96-sample sheet was built for you, but for the full series or another dataset you will need to make your own.
 The phenotype data lives in the **series matrix file**, which `GEOquery` downloads and
-parses for you — you do not need to touch the tar archive to get it.
+parses for you — you do not need the tar archive to get it.
 
-Two details make this less tidy than it sounds, and both are shown in the code below.
-First, GEO packs the phenotype into columns named `characteristics_ch1`,
-`characteristics_ch1.1`, and so on, each holding a `"label: value"` *string* rather than a
-typed value; you have to split them and recover the label. Second, the Basename is not a
-column at all — it has to be recovered from the supplementary-file URL.
+There are two tricky parts to creating a sample sheet from the series matrix files. First, GEO packs the phenotype into columns named `characteristics_ch1`,
+`characteristics_ch1.1`, and so on, in a dictionary format (`"label: value"`). You have to split 
+them and parse out the label. Second, the Basename has to 
+be parsed from the supplementary-file URL.
 
 ```{r}
 #| label: full-sample-sheet
@@ -839,14 +797,13 @@ library(GEOquery)
 # The series matrix is ~30 MB; the default 60-second timeout is not enough.
 options(timeout = max(1200, getOption("timeout")))
 
-# getGPL = FALSE skips the platform manifest, which we do not need here
-# and which is large.
+# getGPL = FALSE skips the platform manifest, which is large and we do not need here
 gse <- getGEO("GSE132203", GSEMatrix = TRUE, getGPL = FALSE)[[1]]
 pd  <- Biobase::pData(gse)
 nrow(pd)                     # 795 samples
 
-# Every "characteristics_ch1*" column holds a "label: value" string. Split on the
-# first colon, using the label GEO supplies as the column name.
+# Every "characteristics_ch1*" column has a "label: value" string. Split on the
+# first colon, using the label as the column name.
 ch <- grep("^characteristics_ch1", names(pd), value = TRUE)
 pheno <- lapply(ch, function(k) {
   v     <- as.character(pd[[k]])
@@ -877,8 +834,9 @@ for (k in c("age", "mergedcapsandpsswinthin30days",
   full[[k]] <- suppressWarnings(as.numeric(full[[k]]))
 }
 
-# Derive the two variables the tutorial models. PTSD is the CAPS/PSS indicator;
-# 50 samples have it missing and will drop out of any model that uses it.
+# Derive PTSD (categorical 'case' or 'control') variable;
+# 50 samples from the total 795 samples are missing this information and will be dropped from any downstream 
+# analyses.
 full$ptsd <- factor(ifelse(full$mergedcapsandpsswinthin30days == 1, "Case", "Control"),
                     levels = c("Control", "Case"))
 full$sex  <- ifelse(full$gender == "Female", "F", "M")
@@ -916,15 +874,14 @@ all.equal(ss[, c("pc1", "pc2", "pc3")], full[i, c("pc1", "pc2", "pc3")],
 ```
 
 Note that `Basename` above points at `idats_full/`, matching the download commands in
-this section. If you put the full series somewhere else, change that one line rather
-than editing the sheet afterwards.
+this section. If you put the full series somewhere else, change the path in that line accordingly.
 
 ## The sample sheet {#sec-sample-sheet}
 
 `minfi` reads IDATs given a **Basename** (the path up to `_Grn/_Red`). We pair
 each Basename with the phenotype row for that GSM. The last three columns, `pc1`–`pc3`,
-are the genetic ancestry principal components GEO deposits for each sample; one of the 96
-has none. [Genetic ancestry PCs](04b_genetic_pcs.qmd) explains what they are and
+are the genetic ancestry principal components (PCs) GEO deposits for each sample; one of the 96
+samples is missing this PC information and is dropped from the analysis later on. [Genetic ancestry PCs](04b_genetic_pcs.qmd) explains what they are and
 why the models use them. Here are the first 8 rows of the sample sheet:
 
 ```{r}
