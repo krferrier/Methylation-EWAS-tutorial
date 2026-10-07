@@ -15,10 +15,7 @@ downstream if it slips through. This notebook runs the standard `minfi`
 process on the 96-sample subset and walks you through how to decide what (if anything) to drop.
 
 We start from the raw two-channel object saved at the end of the
-[Setup](00_setup.qmd) step — `data/01_RGset.rds`. Nothing in this chapter is
-pre-computed: every number and every figure below is derived from that object by the
-code you see, and the four QC measures are saved at the end so later work does not have
-to recompute them.
+[Setup](00_setup.qmd) step — `data/01_RGset.rds`. 
 
 ```{r}
 #| label: load
@@ -26,19 +23,16 @@ library(minfi)     # detectionP(), getQC(), getSex(), getSnpBeta()
 library(ggplot2)   # every figure in this chapter
 
 # The RGChannelSet written by the Setup chapter: raw red and green intensities
-# for 1,051,943 addresses across 96 arrays, with no normalization applied.
+# for 1,051,943 addresses across 96 arrays.
 rg <- readRDS("data/01_RGset.rds")
 
-# Setup attached the sample sheet to the object, so the phenotype table comes
-# back out of it here rather than being read from the CSV a second time. Its row
-# order is guaranteed to match the column order of `rg`.
+# Extract the phenotype table
 ss <- as.data.frame(pData(rg))
 
 rg
 ```
 
-The four checks below are independent of one another, and each one reduces the
-million-probe object to a handful of numbers per sample. Running all four takes under a
+The four checks below are independent of one another. Running all four takes under a
 minute.
 
 ## 1. Detection p-values — did the probe beat background?
@@ -52,12 +46,10 @@ fraction of probes failing at p > 0.01.
 #| label: detp-compute
 # detectionP() compares every probe on every array against that array's own
 # distribution of negative-control probes, and returns a probe x sample matrix
-# of p-values. This is the one expensive step in the chapter: roughly 40 seconds
-# and 4 GB for 96 arrays, because the full 1,051,943 x 96 matrix is built.
+# of p-values. 
 detP <- detectionP(rg)
 
-# Two per-sample summaries are all QC needs, so we collapse the big matrix
-# immediately and keep only these:
+# Condense the detP into two summaries:
 det_mean <- colMeans(detP)          # average detection p-value across all probes
 det_fail <- colMeans(detP > 0.01)   # fraction of probes that failed the 0.01 cut
 
@@ -90,7 +82,7 @@ cat("samples failing QC (mean detP > 0.01):", sum(det$mean_detP > 0.01), "\n")
 ::: {.callout-note}
 ## What a failure would look like
 On a real plate you will sometimes see one or two samples an order of magnitude
-above the rest, crossing the 0.01 line. Those get dropped here, before
+above the rest, crossing the 0.01 line. Those get dropped before
 normalization. 
 :::
 
@@ -103,8 +95,7 @@ convention flags samples below a line at `(mMed + uMed)/2 = 10.5`.
 ```{r}
 #| label: intensity-compute
 # getQC() needs the two channels separated into methylated and unmethylated
-# signal, which is what preprocessRaw() does -- it is a re-arrangement of the
-# raw intensities, not a normalization, so nothing is altered here.
+# signal, which is what preprocessRaw() does.
 mset  <- preprocessRaw(rg)
 qc_df <- getQC(mset)           # one row per sample: mMed and uMed
 
@@ -145,9 +136,9 @@ covariate we must model, catching it here is important.
 
 ```{r}
 #| label: sex-compute
-# getSex() works on median intensity per chromosome, so the probes have to know
-# where they sit in the genome first. mapToGenome() attaches those coordinates
-# using the EPIC annotation package; it adds no new measurement.
+# getSex() works on median intensity per chromosome, so the probes need to be
+# mapped to coordinates on the genome first. mapToGenome() attaches those coordinates
+# using the EPIC annotation package.
 gmset <- mapToGenome(mset)
 psex  <- getSex(gmset)         # xMed, yMed and predictedSex per sample
 
@@ -190,11 +181,11 @@ samples really are the same individual.
 #| label: snp-heatmap
 #| fig-cap: "The ~59 rs SNP probes across samples. Discrete banding near 0 / 0.5 / 1 is the expected genotype signal; no two columns are identical, so no duplicate samples."
 # getSnpBeta() pulls just the rs probes out of the raw object and returns their
-# beta values -- a 59 x 96 genotype matrix, small enough to handle directly.
+# beta values.
 snps <- getSnpBeta(rg)
 
-# Cluster the samples by fingerprint so that any identical pair would sit
-# side by side in the image below.
+# Cluster the samples by 'fingerprint' so that any identical pair would sit
+# side by side in the figure below.
 d   <- dist(t(snps))
 ord <- hclust(d)$order
 image(t(snps[, ord]), col = colorRampPalette(c("#1A6B75", "white", "#8C3A4A"))(64),
@@ -222,9 +213,8 @@ drop_detp <- det$sample[det$mean_detP > 0.01]
 drop_int  <- qc$sample[qc$flag]
 drop_sex  <- sx$sample[sx$mismatch]     # sample IDs, to investigate rather than drop
 
-# Only the first two are automatic. A sex mismatch is a signal to go and find
-# out what happened, not grounds for silent removal, so it is reported and
-# deliberately left out of `keep`.
+# Only the first two are automatic. A sex mismatch signal needs to be checked before
+# dropping. 
 keep <- setdiff(colnames(rg), unique(c(drop_detp, drop_int)))
 
 cat("Samples in:", ncol(rg), "\n")
@@ -251,11 +241,7 @@ QC for one of the 4 checks.
 
 ## Saving what we just computed
 
-The four checks cost a minute of compute and reduce a 460 MB object to a few numbers per
-sample. Save them, so that revisiting a figure or a threshold later does not mean reading
-the IDATs and recomputing detection p-values again.
-
-Two files, for two different readers:
+We export two files from this section:
 
 ```{r}
 #| label: save-qc
@@ -272,9 +258,7 @@ qc_pieces <- list(
 )
 saveRDS(qc_pieces, "data/01_qc_pieces.rds")
 
-# 2. A flat, per-sample table of the same measurements. This one is small enough
-#    to live in the repository, so a reader who cannot hold the RGChannelSet in
-#    memory can still reproduce every figure in this chapter (see the callout).
+# 2. A flat, standard-delimited, per-sample table of the same measurements.
 qc_metrics <- data.frame(
   sample         = colnames(rg),
   mean_detP      = as.numeric(det_mean),
@@ -319,25 +303,24 @@ sx  <- data.frame(sample = qc_metrics$sample, xMed = qc_metrics$xMed,
 sx$mismatch <- sx$predicted != sx$reported
 ```
 
-The detection-*p*, intensity and sex-check figures and tables will then run. The SNP
+With this data you can run the detection-*p*, intensity and sex-check figures and tables. The SNP
 heatmap and duplicate check need the 59 x 96 genotype matrix rather than a per-sample
-summary, and the verdict, save and phenotype-missingness chunks need the `RGChannelSet`
-itself, so skip those. What this route does *not* give
-you is the experience of watching the checks run — so use it because you have to, not to
-save a minute.
+summary, and the other parts need the `RGChannelSet`
+itself. You won't be able to rerun the checks without the unprocessed individual-level data. 
 :::
 
-## What the phenotype file is missing
+## Missing phenotypes
 
-QC checks whether the *arrays* worked. It is also the right moment to check whether
-the **phenotype data** you will eventually model is complete, because a covariate you
-discover is absent at modeling time is far more expensive than one you plan around
-now.
+QC checks whether the *arrays* worked. It is also the right time to check whether
+the **phenotype data** you will eventually model is complete.
 
-There are two distinct kinds of gap, and they have different consequences. A variable
-that is **absent for every sample** is unmeasured confounding — you cannot adjust for
-it. A variable that is **present but incomplete** costs you samples, because any model
-containing that term silently drops the rows where it is missing. Check for both.
+There are two distinct kinds of gap: a variable
+that is **absent for every sample**; a variable that is **present but incomplete**. A 
+variable that is missing from every sample can potentially cause unmeasured confounding 
+that biases the results of your analysis. If you know beforehand you are missing an 
+important variable that could confound your analysis, you can attempt to create a suitable 
+proxy or surrogate variable. If a variable is present, but missing from a few individuals,
+then these samples are excluded from analyses. 
 
 ### Missing values in the variables we intend to model
 
@@ -345,7 +328,7 @@ Tabulate missingness for every term in the planned model, before you normalize:
 
 ```{r}
 #| label: pheno-missing
-model_vars <- c("ptsd", "sex", "age", "pc1", "pc2", "pc3", "childhood_abuse",
+model_vars <- c("ptsd", "sex", "age", "pc1", "pc2", "pc3",
                 "mergedcapsandpsswinthin30days")
 miss <- data.frame(
   variable = model_vars,
@@ -358,13 +341,14 @@ knitr::kable(miss, caption = "Missing values per candidate model variable, acros
 PTSD status — the exposure — is missing for
 `r sum(is.na(ss$ptsd) | ss$ptsd == "")` of the 96 samples. The raw CAPS/PSS indicator
 (`mergedcapsandpsswinthin30days`), which `ptsd` is derived from, is missing for the same
-samples, as expected. The three genetic ancestry PCs are missing for one further sample.
+samples, as expected. The three genetic ancestry PCs are missing for one additional sample.
 
 ::: {.callout-important}
 ## These ten samples are dropped later, and it is not a QC failure
 
-Every one of the 96 arrays passed QC. But an EWAS model contains the exposure, so
-`lm` / `limma` will drop any sample with no PTSD status — the analysis in
+All samples passed the standard QC checks based on the methylation data. But association testing requires complete 
+data for the phenotypes needed in the model (exposure of interest and any other covariates). `lm` / `limma` will 
+drop any sample with no PTSD status — the analysis in
 [chapter 06](06_ewas.qmd) and the pipeline run in
 [chapter 07](07_pipeline.qmd) therefore fit **n = 86**, not 96: nine samples
 have no PTSD status, and one more has no genetic ancestry PCs
@@ -375,21 +359,18 @@ This tutorial keeps all 96 samples through normalization
 ([chapter 03](03_probe_filtering.qmd)), and cell-composition estimation
 ([chapter 04](04_cell_composition.qmd)) on purpose. None of those steps uses PTSD
 status: they describe the arrays, not the association model, so there is no reason to
-discard usable arrays before the step that actually needs the exposure. The count
-changes once, in [batch effects](05_batch_effects.qmd), because the batch correction
+discard usable data before the step that actually needs the exposure. The count
+changes in [batch effects](05_batch_effects.qmd), because the batch correction
 and surrogate variables there are estimated with the exposure and the genetic PCs in
 the model.
 
 The distinction worth internalising: **samples dropped for quality** are samples you
 do not trust, and **samples dropped for missing phenotype** are samples you trust
-but cannot model. Report them separately. Collapsing them into one "n = 86 after QC"
-sentence — the most common way this gets written up — hides the fact that ten
-usable arrays were lost to an incomplete metadata table, which is a very different
-problem from ten failed arrays.
+but cannot model. Report them separately. 
 :::
 
-Because the nine without PTSD status are a loss from missingness rather than quality, it is worth a
-moment to ask whether they are **missing at random** or missing in a way that
+Because the nine without PTSD status are a loss from missingness rather than quality, it is 
+important to check whether they are **missing at random** or missing in a way that
 correlates with something. If the samples without PTSD status were, say, all male or
 all from one chip, dropping them would distort the design:
 
@@ -405,20 +386,18 @@ cat("distinct chips:", length(unique(ss$slide[no_ptsd])),
 ```
 
 Four female and five male, ages spanning the full cohort range, spread across eight
-of the twelve chips — the missingness looks incidental rather than structured. That
-is reassuring, but note that it is a *check you can only do for observed variables*;
-it cannot rule out the samples differing on something unrecorded.
+of the twelve chips — the missingness looks incidental rather than structured. If the 
+missingness appears structured, you would need to consider an alternative analysis plan 
+to what is described in this tutorial that is appropriate for structured missingness.
 
 ### Variables absent for every sample
 
 For blood methylation the most consequential gap is usually **smoking**. Smoking
 produces some of the largest and most reproducible methylation signals in blood
-[@joehanes2016smoking], so an unmeasured smoking variable is unmeasured confounding
-in every model you fit. The Grady deposit gives PTSD, age, sex, race, and childhood
-trauma — but no smoking variable, which is common in public deposits rather than
-unusual.
+[@joehanes2016smoking], so an unmeasured smoking variable is unmeasured confounding. The Grady deposit gives PTSD, age, sex, race, and childhood
+trauma — but no smoking variable, which is common in public deposits.
 
-That absence is worth noting here because it shapes decisions in chapters 05 and 06:
+That absence is worth noting because it shapes decisions in chapters 05 and 06:
 [batch effects](05_batch_effects.qmd) builds a methylation-based smoking proxy. The full set of options, and the one this tutorial
 takes, is laid out in [the EWAS chapter](06_ewas.qmd).
 
