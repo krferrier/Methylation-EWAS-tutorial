@@ -59,20 +59,18 @@ library(ggplot2) # every figure in this chapter
 library(dplyr)   # left_join(), filter() for the phenotype table
 library(tibble)  # rownames_to_column(), column_to_rownames() around the join
 
-# num.sv()'s permutation test and sva()'s iterative reweighting are both
-# stochastic, so the seed is what makes the surrogate variables -- and every
-# number derived from them below -- reproducible from one render to the next.
+# num.sv()'s permutation test and sva()'s iterative reweighting 
+# both use pseudo-randomization.
 set.seed(42)
 
 # The probe-filtered, funnorm-normalized object written by chapter 03:
 # 756,273 EWAS-ready CpGs x 96 QC-passing arrays.
 grs <- readRDS("data/03_grs_filtered.rds")
 
-# The reference-based cell proportions written by chapter 04 (96 x 6). This one
-# is small enough to live in the repository, so it needs no download.
+# The reference-based cell proportions written by chapter 04 (96 x 6). 
 props <- readRDS("data/04_cellcounts.rds")
 
-# The phenotype table comes out of the object, which carries the sample sheet.
+# The phenotype table comes out of the grs object, which has a copy of the sample sheet.
 # The three genetic ancestry PCs (see the genetic PCs chapter) are then joined
 # from the sample sheet by sample ID. Any PC columns already on the object are
 # dropped first, so the join cannot create duplicate pc1.x / pc1.y columns.
@@ -87,16 +85,12 @@ md <- as.data.frame(pData(grs)) %>%
   column_to_rownames("array")
 
 # Everything below indexes samples three different ways -- array columns, rows
-# of `md`, rows of `props` -- so align them once, here, and check each one.
+# of `md`, rows of `props`. Check that they are all the same before continuing
 props <- props[md$sample_id, ]
 stopifnot(identical(colnames(grs), md$sample_id))
 stopifnot(identical(rownames(props), md$sample_id))
 
-# The 86 samples an association model can actually use: PTSD status is missing
-# for nine arrays (see chapter 01) and the genetic PCs for one more, and a model
-# containing either drops them. The PCA diagnostic in section 2 deliberately
-# keeps all 96. Control is set as the reference level, so the PTSD coefficient
-# is "Case relative to Control", the direction the whole tutorial reports.
+# Filter to the 86 samples without missing phenotype data
 mdk <- md %>%
   filter(!is.na(ptsd), ptsd != "",
          !is.na(sex), !is.na(age),
@@ -169,13 +163,6 @@ $R^2$. A PC that has a high $R^2$ with a technical factor is a batch effect.
 ```{r}
 #| label: mvalues
 # PCA, ComBat and SVA all work on M-values rather than betas: log2(beta/(1-beta))
-# is unbounded and roughly homoscedastic, so a linear model is not fighting the
-# floor and ceiling of the 0-1 beta scale.
-#
-# Cost: getBeta() materializes a 756,273 x 96 numeric matrix (~580 MB) and M is a
-# second one, so this chunk peaks near 1.2 GB. `beta` is dropped as soon as the
-# M-values exist; only the handful of panel probes needed in section 5 are read
-# back off `grs` later.
 beta <- getBeta(grs)
 M    <- log2(beta / (1 - beta))
 M[!is.finite(M)] <- NA          # beta exactly 0 or 1 gives -Inf/+Inf
@@ -187,7 +174,7 @@ cat("M-value matrix:", paste(dim(M), collapse = " x "),
 ```{r}
 #| label: pca-compute
 # Rank probes by variance and keep the top 20,000. PCA on all 756,273 probes
-# would take minutes and give the same picture: the leading components are driven
+# would take longer and give the same picture: the leading components are driven
 # by the most variable probes, and this diagnostic only needs to identify what
 # those components track. The SVA in section 6 uses every probe.
 v    <- apply(M, 1, var, na.rm = TRUE)
@@ -195,8 +182,7 @@ top  <- names(sort(v, decreasing = TRUE))[1:20000]
 Mtop <- M[top, ]
 Mtop <- Mtop[complete.cases(Mtop), ]   # prcomp() cannot take an NA
 
-# center but do not scale: every row is already on the same M-value scale, and
-# scaling would give the least variable of the 20,000 probes equal say.
+# center but do not scale: every row is already on the same M-value scale
 pr  <- prcomp(t(Mtop), center = TRUE, scale. = FALSE)
 pcs <- pr$x[, 1:10]
 pve <- (pr$sdev^2 / sum(pr$sdev^2))[1:10]   # fraction of variance per PC
@@ -208,8 +194,6 @@ cat("PCA input:", nrow(Mtop), "probes | PC1-PC3 variance:",
 #| label: pc-r2
 # One row per candidate explanatory variable, technical and biological together
 # -- the point of the diagnostic is that they compete on the same axes.
-# Position is collapsed to its row (R01..R08 -> "R01"), because on an 8 x 1 EPIC
-# chip the column is constant and adds nothing.
 slide  <- factor(as.character(md$slide))
 posrow <- substr(md$array_pos, 1, 3)
 vars <- list(chip_slide = slide, array_position = factor(posrow),
@@ -217,9 +201,7 @@ vars <- list(chip_slide = slide, array_position = factor(posrow),
              Neu = props[, "Neu"], CD4T = props[, "CD4T"], CD8T = props[, "CD8T"],
              gPC1 = md$pc1, gPC2 = md$pc2, gPC3 = md$pc3)
 
-# R^2 of each PC regressed on each variable: a factor enters as its full set of
-# dummies, so a many-level factor like chip is compared against the others with
-# that caveat in mind (see take-away 2 below).
+# R^2 of each PC regressed on each variable
 pc_r2 <- t(sapply(vars, function(x)
   sapply(1:10, function(j) summary(lm(pcs[, j] ~ x))$r.squared)))
 colnames(pc_r2) <- paste0("PC", 1:10)
@@ -301,8 +283,6 @@ sc <- data.frame(PC1 = pcs[, 1], PC2 = pcs[, 2], Neu = 100 * props[, "Neu"])
 
 p_sc <- ggplot(sc, aes(PC1, PC2, color = Neu)) +
   geom_point(size = 2.7, alpha = 0.92) +
-  # a single-hue ramp: neutrophil fraction is a quantity, not a category, so pale
-  # to teal reads as "more" without implying groups
   scale_color_gradient(low = "#DCE9EA", high = "#0F3D43",              # teal_dark
                         name = "Neutrophil\nfraction",
                         labels = function(x) paste0(x, "%")) +
@@ -570,28 +550,27 @@ cat("published CpGs dropped by probe filtering:",
 
 ```{r}
 #| label: smoke-proxy
-## PC1 of the replicated smoking panel, oriented so that higher = heavier exposure.
-## Built on the 86 modeled arrays, so the score describes the variance of the set
-## the EWAS is actually fit on.
-##
-## The panel betas are read back off `grs` rather than taken from `M`: 20 rows of
-## a 756,273-row object is a cheap subset, and the score is defined on the beta
-## scale.
+# PC1 of the replicated smoking panel, oriented so that higher = heavier exposure.
+# Built on the 86 modeled arrays, so the score describes the variance of the set
+# the EWAS is actually fit on.
+#
+# The panel betas are read back off `grs` rather than taken from `M` because
+# the score is defined on the beta scale.
 Bp <- getBeta(grs[panel_probes, mdk$sample_id])
 
-## Each probe is z-scored across samples first, so that a probe with a wide beta
-## range does not dominate PC1 purely because of its scale. scale. = FALSE in
-## prcomp() then, because the scaling has already happened.
+# Each probe is z-scored across samples first, so that a probe with a wide beta
+# range does not dominate PC1 purely because of its scale. scale. = FALSE in
+# prcomp() then, because the scaling has already happened.
 Z  <- t(scale(t(Bp)))
 Z  <- Z[rowSums(is.na(Z)) == 0, ]
 pc <- prcomp(t(Z), center = TRUE, scale. = FALSE)
 smoke     <- pc$x[, 1]
 panel_pve <- pc$sdev^2 / sum(pc$sdev^2)
 
-## AHRR cg05575921 is hypomethylated in smokers, so flip the sign if needed
-## to make the score increase with exposure rather than decrease.
+# AHRR cg05575921 is hypomethylated in smokers, so flip the sign if needed
+# to make the score increase with exposure rather than decrease.
 if (cor(smoke, Bp["cg05575921", ], use = "complete.obs") > 0) smoke <- -smoke
-## Standardized, so the proxy enters every model below in units of one SD.
+# Standardized, so the proxy enters every model below in units of one SD.
 smoke <- as.numeric(scale(smoke))
 
 cat("panel PC1 variance explained:", sprintf("%.1f%%", 100 * panel_pve[1]), "\n")
@@ -667,10 +646,9 @@ genetic ancestry PCs:
 
 ```{r}
 #| label: combat-run
-# The stratified ComBat of section 4, run now that `smoke` exists. About 57
-# seconds for the two strata on this matrix.
+# stratified ComBat 
 #
-# droplevels() matters twice over: a stratum carries only some of the 12 chips, and
+# droplevels(): a stratum carries only some of the 12 chips and
 # ComBat cannot estimate a location for a batch level with no samples in it.
 sexk    <- factor(mdk$sex)
 slidek  <- droplevels(factor(as.character(mdk$slide)))
@@ -680,7 +658,7 @@ Mcb <- Mk
 for (s in levels(sexk)) {
   i  <- which(sexk == s)
   bs <- droplevels(slidek[i])
-  # sex is constant inside a stratum, so it is not -- and cannot be -- in cb_mod.
+  # sex is constant inside a stratum, so it cannot be in cb_mod.
   # Everything else we intend to keep is passed here so ComBat does not remove it
   # along with the chip shift.
   d  <- cbind(cellk[i, ], mdk[i, gpcs],
@@ -698,9 +676,8 @@ for (s in levels(sexk)) {
 #| label: combat-effect
 # Did the correction do what it was supposed to, and did sex survive it?
 #
-# Per-probe R^2 against a factor, for a whole matrix in one call: lm.fit() on the
-# transposed matrix fits all probes simultaneously, which is the difference
-# between seconds and an hour of looping lm() over 20,000 probes.
+# Per-probe R^2 against a factor: lm.fit() on the
+# transposed matrix fits all probes simultaneously
 mean_r2 <- function(X, f) {
   Y   <- t(X)
   rss <- colSums(resid(lm.fit(model.matrix(~ f), Y))^2)
@@ -708,8 +685,7 @@ mean_r2 <- function(X, f) {
   mean(1 - rss / tss)
 }
 
-# Judge the correction on the same 20,000 variable probes the PCA used -- that is
-# where batch structure is visible in the first place.
+# Judge the correction on the same 20,000 variable probes the PCA used.
 diag_probes <- intersect(top, rownames(Mk))
 report <- function(label, f)
   cat(sprintf("mean per-probe R2 vs %-22s %.4f -> %.4f\n", label,
@@ -739,7 +715,7 @@ stopifnot(qr(mod)$rank == ncol(mod))       # a rank-deficient full model makes s
 # num.sv()'s Buja-Eyuboglu test on the uncorrected matrix: how many dimensions of
 # structure are *detectable* before any correction. This and the sva() call below
 # are the expensive pair in the chapter -- together roughly 5 minutes, peaking
-# near 8.9 GB, because both work on the full 756,251 x 86 matrix.
+# near 8.9 GB
 n_sv_be <- num.sv(Mk, mod, method = "be")
 
 # We fit 6, not n_sv_be -- see the k-selection sweep below for why. The sweep
@@ -774,16 +750,16 @@ degrees of freedom are a constraint. So, we swept k over
 sit near 1) and precision (the median standard error of the PTSD coefficient,
 which should fall if the SVs are removing real noise).
 
+**YOU DO NOT NEED TO RUN THE NEXT CHUNK**. It is provided for provenance and as an example if you need 
+to run your own k-sweep.
+
 ```{r}
 #| label: k-sweep-compute
-# This is the sweep behind data/05_k_lambda_sweep.csv, and it runs at render.
+# This is the sweep behind data/05_k_lambda_sweep.csv shipped in the repository and read
+# in the next chunk. 
+#
 # Each candidate k gets its own sva() fit plus a full-probe limma fit, but n.sv is
-# supplied here, so each fit skips the Buja-Eyuboglu estimation that num.sv() does
-# above -- which is what makes the four candidates together cost about 140
-# seconds (measured: 136.9 s), rather than the several minutes the single
-# estimated fit above took on its own. The peak is comparable to that fit's (~9 GB). The small table
-# it writes is committed to the repository, and the chunk below reads it back, so
-# the figure and the text quote one set of numbers.
+# supplied here, so each fit skips the Buja-Eyuboglu estimation that num.sv() does above. 
 
 # Genomic inflation: the median observed chi-squared over its null expectation.
 # 1 is calibrated, > 1 inflated, < 1 deflated.
@@ -805,9 +781,6 @@ rows <- list(data.frame(
   df_F = sum(sexk == "F") - (ncol(mod) - 1), df_M = sum(sexk == "M") - (ncol(mod) - 1)))
 
 for (K in k_candidates) {
-  # sva() prints its own progress and leaves the last line unterminated, so
-  # without the banner and the newline below the four candidates run together
-  # and the final one looks as though it never finished.
   cat(sprintf("\n===== k = %d =====\n", K))
   set.seed(42)                                  # same seed at every k
   SVk <- sva(Mcb, mod, mod0, n.sv = K)$sv       # SVA's native order, first K
@@ -855,8 +828,8 @@ write.csv(ks, "data/05_k_lambda_sweep.csv", row.names = FALSE)
 
 ```{r}
 #| label: k-sweep
-# Read the committed sweep back. It is a few hundred bytes and lives in the
-# repository, so this works whether or not you ran the chunk above.
+# Read the committed sweep back. This ships with the repository, so this section
+# works whether or not you ran the chunk above.
 ks <- read.csv("data/05_k_lambda_sweep.csv")
 knitr::kable(
   ks[, c("k", "npar", "resid_df", "lambda", "med_se", "se_ratio", "r2_smoke_sv", "df_F", "df_M")],
@@ -898,10 +871,8 @@ Of the k values tested, k = 6 is the smallest that brings λ close to 1, and so 
 
 ```{r}
 #| label: sv-table
-# What each retained SV tracks. A surrogate variable is only interpretable
-# through its associations, so every candidate explanation gets a column --
-# including PTSD, because an SV that tracks the exposure is absorbing signal
-# rather than confounding.
+# What each retained SV correlates with. A surrogate variable is only interpretable
+# through its associations, so every candidate phenotype is tested.  
 r2 <- function(y, x) summary(lm(y ~ x))$r.squared
 sv_table <- data.frame(
   SV       = seq_len(ncol(SV)),
@@ -959,8 +930,7 @@ ggsave("data/05_sva_bars.png", plot = p_sv, width = 8.4, height = 4.4, dpi = 200
 
 ```{r}
 #| label: sva-summary
-# The two numbers that decide whether the SVA was worth running: the SVs should
-# be strongly chip-linked and near-orthogonal to the exposure.
+# The SVs should be strongly chip-linked and near-orthogonal to PTSD.
 chip_r2 <- sapply(1:ncol(SV), function(j) summary(lm(SV[,j] ~ factor(mdk$slide)))$r.squared)
 ptsd_r2 <- sapply(1:ncol(SV), function(j) summary(lm(SV[,j] ~ factor(mdk$ptsd)))$r.squared)
 cat(sprintf("Strongest chip-linked SV: SV%d (R2 = %.2f)\n", which.max(chip_r2), max(chip_r2)))
@@ -989,8 +959,7 @@ code that produced it.
 
 ```{r}
 #| label: save-05
-# 1. The PCA diagnostic. Small, and it is what the variable-association figures
-#    are drawn from, so a reader can redraw them without re-running the PCA.
+# 1. The PCA diagnostic. 
 saveRDS(list(pcs = pcs, pve = pve, r2 = pc_r2, md = md, props = props,
              slide = slide, posrow = posrow),
         "data/05_batch_pca.rds")
@@ -1017,9 +986,7 @@ saveRDS(list(SV = SV, n.sv = ncol(SV), mdk = mdk, propk = propk,
                                  "genetic PCs pc1-pc3 as covariates; SVA k=6")),
         "data/05_sva.rds")
 
-# 4. The corrected M-value matrix the EWAS is actually fit on. This one is
-#    about 480 MB, which is why it is excluded from git and distributed as a Zenodo
-#    tier rather than committed.
+# 4. The corrected M-value matrix the EWAS is actually fit on. 
 saveRDS(Mcb, "data/05_mvals_combat.rds")
 ```
 
