@@ -77,8 +77,7 @@ ss   <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 gpcs <- c("pc1", "pc2", "pc3")
 
 # The 86 samples an association model can use: PTSD status, sex, age and all three
-# PCs recorded. These are the same 86 samples chapter 05 onwards models; one of the
-# 96 arrays has no PCs, and nine have no PTSD status.
+# PCs recorded. 
 pcs <- ss %>%
   filter(!is.na(ptsd), ptsd != "",
          !is.na(sex), !is.na(age),
@@ -222,8 +221,7 @@ than a foregone conclusion.
 #| label: epistructure
 library(minfi)   # getBeta()
 
-# GLINT's reference list, read from the GLINT repository at a fixed commit so it
-# keeps returning this exact file.
+# GLINT's reference list, read from the GLINT repository at a fixed commit 
 ref <- readLines(paste0("https://raw.githubusercontent.com/cozygene/glint/",
                         "31a138ce380faeaf0e698733e781771df33374fe/",
                         "parsers/assets/epistructure_reference_sites.txt"))
