@@ -8,7 +8,7 @@ title: "Cell composition: Whole Blood"
 source("_setup.R")
 ```
 
-Whole blood is not one thing. It is a mixture of neutrophils, monocytes, natural killer (NK) cells,
+Whole blood is comprised of multiple cell types. It is a mixture of neutrophils, monocytes, natural killer (NK) cells,
 B cells, and CD4+/CD8+ T cells, and each cell type has a distinctly different
 methylome. When you draw blood from two people, differences in their cell-type
 *proportions* — driven by age, infection, stress, time of day — can produce large
@@ -38,7 +38,7 @@ library(ggplot2)                # every figure in this chapter
 library(dplyr)                  # joins for the deposited table, bind_rows() for the figure
 library(tibble)                 # rownames_to_column() before the join
 
-# The raw two-channel object written by the Setup chapter: 1,051,943 addresses
+# The raw two-channel object written by the Setup chapter: 1,051,943 CpGs
 # across 96 arrays, with no normalization applied. Deconvolution is one of the
 # few steps that needs the raw intensities rather than the normalized object
 # from chapter 02 -- the reason is in the callout below.
@@ -87,16 +87,13 @@ reference `RGChannelSet`, normalizing jointly (here with noob), then deconvolvin
 # rather than a function, so it has to be attached before it can be passed in.
 data("IDOLOptimizedCpGs")
 
-# The published proportions were produced with this seed set; keeping it means a
-# re-render reproduces the same numbers rather than something merely similar.
+# Set the psuedo-random seed 
 set.seed(1)
 
-# This is the most memory-hungry step in the whole tutorial: roughly 1 min 54 s
-# and a 15.0 GB peak for 96 arrays. The cost is structural, not wasteful -- the
-# 96 arrays and the flow-sorted reference are stacked into one object and noob-
-# normalized together (see the callout below), so the peak holds both datasets
-# at full probe resolution at once. An 8 GB laptop cannot run this chunk; the
-# collapsed callout further down is the route around it.
+# This is the most memory-intensive step in the whole tutorial: 15.0 GB peak.
+# The collapsed callout further down gives instructions on how to download the 
+# precomputed estimated cell counts if you don't have the resources to do this
+# step on your own computer.
 cc <- estimateCellCounts2(
   rg,                                   # raw RGChannelSet (not yet normalized)
   compositeCellType   = "Blood",
@@ -140,23 +137,15 @@ ExperimentHub::setExperimentHubOption("CACHE", "/path/of/your/choosing")
 ::: {.callout-note collapse="true"}
 ## Running out of memory on the chunk above
 
-A 15.0 GB peak is more than a 16 GB laptop has spare, and far more than an 8 GB one
-has at all. The proportions this chapter writes at the end are committed to the
-repository, so you can skip the `deconvolve` chunk and read them instead — every
-section below it then runs:
+The proportions this chapter writes at the end are committed to the
+repository, so you can skip the `deconvolve` chunk and read them instead if you
+don't have the available RAM to run the deconvolution yourself:
 
 ```{.r filename="RStudio Console"}
 props <- readRDS(url(paste0("https://raw.githubusercontent.com/krferrier/",
                             "Methylation-EWAS-tutorial/main/tutorial/data/",
                             "04_cellcounts.rds")))
 ```
-
-What this route costs you is the one thing this chapter is about: you do not see the
-reference being fetched, you do not see the joint normalization, and if your own study
-ever needs different cell types or a different reference, you will not have run the
-call that changes. It also leaves `cc` undefined, so the save of the full
-deconvolution return in the `save-cellcounts` chunk cannot run. Use it because your
-machine forces you to.
 :::
 
 ## 3. The composition of this subset
@@ -164,8 +153,8 @@ machine forces you to.
 ```{r}
 #| label: comp-summary
 # Collapse the 96 x 6 matrix to one row per cell type: the mean proportion and
-# the observed range across samples. Percentages read more easily than
-# proportions in a table, hence the 100x.
+# the observed range across samples. Then, convert to percentages because they read 
+# more easily in a table.
 comp <- data.frame(cell_type = colnames(props),
                    mean_pct   = round(100 * colMeans(props), 1),
                    min_pct    = round(100 * apply(props, 2, min), 1),
@@ -213,13 +202,10 @@ GEO record. That gives us the opportunity to check our deconvolution.
 # The deposited proportions are part of the GEO record's *phenotype*, not of the
 # IDATs, so they come out of the series matrix rather than out of `rg`. GEOquery
 # parses each "label: value" characteristic into its own column named
-# "<label>:ch1", which is where the six proportions arrive.
+# "<label>:ch1", which is where the six proportions are found.
 dep_file <- "data/04_deposited_cellcounts.tsv"
 
 if (file.exists(dep_file)) {
-  # The series matrix is ~30 MB and the deposited values never change, so once
-  # the small table below exists it is what later renders read. Delete it to
-  # force the fetch again.
   dep <- fread(dep_file, data.table = FALSE)
 } else {
   # 60 seconds is not enough to pull 30 MB from GEO on a slow link.
@@ -239,8 +225,7 @@ if (file.exists(dep_file)) {
   dep$sample_id <- as.character(pd$geo_accession)
 
   # The series carries 795 samples. Joining onto our 96 sample IDs keeps only
-  # the samples on our plate subset, in the row order of `props`, so the
-  # comparison below cannot silently misalign.
+  # the samples on our plate subset
   dep <- left_join(data.frame(sample_id = rownames(props)), dep, by = "sample_id")
 }
 ```
@@ -249,15 +234,14 @@ if (file.exists(dep_file)) {
 #| label: validation-compute
 cells <- c("CD8T","CD4T","NK","Bcell","Mono","Neu")
 
-# One row per sample with both sets of numbers side by side. The sample IDs are
-# the row names of `props`, so they are moved into a column to join on. Both
-# tables carry the same six column names, so the join appends the suffixes that
-# tell them apart -- .est for ours, .dep for the study's.
+# One row per sample with our estimated cell proportions versus and the deposited
+# cell proportions side by side. A suffix is added to differentiate which dataset
+# the cell proportion estimate came from. 
 m <- as.data.frame(props) %>%
   rownames_to_column("sample_id") %>%
   inner_join(dep, by = "sample_id", suffix = c(".est", ".dep"))
 
-# Three complementary summaries per cell type: correlation says whether the
+# Summaries per cell type: correlation says whether the
 # between-sample variation agrees (the part that matters for confounding
 # adjustment), mean absolute error says how far apart the absolute values are,
 # and the two means expose a systematic offset the correlation would hide.
@@ -272,9 +256,7 @@ for (i in seq_along(cells)) {
   res$mean_dep[i] <- mean(d, na.rm = TRUE)
 }
 
-# The per-sample comparison and the per-cell-type summary travel together: this
-# is the object the save-cellcounts chunk saves, and the one the paragraph below
-# the figure reads its numbers from.
+# The per-sample comparison and the per-cell-type summary 
 val <- list(merged = m, validation = res)
 ```
 
@@ -300,8 +282,7 @@ long <- bind_rows(lapply(cells, function(k)
   data.frame(cell = k, est = m[[paste0(k, ".est")]], dep = m[[paste0(k, ".dep")]]))) %>%
   mutate(cell = factor(cell, levels = cells))
 
-# The correlation from the table above, printed in each panel's corner: with
-# free axes per panel a reader cannot judge agreement by eye alone.
+# The correlation from the table above, printed in each panel's corner
 labs_r <- data.frame(cell = factor(res$cell, levels = cells),
                      lab  = sprintf("r = %.3f", res$r))
 
@@ -354,14 +335,11 @@ saveRDS(cc, "data/04_cc_full.rds")
 #    are all drawn from.
 saveRDS(val, "data/04_validation.rds")
 
-# 4. The deposited proportions, flat and small enough to live in the repository
-#    rather than in a Zenodo tier -- which is what lets the fetch above run once
-#    instead of on every render.
+# 4. The deposited proportions as a tsv
 write.table(dep, "data/04_deposited_cellcounts.tsv",
             sep = "\t", row.names = FALSE, quote = FALSE)
 
-# 5. The validation figure at the size the rendered page uses. The site serves
-#    the committed copy, so it is written by the same code that drew it above.
+# 5. The validation figure at the size the rendered page uses. 
 ggsave("data/04_validation_scatter.png", p_val, width = 8, height = 5.2, dpi = 130)
 ```
 
@@ -386,8 +364,8 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
    # Schematic only. `beta_mat` is a CpG x sample matrix -- in the deposit-only
    # case, whatever the submitter posted; locally, getBeta() on the chapter 03
    # object gives one. The result is deliberately NOT called `props`: that name
-   # holds this chapter's IDOL estimates, and overwriting it would change every
-   # number downstream without any error to warn you.
+   # refers to this chapter's IDOL estimates, and overwriting it would cause 
+   # serious problems downstream. 
    library(FlowSorted.Blood.EPIC)
    library(genefilter)
    ref <- ...   # matrix: IDOL CpGs x 6 cell types, from the package
@@ -406,9 +384,8 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
 
    ```{.r filename="Generic example, do not run"}
    # Schematic only. `beta_mat` stands for your own CpG x sample beta matrix. The
-   # result is deliberately not called `props`: that name holds this chapter's IDOL
-   # estimates, and overwriting it would quietly change every figure and model
-   # after this point.
+   # result is deliberately not called `props` because that column name already refers
+   # to the IDOL estimates.
    library(EpiDISH)
    data(centDHSbloodDMC.m)                     # blood reference centroids
    out <- epidish(beta_mat, ref.m = centDHSbloodDMC.m, method = "RPC")
@@ -429,8 +406,7 @@ components are not labeled cell types, only surrogate variables to adjust for.
 ---
 
 **Next:** [Genetic ancestry PCs](04b_genetic_pcs.qmd) — what the three ancestry
-covariates used from chapter 05 onwards are, and why they are a better covariate than
-self-reported race.
+covariates used from chapter 05 onwards are and why we use them in statistical modeling.
 
 ## References {.unnumbered}
 
