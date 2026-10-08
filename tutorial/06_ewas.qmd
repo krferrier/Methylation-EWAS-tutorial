@@ -37,14 +37,10 @@ library(bacon)   # bacon(), and the four diagnostic plots in section 4
 library(dplyr)   # select(), mutate(), joins and grouped summaries on result tables
 
 # The matrix the model is fit to: the stratified-ComBat M-values chapter 05
-# wrote, 756,251 probes x 86 samples. It is ~510 MB on disk and about the same
-# again in memory, so this read takes several seconds.
+# wrote, 756,251 probes x 86 samples. 
 Mcb <- readRDS("data/05_mvals_combat.rds")
 
-# Its small companion, which is committed to the repository: the 86-sample
-# phenotype table (which carries the genetic ancestry PCs pc1-pc3), the six cell
-# proportions from chapter 04, the smoking proxy, and the surrogate variables
-# with the k that chapter 05's sweep settled on.
+# Phenotype data
 sv_pieces <- readRDS("data/05_sva.rds")
 mdk   <- sv_pieces$mdk            # phenotype table (incl. pc1-pc3), rows in Mcb's column order
 propk <- sv_pieces$propk          # CD8T, CD4T, NK, Bcell, Mono, Neu
@@ -57,15 +53,12 @@ SV    <- sv_pieces$SV[, seq_len(K)]
 stopifnot(ncol(Mcb) == nrow(mdk))
 
 # Control is the reference level, which is what makes the tested coefficient
-# `ptsdCase` and makes its sign read as case minus control rather than the
-# reverse. Left to alphabetical ordering, "Case" would become the reference.
+# `ptsdCase` and makes its sign read as case minus control.
 ptsd    <- relevel(factor(mdk$ptsd), ref = "Control")
 is_case <- ptsd == "Case"
 
 # `ew` is the handoff object this chapter saves as data/06_ewas.rds and that
-# chapter 08 reads back. The sample counts are known before any model is fit;
-# the design size, the results table and lambda are added below as they are
-# computed, and the whole list is written out in one place at the end.
+# chapter 08 reads back. 
 ew <- list(n = ncol(Mcb), ncase = sum(is_case), nctrl = sum(!is_case),
            k_sv = K, n_tested = nrow(Mcb),
            panel_excluded = sv_pieces$excluded_n)
@@ -75,8 +68,7 @@ cat("EWAS matrix:", nrow(Mcb), "probes x", ncol(Mcb), "samples | k =", K, "\n")
 
 ## 1. Two ways to write the model — and why the outcome matters {#sec-model}
 
-There are two ways to set up the per-CpG regression, and they answer subtly
-different questions.
+There are two ways to set up the per-CpG regression:
 
 **(a) Methylation as the outcome**:
 
@@ -180,22 +172,17 @@ bs <- readRDS("data/06_bacon_summary.rds")
 ```
 
 Every other number, table and figure in this chapter will then run. The four BACON
-diagnostic plots are the one thing you lose, because they are drawn from the `bc` object
-rather than from the saved table.
+diagnostic plots are the one thing you won't be able to recreate because they are drawn from the `bc` object.
 :::
 
 ```{r}
 #| label: ewas-fit
-# Array position is an 8-level factor on an EPIC chip, so it costs 7 dummy
-# columns. Rebuilding the factor from as.character() drops any level the sample
-# sheet defines but no modeled sample occupies; an empty level would add an
-# all-zero dummy column and leave the design rank-deficient.
+# Array position is an 8-level factor on an EPIC chip, so it costs 7 degrees of freedom. 
+# Rebuilding the factor from as.character() drops any levels that don't have any samples
+# represented in the subset of 86; an empty level would make the design rank-deficient.
 pos <- factor(as.character(mdk$array_pos))
 
-# Every model term goes into one data frame so that model.matrix() can name the
-# columns it builds: `propk` expands to the six cell proportions by their own
-# names, and `SV` to SV1...SV6. check.names = FALSE keeps those names intact.
-# pc1-pc3 are the genetic ancestry PCs carried on mdk from chapter 05.
+# Create a dataframe of all the phenotypes and design the model matrix 
 dd <- data.frame(ptsd = ptsd, sex = factor(mdk$sex), age = mdk$age,
                  smoke = smoke, pos = pos,
                  pc1 = mdk$pc1, pc2 = mdk$pc2, pc3 = mdk$pc3,
@@ -206,8 +193,7 @@ stopifnot("ptsdCase" %in% colnames(design))
 ew$design_ncol <- ncol(design)
 ew$resid_df    <- ncol(Mcb) - ncol(design)
 
-# 756,251 least-squares fits in a single call -- which is why limma is the tool
-# here rather than a loop over lm(). This is the expensive step in the chapter:
+# Run linear regression analyses using limma. This is the expensive step in the chapter:
 # roughly a minute, and several GB while the per-probe coefficients and residual
 # variances are held in memory.
 fit <- lmFit(Mcb, design)        # per-probe weighted least squares
@@ -216,11 +202,6 @@ fit <- eBayes(fit)               # empirical-Bayes moderation of the variance
 # sort.by = "P" fixes the row order of the saved table to increasing p-value;
 # topTable()'s default sorts by the log-odds column B instead.
 #
-# limma:: is required, not decoration. bacon exports its own topTable method,
-# and because bacon is attached after limma above, a bare topTable() call
-# resolves to bacon's -- whose signature is (object, number, adjust.method,
-# sort.by) and which fails with "unused argument (coef = ...)". Qualifying the
-# call is the fix that does not depend on library() order.
 tt <- limma::topTable(fit, coef = "ptsdCase", number = Inf, sort.by = "P")
 tt$probe <- rownames(tt)
 
@@ -234,8 +215,7 @@ db  <- rowMeans(bcb[, is_case],  na.rm = TRUE) -
 tt$delta_beta <- db[tt$probe]
 rm(bcb); invisible(gc())
 
-# Genomic inflation factor from the p-values: the conventional definition, and
-# the same one chapter 05's k-selection sweep used, so the two are comparable.
+# Genomic inflation factor from the p-values
 lam    <- function(p) median(qchisq(1 - p, 1), na.rm = TRUE) / qchisq(0.5, 1)
 lambda <- lam(tt$P.Value)
 
@@ -294,23 +274,20 @@ estimates are needed down stream if a meta-analysis is performed.
 
 ```{r}
 #| label: run-bacon
-# The Gibbs sampler is stochastic, so the seed is what makes the inflation,
-# the bias and every adjusted p-value below reproducible run to run.
+# The Gibbs sampler uses pseudo-randomization. Set the seed.
 set.seed(42)
 
 es <- tt$logFC              # effect size per CpG
 se <- tt$logFC / tt$t       # standard error = beta / t-statistic
 
-# 5,000 iterations with 2,000 burn-in (bacon's defaults) over all 756,251
-# statistics: about a minute. bacon estimates inflation and bias from the test
-# statistics; the effect sizes and standard errors are passed as well so that
+# 5,000 iterations with 2,000 burn-in (bacon's defaults). Bacon estimates inflation and bias 
+# from the test statistics; the effect sizes and standard errors are passed as well so that
 # es() and se() below can return their corrected versions. limma's t equals
 # es / se here, so all three describe the same statistic.
 bc <- bacon(teststatistics = tt$t, effectsizes = es, standarderrors = se)
 
 # es() and se() below are bacon's accessor functions, not the two numeric
-# vectors of the same name defined above: R resolves a name used in function
-# position to a function and skips the vector.
+# vectors of the same name defined above.
 inflation(bc)   # estimated inflation (sigma.0); 1 = none
 bias(bc)        # estimated bias (mu); 0 = none
 # pval(), es() and se() each return a one-column matrix; [, 1] takes that column
@@ -362,15 +339,13 @@ full.)
 # its own jpeg() device instead of through ggsave().
 dir.create("data/06_bacon", showWarnings = FALSE, recursive = TRUE)
 
-# fit() is bacon's mixture-fit plot. The limma object named `fit` above does not
-# get in the way, for the same reason es() and se() still worked: a name in
-# function position resolves to a function.
+# fit() creates bacon's mixture-fit plot.
 jpeg("data/06_bacon/fit.jpg", width = 1600, height = 1200, res = 200)
-print(fit(bc, n = 100))                  # n = 100 histogram bins
+print(bacon::fit(bc, n = 100))                  # n = 100 histogram bins
 dev.off()
 
 jpeg("data/06_bacon/qq.jpg", width = 1600, height = 1200, res = 200)
-print(plot(bc, type = "qq"))             # a ggplot, hence the print()
+print(bacon::plot(bc, type = "qq"))            
 dev.off()
 
 # traces() and posteriors() draw straight onto the device, so no print() here.
@@ -735,23 +710,20 @@ section 4 reports from, and a flat copy of the results table.
 
 ```{r}
 #| label: save-ewas
-# 1. The handoff object. `tt` is attached only now, after BACON, so that the
-#    saved table already carries bacon.p / bacon.es / bacon.se / bacon.adj.P --
-#    chapter 08 reads those columns straight out of this file and never reruns
-#    the sampler.
+# 1. The handoff object. The test statistic and lambda are added to the 
+#    table before exporting. The table already had bacon.p / bacon.es / bacon.se / bacon.adj.P 
 ew$tt     <- tt
 ew$lambda <- lambda
 saveRDS(ew, "data/06_ewas.rds")
 
-# 2. The four calibration numbers, on their own, for anything that needs them
-#    without loading a 756,251-row table.
+# 2. The four calibration numbers
 saveRDS(bs, "data/06_bacon_summary.rds")
 
 # 3. A flat copy of the results table, one row per CpG. Gzipped CSV rather than
 #    a tab-delimited file in the repository: 756,251 rows is far too large to
 #    commit, so this one is deposited in the Zenodo record instead. The write
 #    takes about a minute.
-write.csv(tt, gzfile("data/06_ewas_bacon_toptable.csv.gz"), row.names = FALSE)
+fwrite(tt, "data/06_ewas_bacon_toptable.csv.gz")
 ```
 
 ## 8. When you don't have IDATs {#sec-no-idats}
