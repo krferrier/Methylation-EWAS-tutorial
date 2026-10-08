@@ -36,9 +36,7 @@ library(data.table)  # fread() for the mask tables
 library(dplyr)       # filter() and pull() on the mask table
 
 # The functional-normalized GenomicRatioSet saved by
-# [normalization](02_normalization.qmd): 96 samples, beta and M-values for every
-# probe that survived normalization. Nothing is filtered yet -- that is this
-# chapter's job.
+# [normalization](02_normalization.qmd): 96 samples, beta and M-values 
 grs <- readRDS("data/02_funnorm_grs.rds")
 grs
 ```
@@ -58,8 +56,8 @@ below score 35, or (for Infinium-I) whose two alleles land in different places; 
 `M_nonuniq`, for probes that map but with mapping quality under 10 — which is the one
 that catches a probe hybridising in several locations.
 
-**SNP-affected probes.** If a common SNP falls in the probe body — especially at
-the interrogated CpG or the single-base extension position — then the assay may 
+**SNP-affected probes.** If a common SNP falls in the probe body, especially at
+the interrogated CpG or the single-base extension position, then the assay may 
 reflect **genotype**, and not methylation. Two individuals with different alleles 
 will show a large "methylation difference" that is really a difference in DNA 
 sequence. This is a dangerous and often overlooked category for an EWAS, because 
@@ -211,29 +209,26 @@ drop <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
 This is where the five-population table in [§2](#sec-ancestry) comes from, and it is
 the concrete reason the chapter needs both forms of the mask. The TSV carries
 `M_SNP_AFR_1pt` and `M_SNP_EUR_1pt`, so the AFR-versus-EUR comparisons in that section
-come straight from it — but it does not carry the AMR, SAS or EAS equivalents, so three
-of the five rows can only come from the full release. Because the unpacked bits are committed, the count runs here rather
-than being quoted at you:
+come straight from it — but it does not have the AMR, SAS or EAS population columns, so three
+of the five rows can only come from the full release.
 
 ```{r}
 #| label: snp-by-pop
-# Both inputs are the committed output of the `yame unpack -a` call above, so this
-# runs without the yame binary. The bit matrix is 866,553 x 24 of 0/1, which gzips
-# from 40 MB down to 0.5 MB -- small enough to keep in the repository.
+# Both inputs come from the output of `yame unpack -a` above. These files have been
+# added to the repo for convenience so you don't have to use yame.
 terms  <- fread("data/EPIC.hg38.mask.cm.idx", header = FALSE)$V1
 bits   <- fread("data/mask_bits.tsv.gz", header = FALSE, col.names = terms,
                 data.table = FALSE)
 
 # M_SNP_<POP>_1pt flags a common SNP (MAF >= 1%) at the interrogated CpG in that
-# 1000 Genomes super-population. Counted over the whole array, not over this
+# 1000 Genomes super-population. The MAF is counted over the whole array, not over this
 # study's probes, because it is a property of the platform.
 pops <- c("AFR", "AMR", "SAS", "EUR", "EAS")
 snp_by_pop <- vapply(pops,
                      function(p) sum(bits[[paste0("M_SNP_", p, "_1pt")]] == 1L),
                      integer(1))
 
-# Five rows of two columns, committed to the repository so the §2 table is
-# readable straight from git without unpacking the mask first.
+# Export the summary table
 write.table(data.frame(population = pops, n_probes = snp_by_pop),
             "data/03_snp_by_pop.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 ```
@@ -254,8 +249,7 @@ SNP" depends on which population you ask about. The number of SNP-affected probe
 
 ```{r}
 #| label: pop-snp-table
-# The five-row table written by the `snp-by-pop` chunk above. Read here rather
-# than recounted, so this section and the funnel quote one source.
+# The five-row table written by the `snp-by-pop` chunk above. 
 sp <- fread("data/03_snp_by_pop.tsv", data.table = FALSE)
 snp_by_pop <- setNames(sp$n_probes, sp$population)
 
@@ -275,8 +269,7 @@ AFR versus **`r format(snp_by_pop[["EUR"]], big.mark = ",")`** for EUR:
 
 ```{r}
 #| label: afr-eur-overlap
-# One probe list per mask code, built straight from the shipped table's columns.
-# The filtering section below reuses these, and chapter-level saves carry them.
+# One probe list per mask code 
 mask_cols <- c("M_mapping", "M_nonuniq",
                "M_SNP_AFR_1pt", "M_1baseSwitchSNP_AFR_1pt", "M_2extBase_SNP_AFR_1pt",
                "M_SNP_EUR_1pt", "M_1baseSwitchSNP_EUR_1pt", "M_2extBase_SNP_EUR_1pt")
@@ -284,7 +277,7 @@ per_code_sets <- lapply(mask_cols, function(m) mask$Probe_ID[mask[[m]] == 1L])
 names(per_code_sets) <- mask_cols
 mp <- list(per_code_sets = per_code_sets)
 
-# The comparison is between two mask terms over the same probe universe.
+# The comparison is between two mask terms over the same probe set.
 afr <- per_code_sets$M_SNP_AFR_1pt
 eur <- per_code_sets$M_SNP_EUR_1pt
 cat("masked in AFR but NOT EUR:", length(setdiff(afr, eur)), "\n")
@@ -365,21 +358,19 @@ committed to the repository, so you can still read them without running the chap
 
 ```{r}
 #| label: probe-detp
-# The detection-p filter is per PROBE, so it needs the full probe x sample
+# The detection-p filter is per probe, so it needs the full probe x sample
 # p-value matrix. The QC chapter kept only per-sample summaries, so the matrix is
-# recomputed from the raw two-channel object here: about 40 seconds and ~4 GB for
-# 96 arrays, which is the most expensive step in this chapter.
+# recomputed from the raw two-channel object.
 rg   <- readRDS("data/01_RGset.rds")
 detP <- detectionP(rg)
 
-# Fraction of samples in which each probe failed the p > 0.01 cut, over the
-# probes that survived normalization -- those are the only ones the funnel can
-# drop. A probe unreliable in more than 10% of samples goes.
+# Fraction of samples in which each probe failed the p > 0.01, over the
+# probes that survived normalization. A probe unreliable in more than 10% of samples
+# is dropped
 frac_fail <- rowMeans(detP[rownames(grs), ] > 0.01)
 drop_detp <- rownames(grs)[frac_fail > 0.10]
 
-# Nothing below needs the raw object or the p-value matrix, and together they are
-# the memory high-water mark of the chapter, so release them now.
+# Remove unneeded objects
 rm(rg, detP); invisible(gc())
 length(drop_detp)
 ```
@@ -399,7 +390,7 @@ drop_sex <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
 keep <- setdiff(rownames(grs), Reduce(union, list(drop_mask, drop_detp, drop_sex)))
 
 
-# Every count the funnel, the tables and the prose below quote, in one place.
+# Counts for each filtering step
 funl <- list(
   n0               = nrow(grs),                        # probes entering the funnel
   drop_mask        = length(drop_mask),
@@ -432,15 +423,14 @@ cat(sprintf("Retained %d of %d probes (%.1f%%).\n",
 
 ```{r}
 #| label: apply-filter
-# `keep` is the set union of the three drop lists, taken out of the normalized
+# `keep` is the set union of the three drop lists taken out of the normalized
 # probe set: the eight-code mask (`drop_mask`), the detection-p failures
-# (`drop_detp`) and the sex chromosomes (`drop_sex`), all built above. Order does
-# not matter -- a probe flagged by two filters is dropped once.
+# (`drop_detp`) and the sex chromosomes (`drop_sex`) built above. 
 grs_filt <- grs[keep, ]
 
 # Subsetting a GenomicRatioSet carries the beta/M matrices, the genome
 # coordinates and the sample metadata along with it, so this object is
-# analysis-ready as it stands.
+# analysis-ready.
 grs_filt
 ```
 
@@ -479,8 +469,7 @@ fwrite(long, "data/03_legacy_pop_mask.tsv.gz", sep = "\t")
 
 ```{r}
 #| label: mask-generation-contrast
-# Long form: one row per (probe, legacy mask column) pair, flagged probes only --
-# which is how two columns of an 866k-probe annotation fit in 0.6 MB.
+# Long form: one row per (probe, legacy mask column) pair, flagged probes only 
 leg <- fread("data/03_legacy_pop_mask.tsv.gz", data.table = FALSE)
 L   <- split(leg$probeID, leg$mask)
 
@@ -582,8 +571,7 @@ So `r format(funl$retained, big.mark=",")` probes pass filtering and
 ## 5. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
 
 Probe filtering is one of the few preprocessing steps that works **identically**
-whether your data came from IDATs or from a processed β-matrix — because the masks
-are keyed on **probe IDs**, not intensities. The workflow:
+whether your data came from IDATs or from a processed β-matrix. The workflow:
 
 1. **Load the matrix** (see the [normalization](02_normalization.qmd) non-IDAT
    section) so you have a β-matrix with `cg`/`ch` probe IDs as rownames.
@@ -593,8 +581,7 @@ are keyed on **probe IDs**, not intensities. The workflow:
    `mask-read` chunk in [§1](#sec-why) first — that is where `drop8` is built:
 
    ```{.r filename="RStudio Console"}
-   # `drop8` is the eight-code union built by the `mask-read` chunk in §1. It works
-   # unchanged on a matrix, because the mask is keyed on probe IDs and nothing else.
+   # `drop8` is the eight-code union built by the `mask-read` chunk in §1. 
    beta_filt <- beta[!rownames(beta) %in% drop8, ]
 
    # archived manifest (14 MB), if you need sub-population resolution instead
@@ -604,7 +591,7 @@ are keyed on **probe IDs**, not intensities. The workflow:
    drop <- pop$probeID[pop$MASK_general_ASW]           # e.g. African-ancestry SW US
    beta_filt <- beta[!rownames(beta) %in% drop, ]
    ```
-3. **You lose the detection-p filter** unless the submitter deposited detection
+3. **Skip the detection-p filter** unless the submitter deposited detection
    p-values alongside the matrix (some do, as a separate supplementary file — use
    it if present). Without it, rely on the mask plus removing probes with excessive
    `NA` values.
@@ -620,8 +607,9 @@ the probe IDs mostly overlap between 450K and EPIC but the mask *contents* diffe
 If you are combining a 450K series with an EPIC series, filter each on its own
 manifest, then intersect on the shared probe IDs. This tutorial uses the hg38 masks
 because its results are reported in hg38 coordinates ([annotation](08_annotation.qmd));
-the object's hg19 Illumina annotation is used here only to find the sex-chromosome
-probes.
+the object's hg19 Illumina annotation is used here only to identify the sex-chromosome
+probes. The exact coordinates are not necessary for this, so it's okay to use the hg19 
+mapping for this step versus hg38. 
 :::
 
 ---
