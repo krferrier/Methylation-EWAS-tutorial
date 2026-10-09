@@ -5,25 +5,25 @@
 /tutorial/data/02_funnorm_grs.rds
 /tutorial/data/02_norm_pieces.rds
 /tutorial/data/03_grs_filtered.rds
-/tutorial/data/05_k_lambda_sweep.rds
-/tutorial/data/05_mvals_combat.rds
-/tutorial/data/05_mvals_combat_pos.rds
-/tutorial/data/05_sv_worth_it.rds
-/tutorial/data/06_ewas.rds
-/tutorial/data/06_ewas_bacon_toptable.csv.gz
-/tutorial/data/08_annotation/08_dmr_combp_outputs.tar.gz
-/tutorial/data/08_annotation/PTSD_ewas_annotated_results.bed
-/tutorial/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz
-/tutorial/data/08_annotation/annotated.rds
-/tutorial/data/08_annotation/bios_eqtm_hgnc_annotated.tsv
-/tutorial/data/08_annotation/dmr/PTSD_dmr.fdr.bed.gz
-/tutorial/data/08_annotation/dmr/PTSD_dmr.slk.bed.gz
-/tutorial/data/08_annotation/dmr/PTSD_dmr_demo.fdr.bed.gz
-/tutorial/data/08_annotation/dmr/PTSD_dmr_demo.slk.bed.gz
-/tutorial/data/08_annotation/dmr_demo/
-/tutorial/data/06_ewas_bacon_toptable.csv
-/tutorial/data/06_ewas_toptable.csv
-/tutorial/data/08_annotation/PTSD_ewas_annotated_results.csv.gz
+/tutorial/data/06_k_lambda_sweep.rds
+/tutorial/data/06_mvals_combat.rds
+/tutorial/data/06_mvals_combat_pos.rds
+/tutorial/data/06_sv_worth_it.rds
+/tutorial/data/07_ewas.rds
+/tutorial/data/07_ewas_bacon_toptable.csv.gz
+/tutorial/data/09_annotation/09_dmr_combp_outputs.tar.gz
+/tutorial/data/09_annotation/PTSD_ewas_annotated_results.bed
+/tutorial/data/09_annotation/PTSD_ewas_annotated_zhou.csv.gz
+/tutorial/data/09_annotation/annotated.rds
+/tutorial/data/09_annotation/bios_eqtm_hgnc_annotated.tsv
+/tutorial/data/09_annotation/dmr/PTSD_dmr.fdr.bed.gz
+/tutorial/data/09_annotation/dmr/PTSD_dmr.slk.bed.gz
+/tutorial/data/09_annotation/dmr/PTSD_dmr_demo.fdr.bed.gz
+/tutorial/data/09_annotation/dmr/PTSD_dmr_demo.slk.bed.gz
+/tutorial/data/09_annotation/dmr_demo/
+/tutorial/data/07_ewas_bacon_toptable.csv
+/tutorial/data/07_ewas_toptable.csv
+/tutorial/data/09_annotation/PTSD_ewas_annotated_results.csv.gz
 
 # Raw IDATs, fetched as Zenodo tier A. 1.4 GB across 192 files, and the
 # Setup chapter tells readers to extract them here, so they must never be

@@ -1,4 +1,4 @@
-# Chapters 01-06 and 08. Only directly-used packages are listed --
+# Chapters 1-7 and 9. Only directly-used packages are listed --
 # conda resolves the dependency tree from these.
 #
 # One constraint is deliberate:
@@ -15,13 +15,13 @@
 # methylGSA is deliberately NOT in this file. bioconda's newest build is
 # 1.16.0 for R 4.2, so keeping it would hold this environment a generation
 # back. It has its own environment in envs/methylgsa.yml, used only by that
-# one section of chapter 08.
+# one section of chapter 9.
 #
 # knowYourCG and ENmix ARE in this file, as of the R 4.5 generation. They were
 # left out when the stack was pinned at R 4.2/Bioc 3.16, where knowYourCG did
 # not exist (it enters at Bioc 3.18) and neither had a usable build. At
 # r-base=4.5 both solve into this environment alongside everything else --
-# verified by building it -- so chapter 08's KYCG enrichment and its comb-p
+# verified by building it -- so chapter 9's KYCG enrichment and its comb-p
 # DMR call no longer need a second environment. methylGSA remains the one
 # section that does.
 #
@@ -36,7 +36,7 @@ channels:
 #                    one of its dependencies). 0.22 still exports it. No chapter
 #                    loads wateRmelon directly, so this breaks nothing in the
 #                    rendered tutorial, but the package should work if a reader
-#                    reaches for BMIQ as chapter 02 suggests.
+#                    reaches for BMIQ as chapter 2 suggests.
 dependencies:
   - r-base=4.5
   - r-lattice<0.23
@@ -72,12 +72,12 @@ dependencies:
   # data handling, figures, rendering
   - r-data.table
   - r-r.utils          # fread() needs it to decompress .gz; otherwise only arrives via GEOquery
-  - r-jsonlite         # chapter 08 queries the UCSC API for the HGNC track
-  - r-ggrepel          # figure labels, chapters 06 and 08
-  - r-ggtext           # coloured axis labels, chapter 08 KYCG figure
-  - r-fst              # the pipeline's .fst M-value input, chapter 07
-  - r-dplyr            # left_join() / filter() on phenotype tables, chapters 04, 04b, 05
-  - r-tibble           # rownames_to_column() / column_to_rownames(), chapter 05
+  - r-jsonlite         # chapter 9 queries the UCSC API for the HGNC track
+  - r-ggrepel          # figure labels, chapters 7 and 9
+  - r-ggtext           # coloured axis labels, chapter 9 KYCG figure
+  - r-fst              # the pipeline's .fst M-value input, chapter 8
+  - r-dplyr            # left_join() / filter() on phenotype tables, chapters 4, 5, 6
+  - r-tibble           # rownames_to_column() / column_to_rownames(), chapter 6
   - r-ggplot2
   - r-knitr
   - r-dt

@@ -1,7 +1,7 @@
 {
  "tiers": {
   "A_idats": {
-   "resume": "ch01 \u2014 raw IDATs, run the tutorial from the beginning",
+   "resume": "chapter 1 \u2014 raw IDATs, run the tutorial from the beginning",
    "files": [
     [
      "repo/data/idats/GSM3853168_200932680028_R01C01_Grn.idat.gz",
@@ -774,7 +774,7 @@
    ]
   },
   "B_qc": {
-   "resume": "ch02 \u2014 skip reading 96 IDAT pairs (192 files)",
+   "resume": "chapter 2 \u2014 skip reading 96 IDAT pairs (192 files)",
    "files": [
     [
      "repo/data/01_RGset.rds",
@@ -791,7 +791,7 @@
    ]
   },
   "C_normalized": {
-   "resume": "ch03 \u2014 skip funnorm normalization",
+   "resume": "chapter 3 (and chapter 5's EPISTRUCTURE example) \u2014 skip funnorm normalization",
    "files": [
     [
      "repo/data/02_funnorm_grs.rds",
@@ -804,7 +804,7 @@
    ]
   },
   "D_filtered": {
-   "resume": "ch04/ch05 \u2014 skip v8.1 mask filtering",
+   "resume": "chapters 4 and 6 \u2014 skip v8.1 mask filtering",
    "files": [
     [
      "repo/data/03_grs_filtered.rds",
@@ -825,7 +825,7 @@
    ]
   },
   "E_model_inputs": {
-   "resume": "ch06 \u2014 skip cell composition, ComBat and SVA",
+   "resume": "chapter 7 \u2014 skip cell composition, ComBat and SVA",
    "files": [
     [
      "repo/data/04_cc_full.rds",
@@ -836,38 +836,38 @@
      8203
     ],
     [
-     "repo/data/05_mvals_combat.rds",
+     "repo/data/06_mvals_combat.rds",
      505149587
     ],
     [
-     "repo/data/05_sva.rds",
+     "repo/data/06_sva.rds",
      14422
     ],
     [
-     "repo/data/05_batch_pca.rds",
+     "repo/data/06_batch_pca.rds",
      18339
     ]
    ]
   },
   "F_ewas_results": {
-   "resume": "ch07/ch08 \u2014 skip the limma + BACON run",
+   "resume": "chapters 8 and 9 \u2014 skip the limma + BACON run",
    "files": [
     [
-     "repo/data/06_ewas.rds",
-     56049672
+     "repo/data/07_ewas.rds",
+     50473587
     ],
     [
-     "repo/data/06_bacon_summary.rds",
+     "repo/data/07_bacon_summary.rds",
      187
     ],
     [
-     "repo/data/06_ewas_bacon_toptable.csv.gz",
-     61108280
+     "repo/data/07_ewas_bacon_toptable.csv.gz",
+     53942729
     ]
    ]
   },
   "G_pipeline_run": {
-   "resume": "ch07 \u2014 Snakemake pipeline outputs (combined + stratified + meta)",
+   "resume": "chapter 8 \u2014 Snakemake pipeline outputs (combined + stratified + meta)",
    "files": [
     [
      "ewas_pipeline/data/pheno.csv",
@@ -960,32 +960,32 @@
    ]
   },
   "H_annotation": {
-   "resume": "ch08 \u2014 annotated results and comb-p outputs",
+   "resume": "chapter 9 \u2014 annotated results and comb-p outputs",
    "files": [
     [
-     "repo/data/08_annotation/annotated.rds",
-     82353846
+     "repo/data/09_annotation/annotated.rds",
+     76578899
     ],
     [
-     "repo/data/08_annotation/PTSD_ewas_annotated_results.bed",
+     "repo/data/09_annotation/PTSD_ewas_annotated_results.bed",
      39982327
     ],
     [
-     "repo/data/08_annotation/PTSD_ewas_annotated_zhou.csv.gz",
-     83115125
+     "repo/data/09_annotation/PTSD_ewas_annotated_zhou.csv.gz",
+     75766376
     ],
     [
-     "repo/data/08_annotation/dmr/PTSD_dmr.slk.bed.gz",
+     "repo/data/09_annotation/dmr/PTSD_dmr.slk.bed.gz",
      8362568
     ],
     [
-     "repo/data/08_annotation/dmr/PTSD_dmr.fdr.bed.gz",
+     "repo/data/09_annotation/dmr/PTSD_dmr.fdr.bed.gz",
      9573592
     ]
    ]
   }
  },
  "excluded": {
-  "ewas_pipeline/data/mvals.csv.gz": "regenerable from tier E by chapter 07's pipeline-input code (514 MB)"
+  "ewas_pipeline/data/mvals.csv.gz": "regenerable from tier E by chapter 8's pipeline-input code (514 MB)"
  }
 }

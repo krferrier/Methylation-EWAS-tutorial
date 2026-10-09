@@ -1,5 +1,6 @@
 ---
-title: "Setup: getting the data onto your machine"
+title: "0. Setup: getting the data onto your machine"
+number-offset: [0, 0]
 ---
 
 ```{r}
@@ -11,7 +12,7 @@ source("_setup.R")
 This notebook introduces the dataset the tutorial uses, shows how to get the raw
 files onto your own machine, and sets out what running everything costs in time,
 memory, and disk. It assumes the array background from
-[Background](00a_background.qmd).
+[Background](background.qmd).
 
 ::: {.callout-important}
 ## Where to type each block
@@ -99,37 +100,37 @@ Rscript install_packages.R
 ```
 :::
 
-The non-R sections: **chapter 07** runs the EWAS through a Snakemake pipeline, and that
-genuinely needs conda. Chapter 06 already runs the same association test directly in R. So,
+The non-R sections: **chapter 8** runs the EWAS through a Snakemake pipeline, and that
+genuinely needs conda. Chapter 7 already runs the same association test directly in R. So,
 using the Snakemake pipeline is not necessary to complete the tutorial, it is an alternative 
 to perform the same type of testing reproducibly at scale. If you just want to stick with R, 
-you can skip from Chapter 06 (EWAS) to Chapter 08 (annotation). The `comb-p`
-region-level section of chapter 08 also needs conda, but again, an exclusively R option is also 
+you can skip from Chapter 7 (EWAS) to Chapter 9 (annotation). The `comb-p`
+region-level section of chapter 9 also needs conda, but again, an exclusively R option is also 
 shown, so using conda isn't necessary. 
 
 ### conda
 
-If you already use conda, or you want to run chapter 07, four environments are defined in
+If you already use conda, or you want to run chapter 8, four environments are defined in
 the repository's `envs/` directory. Three of them exist because their toolchains cannot
 coexist: Snakemake needs Python 3, `comb-p` runs on Python 2.7, and `methylGSA` is only
 packaged for an older R than the rest of the stack.
 
 ```{.bash filename="Terminal"}
-conda env create -f envs/methyl.yml       # chapters 01-06, 08   -- R 4.5
-conda env create -f envs/smk.yml          # chapter 07           -- Snakemake
-conda env create -f envs/combp.yml        # chapter 08 DMRs      -- comb-p
-conda env create -f envs/methylgsa.yml    # chapter 08 methylGSA -- R 4.2
+conda env create -f envs/methyl.yml       # chapters 1-7, 9   -- R 4.5
+conda env create -f envs/smk.yml          # chapter 8           -- Snakemake
+conda env create -f envs/combp.yml        # chapter 9 DMRs      -- comb-p
+conda env create -f envs/methylgsa.yml    # chapter 9 methylGSA -- R 4.2
 ```
 
 | Environment | Chapters | Core tool |
 |---|---|---|
-| `ewas-methyl` | 01-06, 08 | R 4.5, Bioconductor 3.22 |
-| `ewas-smk` | 07 | Snakemake 9.26.1 |
-| `ewas-combp` | 08 (DMR section) | comb-p on Python 2.7 |
-| `ewas-methylgsa` | 08 (methylGSA section) | methylGSA on R 4.2 |
+| `ewas-methyl` | 0-7, 9 | R 4.5, Bioconductor 3.22 |
+| `ewas-smk` | 8 | Snakemake 9.26.1 |
+| `ewas-combp` | 9 (DMR section) | comb-p on Python 2.7 |
+| `ewas-methylgsa` | 9 (methylGSA section) | methylGSA on R 4.2 |
 
 If you only want the R chapters, `envs/methyl.yml` is the only one you need. `methylGSA`
-is one of three probe-bias corrections chapter 08 compares, and the other two run in the main environment.
+is one of three probe-bias corrections chapter 9 compares, and the other two run in the main environment.
 
 Each file lists only the packages the tutorial uses directly and lets conda resolve the
 rest. `envs/smk.yml` deliberately installs only Snakemake: the pipeline
@@ -461,7 +462,7 @@ ss <- read.csv("data/sample_sheet.csv", stringsAsFactors = FALSE)
 
 # Type the variables we intend to model. Level order matters: R uses
 # the FIRST level as the reference category, so listing "Control" first is what
-# makes chapter 06 report the effect of PTSD relative to controls. Left to
+# makes chapter 7 report the effect of PTSD relative to controls. Left to
 # itself, factor() sorts alphabetically and puts "Case" first. 
 ss$ptsd            <- factor(ss$ptsd,            levels = c("Control", "Case"))
 ss$sex             <- factor(ss$sex,             levels = c("F", "M"))
@@ -483,7 +484,7 @@ pData(RGset)    <- DataFrame(ss, row.names = ss$sample_id)   # DataFrame() comes
 RGset
 dim(RGset)                  # 1051943 addresses x 96 arrays
 
-# Save it. Chapters 01 and 02 both start from this object. The file is roughly
+# Save it. Chapters 1 and 2 both start from this object. The file is roughly
 # 460 MB. If you need more space you can delete the raw idats. 
 saveRDS(RGset, "data/01_RGset.rds")
 ```
@@ -541,17 +542,17 @@ process**, which is what has to fit in RAM.
 
 | Chapter | Step                                         | Wall time | Peak memory |
 |---|----------------------------------------------|---:|---:|
-| [00 Setup](00_setup.qmd#sec-read-idats) | Read 96 IDAT pairs (`read.metharray`)        | 2 min 21 s | 5.8 GB |
-| [01 QC](01_qc.qmd) | Detection *p*-values (`detectionP`)          | 48 s | 3.8 GB |
-| [02 Normalization](02_normalization.qmd) | Functional normalization (`preprocessFunnorm`) | 2 min 4 s | 12.5 GB |
-| [03 Probe filtering](03_probe_filtering.qmd) | Mask + detection-*p* + sex chromosomes       | 26 s | 5.6 GB |
-| [04 Cell composition](04_cell_composition.qmd) | Deconvolution (`estimateCellCounts2`, IDOL)  | 1 min 54 s | **15.0 GB** |
-| [05 Batch effects](05_batch_effects.qmd) | Stratified `ComBat` on slide                 | 57 s | 4.1 GB |
-| [05 Batch effects](05_batch_effects.qmd) | `num.sv` + `sva` at *k* = 6                  | 5 min 1 s | 8.9 GB |
-| [06 EWAS](06_ewas.qmd) | EWAS using `lmFit` + `eBayes` + BACON        | 18 s | 4.1 GB |
-| [Chapter 07](07_pipeline.qmd) | Non-stratified EWAS on 86 samples, 8 workers | 6 min 12 s | **12.0 GB** |
-| [Chapter 07](07_pipeline.qmd) | Stratified EWAS: 2 strata (44 and 42) run simultaneously, 4 workers each | 11 min 37 s | 6.3 GB |
-| [08 Annotation](08_annotation.qmd) | GENCODE v41 join over 756,251 CpGs           | 11 s | 1.3 GB |
+| [0 Setup](00_setup.qmd#sec-read-idats) | Read 96 IDAT pairs (`read.metharray`)        | 2 min 21 s | 5.8 GB |
+| [1 QC](01_qc.qmd) | Detection *p*-values (`detectionP`)          | 48 s | 3.8 GB |
+| [2 Normalization](02_normalization.qmd) | Functional normalization (`preprocessFunnorm`) | 2 min 4 s | 12.5 GB |
+| [3 Probe filtering](03_probe_filtering.qmd) | Mask + detection-*p* + sex chromosomes       | 26 s | 5.6 GB |
+| [4 Cell composition](04_cell_composition.qmd) | Deconvolution (`estimateCellCounts2`, IDOL)  | 1 min 54 s | **15.0 GB** |
+| [6 Batch effects](06_batch_effects.qmd) | Stratified `ComBat` on slide                 | 57 s | 4.1 GB |
+| [6 Batch effects](06_batch_effects.qmd) | `num.sv` + `sva` at *k* = 6                  | 5 min 1 s | 8.9 GB |
+| [7 EWAS](07_ewas.qmd) | EWAS using `lmFit` + `eBayes` + BACON        | 18 s | 4.1 GB |
+| [8 Pipeline](08_pipeline.qmd) | Non-stratified EWAS on 86 samples, 8 workers | 6 min 12 s | **12.0 GB** |
+| [8 Pipeline](08_pipeline.qmd) | Stratified EWAS: 2 strata (44 and 42) run simultaneously, 4 workers each | 11 min 37 s | 6.3 GB |
+| [9 Annotation](09_annotation.qmd) | GENCODE v41 join over 756,251 CpGs           | 11 s | 1.3 GB |
 
 On average, the whole tutorial should take about 30 minutes of compute time. The 
 potential limiting resource is memory. The normalization and cell-type deconvolution takes about 12.5GB and 15GB of 
@@ -559,7 +560,7 @@ memory to run, respectively. Those using a laptop with 8GB of RAM may not be abl
 local computer. Saved checkpoints of these results are available in the Zenodo record so that you can still run the rest of the 
 steps in these chapters.
 
-For the Chapter 07 EWAS run using a snakemake pipeline, the first row is the whole cohort in one
+For the Chapter 8 EWAS run using a snakemake pipeline, the first row is the whole cohort in one
 EWAS. The second splits it into two EWAS (here by sex), giving 44 and 42 samples — run 
 in parallel. Note that the split requires *less* memory; peak memory
 is driven by **samples × workers**, and each stratum is running half the samples with half
@@ -571,11 +572,11 @@ being able to run an analysis at all!
 ::: {.callout-warning}
 ## Time versus Memory tradeoffs
 You may have noticed that the EWAS method shown in Chapter 6 runs significantly faster than the EWAS performed using 
-snakemake in Chapter 07, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 86 
+snakemake in Chapter 8, and at this sample size it also uses less memory — 4.1 GB against 12.0 GB for the same 86 
 samples at 8 workers. Those two numbers are not fixed in the same way, though. The pipeline's memory is a function of how 
-many workers you give it. The Chapter 06 approach holds the whole matrix in one process. 86 samples is quite small, and a full-scale EWAS will have 
-several hundreds to thousands of samples. The faster method shown in Chapter 06 will very quickly require more memory resources 
-than you have available as the number of samples you try to run at once increase. The Snakemake pipeline in Chapter 07 takes a bit longer,
+many workers you give it. The Chapter 7 approach holds the whole matrix in one process. 86 samples is quite small, and a full-scale EWAS will have 
+several hundreds to thousands of samples. The faster method shown in Chapter 7 will very quickly require more memory resources 
+than you have available as the number of samples you try to run at once increase. The Snakemake pipeline in Chapter 8 takes a bit longer,
 especially for smaller datasets, because part of what it's doing under the hood is breaking the big dataset into smaller, more 
 reasonably sized chunks. The Snakemake EWAS method was designed to minimize memory cost for full-scale analyses; the consequence of this 
 is longer runtimes.
@@ -881,7 +882,7 @@ this section. If you put the full series somewhere else, change the path in that
 `minfi` reads IDATs given a **Basename** (the path up to `_Grn/_Red`). We pair
 each Basename with the phenotype row for that GSM. The last three columns, `pc1`–`pc3`,
 are the genetic ancestry principal components (PCs) GEO deposits for each sample; one of the 96
-samples is missing this PC information and is dropped from the analysis later on. [Genetic ancestry PCs](04b_genetic_pcs.qmd) explains what they are and
+samples is missing this PC information and is dropped from the analysis later on. [Genetic ancestry PCs](05_genetic_pcs.qmd) explains what they are and
 why the models use them. Here are the first 8 rows of the sample sheet:
 
 ```{r}

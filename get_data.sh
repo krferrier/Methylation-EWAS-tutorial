@@ -6,13 +6,13 @@
 #   ./get_data.sh all               # everything (~5.6 GB)
 #
 # A_idats holds the 192 raw IDAT files (96 samples x 2 channels) for the
-# teaching subset, so chapter 01 can be run from raw data. Every other tier is
+# teaching subset, so chapter 1 can be run from raw data. Every other tier is
 # a resume point that skips the steps before it.
 #
 # The record id below is the published one; override it by exporting ZENODO_RECORD
 # (e.g. to pin an older version of the data).
 #   Concept DOI (always newest): 10.5281/zenodo.22135215
-#   This version:                10.5281/zenodo.23198019
+#   This version:                10.5281/zenodo.23198791
 set -euo pipefail
 
 # Always extract at the repository root, whatever directory you call this from.
@@ -21,7 +21,7 @@ set -euo pipefail
 # and the chapters would not find their inputs.
 cd "$(dirname "$0")"
 
-ZENODO_RECORD="${ZENODO_RECORD:-23198019}"
+ZENODO_RECORD="${ZENODO_RECORD:-23198791}"
 BASE="https://zenodo.org/records/${ZENODO_RECORD}/files"
 ALL_TIERS=(A_idats B_qc C_normalized D_filtered E_model_inputs F_ewas_results G_pipeline_run H_annotation)
 

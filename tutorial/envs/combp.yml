@@ -1,4 +1,4 @@
-# Chapter 08, DMR section -- comb-p region calling.
+# Chapter 9, DMR section -- comb-p region calling.
 #
 # comb-p (the `combined-pvalues` package) runs on Python 2.7, which is why this
 # cannot be merged into either environment above. It is a standalone command-line

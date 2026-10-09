@@ -1,4 +1,4 @@
-# Chapter 08, the methylGSA section only (methylglm and methylRRA).
+# Chapter 9, the methylGSA section only (methylglm and methylRRA).
 #
 # Why this is its own environment: bioconda's newest methylGSA build is 1.16.0
 # for R 4.2 -- there is no r43/r44/r45 build. Keeping it in ewas-methyl would
@@ -6,10 +6,10 @@
 # comb-p does in envs/combp.yml.
 #
 # Nothing is shared at runtime. The section's only input is a CSV of
-# BACON-calibrated EWAS results written by chapter 06, so this environment
+# BACON-calibrated EWAS results written by chapter 7, so this environment
 # reads a file and writes a table -- it never touches a minfi object.
 #
-# methylGSA is one of three probe-bias corrections chapter 08 compares, and the
+# methylGSA is one of three probe-bias corrections chapter 9 compares, and the
 # only one that needs this environment. `gometh` (missMethyl) is the chapter's
 # default and runs in ewas-methyl.
 name: ewas-methylgsa

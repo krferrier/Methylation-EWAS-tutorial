@@ -1,5 +1,6 @@
 ---
-title: "Probe filtering"
+title: "3. Probe filtering"
+number-offset: [3, 0]
 ---
 
 ```{r}
@@ -41,7 +42,7 @@ grs <- readRDS("data/02_funnorm_grs.rds")
 grs
 ```
 
-## 1. Why some probes are unreliable by design {#sec-why}
+## Why some probes are unreliable by design {#sec-why}
 
 There are two main types of problematic probes, each characterized in dedicated
 methods papers:
@@ -105,7 +106,7 @@ The mask comes in two forms, and **this chapter uses both** — they are not
 alternatives you pick between. The ready-made TSV carries the eight codes the
 filtering is built on, and that is all you need to reproduce the probe set. The full
 release carries all 24 codes, three of which the per-population table in
-[§2](#sec-ancestry) needs and the TSV does not have. Start with the TSV; read the
+[§3.2](#sec-ancestry) needs and the TSV does not have. Start with the TSV; read the
 second part when you want a term outside the eight.
 
 #### The ready-made TSV — the eight codes the filtering uses {#the-tsv}
@@ -206,7 +207,7 @@ mask_cols <- c("M_mapping", "M_nonuniq",
 drop <- probes[Reduce(`|`, lapply(mask_cols, function(m) bits[[m]] == 1L))]
 ```
 
-This is where the five-population table in [§2](#sec-ancestry) comes from, and it is
+This is where the five-population table in [§3.2](#sec-ancestry) comes from, and it is
 the concrete reason the chapter needs both forms of the mask. The TSV carries
 `M_SNP_AFR_1pt` and `M_SNP_EUR_1pt`, so the AFR-versus-EUR comparisons in that section
 come straight from it — but it does not have the AMR, SAS or EAS population columns, so three
@@ -238,11 +239,11 @@ write.table(data.frame(population = pops, n_probes = snp_by_pop),
 `EPIC.hg38.manifest.pop.tsv.gz` remains available and is the right choice when you
 need **sub-population** resolution: it covers 26 sub-populations (GWD, YRI, ASW, CEU,
 FIN, …) as well as the 5 super-populations, where v8.1's `.cm` stops at the 5. The two
-generations do not mask the same categories either — [§4](#sec-apply) quantifies the
+generations do not mask the same categories either — [§3.4](#sec-apply) quantifies the
 difference and shows what it costs this cohort.
 :::
 
-## 2. Ancestry matters {#sec-ancestry}
+## Ancestry matters {#sec-ancestry}
 
 The SNP mask is **not the same for every study population**, because a "common
 SNP" depends on which population you ask about. The number of SNP-affected probes varies substantially by ancestry:
@@ -304,7 +305,7 @@ a probe if it is SNP-affected in *any* represented ancestry). For a cohort spann
 ancestries, or of unknown ancestry, the general population mask is the most appropriate.
 :::
 
-## 3. Detection-p and sex-chromosome filtering {#sec-detp-sex}
+## Detection-p and sex-chromosome filtering {#sec-detp-sex}
 
 Two study-specific filters complete the funnel:
 
@@ -317,20 +318,20 @@ Two study-specific filters complete the funnel:
   *removed from the autosomal analysis*, not deleted from the study — a sex-specific
   analysis would use them deliberately.
 
-The funnel in [§4](#sec-apply) reports how many probes each of these removed.
+The funnel in [§3.4](#sec-apply) reports how many probes each of these removed.
 
-## 4. Applying the filters {#sec-apply}
+## Applying the filters {#sec-apply}
 
 Everything above is a decision about *which* probes to drop and why. This section
-carries it out: the mask from [§1](#sec-why) and [§2](#sec-ancestry), the two
-study-specific filters from [§3](#sec-detp-sex), and the funnel that accounts for
+carries it out: the mask from [§3.1](#sec-why) and [§3.2](#sec-ancestry), the two
+study-specific filters from [§3.3](#sec-detp-sex), and the funnel that accounts for
 all of them.
 
 ::: {.callout-note}
 ## What the detection-p filter needs
 This one step needs the raw two-channel object, `data/01_RGset.rds`, written by
-[chapter 00](00_setup.qmd) — the QC chapter kept only per-sample summaries, and the
-filter is per probe. If you did not run chapter 00, fetch the published checkpoint:
+[chapter 0](00_setup.qmd) — the QC chapter kept only per-sample summaries, and the
+filter is per probe. If you did not run chapter 0, fetch the published checkpoint:
 
 ```{.bash filename="Terminal"}
 ./get_data.sh B_qc
@@ -382,7 +383,7 @@ length(drop_detp)
 drop_mask <- intersect(rownames(grs), drop8)
 
 # Sex-chromosome probes, from the manifest coordinates minfi attached to the
-# object -- removed for an autosomal EWAS, as set out in §3.
+# object -- removed for an autosomal EWAS, as set out in §3.3.
 drop_sex <- rownames(grs)[getAnnotation(grs)$chr %in% c("chrX", "chrY")]
 
 # A probe is dropped if ANY of the three lists flags it, so the three counts
@@ -474,7 +475,7 @@ leg <- fread("data/03_legacy_pop_mask.tsv.gz", data.table = FALSE)
 L   <- split(leg$probeID, leg$mask)
 
 # The legacy mask applied to this study, with detection-p and sex held fixed so the
-# mask generation is the only thing that differs from the funnel in §4.
+# mask generation is the only thing that differs from the funnel in §3.4.
 legacy_union <- union(L$MASK_general_AFR, L$MASK_snp5_EUR)
 leg_masked   <- intersect(rownames(grs), legacy_union)
 leg_keep     <- setdiff(rownames(grs), Reduce(union, list(leg_masked, drop_detp, drop_sex)))
@@ -522,10 +523,10 @@ literature to be smoking-associated, at this filtering stage rather than after t
 fact. That is a decision about confounding, not about probe quality, so it does not
 belong in the funnel above. This tutorial does exclude smoking-associated CpGs, but
 at a later step as these probes are needed to create a proxy smoking variable. See
-[the smoking section in the EWAS chapter](06_ewas.qmd) for the full set of options.
+[the smoking section in the EWAS chapter](07_ewas.qmd) for the full set of options.
 :::
 
-## Saving what we just computed
+## Saving what we just computed {#sec-save}
 
 We save the filtered, EWAS-ready object for cell-composition estimation next:
 
@@ -533,15 +534,15 @@ We save the filtered, EWAS-ready object for cell-composition estimation next:
 #| label: save-filtered
 # 1. The EWAS-ready GenomicRatioSet. An S4 object with two parallel assay matrices
 #    (Beta and CN; getM() derives M-values from Beta) and a GRanges, so RDS rather than a flat file. Read by cell-composition
-#    estimation ([chapter 04](04_cell_composition.qmd)) and the batch-effect
-#    diagnostics ([chapter 05](05_batch_effects.qmd)).
+#    estimation ([chapter 4](04_cell_composition.qmd)) and the batch-effect
+#    diagnostics ([chapter 6](06_batch_effects.qmd)).
 saveRDS(grs_filt, "data/03_grs_filtered.rds")
 
 # 2. The funnel counts, so a later chapter or a methods section can quote them
 #    without re-running the filter.
 saveRDS(funl, "data/03_filter_funnel.rds")
 
-# 3. The per-code probe sets built in §2. A list of eight character vectors of
+# 3. The per-code probe sets built in §3.2. A list of eight character vectors of
 #    unequal length, which a flat file would not hold.
 saveRDS(mp, "data/03_mask_pieces.rds")
 
@@ -558,7 +559,7 @@ appropriate to an admixed African-American cohort (AFR and EUR terms together),
 detection reliability, and sex chromosomes.
 
 Nearly every probe that survives here is tested in the EWAS. Two small deductions
-happen later, both in [chapter 05](05_batch_effects.qmd):
+happen later, both in [chapter 6](06_batch_effects.qmd):
 
 - the **20 CpGs used to build the smoking proxy** are excluded, because regressing
   those probes on a score derived from themselves is circular; and
@@ -568,7 +569,7 @@ happen later, both in [chapter 05](05_batch_effects.qmd):
 So `r format(funl$retained, big.mark=",")` probes pass filtering and
 **756,251** are actually tested.
 
-## 5. When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
+## When you don't have IDATs: filtering a processed matrix {#sec-no-idats}
 
 Probe filtering is one of the few preprocessing steps that works **identically**
 whether your data came from IDATs or from a processed β-matrix. The workflow:
@@ -578,10 +579,10 @@ whether your data came from IDATs or from a processed β-matrix. The workflow:
 2. **Apply the same masks by ID.** Read Zhou's mask/manifest for the correct array
    (450K vs EPIC vs EPICv2 — they have different probe sets), pick the mask for
    your study population, and subset. If you came straight to this section, run the
-   `mask-read` chunk in [§1](#sec-why) first — that is where `drop8` is built:
+   `mask-read` chunk in [§3.1](#sec-why) first — that is where `drop8` is built:
 
    ```{.r filename="RStudio Console"}
-   # `drop8` is the eight-code union built by the `mask-read` chunk in §1. 
+   # `drop8` is the eight-code union built by the `mask-read` chunk in §3.1. 
    beta_filt <- beta[!rownames(beta) %in% drop8, ]
 
    # archived manifest (14 MB), if you need sub-population resolution instead
@@ -606,7 +607,7 @@ Zhou publishes masks per platform (450K / EPIC / EPICv2) and per genome build
 the probe IDs mostly overlap between 450K and EPIC but the mask *contents* differ.
 If you are combining a 450K series with an EPIC series, filter each on its own
 manifest, then intersect on the shared probe IDs. This tutorial uses the hg38 masks
-because its results are reported in hg38 coordinates ([annotation](08_annotation.qmd));
+because its results are reported in hg38 coordinates ([annotation](09_annotation.qmd));
 the object's hg19 Illumina annotation is used here only to identify the sex-chromosome
 probes. The exact coordinates are not necessary for this, so it's okay to use the hg19 
 mapping for this step versus hg38. 

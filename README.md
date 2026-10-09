@@ -29,16 +29,18 @@ discovery. Treat the association results as a teaching artifact, not a finding.
 
 | | chapter | what it covers                                                                 |
 |---|---|--------------------------------------------------------------------------------|
-| 00 | `00_setup.qmd` | environment, packages, CpG-island vocabulary                                   |
-| 00b | `00b_dataset_catalog.qmd` | how the GEO dataset was chosen from 70 candidates                              |
-| 01 | `01_qc.qmd` | IDAT import, detection *p*, sample and probe QC                                |
-| 02 | `02_normalization.qmd` | functional normalization                                                       |
-| 03 | `03_probe_filtering.qmd` | masking, detection *p*, sex chromosomes                                          |
-| 04 | `04_cell_composition.qmd` | IDOL reference-based deconvolution                                             |
-| 05 | `05_batch_effects.qmd` | PCA, sex-stratified ComBat, SVA (k = 6)                                        |
-| 06 | `06_ewas.qmd` | limma EWAS, BACON bias and inflation correction                                |
-| 07 | `07_pipeline.qmd` | the same analysis as a Snakemake pipeline, sex-stratified, METAL meta-analysis |
-| 08 | `08_annotation.qmd` | gene and CGI annotation, gometh / methylGSA / KYCG enrichment, comb-p DMRs     |
+|  | `dataset_catalog.qmd` | how the GEO dataset was chosen from 70 candidates                              |
+|  | `background.qmd` | DNA methylation and how arrays measure it                                    |
+| 0 | `00_setup.qmd` | environment, packages, downloading and reading the IDATs                       |
+| 1 | `01_qc.qmd` | detection *p*, sample QC, predicted sex, SNP identity                          |
+| 2 | `02_normalization.qmd` | functional normalization                                                       |
+| 3 | `03_probe_filtering.qmd` | masking, detection *p*, sex chromosomes                                          |
+| 4 | `04_cell_composition.qmd` | IDOL reference-based deconvolution                                             |
+| 5 | `05_genetic_pcs.qmd` | genetic ancestry principal components                                          |
+| 6 | `06_batch_effects.qmd` | PCA, sex-stratified ComBat, SVA (k = 6)                                        |
+| 7 | `07_ewas.qmd` | limma EWAS, BACON bias and inflation correction                                |
+| 8 | `08_pipeline.qmd` | the same analysis as a Snakemake pipeline, sex-stratified, METAL meta-analysis |
+| 9 | `09_annotation.qmd` | gene and CGI annotation, gometh / methylGSA / KYCG enrichment, comb-p DMRs     |
 
 ## Repository layout
 
@@ -46,7 +48,7 @@ discovery. Treat the association results as a teaching artifact, not a finding.
 tutorial/          the .qmd chapters, _quarto.yml, _setup.R, references.bib
 tutorial/data/     small committed data: figures, summary CSVs, sample sheets
 scripts/           draw the figures no chapter draws itself: the dataset-catalogue
-                   overview (00b) and the chapter 07 pipeline figures
+                   overview (dataset catalog) and the chapter 8 pipeline figures
 docs/              the rendered site, served by GitHub Pages
 get_data.sh        fetches the large checkpoints from Zenodo
 MANIFEST.md        every distributed file, its size, and per-tier checksums
@@ -70,26 +72,26 @@ the chapter you want to start from, and every later chapter will run.
 
 | tier | download | resume at | contents |
 |---|---:|---|---|
-| `B_qc` | 587 MB | **ch02** | `RGChannelSet`, detection *p* matrix, QC summaries |
-| `C_normalized` | 1301 MB | **ch03** | funnorm `GenomicRatioSet` |
-| `D_filtered` | 1102 MB | **ch04** | mask-filtered `GenomicRatioSet` (756,273 probes), mask pieces, filter funnel |
-| `E_model_inputs` | 511 MB | **ch06** | cell proportions, ComBat M-values, SVA fit (k = 6), batch PCA |
-| `F_ewas_results` | 117 MB | **ch07** | limma top table, BACON summary, corrected top table |
-| `G_pipeline_run` | 220 MB | **ch07 figures** | Snakemake pipeline outputs: combined arm, F/M strata, METAL meta-analysis |
-| `H_annotation` | 306 MB | **ch08** | Zhou gencode v36/v41 manifests, annotated results, comb-p output |
+| `B_qc` | 587 MB | **chapter 2** | `RGChannelSet`, detection *p* matrix, QC summaries |
+| `C_normalized` | 1301 MB | **chapter 3** | funnorm `GenomicRatioSet` |
+| `D_filtered` | 1053 MB | **chapter 4** | mask-filtered `GenomicRatioSet` (756,273 probes), mask pieces, filter funnel |
+| `E_model_inputs` | 482 MB | **chapter 7** | cell proportions, ComBat M-values, SVA fit (k = 6), batch PCA |
+| `F_ewas_results` | 100 MB | **chapter 8** | limma top table, BACON summary, corrected top table |
+| `G_pipeline_run` | 265 MB | **chapter 8 figures** | Snakemake pipeline outputs: combined arm, F/M strata, METAL meta-analysis |
+| `H_annotation` | 177 MB | **chapter 9** | annotated results, comb-p output |
 
 ```bash
 git clone https://github.com/krferrier/Methylation-EWAS-tutorial.git
 cd Methylation-EWAS-tutorial
 
-./get_data.sh F_ewas_results H_annotation   # enough to run ch07 and ch08
+./get_data.sh E_model_inputs F_ewas_results G_pipeline_run H_annotation   # enough to run chapters 8 and 9
 ./get_data.sh all                           # everything, ~4.1 GB
 ```
 
 `get_data.sh` verifies each tarball against `SHA256SUMS.txt` before extracting, and
 extracts in place so files land where the `.qmd` documents look for them.
 
-Starting from chapter 01 instead means downloading the 192 raw IDAT files (96
+Starting from chapter 1 instead means downloading the 192 raw IDAT files (96
 Grn/Red pairs, one pair per array) from GEO yourself; `01_qc.qmd` documents how.
 
 ## Rendering
@@ -99,18 +101,18 @@ Render from the `tutorial/` folder with Quarto:
 ```bash
 cd tutorial
 quarto render                # whole site -> tutorial/_site
-quarto render 06_ewas.qmd    # one chapter
+quarto render 07_ewas.qmd    # one chapter
 ```
 
 To publish, copy the contents of `tutorial/_site/` into `docs/` after a whole-site render.
 
-Chapter 04 needs `FlowSorted.Blood.EPIC`, which is a large Bioconductor experiment
+Chapter 4 needs `FlowSorted.Blood.EPIC`, which is a large Bioconductor experiment
 package; if it is not installed, use tier `E_model_inputs` and the chapter will read the
 cached proportions instead of recomputing them.
 
 ## Reusing the pipeline
 
-Chapter 07 drives the Snakemake EWAS pipeline at
+Chapter 8 drives the Snakemake EWAS pipeline at
 **https://github.com/krferrier/EWAS**. Clone it as a sibling directory
 (`../ewas_pipeline`) if you want to run it yourself; tier `G_pipeline_run` contains its
 outputs so the chapter renders without recomputing.
@@ -165,7 +167,7 @@ repository"** button in the sidebar to get APA or BibTeX directly.
 
 That is the *concept* DOI: it always resolves to the newest version of the data.
 To cite the exact files this tutorial was built from, use the version DOI
-https://doi.org/10.5281/zenodo.23198019 (record `23198019`).
+https://doi.org/10.5281/zenodo.23198791 (record `23198791`).
 
 ### Also cite the upstream sources
 

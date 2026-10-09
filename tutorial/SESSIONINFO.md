@@ -7,7 +7,7 @@ Generated: 2026-09-03
 
 ## Two ways to install: R alone, or conda
 
-Everything except chapter 07 needs **only R**. `install_packages.R` in the repository
+Everything except chapter 8 needs **only R**. `install_packages.R` in the repository
 root installs the 4 CRAN and 18 Bioconductor packages the chapters use:
 
 ```bash
@@ -17,7 +17,7 @@ Rscript install_packages.R
 It requires **R 4.4 or newer** and relies on `BiocManager`, which selects the
 Bioconductor release matching your R (R 4.6 → 3.23, R 4.5 → 3.22). All 31 package names
 resolve in every release from 3.19 on, and nothing needs a version pin. The floor is R 4.4
-because `knowYourCG`, used in chapter 08, first appears in Bioconductor 3.19.
+because `knowYourCG`, used in chapter 9, first appears in Bioconductor 3.19.
 
 Below that, the older R 4.3 floor was not cosmetic either. `matrixStats` made `useNames = NA` defunct in 1.2.0,
 while `MatrixGenerics` still passed `NA` as its own default — so on Bioconductor 3.16 and
@@ -29,8 +29,8 @@ to `TRUE` and shipped in **Bioconductor 3.18**. From that release on, the curren
 newer, whose headers no longer define the bare `Calloc`/`Free` macros their C code uses.
 The installer therefore stops with an explanation rather than pinning anything.
 
-Conda is required only for **chapter 07** (Snakemake) and the **comb-p section of chapter
-08**. If you skip those, ignore the environment files entirely — chapter 06 already runs
+Conda is required only for **chapter 8** (Snakemake) and the **comb-p section of chapter
+9**. If you skip those, ignore the environment files entirely — chapter 7 already runs
 the same association test directly in R.
 
 ## The four conda environments
@@ -38,10 +38,10 @@ the same association test directly in R.
 If you are using conda, this tutorial uses four unique environments:
 
 ```bash
-conda env create -f envs/methyl.yml       # chapters 01-06, 08   -- R 4.5
-conda env create -f envs/smk.yml          # chapter 07           -- Snakemake 9.26.1
-conda env create -f envs/combp.yml        # chapter 08 DMRs      -- Python 2.7.15
-conda env create -f envs/methylgsa.yml    # chapter 08 methylGSA -- R 4.2
+conda env create -f envs/methyl.yml       # chapters 1-7, 9   -- R 4.5
+conda env create -f envs/smk.yml          # chapter 8           -- Snakemake 9.26.1
+conda env create -f envs/combp.yml        # chapter 9 DMRs      -- Python 2.7.15
+conda env create -f envs/methylgsa.yml    # chapter 9 methylGSA -- R 4.2
 ```
 
 | Environment | Chapters | Core tool |
@@ -78,7 +78,7 @@ those checkpoints are regenerated under the new environment.
 
 ## What is *not* in these files
 
-**The Snakemake pipeline's R packages.** Chapter 07 runs `krferrier/EWAS`, which declares its own
+**The Snakemake pipeline's R packages.** Chapter 8 runs `krferrier/EWAS`, which declares its own
 per-rule environment (`envs/ewas.yaml`). Snakemake builds that itself on first run, because the workflow profile sets `software-deployment-method: conda`. 
 
 **METAL.** The same pipeline compiles it from source in its `install_metal` rule.
@@ -87,7 +87,7 @@ per-rule environment (`envs/ewas.yaml`). Snakemake builds that itself on first r
 alternatives inside non-executing (`eval: false`) blocks. Install them yourself if you
 want to run those blocks.
 
-## Troubleshooting: `pthread_create()` Error in chapter 02
+## Troubleshooting: `pthread_create()` Error in chapter 2
 
 If `preprocessFunnorm()` fails with:
 
@@ -136,7 +136,7 @@ so conda removes `libopenblas` and satisfies BLAS and LAPACK from `blis` and Net
 reference LAPACK. Measured on a 1500 × 1500 matrix, that costs roughly 2× on matrix
 products and `svd()`, about 6× on `solve()` and `eigen()`, and 33× on `chol()` (0.01 s to
 0.33 s). Normalization is not decomposition-bound so it barely notices, but `sva()` in
-chapter 05 and `lmFit()` in chapter 06 are, which is why the source rebuild is the better
+chapter 6 and `lmFit()` in chapter 7 are, which is why the source rebuild is the better
 default where build tools are available.
 
 The numbers here were produced with the rebuilt copy, which changes only the threading

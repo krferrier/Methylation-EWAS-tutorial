@@ -27,10 +27,10 @@ options(Ncpus = max(1L, parallel::detectCores() - 1L))   # parallel compiles
 rv <- getRversion()
 if (rv < "4.4") {
   stop("This tutorial needs R 4.4 or newer; you are on ", rv, ".\n",
-       "knowYourCG, used in chapter 08, first appears in Bioconductor 3.19,\n",
+       "knowYourCG, used in chapter 9, first appears in Bioconductor 3.19,\n",
        "which needs R 4.4. (Older still, R 4.2 selects Bioconductor 3.16, where\n",
        "MatrixGenerics passes `useNames = NA` -- an argument matrixStats made\n",
-       "defunct in 1.2.0 -- so chapters 01-02 fail.) Install the current\n",
+       "defunct in 1.2.0 -- so chapters 1-2 fail.) Install the current\n",
        "R from https://cran.r-project.org/ and re-run this script.",
        call. = FALSE)
 }
@@ -54,9 +54,9 @@ if (bioc_ver < "3.19") {
 
 ## --- 2. the packages --------------------------------------------------------
 cran <- c("data.table", "ggplot2", "knitr", "DT",
-          "ggrepel", "ggtext",   # figure labels (chapters 06 and 08)
-          "fst", "jsonlite",    # pipeline input file (07); UCSC API query (08)
-          "dplyr", "tibble")    # joining and filtering phenotype tables (04, 04b, 05)
+          "ggrepel", "ggtext",   # figure labels (chapters 7 and 9)
+          "fst", "jsonlite",    # pipeline input file (8); UCSC API query (9)
+          "dplyr", "tibble")    # joining and filtering phenotype tables (4, 5, 6)
 
 bioc <- c(
   # array I/O and preprocessing

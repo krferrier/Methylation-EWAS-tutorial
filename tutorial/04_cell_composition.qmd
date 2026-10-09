@@ -1,5 +1,6 @@
 ---
-title: "Cell composition: Whole Blood"
+title: "4. Cell composition: Whole Blood"
+number-offset: [4, 0]
 ---
 
 ```{r}
@@ -20,7 +21,7 @@ against the proportions the study deposited.
 
 ::: {.callout-note}
 ## What this chapter needs
-This chapter starts from `data/01_RGset.rds`, written by [chapter 00](00_setup.qmd). If you
+This chapter starts from `data/01_RGset.rds`, written by [chapter 0](00_setup.qmd). If you
 did not run that chapter, fetch the published checkpoint instead:
 
 ```{.bash filename="Terminal"}
@@ -41,11 +42,11 @@ library(tibble)                 # rownames_to_column() before the join
 # The raw two-channel object written by the Setup chapter: 1,051,943 CpGs
 # across 96 arrays, with no normalization applied. Deconvolution is one of the
 # few steps that needs the raw intensities rather than the normalized object
-# from chapter 02 -- the reason is in the callout below.
+# from chapter 2 -- the reason is in the callout below.
 rg <- readRDS("data/01_RGset.rds")
 ```
 
-## 1. Why cell composition matters
+## Why cell composition matters
 
 A neutrophil and a CD4+ T cell carry the same genome but very different DNA
 methylation. A whole-blood methylation measurement at any CpG is therefore a 
@@ -61,7 +62,7 @@ reasons unrelated to the exposure — every cell-type-discriminating CpG will lo
 chunk of genome-wide methylation variance in blood.
 
 
-## 2. Reference-based deconvolution (Houseman)
+## Reference-based deconvolution (Houseman)
 
 The standard approach is the **Houseman method** [@houseman2012cellcomp]:
 
@@ -148,7 +149,7 @@ props <- readRDS(url(paste0("https://raw.githubusercontent.com/krferrier/",
 ```
 :::
 
-## 3. The composition of this subset
+## The composition of this subset
 
 ```{r}
 #| label: comp-summary
@@ -165,8 +166,8 @@ knitr::kable(comp, row.names = FALSE,
 ```
 
 ```{r}
-#| label: comp-stack
-#| fig-cap: "Estimated cell-type proportions per sample (stacked). The neutrophil fraction (largest band) varies from 17% to 84% across individuals — a swing that would swamp most disease effects if left unmodeled."
+#| label: fig-comp-stack
+#| fig-cap: "Estimated cell-type proportions per sample (stacked). The neutrophil fraction has the largest variance (17-84%) across individuals. Unaccounted for this variation could confound association testing results."
 #| fig-width: 8
 #| fig-height: 3.4
 # reshape() wants a data.frame with an id column, so the matrix goes wide-to-long
@@ -186,13 +187,13 @@ ord <- order(props[,"Neu"]); plm$sample_id <- factor(plm$sample_id,
 ggplot(plm, aes(sample_id, prop, fill = cell)) +
   geom_col(width = 1) +
   scale_fill_brewer(palette = "Set2") +
-  labs(x = "sample (ordered by neutrophil fraction)", y = "estimated proportion",
-       fill = "cell type", title = "Blood cell composition varies widely between samples") +
+  labs(x = "Sample (ordered by neutrophil fraction)", y = "Estimated proportion",
+       fill = "Cell type") +
   theme_bw(base_size = 11) +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
 
-## 4. Validation against the deposited answer key
+## Validation against the deposited answer key
 
 The Grady Trauma Project deposited its own cell-type proportion estimates with the
 GEO record. That gives us the opportunity to check our deconvolution.
@@ -273,8 +274,8 @@ knitr::kable(disp, caption = "Our estimates vs the study's deposited proportions
 ```
 
 ```{r}
-#| label: validation-scatter
-#| fig-cap: "Estimated (y) vs deposited (x) proportions for each cell type; dashed line is perfect agreement. Every cell type correlates > 0.95 with the answer key, with mean absolute error under 1.5 percentage points — this pipeline reproduces the study's own estimates."
+#| label: fig-validation-scatter
+#| fig-cap: "Estimated (y) vs deposited (x) proportions for each cell type. Every estimated cell type correlates > 0.95 with the deposited cell types with mean absolute error under 1.5%.  Our newly estimated cell type proportions successfully reproduce what was reported by the original study."
 #| fig-width: 8
 #| fig-height: 5.2
 # Six panels, one per cell type, so stack the pairs into a long table.
@@ -293,8 +294,7 @@ p_val <- ggplot(long, aes(dep, est)) +
   facet_wrap(~cell, scales = "free") +
   geom_text(data = labs_r, aes(x = -Inf, y = Inf, label = lab),
             hjust = -0.15, vjust = 1.5, size = 3, inherit.aes = FALSE) +
-  labs(x = "deposited proportion (study answer key)", y = "our Houseman/IDOL estimate",
-       title = "Deconvolution validation: estimated vs deposited cell proportions")
+  labs(x = "Deposited proportion", y = "Estimated proportion (IDOL)")
 p_val
 ```
 
@@ -346,11 +346,11 @@ ggsave("data/04_validation_scatter.png", p_val, width = 8, height = 5.2, dpi = 1
 Proportions are estimated for all **96** QC-passing arrays. Deconvolution does not
 use the exposure, so there is no reason to restrict it to the modeled subset here —
 the nine samples with no recorded PTSD status
-([chapter 01](01_qc.qmd)) drop out later, when the exposure enters the model, as does the one sample with
-no genetic ancestry PCs ([Genetic ancestry PCs](04b_genetic_pcs.qmd)), leaving
+([chapter 1](01_qc.qmd)) drop out later, when the exposure enters the model, as does the one sample with
+no genetic ancestry PCs ([Genetic ancestry PCs](05_genetic_pcs.qmd)), leaving
 n = 86 for the EWAS.
 
-## 5. When you don't have IDATs: deconvolution from a processed matrix
+## When you don't have IDATs: deconvolution from a processed matrix
 
 Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
 β-matrix-only deposit is the harder case. Two routes:
@@ -362,7 +362,7 @@ Reference-based deconvolution normally wants the raw `RGChannelSet`, so a
 
    ```{.r filename="Generic example, do not run"}
    # Schematic only. `beta_mat` is a CpG x sample matrix -- in the deposit-only
-   # case, whatever the submitter posted; locally, getBeta() on the chapter 03
+   # case, whatever the submitter posted; locally, getBeta() on the chapter 3
    # object gives one. The result is deliberately NOT called `props`: that name
    # refers to this chapter's IDOL estimates, and overwriting it would cause 
    # serious problems downstream. 
@@ -398,15 +398,15 @@ When no suitable reference exists (unusual tissues, or you worry the reference
 doesn't match your population), **reference-free** methods estimate latent
 composition-like components directly from the data: RefFreeEWAS
 [@houseman2014reffree], SVA [@leek2012sva], and RUV. This tutorial does not use
-RefFreeEWAS; SVA is used in [batch effects](05_batch_effects.qmd) to capture unmeasured
+RefFreeEWAS; SVA is used in [batch effects](06_batch_effects.qmd) to capture unmeasured
 variation, and RUV is mentioned there. The trade-off is that the recovered
 components are not labeled cell types, only surrogate variables to adjust for.
 :::
 
 ---
 
-**Next:** [Genetic ancestry PCs](04b_genetic_pcs.qmd) — what the three ancestry
-covariates used from chapter 05 onwards are and why we use them in statistical modeling.
+**Next:** [Genetic ancestry PCs](05_genetic_pcs.qmd) — what the three ancestry
+covariates used from chapter 6 onwards are and why we use them in statistical modeling.
 
 ## References {.unnumbered}
 

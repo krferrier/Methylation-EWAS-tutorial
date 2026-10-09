@@ -1,4 +1,4 @@
-# Chapter 07 -- running the EWAS as a Snakemake workflow.
+# Chapter 8 -- running the EWAS as a Snakemake workflow.
 #
 # This environment holds ONLY the workflow engine. The pipeline declares its own
 # per-rule R environment (envs/ewas.yaml in the EWAS repo) and Snakemake builds

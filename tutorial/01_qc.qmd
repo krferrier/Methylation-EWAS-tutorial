@@ -1,5 +1,6 @@
 ---
-title: "Quality control: which samples can we trust?"
+title: "1. Quality control: which samples can we trust?"
+number-offset: [1, 0]
 ---
 
 ```{r}
@@ -35,7 +36,7 @@ rg
 The four checks below are independent of one another. Running all four takes under a
 minute.
 
-## 1. Detection p-values — did the probe beat background?
+## Detection p-values — did the probe beat background?
 
 Every probe is compared to the array's negative-control distribution. A large
 **detection p-value** means the signal is indistinguishable from background; the
@@ -62,13 +63,12 @@ head(det, 3)
 ```
 
 ```{r}
-#| label: detp-plot
-#| fig-cap: "Per-sample detection p-value. All 96 samples are far below the 0.01 concern line — no failed arrays."
+#| label: fig-detp
+#| fig-cap: "Per-sample detection p-value. All 96 samples have a detection p-value below 0.01, passing this QC check."
 ggplot(det, aes(x = reorder(sample, mean_detP), y = mean_detP)) +
   geom_point(color = "#1A6B75", size = 1.6) +                                  # teal
   geom_hline(yintercept = 0.01, linetype = "dashed", color = "#8C3A4A") +      # plum
-  labs(x = "sample (ranked)", y = "mean detection p-value",
-       title = "Detection p-value per sample") +
+  labs(x = "Sample (ranked)", y = "Mean detection p-value") +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
 ```
 
@@ -86,7 +86,7 @@ above the rest, crossing the 0.01 line. Those get dropped before
 normalization. 
 :::
 
-## 2. Signal intensity — is the array bright enough?
+## Signal intensity — is the array bright enough?
 
 `getQC()` reduces each sample to the median methylated (`mMed`) and unmethylated
 (`uMed`) log2 intensity. Weak arrays fall toward the bottom-left; `minfi`'s
@@ -107,16 +107,15 @@ head(qc, 3)
 ```
 
 ```{r}
-#| label: intensity-plot
-#| fig-cap: "Median methylated vs unmethylated log2 intensity. All samples sit well above the 10.5 low-signal cutoff."
+#| label: fig-intensity
+#| fig-cap: "Median methylated vs unmethylated log2 intensity. All samples are above the low-signal threshold, passing this QC check."
 ggplot(qc, aes(mMed, uMed, color = flag)) +
   geom_point(size = 2) +
   geom_abline(intercept = 2 * 10.5, slope = -1, linetype = "dashed", color = "gray40") +
   scale_color_manual(values = c(`FALSE` = "#1A6B75", `TRUE` = "#8C3A4A"),
                      labels = c("pass", "low signal"), name = NULL) +
-  labs(x = "median methylated log2 int (mMed)",
-       y = "median unmethylated log2 int (uMed)",
-       title = "Signal-intensity QC") +
+  labs(x = "Median methylated intensity (log2)",
+       y = "Median unmethylated intensity (log2)") +
   coord_equal(xlim = c(9, 14), ylim = c(9, 14))
 ```
 
@@ -126,7 +125,7 @@ cat("mMed range:", round(min(qc$mMed),2), "-", round(max(qc$mMed),2), "\n")
 cat("low-signal flagged samples:", sum(qc$flag), "\n")
 ```
 
-## 3. Predicted vs reported sex 
+## Predicted vs reported sex 
 
 Sex is the single most reliable phenotype to predict from methylation: the X and
 Y chromosome signal is unambiguous. `getSex()` compares median total intensity on
@@ -152,14 +151,13 @@ head(sx, 3)
 ```
 
 ```{r}
-#| label: sex-plot
+#| label: fig-sex
 #| fig-cap: "Predicted sex from X/Y intensity, colored by reported sex. Clean separation, zero mismatches."
 ggplot(sx, aes(xMed, yMed, color = reported, shape = mismatch)) +
   geom_point(size = 2.5) +
-  scale_color_manual(values = c(F = "#B8873F", M = "#1A6B75"), name = "reported") +
+  scale_color_manual(values = c(F = "#B8873F", M = "#1A6B75"), name = "Reported sex") +
   scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 4), guide = "none") +
-  labs(x = "median X log2 int", y = "median Y log2 int",
-       title = "Predicted vs reported sex")
+  labs(x = "Median chrX intensity (log2)", y = "Median chrY intensity (log2)")
 ```
 
 ```{r}
@@ -169,7 +167,7 @@ knitr::kable(tab, caption = "Reported vs predicted sex")
 cat("sex mismatches:", sum(sx$mismatch), "of", nrow(sx), "\n")
 ```
 
-## 4. SNP-identity fingerprint
+## SNP-identity fingerprint
 
 EPIC carries ~59 `rs` SNP probes that measure genotype, not methylation. Their
 beta values cluster near 0, 0.5, or 1 (the three genotypes). They are useful for
@@ -178,8 +176,8 @@ person share a fingerprint) and, in longitudinal designs, confirming that repeat
 samples really are the same individual.
 
 ```{r}
-#| label: snp-heatmap
-#| fig-cap: "The ~59 rs SNP probes across samples. Discrete banding near 0 / 0.5 / 1 is the expected genotype signal; no two columns are identical, so no duplicate samples."
+#| label: fig-snp-heatmap
+#| fig-cap: "The ~59 rs SNP probes across samples, with samples ordered by hierarchical clustering of their fingerprints. Discrete banding near 0 / 0.5 / 1 is the expected genotype signal; no two columns are identical, so no duplicate samples."
 # getSnpBeta() pulls just the rs probes out of the raw object and returns their
 # beta values.
 snps <- getSnpBeta(rg)
@@ -189,7 +187,7 @@ snps <- getSnpBeta(rg)
 d   <- dist(t(snps))
 ord <- hclust(d)$order
 image(t(snps[, ord]), col = colorRampPalette(c("#1A6B75", "white", "#8C3A4A"))(64),
-      axes = FALSE, main = "rs SNP-probe fingerprints (samples clustered)")
+      axes = FALSE)
 box()
 ```
 
@@ -229,7 +227,7 @@ All 96 samples pass. We carry the full set forward to
 
 Note that "96 samples pass QC" is not the same as "96 samples are analyzed". Nine of
 them have no recorded PTSD status and will drop out when the exposure enters the
-model — see [phenotype completeness](#what-the-phenotype-file-is-missing) below.
+model — see phenotype completeness in @sec-missing-pheno.
 
 ::: {.callout-tip}
 ## Always do QC. ALWAYS
@@ -309,7 +307,7 @@ summary, and the other parts need the `RGChannelSet`
 itself. You won't be able to rerun the checks without the unprocessed individual-level data. 
 :::
 
-## Missing phenotypes
+## Missing phenotypes {#sec-missing-pheno}
 
 QC checks whether the *arrays* worked. It is also the right time to check whether
 the **phenotype data** you will eventually model is complete.
@@ -349,18 +347,18 @@ samples, as expected. The three genetic ancestry PCs are missing for one additio
 All samples passed the standard QC checks based on the methylation data. But association testing requires complete 
 data for the phenotypes needed in the model (exposure of interest and any other covariates). `lm` / `limma` will 
 drop any sample with no PTSD status — the analysis in
-[chapter 06](06_ewas.qmd) and the pipeline run in
-[chapter 07](07_pipeline.qmd) therefore fit **n = 86**, not 96: nine samples
+[chapter 7](07_ewas.qmd) and the pipeline run in
+[chapter 8](08_pipeline.qmd) therefore fit **n = 86**, not 96: nine samples
 have no PTSD status, and one more has no genetic ancestry PCs
-([Genetic ancestry PCs](04b_genetic_pcs.qmd)).
+([Genetic ancestry PCs](05_genetic_pcs.qmd)).
 
 This tutorial keeps all 96 samples through normalization
-([chapter 02](02_normalization.qmd)), probe filtering
-([chapter 03](03_probe_filtering.qmd)), and cell-composition estimation
-([chapter 04](04_cell_composition.qmd)) on purpose. None of those steps uses PTSD
+([chapter 2](02_normalization.qmd)), probe filtering
+([chapter 3](03_probe_filtering.qmd)), and cell-composition estimation
+([chapter 4](04_cell_composition.qmd)) on purpose. None of those steps uses PTSD
 status: they describe the arrays, not the association model, so there is no reason to
 discard usable data before the step that actually needs the exposure. The count
-changes in [batch effects](05_batch_effects.qmd), because the batch correction
+changes in [batch effects](06_batch_effects.qmd), because the batch correction
 and surrogate variables there are estimated with the exposure and the genetic PCs in
 the model.
 
@@ -397,9 +395,9 @@ produces some of the largest and most reproducible methylation signals in blood
 [@joehanes2016smoking], so an unmeasured smoking variable is unmeasured confounding. The Grady deposit gives PTSD, age, sex, race, and childhood
 trauma — but no smoking variable, which is common in public deposits.
 
-That absence is worth noting because it shapes decisions in chapters 05 and 06:
-[batch effects](05_batch_effects.qmd) builds a methylation-based smoking proxy. The full set of options, and the one this tutorial
-takes, is laid out in [the EWAS chapter](06_ewas.qmd).
+That absence is worth noting because it shapes decisions in chapters 6 and 7:
+[batch effects](06_batch_effects.qmd) builds a methylation-based smoking proxy. The full set of options, and the one this tutorial
+takes, is laid out in [the EWAS chapter](07_ewas.qmd).
 
 ::: {.callout-tip}
 ## Inventory your covariates before you normalize

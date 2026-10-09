@@ -1,5 +1,6 @@
 ---
-title: "Normalization: making arrays comparable"
+title: "2. Normalization: making arrays comparable"
+number-offset: [2, 0]
 ---
 
 ```{r}
@@ -20,7 +21,7 @@ failed to meet QC thresholds, those samples should be removed prior to normaliza
 
 ::: {.callout-note}
 ## What this chapter needs
-This chapter starts from `data/01_RGset.rds`, written by [chapter 00](00_setup.qmd). If you
+This chapter starts from `data/01_RGset.rds`, written by [chapter 0](00_setup.qmd). If you
 did not run that chapter, fetch the published checkpoint instead:
 
 ```{.bash filename="Terminal"}
@@ -42,7 +43,7 @@ rg <- readRDS("data/01_RGset.rds")
 rg
 ```
 
-## 1. Two sources of unwanted variation
+## Two sources of unwanted variation
 
 **Within-array, technical.** Every Infinium measurement is a fluorescence
 intensity, and fluorescence has a background floor (autofluorescence, non-specific
@@ -123,7 +124,7 @@ test will partly reflect *which chemistry* a probe uses rather than biology, and
 effect sizes are not comparable across probe types.
 :::
 
-## 2. Normalization methods
+## Normalization methods
 
 Methods fall into two groups by *what* they try to make comparable.
 
@@ -166,7 +167,7 @@ small expected differences, quantile-based methods (or `preprocessQuantile`) are
 also reasonable.
 :::
 
-## 3. Running it on the subset
+## Running it on the subset
 
 We compute three versions and compare: **raw** (`preprocessRaw`, no correction),
 **noob** (`preprocessNoob`), and **functional** (`preprocessFunnorm`). The
@@ -274,7 +275,7 @@ Restart R, then re-run the chunk.
 The two chunks above need the 460 MB `RGChannelSet` in memory and peak around
 12.5 GB. If that is not practical, the published checkpoint, `C_normalized` archive in 
 the Zenodo deposit contains both the
-normalized object itself and the pieces the figures below use:
+normalized object itself and the pieces @fig-density-compare is drawn from:
 
 ```{.bash filename="Terminal"}
 ./get_data.sh C_normalized
@@ -298,7 +299,7 @@ reads, so you can skip the `save-norm` chunk at the end.
 Then we can compare the distribution of signals across the three versions of the data and the probe types. 
 
 ```{r}
-#| label: density-compare
+#| label: fig-density-compare
 #| fig-cap: "β-value density by probe design, before and after normalization (20k-probe sample). Raw Type II (dashed) is visibly pulled toward the center; noob and funnorm restore a more bimodal shape and bring the two designs closer together."
 #| fig-width: 9
 #| fig-height: 3.4
@@ -326,8 +327,7 @@ ggplot(long, aes(x = beta, color = design, linetype = design)) +
   facet_wrap(~method) +
   scale_color_manual(values = c("Type I"  = "#1A6B75",     # teal
                                 "Type II" = "#8C3A4A")) +  # plum
-  labs(x = "β-value", y = "density",
-       title = "Probe-design bias, before and after normalization") +
+  labs(x = "β-value", y = "Density") +
   theme(legend.position = "bottom")
 ```
 
@@ -362,10 +362,10 @@ where each design targets in the genome rather than a measure of design
 bias. 
 
 Functional normalization additionally removes between-array technical variance that these
-density plots do not show. This will be seen later, in the [batch-effects](05_batch_effects.qmd)
+density plots do not show. This will be seen later, in the [batch-effects](06_batch_effects.qmd)
 notebook, as reduced technical structure in the principal components.
 
-## 4. β-values vs M-values
+## β-values vs M-values
 
 Normalization outputs β-values (proportion methylated, bounded 0–1), which are
 interpretable but **heteroscedastic** — their variance is small near 0 and 1 and
@@ -386,7 +386,7 @@ and reporting from M-values, but to report effect sizes from Beta values you wou
 follow the same steps, just with the Beta value matrix instead of the M-value matrix.
 
 ```{r}
-#| label: mvalue-demo
+#| label: fig-mvalue-demo
 #| fig-cap: "The β→M transform. β is bounded and heteroscedastic; M is unbounded and closer to constant-variance."
 #| fig-width: 7
 #| fig-height: 3
@@ -399,7 +399,7 @@ ggplot(dfm, aes(beta, M)) +
   geom_line(color = "#1A6B75", linewidth = 0.9) +        # teal
   geom_hline(yintercept = 0, color = "gray70") +
   geom_vline(xintercept = 0.5, color = "gray70") +
-  labs(x = "β-value", y = "M-value", title = "β → M-value transform")
+  labs(x = "β-value", y = "M-value")
 ```
 
 ## Save the normalized data
@@ -409,13 +409,13 @@ Normalizing the data is a computationally expensive step, so make sure to save i
 ```{r}
 #| label: save-norm
 # 1. The handoff object: 865,859 CpGs x 96 samples, genome-mapped, noob +
-#    functional normalized. This is what probe filtering (chapter 03) reads, and
+#    functional normalized. This is what probe filtering (chapter 3) reads, and
 #    it is the file deposited as Zenodo tier C_normalized. ~1 GB on disk.
 saveRDS(grs_fun, "data/02_funnorm_grs.rds")
 
 # 2. The pieces the figures above are drawn from: the three 20,000-probe β
 #    matrices and the two design lists. Saving them means the resume callout in
-#    section 3 restores exactly the objects this chapter computed.
+#    section 2.3 restores exactly the objects this chapter computed.
 norm_pieces <- list(
   beta_raw  = beta_raw,    # 20,000 x 96, no correction
   beta_noob = beta_noob,   # 20,000 x 96, noob only
@@ -426,7 +426,7 @@ norm_pieces <- list(
 saveRDS(norm_pieces, "data/02_norm_pieces.rds")
 ```
 
-## 5. Normalizing from a processed matrix
+## Normalizing from a processed matrix
 
 Many GEO series do not deposit raw IDATs, but do provide a processed matrix: 
 a table of β-values (or sometimes M-values) with CpGs in rows and samples in columns, often as a
