@@ -484,6 +484,11 @@ bed <- inner_join(tt, map, by = "probe") %>%
   select(`#chrom` = CpG_chrm, start = CpG_beg, end, pvals = bacon.p, cpgid = probe) %>%
   # order along each chromosome; probes that share a position are ordered by ID
   arrange(`#chrom`, start, cpgid)
+# Drop any probes without coordinate mappings
+bed <- na.omit(bed)
+# Change any p-values = 0 to the smallest numeric limit of your computer
+bed$pvals <- pmax(bed$pvals, .Machine$double.xmin)
+# export bed file
 fwrite(bed, "data/09_annotation/PTSD_ewas_annotated_results.bed", sep = "\t")
 ```
 
@@ -508,6 +513,7 @@ comb-p pipeline \
     --seed 1e-4 \
     --dist 200 \
     --region-filter-p 0.05 \
+    --region-filter-n 2 \
     -p data/09_annotation/dmr/PTSD_dmr \
     data/09_annotation/PTSD_ewas_annotated_results.bed
 ```
