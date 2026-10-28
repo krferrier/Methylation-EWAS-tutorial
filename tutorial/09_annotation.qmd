@@ -502,10 +502,13 @@ Then the region detection, with the pipeline's default parameters
 
 comb-p is a Python tool with its own environment
 (`conda env create -f envs/combp.yml`); run the command below in a terminal from the
-`tutorial/` folder. Its seven output files are committed under
-`data/09_annotation/dmr/`, so the R chunks that follow run whether or not you run it.
-`--seed` is the p-value a CpG must reach to start a region, and `--dist` is how far
-apart (in bp) neighbouring CpGs can be and still extend it:
+`tutorial/` folder. Its output files are in `data/09_annotation/dmr/` — five committed
+here, the two large `.bed.gz` files in Zenodo tier H — so the R chunks that follow run
+whether or not you run it.
+`--seed` is the p-value a CpG must reach to start a region, `--dist` is how far
+apart (in bp) neighbouring CpGs can be and still extend it, and `--region-filter-n 2`
+drops anything built from a single CpG — a "region" of one probe is just that probe
+again, and reporting it as a DMR double-counts the evidence:
 
 ```{.bash filename="Terminal"}
 mkdir -p data/09_annotation/dmr
@@ -529,7 +532,7 @@ prints the answer to screen, so it is worth knowing which file holds what:
 | `PTSD_dmr.fdr.bed.gz` | the same rows plus `region-q`, the Benjamini–Hochberg correction of `region-p` |
 | `PTSD_dmr.regions.bed.gz` | the stitched regions, minimal and headerless: chrom, start, end, `min_p`, `n_probes` |
 | `PTSD_dmr.regions-p.bed.gz` | the regions with statistics: `#chrom`, `start`, `end`, `min_p`, `n_probes`, `z_p`, `z_sidak_p` |
-| `PTSD_dmr.regions-t.bed` | the regions that pass `--region-filter-p` — here the single region with `z_sidak_p` < 0.05 |
+| `PTSD_dmr.regions-t.bed` | the regions that pass `--region-filter-p` and `--region-filter-n` — here the single region with `z_sidak_p` < 0.05 and at least 2 probes |
 
 `regions-p.bed.gz` is the file to read: it lists every candidate region with
 both the uncorrected and the Šidák-corrected region p. `regions-t.bed` is that
