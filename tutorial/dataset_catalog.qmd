@@ -13,8 +13,7 @@ library(DT)
 ```
 
 In this tutorial we use one of the datasets available from the NCBI GEO database. 
-You are encouraged to follow along with the tutorial using the Grady Trauma Project, 
-and once you've gotten some experience following along, then practice with another 
+You are encouraged to follow along with the tutorial using the Grady Trauma Project, then practice with another
 dataset. The NCBI GEO database can be a bit tricky to navigate, so for ease, I've curated 
 a catalog of 70 Illumina MethylationEPIC GEO Series (including the dataset used in the tutorial) that carry enough phenotype
 and covariate metadata to support a real association analysis. Browse it to 
@@ -236,9 +235,9 @@ htmltools::tagList(
 )
 ```
 
-## What the columns mean
+## Data Dictionary
 
-| Column | Meaning |
+| Column | Description |
 |---|---|
 | `GEO accession` | GEO Series accession — the identifier you give to `getGEO()` or use in the FTP path to download IDATs. Where a study was deposited as a SuperSeries plus SubSeries, every accession is listed here and the row's other columns describe the first one. |
 | `Title` | The study's deposited title. |
@@ -294,29 +293,30 @@ against. There are also published manuscripts that we can compare our results wi
 ::: {.callout-note}
 ## Not every study gives you IDATs
 Some GEO methylation studies deposit only a processed beta-value matrix, not raw
-IDATs. You can still use these for your rotation — the [Normalization](02_normalization.qmd)
-notebook includes notes on how to enter the workflow from a processed matrix and
+IDATs. You can still use these for your rotation — the
+Chapters include notes on how to enter the workflow from a processed matrix and
 which steps you can and cannot still do.
 :::
 
-## Download the catalog
+## More detail on the curated catalog
 
-The catalog is available as a CSV. It holds exactly the 60 studies in the table
-above, in the same order, with `r length(csv_cols)` columns rather than the `r length(show_cols)` shown:
+The curated catalog shown above with information about the different GEO datasets to choose from for your own
+analyses is also available as a csv. The csv version contains more information about the 60 studies than what is shown in
+the table above: the csv has `r length(csv_cols)` columns rather than the `r length(show_cols)`:
 
-- [**methylation_geo_catalog.csv**](methylation_geo_catalog.csv) — ready to load with `read_csv()` (R) or `pd.read_csv()` (Python).
+- [**methylation_geo_catalog.csv**](methylation_geo_catalog.csv) — ready to load with `read_csv()`.
+
+You can also read in the csv with Excel or a similar spreadsheet software.
 
 `GSE` and `N_samples` are comma-separated and aligned with each other, so the
 Congo study reads `GSE224365, GSE224363, GSE224364` against `712, 356, 356`.
-Every other column describes the **first** accession listed. The file is written
-by the same chunk that draws the table, so the download cannot drift from what
-you see above.
+Every other column describes the **first** accession listed.
 
-You can also grab the current view directly from the table using the **CSV** and
-**Copy** buttons above it.
+Downloading `methylation_geo_catalog.csv` *will not* provide you with the datasets, just more information about the studies.
+You will still need to create a sample sheet and download the IDATs as described in [Setup](00_setup.qmd) for whichever study you
+choose.
 
 ---
 
-**Next:** with a dataset in hand, head to [Background](background.qmd) to meet the
-platform — or, if you already know the array, skip straight to [Setup](00_setup.qmd)
-to download the raw IDATs and read them into R.
+**Next:** head to [Background](background.qmd) to learn more about the background of methylation array data.
+Or, if you already familiar with methylation data, skip straight to [Setup](00_setup.qmd).
