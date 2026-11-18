@@ -1,6 +1,6 @@
 # An EWAS walkthrough: from raw IDATs to functional annotation
 
-A reproducible, eleven-chapter Quarto tutorial that takes a publicly available Illumina
+A Quarto tutorial that takes a publicly available Illumina
 Infinium MethylationEPIC dataset from raw IDAT files through quality control,
 normalization, probe filtering, cell-composition estimation, batch-effect diagnosis,
 an epigenome-wide association study, a Snakemake production pipeline, and functional
@@ -13,42 +13,40 @@ annotation of the results.
 ## The dataset
 
 Grady Trauma Project, NCBI GEO accession **GSE132203** — whole-blood EPIC methylation
-with matched phenotype data. The walkthrough uses a curated subset of **96 arrays**
+with matched phenotype data. The walkthrough uses a curated subset of 96 samples
 (approximately 95% African American). All 96 pass QC and are carried through
 normalization, probe filtering, cell-composition estimation, and batch diagnosis;
-the association model is fit on the **87** samples with recorded PTSD status
-(32 cases, 55 controls) — nine samples have no PTSD status in the deposit and drop
-out when the exposure enters the model, which is a problem of missingness of the phenotype of interest rather than a
-quality failure. After filtering under the Zhou EPIC `mask.cm` **v8.1** recommended
+the association model is fit on the **86** samples that are not missing PTSD status
+or genetic ancestry PCs (32 cases, 55 controls). After filtering with the Zhou EPIC `mask.cm` **v8.1** recommended
 mask, **756,251 CpGs** are tested.
 
-The point of the walkthrough is the method and its calibration (λ ≈ 1.02), not a
-discovery. Treat the association results as a teaching artifact, not a finding.
+The small subset used for the tutorial is not powered for detection of epigenome-wide significant 
+results. The point of using a small dataset is to make the tutorial accessible to run on a standard laptop. 
+The overall goal of the tutorial is to teach individuals how to process and analyze their own methylation data. 
 
 ## Chapters
 
-| | chapter | what it covers                                                                 |
+| | chapter | description                                                                 |
 |---|---|--------------------------------------------------------------------------------|
-|  | `dataset_catalog.qmd` | how the GEO dataset was chosen from 70 candidates                              |
-|  | `background.qmd` | DNA methylation and how arrays measure it                                    |
-| 0 | `00_setup.qmd` | environment, packages, downloading and reading the IDATs                       |
+|  | `dataset_catalog.qmd` | A curated set of public datasets recommended for practice                          |
+|  | `background.qmd` | DNA methylation and array technology                                    |
+| 0 | `00_setup.qmd` | environment, packages, downloading and reading the IDATs, computational resources                       |
 | 1 | `01_qc.qmd` | detection *p*, sample QC, predicted sex, SNP identity                          |
 | 2 | `02_normalization.qmd` | functional normalization                                                       |
-| 3 | `03_probe_filtering.qmd` | masking, detection *p*, sex chromosomes                                          |
-| 4 | `04_cell_composition.qmd` | IDOL reference-based deconvolution                                             |
-| 5 | `05_genetic_pcs.qmd` | genetic ancestry principal components                                          |
-| 6 | `06_batch_effects.qmd` | PCA, sex-stratified ComBat, SVA (k = 6)                                        |
-| 7 | `07_ewas.qmd` | limma EWAS, BACON bias and inflation correction                                |
-| 8 | `08_pipeline.qmd` | the same analysis as a Snakemake pipeline, sex-stratified, METAL meta-analysis |
-| 9 | `09_annotation.qmd` | gene and CGI annotation, gometh / methylGSA / KYCG enrichment, comb-p DMRs     |
+| 3 | `03_probe_filtering.qmd` | poor mapping, detection *p*, sex chromosomes, ancestry-specific masking                                          |
+| 4 | `04_cell_composition.qmd` | reference-based whole blood deconvolution                                             |
+| 5 | `05_genetic_pcs.qmd` | genetic ancestry principal components: what they are and how to estimate them                                          |
+| 6 | `06_batch_effects.qmd` | PCA, ComBat, Surrogate Variable Analysis                                        |
+| 7 | `07_ewas.qmd` | limma EWAS, BACON bias and inflation correction with R                               |
+| 8 | `08_pipeline.qmd` | **OPTIONAL** EWAS with a Snakemake pipeline |
+| 9 | `09_annotation.qmd` | regional analysis, enrichment analyses, functional annotation     |
 
 ## Repository layout
 
 ```
 tutorial/          the .qmd chapters, _quarto.yml, _setup.R, references.bib
 tutorial/data/     small committed data: figures, summary CSVs, sample sheets
-scripts/           draw the figures no chapter draws itself: the dataset-catalogue
-                   overview (dataset catalog) and the chapter 8 pipeline figures
+scripts/           R scripts for figures without code blocks in the chapter and the dataset-catalogue
 docs/              the rendered site, served by GitHub Pages
 get_data.sh        fetches the large checkpoints from Zenodo
 MANIFEST.md        every distributed file, its size, and per-tier checksums
@@ -61,14 +59,12 @@ dev-notes/         maintainer notes: analysis decisions, change log, release che
 The tutorial tests the full post-QC CpG set, so the
 intermediate objects are large: the normalized `GenomicRatioSet` alone is 1.2 GiB and the
 whole checkpoint set is about 4.3 GiB on disk. So, **code, prose and every file under 5 MB are in git; the large checkpoints are a
-versioned Zenodo record with a DOI.** Zenodo allows 50 GB per record, is free, has no
-bandwidth metering, and gives the dataset a citable identifier — which is the right
-outcome for a teaching resource anyway.
+versioned Zenodo record with a DOI.** 
 
 ## Getting the data
 
-You do not need all of it. Each tarball is a **resume point**: download only the tier for
-the chapter you want to start from, and every later chapter will run.
+You do not need all of it. Each tarball is a resume or check point: download only the tier for
+the chapter you want to check your answers to or start from.
 
 | tier | download | resume at | contents |
 |---|---:|---|---|
