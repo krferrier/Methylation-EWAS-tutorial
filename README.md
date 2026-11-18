@@ -87,8 +87,7 @@ cd Methylation-EWAS-tutorial
 `get_data.sh` verifies each tarball against `SHA256SUMS.txt` before extracting, and
 extracts in place so files land where the `.qmd` documents look for them.
 
-Starting from chapter 1 instead means downloading the 192 raw IDAT files (96
-Grn/Red pairs, one pair per array) from GEO yourself; `01_qc.qmd` documents how.
+Instructions for programmatically downloading the IDATs from GEO yourself are outlined in `01_qc.qmd`.
 
 ## Rendering
 
@@ -108,7 +107,7 @@ cached proportions instead of recomputing them.
 
 ## Reusing the pipeline
 
-Chapter 8 drives the Snakemake EWAS pipeline at
+Chapter 8 covers the Snakemake EWAS pipeline at
 **https://github.com/krferrier/EWAS**. Clone it as a sibling directory
 (`../ewas_pipeline`) if you want to run it yourself; tier `G_pipeline_run` contains its
 outputs so the chapter renders without recomputing.
@@ -118,7 +117,7 @@ outputs so the chapter renders without recomputing.
 **If you use this tutorial — in teaching, in a rotation project, in a methods
 section, or as the basis for your own analysis — please cite it.** The MIT
 license does not require this, but academic credit is how work like this is
-sustained, and it costs you one line.
+sustained.
 
 There are two things to cite, and which you need depends on what you used:
 
