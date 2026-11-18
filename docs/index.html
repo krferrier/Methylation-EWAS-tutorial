@@ -5735,10 +5735,10 @@ window.onload = function() {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#who-this-is-for" id="toc-who-this-is-for" class="nav-link active" data-scroll-target="#who-this-is-for">Who this is for</a></li>
-  <li><a href="#the-dataset" id="toc-the-dataset" class="nav-link" data-scroll-target="#the-dataset">The dataset</a></li>
-  <li><a href="#how-the-teaching-subset-was-chosen" id="toc-how-the-teaching-subset-was-chosen" class="nav-link" data-scroll-target="#how-the-teaching-subset-was-chosen">How the teaching subset was chosen</a></li>
-  <li><a href="#how-the-notebooks-fit-together" id="toc-how-the-notebooks-fit-together" class="nav-link" data-scroll-target="#how-the-notebooks-fit-together">How the notebooks fit together</a></li>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#the-grady-trauma-project-gtp" id="toc-the-grady-trauma-project-gtp" class="nav-link" data-scroll-target="#the-grady-trauma-project-gtp">The Grady Trauma Project (GTP)</a></li>
+  <li><a href="#the-subset" id="toc-the-subset" class="nav-link" data-scroll-target="#the-subset">The subset</a></li>
+  <li><a href="#table-of-contents" id="toc-table-of-contents" class="nav-link" data-scroll-target="#table-of-contents">Table of Contents</a></li>
   </ul>
 </nav>
     </div>
@@ -5748,7 +5748,6 @@ window.onload = function() {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <div class="quarto-title-block"><div><h1 class="title">Epigenome-Wide Association Studies: a hands-on tutorial</h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
-<p class="subtitle lead">From raw IDATs to annotated hits, using the Grady Trauma Project (GSE132203)</p>
 </div>
 
 
@@ -5765,72 +5764,38 @@ window.onload = function() {
 </header>
 
 
-<section id="who-this-is-for" class="level2">
-<h2 class="anchored" data-anchor-id="who-this-is-for">Who this is for</h2>
-<p>This tutorial is written for rotation students and anyone new to array-based DNA methylation analysis. It walks the full path from <strong>raw Illumina IDAT files</strong> to a set of <strong>annotated, genome-wide association results</strong>, running every step for real on a teaching subset of a public dataset. By the end you will have:</p>
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>This tutorial is written for anyone new to array-based DNA methylation analysis. The tutorial is primarily written using R, but instructions are provided such that those with little to no previous programming experience should be able to follow. It walks through quality control (QC) and preprocessing from raw Illumina IDAT files (or a partially processed methylation matrix), running an EWAS, and post-EWAS steps such as secondary analyses and annotation of results. This tutorial uses real, publicly available data to showcase the critical decisions in pre-processing and modeling that occur due to data missingness, bias, or confounding that comes with real datasets. By the end, you should understand how to:</p>
 <ul>
-<li>read raw two-channel IDATs into R and understood what the numbers mean;</li>
-<li>run the quality-control checks that decide which samples and probes to trust;</li>
-<li>normalized the data and filtered unreliable probes using ancestry-aware masks;</li>
-<li>estimated blood cell composition and diagnosed technical batch structure;</li>
-<li>fit an epigenome-wide model, run it reproducibly as a Snakemake pipeline, and annotated the top CpGs and regions.</li>
+<li>read raw two-channel IDATs into R;</li>
+<li>run standard QC checks for methylation array data;</li>
+<li>normalize methylation data;</li>
+<li>identify which probes to filter prior to running an EWAS;</li>
+<li>create proxies for genetic ancestry or tobacco smoking;</li>
+<li>estimate blood cell composition;</li>
+<li>identify and correct for technical variation;</li>
+<li>fit an epigenome-wide model;</li>
+<li>run secondary regional analyses;</li>
+<li>add functional annotation to results</li>
 </ul>
 </section>
-<section id="the-dataset" class="level2">
-<h2 class="anchored" data-anchor-id="the-dataset">The dataset</h2>
-<p>We use <strong>GSE132203</strong>, the <em>Grady Trauma Project</em> — whole-blood Illumina MethylationEPIC (v1, 850K) profiles from an adult cohort deeply phenotyped for trauma exposure and PTSD. It was chosen for teaching because it is unusually complete:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Feature</th>
-<th>Why it matters for teaching</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Raw IDATs deposited</td>
-<td>Lets us start from the true beginning, not a processed matrix</td>
-</tr>
-<tr class="even">
-<td>N = 795 (we use a <strong>96-sample subset</strong>)</td>
-<td>Big enough to be realistic, small enough to run live</td>
-</tr>
-<tr class="odd">
-<td>Deposited cell-type proportions</td>
-<td>An <strong>answer key</strong> to validate our own deconvolution</td>
-</tr>
-<tr class="even">
-<td>Sentrix barcodes in filenames</td>
-<td>Real chip/position structure for the batch-effects lesson</td>
-</tr>
-<tr class="odd">
-<td>Explicit age &amp; sex, multiple exposures</td>
-<td>Proper covariate modeling, several candidate outcomes</td>
-</tr>
-</tbody>
-</table>
+<section id="the-grady-trauma-project-gtp" class="level2">
+<h2 class="anchored" data-anchor-id="the-grady-trauma-project-gtp">The Grady Trauma Project (GTP)</h2>
+<p>This tutorial uses whole blood Illumina Methylation EPIC (v1, 850k probes) array data from the Grady Trauma Project (GSE132203), accessed through NCBI’s GEO database. This study is a case-control cohort of individuals with trauma and PTSD. In total, there are 795 individuals in the GTP cohort, although only a subset of 96 individuals are used for the tutorial so everything can be run on a standard laptop.</p>
+<p>The GTP was chosen for a number of reasons. First, it had raw IDATs deposited so we could show how to download and process from raw files. Second, because it has an unusually complete set of phenotype data for a publicly available dataset. Many public datasets deposited provide limited phenotype data. For the purposes of teaching, we wanted a dataset which did have many important variables deposited. This way, we are able to show how to estimate or create proxy variables when such data is not deposited, and provide comparisons to what was originally deposited to show evidence these methods are sound.</p>
 </section>
-<section id="how-the-teaching-subset-was-chosen" class="level2">
-<h2 class="anchored" data-anchor-id="how-the-teaching-subset-was-chosen">How the teaching subset was chosen</h2>
-<p>The Grady Trauma Project was selected for this tutorial in specific because I wanted to be able to provide a walkthrough that shows:</p>
-<ol type="1">
-<li>How to process from raw IDAT files,</li>
-<li>Uses whole blood as the tissue source since this is a common tissue used in methylation studies and requires some additional consideration in statistical modeling.</li>
-<li>Has available phenotype data for a disease or trait association testing, as well as sex and age demographic information.</li>
-</ol>
-<p>The resulting balance of the 96 samples chosen for the tutorial subset:</p>
+<section id="the-subset" class="level2">
+<h2 class="anchored" data-anchor-id="the-subset">The subset</h2>
+<p>The subset of 96 individuals used for the tutorial were selected from the full 795 balanced for PTSD case-control status and Sex. Below is a summary of the key characterstics of the 96-sample subset including PTSD status, sex, race (self-reported), and mean age. We also show that the selected 95 do not have confounding of PTSD status with the technical variable ‘Slide’. This type of confounding would make it impossible to distinguish if signals identified were due to true biological differences or technical artifacts.</p>
 <div class="cell">
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>bal <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">PTSD          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>ptsd, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>),</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex           =</span> <span class="fu">table</span>(ss<span class="sc">$</span>gender),</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Race          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>race, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make a summary table of cohort characteristics</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>bal <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">PTSD          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>ptsd, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>),</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex           =</span> <span class="fu">table</span>(ss<span class="sc">$</span>gender),</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Race          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>race, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>))</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>bal</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
@@ -5851,8 +5816,9 @@ $Race
 </div>
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Age: range&quot;</span>, <span class="fu">paste</span>(<span class="fu">range</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="at">collapse=</span><span class="st">&quot;-&quot;</span>),</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| mean&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate and report age statistics</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Age: range&quot;</span>, <span class="fu">paste</span>(<span class="fu">range</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="at">collapse=</span><span class="st">&quot;-&quot;</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| mean&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -5860,45 +5826,36 @@ Age: range 18-66 | mean 42.5 </code></pre>
 </div>
 <details open class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Chips carrying both PTSD classes:&quot;</span>,</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(<span class="fu">tapply</span>(ss<span class="sc">$</span>ptsd, ss<span class="sc">$</span>slide, <span class="cf">function</span>(x) <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">na.omit</span>(x)))<span class="sc">&gt;</span><span class="dv">1</span>)),</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;of&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate and report if there is confounding of PTSD and Slide</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Chips carrying both PTSD classes:&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(<span class="fu">tapply</span>(ss<span class="sc">$</span>ptsd, ss<span class="sc">$</span>slide, <span class="cf">function</span>(x) <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">na.omit</span>(x)))<span class="sc">&gt;</span><span class="dv">1</span>)),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;of&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Chips carrying both PTSD classes: 12 of 12 </code></pre>
 </div>
 </div>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>A bonus lesson I can teach with the Grady Trauma Project
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>This cohort is ~95% African American, which means in addition to the main tutorial lessons I wanted to achieve, I also get to showcase using <strong>population-specific</strong> SNP (single nucleotide polymorphism) masks. Differences in genomic architecture is observed across populations; a variant may be polymorphic in one population, but is not in another, and vice-versa. SNPs in close proximity to a CpG can impact the ability for the CpG probes to measure the methylation status accurately. Thus, CpGs near common SNPs are typically excluded from downstream analyses. However, not all populations share the same SNPs and masking with the wrong population may cause you to lose true-positive signals and retain false-positive signals.</p>
-</div>
-</div>
 </section>
-<section id="how-the-notebooks-fit-together" class="level2">
-<h2 class="anchored" data-anchor-id="how-the-notebooks-fit-together">How the notebooks fit together</h2>
-<p>The preprocessing-through-analysis arc maps onto these notebooks:</p>
+<section id="table-of-contents" class="level2">
+<h2 class="anchored" data-anchor-id="table-of-contents">Table of Contents</h2>
+<p>Below is an overview of each Chapter of this tutorial and a brief description of what it covers:</p>
 <ul>
-<li><strong><a href="./background.html">Background</a></strong> — what DNA methylation is and how arrays measure it. Skip it if you already work with methylation data.</li>
-<li><strong><a href="./00_setup.html">0. Setup</a></strong> — downloading the raw IDATs, reading them into R, and what the whole tutorial costs in time, memory, and disk.</li>
+<li><strong><a href="./background.html">Background</a></strong> — what DNA methylation is and how arrays measure it.</li>
+<li><strong><a href="./00_setup.html">0. Setup</a></strong> — setting up software environments, downloading IDATs, assessing computational resources.</li>
 <li><strong><a href="./01_qc.html">1. Quality control</a></strong> — detection p-values, intensity, predicted sex, SNP identity.</li>
 <li><strong><a href="./02_normalization.html">2. Normalization</a></strong> — within- and between-array normalization.</li>
-<li><strong><a href="./03_probe_filtering.html">3. Probe filtering</a></strong> — detection-p, cross-reactive, and ancestry-aware SNP masks.</li>
+<li><strong><a href="./03_probe_filtering.html">3. Probe filtering</a></strong> — detection-p, cross-reactive, poor mapping, and ancestry-aware SNP masks.</li>
 <li><strong><a href="./04_cell_composition.html">4. Cell composition</a></strong> — reference-based deconvolution, validated against deposited proportions.</li>
-<li><strong><a href="./05_genetic_pcs.html">5. Genetic ancestry PCs</a></strong> — what the deposited genetic ancestry principal components capture and why the models adjust for them.</li>
-<li><strong><a href="./06_batch_effects.html">6. Batch effects</a></strong> — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.</li>
-<li><strong><a href="./07_ewas.html">7. EWAS</a></strong> — the association model, adjusted for sex, age, a methylation-based smoking proxy, array position, cell composition, genetic ancestry PCs, and surrogate variables.</li>
-<li><strong><a href="./08_pipeline.html">8. Snakemake pipeline</a></strong> — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.</li>
-<li><strong><a href="./09_annotation.html">9. Annotation</a></strong> — mapping top CpGs to genes, regions (DMRs), and regulatory context.</li>
+<li><strong><a href="./05_genetic_pcs.html">5. Genetic ancestry PCs</a></strong> — genetic ancestry principal components: what they are and how to estimate them.</li>
+<li><strong><a href="./06_batch_effects.html">6. Batch effects</a></strong> — technical variation correction; ComBat and surrogate variables.</li>
+<li><strong><a href="./07_ewas.html">7. EWAS</a></strong> — association modeling with R.</li>
+<li><strong><a href="./08_pipeline.html">8. Snakemake pipeline</a></strong> — <strong>OPTIONAL</strong> EWAS using a reproducible Snakemake workflow.</li>
+<li><strong><a href="./09_annotation.html">9. Annotation</a></strong> — mapping top CpGs to genes, regions (DMRs), and adding functional annotation to results.</li>
 </ul>
-<p>Each notebook loads the object saved by the previous one, so you can work through them in order or jump to any step and pick up the saved checkpoint.</p>
+<p>Each chapter’s inputs are either available online to download or are created and saved from the previous chapter. There is a <a href="https://doi.org/10.5281/zenodo.22135215">Zenodo archive</a> of all chapter inputs, intermediate files, and outputs so that you can check your work along the way or skip sections that you don’t have the compute resources to perform yourself.</p>
+<hr>
+<p>Author: Kendra Ferrier, PhD<br>
+Date last updated: Nov. 17, 2026</p>
 
 
 <!-- -->
@@ -6360,104 +6317,102 @@ Age: range 18-66 | mean 42.5 </code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> &quot;Epigenome-Wide Association Studies: a hands-on tutorial&quot;</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="an">number-sections:</span><span class="co"> false</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="an">subtitle:</span><span class="co"> &quot;From raw IDATs to annotated hits, using the Grady Trauma Project (GSE132203)&quot;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: setup</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;_setup.R&quot;</span>)</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># The same sample sheet every chapter reads; only used here for the inline counts below.</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>ss <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/sample_sheet.csv&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>ss <span class="ot">&lt;-</span> ss[<span class="fu">order</span>(ss<span class="sc">$</span>slide, ss<span class="sc">$</span>array_pos), ]</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="fu">## Who this is for</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>This tutorial is written for rotation students and anyone new to array-based</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>DNA methylation analysis. It walks the full path from **raw Illumina IDAT</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>files** to a set of **annotated, genome-wide association results**, running</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>every step for real on a teaching subset of a public dataset. By the end you</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>will have:</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>read raw two-channel IDATs into R and understood what the numbers mean;</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>run the quality-control checks that decide which samples and probes to trust;</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>normalized the data and filtered unreliable probes using ancestry-aware masks;</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>estimated blood cell composition and diagnosed technical batch structure;</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>fit an epigenome-wide model, run it reproducibly as a Snakemake pipeline, and annotated the top CpGs and regions.</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="fu">## The dataset</span></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>We use **GSE132203**, the *Grady Trauma Project* — whole-blood Illumina</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>MethylationEPIC (v1, 850K) profiles from an adult cohort deeply phenotyped for</span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>trauma exposure and PTSD. It was chosen for teaching because it is unusually</span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>complete:</span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Feature <span class="pp">|</span> Why it matters for teaching <span class="pp">|</span></span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|</span></span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Raw IDATs deposited <span class="pp">|</span> Lets us start from the true beginning, not a processed matrix <span class="pp">|</span></span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> N = 795 (we use a **96-sample subset**) <span class="pp">|</span> Big enough to be realistic, small enough to run live <span class="pp">|</span></span>
-<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Deposited cell-type proportions <span class="pp">|</span> An **answer key** to validate our own deconvolution <span class="pp">|</span></span>
-<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Sentrix barcodes in filenames <span class="pp">|</span> Real chip/position structure for the batch-effects lesson <span class="pp">|</span></span>
-<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Explicit age &amp; sex, multiple exposures <span class="pp">|</span> Proper covariate modeling, several candidate outcomes <span class="pp">|</span></span>
-<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="fu">## How the teaching subset was chosen</span></span>
-<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>The Grady Trauma Project was selected for this tutorial in specific because I wanted</span>
-<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>to be able to provide a walkthrough that shows:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: setup</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;_setup.R&quot;</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Read the sample sheet for the subset of the cohort used in this tutorial.</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>ss <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/sample_sheet.csv&quot;</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>ss <span class="ot">&lt;-</span> ss[<span class="fu">order</span>(ss<span class="sc">$</span>slide, ss<span class="sc">$</span>array_pos), ]</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="fu">## Overview</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>This tutorial is written for anyone new to array-based</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>DNA methylation analysis. The tutorial is primarily written using R, but instructions are provided such that </span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>those with little to no previous programming experience should be able to follow. It walks through quality control (QC) and </span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>preprocessing from raw Illumina IDAT files (or a partially processed methylation matrix), </span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>running an EWAS, and post-EWAS steps such as secondary analyses and annotation of results. This tutorial uses real,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>publicly available data to showcase the critical decisions in pre-processing and modeling that occur due to data </span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>missingness, bias, or confounding that comes with real datasets. By the end, you should understand how to:</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>read raw two-channel IDATs into R;</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>run standard QC checks for methylation array data;</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>normalize methylation data;</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>identify which probes to filter prior to running an EWAS;</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>create proxies for genetic ancestry or tobacco smoking;</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>estimate blood cell composition;</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>identify and correct for technical variation;</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>fit an epigenome-wide model;</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>run secondary regional analyses;</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>add functional annotation to results</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Grady Trauma Project (GTP)</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>This tutorial uses whole blood Illumina Methylation EPIC (v1, 850k probes) array data from the Grady Trauma Project</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>(GSE132203), accessed through NCBI&#39;s GEO database. This study is a case-control cohort of individuals with trauma </span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>and PTSD. In total, there are 795 individuals in the GTP cohort, although only a subset of 96 </span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>individuals are used for the tutorial so everything can be run on a standard laptop.</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>The GTP was chosen for a number of reasons. First, it had raw IDATs deposited so we could show how to download and </span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>process from raw files. Second, because it has an unusually complete set of phenotype data for a publicly available </span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>dataset. Many public datasets deposited provide limited phenotype data. For the purposes of teaching, we wanted a dataset </span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>which did have many important variables deposited. This way, we are able to show how to estimate or </span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>create proxy variables when such data is not deposited, and provide comparisons to what was originally deposited to </span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>show evidence these methods are sound.</span>
 <span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>How to process from raw IDAT files,</span>
-<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Uses whole blood as the tissue source since this is a common tissue used in methylation studies and requires some additional consideration in statistical modeling.</span>
-<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>Has available phenotype data for a disease or trait association testing, as well as sex and age demographic information.</span>
-<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>The resulting balance of the 96 samples chosen for the tutorial subset:</span>
-<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: subset-balance</span></span>
-<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>bal <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>  <span class="at">PTSD          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>ptsd, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>),</span>
-<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex           =</span> <span class="fu">table</span>(ss<span class="sc">$</span>gender),</span>
-<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>  <span class="at">Race          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>race, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>)</span>
-<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a>bal</span>
-<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Age: range&quot;</span>, <span class="fu">paste</span>(<span class="fu">range</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="at">collapse=</span><span class="st">&quot;-&quot;</span>),</span>
-<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| mean&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Chips carrying both PTSD classes:&quot;</span>,</span>
-<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(<span class="fu">tapply</span>(ss<span class="sc">$</span>ptsd, ss<span class="sc">$</span>slide, <span class="cf">function</span>(x) <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">na.omit</span>(x)))<span class="sc">&gt;</span><span class="dv">1</span>)),</span>
-<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;of&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a>::: {.callout-note}</span>
-<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a><span class="fu">## A bonus lesson I can teach with the Grady Trauma Project</span></span>
-<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a>This cohort is ~95% African American, which means in addition to the main tutorial</span>
-<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a>lessons I wanted to achieve, I also get to showcase using **population-specific**</span>
-<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a>SNP (single nucleotide polymorphism) masks. Differences in genomic architecture is</span>
-<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a>observed across populations; a variant may be polymorphic in one population, but is</span>
-<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a>not in another, and vice-versa. SNPs in close proximity to a CpG can impact the</span>
-<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a>ability for the CpG probes to measure the methylation status accurately. Thus, CpGs</span>
-<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a>near common SNPs are typically excluded from downstream analyses. However, not all</span>
-<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a>populations share the same SNPs and masking with the wrong population may cause you</span>
-<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a>to lose true-positive signals and retain false-positive signals.</span>
-<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a><span class="fu">## How the notebooks fit together</span></span>
-<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a>The preprocessing-through-analysis arc maps onto these notebooks:</span>
-<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[Background](background.qmd)** — what DNA methylation is and how arrays measure it. Skip it if you already work with methylation data.</span>
-<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[0. Setup](00_setup.qmd)** — downloading the raw IDATs, reading them into R, and what the whole tutorial costs in time, memory, and disk.</span>
-<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[1. Quality control](01_qc.qmd)** — detection p-values, intensity, predicted sex, SNP identity.</span>
-<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[2. Normalization](02_normalization.qmd)** — within- and between-array normalization.</span>
-<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[3. Probe filtering](03_probe_filtering.qmd)** — detection-p, cross-reactive, and ancestry-aware SNP masks.</span>
-<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[4. Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.</span>
-<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[5. Genetic ancestry PCs](05_genetic_pcs.qmd)** — what the deposited genetic ancestry principal components capture and why the models adjust for them.</span>
-<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[6. Batch effects](06_batch_effects.qmd)** — chip and array-position diagnosis; ComBat, and surrogate variables for what remains.</span>
-<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[7. EWAS](07_ewas.qmd)** — the association model, adjusted for sex, age, a methylation-based smoking proxy, array position, cell composition, genetic ancestry PCs, and surrogate variables.</span>
-<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[8. Snakemake pipeline](08_pipeline.qmd)** — the same analysis as a versioned, one-command reproducible workflow, with BACON and sex-stratified meta-analysis.</span>
-<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[9. Annotation](09_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and regulatory context.</span>
-<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-104"><a href="#cb7-104" aria-hidden="true" tabindex="-1"></a>Each notebook loads the object saved by the previous one, so you can work</span>
-<span id="cb7-105"><a href="#cb7-105" aria-hidden="true" tabindex="-1"></a>through them in order or jump to any step and pick up the saved checkpoint.</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="fu">## The subset</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>The subset of 96 individuals used for the tutorial were selected from the full 795 balanced for PTSD case-control </span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>status and Sex. Below is a summary of the key characterstics of the 96-sample subset including PTSD status, sex, race</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>(self-reported), and mean age. We also show that the selected 95 do not have confounding of PTSD status with the </span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>technical variable &#39;Slide&#39;. This type of confounding would make it impossible to distinguish if signals identified were due to true </span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>biological differences or technical artifacts.   </span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: subset-characteristic-summary</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a><span class="co"># Make a summary table of cohort characteristics</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>bal <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a>  <span class="at">PTSD          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>ptsd, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>),</span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sex           =</span> <span class="fu">table</span>(ss<span class="sc">$</span>gender),</span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a>  <span class="at">Race          =</span> <span class="fu">table</span>(ss<span class="sc">$</span>race, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>))</span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>bal</span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate and report age statistics</span></span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Age: range&quot;</span>, <span class="fu">paste</span>(<span class="fu">range</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="at">collapse=</span><span class="st">&quot;-&quot;</span>),</span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;| mean&quot;</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ss<span class="sc">$</span>age, <span class="at">na.rm=</span><span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate and report if there is confounding of PTSD and Slide</span></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Chips carrying both PTSD classes:&quot;</span>,</span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(<span class="fu">tapply</span>(ss<span class="sc">$</span>ptsd, ss<span class="sc">$</span>slide, <span class="cf">function</span>(x) <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">na.omit</span>(x)))<span class="sc">&gt;</span><span class="dv">1</span>)),</span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;of&quot;</span>, <span class="fu">length</span>(<span class="fu">unique</span>(ss<span class="sc">$</span>slide)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a><span class="fu">## Table of Contents</span></span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a>Below is an overview of each Chapter of this tutorial and a brief description of what it covers:</span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[Background](background.qmd)** — what DNA methylation is and how arrays measure it. </span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[0. Setup](00_setup.qmd)** — setting up software environments, downloading IDATs, assessing computational resources.</span>
+<span id="cb7-86"><a href="#cb7-86" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[1. Quality control](01_qc.qmd)** — detection p-values, intensity, predicted sex, SNP identity.</span>
+<span id="cb7-87"><a href="#cb7-87" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[2. Normalization](02_normalization.qmd)** — within- and between-array normalization.</span>
+<span id="cb7-88"><a href="#cb7-88" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[3. Probe filtering](03_probe_filtering.qmd)** — detection-p, cross-reactive, poor mapping, and ancestry-aware SNP masks.</span>
+<span id="cb7-89"><a href="#cb7-89" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[4. Cell composition](04_cell_composition.qmd)** — reference-based deconvolution, validated against deposited proportions.</span>
+<span id="cb7-90"><a href="#cb7-90" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[5. Genetic ancestry PCs](05_genetic_pcs.qmd)** — genetic ancestry principal components: what they are and how to estimate them. </span>
+<span id="cb7-91"><a href="#cb7-91" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[6. Batch effects](06_batch_effects.qmd)** — technical variation correction; ComBat and surrogate variables.</span>
+<span id="cb7-92"><a href="#cb7-92" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[7. EWAS](07_ewas.qmd)** — association modeling with R.</span>
+<span id="cb7-93"><a href="#cb7-93" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[8. Snakemake pipeline](08_pipeline.qmd)** — **OPTIONAL** EWAS using a reproducible Snakemake workflow.</span>
+<span id="cb7-94"><a href="#cb7-94" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**[9. Annotation](09_annotation.qmd)** — mapping top CpGs to genes, regions (DMRs), and adding functional annotation to results.</span>
+<span id="cb7-95"><a href="#cb7-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-96"><a href="#cb7-96" aria-hidden="true" tabindex="-1"></a>Each chapter&#39;s inputs are either available online to download or are created and saved from the previous chapter. There </span>
+<span id="cb7-97"><a href="#cb7-97" aria-hidden="true" tabindex="-1"></a>is a <span class="co">[</span><span class="ot">Zenodo archive</span><span class="co">](https://doi.org/10.5281/zenodo.22135215)</span> of all chapter inputs, intermediate files, and outputs so that you can check your work along the </span>
+<span id="cb7-98"><a href="#cb7-98" aria-hidden="true" tabindex="-1"></a>way or skip sections that you don&#39;t have the compute resources to perform yourself. </span>
+<span id="cb7-99"><a href="#cb7-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-100"><a href="#cb7-100" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb7-101"><a href="#cb7-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-102"><a href="#cb7-102" aria-hidden="true" tabindex="-1"></a>Author: Kendra Ferrier, PhD  </span>
+<span id="cb7-103"><a href="#cb7-103" aria-hidden="true" tabindex="-1"></a>Date last updated: Nov. 17, 2026</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

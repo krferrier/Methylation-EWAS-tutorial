@@ -94,5 +94,6 @@ is a [Zenodo archive](https://doi.org/10.5281/zenodo.22135215) of all chapter in
 way or skip sections that you don't have the compute resources to perform yourself. 
 
 ---
-Author: Kendra Ferrier, PhD
+
+Author: Kendra Ferrier, PhD  
 Date last updated: Nov. 17, 2026
